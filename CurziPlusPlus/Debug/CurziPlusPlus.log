@@ -1,0 +1,10 @@
+﻿  main.cpp
+C:\Users\Bruno\Desktop\prog\src\c++\CurziPlusPlus\CurziPlusPlus\tokenizer.h(180,18): warning C4018: '<=': signed/unsigned mismatch
+C:\Users\Bruno\Desktop\prog\src\c++\CurziPlusPlus\CurziPlusPlus\tokenizer.h(220,18): warning C4018: '<=': signed/unsigned mismatch
+C:\Users\Bruno\Desktop\prog\src\c++\CurziPlusPlus\CurziPlusPlus\tokenizer.h(251,18): warning C4018: '<=': signed/unsigned mismatch
+  typenameNode.cpp
+C:\Users\Bruno\Desktop\prog\src\c++\CurziPlusPlus\CurziPlusPlus\tokenizer.h(180,18): warning C4018: '<=': signed/unsigned mismatch
+C:\Users\Bruno\Desktop\prog\src\c++\CurziPlusPlus\CurziPlusPlus\tokenizer.h(220,18): warning C4018: '<=': signed/unsigned mismatch
+C:\Users\Bruno\Desktop\prog\src\c++\CurziPlusPlus\CurziPlusPlus\tokenizer.h(251,18): warning C4018: '<=': signed/unsigned mismatch
+  Generating Code...
+  CurziPlusPlus.vcxproj -> C:\Users\Bruno\Desktop\prog\src\c++\CurziPlusPlus\Debug\CurziPlusPlus.exe

@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\nodes">
+      <UniqueIdentifier>{a749ce57-8fe0-454e-b11b-0b53ab202397}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nodes\inheritance">
+      <UniqueIdentifier>{60e4fc0f-45a5-4405-8b4b-b7ca75fd8864}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nodes\base">
+      <UniqueIdentifier>{b7b490b9-7ea5-4f28-8f4e-8ff4acb7848f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nodes\classElements">
+      <UniqueIdentifier>{1f4b9173-206d-4f62-ab0d-c2c13425f39d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nodes\types">
+      <UniqueIdentifier>{02842abd-2ee0-4ca7-8f9a-7fb3b41d98a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nodes\other">
+      <UniqueIdentifier>{6e3340b3-fdc4-4b00-b319-79e0a0da0844}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tokenizer">
+      <UniqueIdentifier>{485a5228-d6e8-4a62-a463-e26a46d4706f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="typenameNode.cpp">
+      <Filter>Source Files\nodes\types</Filter>
+    </ClCompile>
+    <ClCompile Include="tokenizer.cpp">
+      <Filter>Source Files\tokenizer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="grammarizer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="classNode.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="classInheritanceNode.h">
+      <Filter>Source Files\nodes\inheritance</Filter>
+    </ClInclude>
+    <ClInclude Include="emptyNode.h">
+      <Filter>Source Files\nodes\base</Filter>
+    </ClInclude>
+    <ClInclude Include="node.h">
+      <Filter>Source Files\nodes\base</Filter>
+    </ClInclude>
+    <ClInclude Include="andorNode.h">
+      <Filter>Source Files\nodes\base</Filter>
+    </ClInclude>
+    <ClInclude Include="tokenNode.h">
+      <Filter>Source Files\nodes\base</Filter>
+    </ClInclude>
+    <ClInclude Include="multipleInheritanceNode.h">
+      <Filter>Source Files\nodes\inheritance</Filter>
+    </ClInclude>
+    <ClInclude Include="singleInheritanceNode.h">
+      <Filter>Source Files\nodes\inheritance</Filter>
+    </ClInclude>
+    <ClInclude Include="classElementNode.h">
+      <Filter>Source Files\nodes\classElements</Filter>
+    </ClInclude>
+    <ClInclude Include="classMember.h">
+      <Filter>Source Files\nodes\classElements</Filter>
+    </ClInclude>
+    <ClInclude Include="untilTokenNode.h">
+      <Filter>Source Files\nodes\base</Filter>
+    </ClInclude>
+    <ClInclude Include="classElementsNode.h">
+      <Filter>Source Files\nodes\classElements</Filter>
+    </ClInclude>
+    <ClInclude Include="classMemberQualifiers.h">
+      <Filter>Source Files\nodes\classElements</Filter>
+    </ClInclude>
+    <ClInclude Include="argumentsNode.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="codeBlockNode.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="pppQualifierNode.h">
+      <Filter>Source Files\nodes\types</Filter>
+    </ClInclude>
+    <ClInclude Include="usingNode.h">
+      <Filter>Source Files\nodes\other</Filter>
+    </ClInclude>
+    <ClInclude Include="typenameNode.h">
+      <Filter>Source Files\nodes\types</Filter>
+    </ClInclude>
+    <ClInclude Include="macroNode.h">
+      <Filter>Source Files\nodes\other</Filter>
+    </ClInclude>
+    <ClInclude Include="tokenizer.h">
+      <Filter>Source Files\tokenizer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
+</Project>
