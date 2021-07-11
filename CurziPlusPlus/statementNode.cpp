@@ -8,6 +8,7 @@ void StatementNode::build() {
 			MAKE(TokenNode)(SEMICOLON),
 		__,
 		MAKE(IfStatementNode)(),
+		MAKE(TokenNode)(SEMICOLON),
 	__,
 	};
 }

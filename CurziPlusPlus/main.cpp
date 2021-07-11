@@ -41,7 +41,7 @@ void test(std::string program, std::shared_ptr<Node> expected) {
 void test() {
 	std::vector<std::pair<std::string, std::shared_ptr<Node>>> tests = {
 		{
-			"a.a.a().a(a.a.a() * a.a()()(), a()(), a.a().a.a)().a * a()() * a.a * a;",
+			"((a.a.a()).a(a.a.a() * a.a()()(), a()(), a.a().a.a)().a * a())() * a.a * a;",
 			MAKE(StatementNode)(),
 		},
 	};

@@ -7,24 +7,37 @@
 #include "codeBlockNode.h"
 #include "argumentsNode.h"
 
-void ExpressionNode::build() {
+void ParenExpressionNode::build() {
 	nodes = {
-		MAKE(MultiplicativeExpressionNode)(),
-	};
-		/*_OR_
+		_OR_
 			_AND_
 				MAKE(TokenNode)(PARENOPEN),
 				MAKE(ExpressionNode)(),
 				MAKE(TokenNode)(PARENCLOSE),
 			__,
-			MAKE(PostfixExpressionNode)(),
-		__,*/
+			MAKE(TokenNode)(WORD),
+		__
+	};
+}
+
+void ExpressionNode::build() {
+	nodes = {
+		MAKE(MultiplicativeExpressionNode)(),
+	};
+	/*_OR_
+		_AND_
+			MAKE(TokenNode)(PARENOPEN),
+			MAKE(ExpressionNode)(),
+			MAKE(TokenNode)(PARENCLOSE),
+		__,
+		MAKE(PostfixExpressionNode)(),
+	__,*/
 }
 
 void PostfixExpressionNode::build() {
 	nodes = {
 		_AND_
-			MAKE(TokenNode)(WORD),
+			MAKE(ParenExpressionNode)(),
 			__STAR
 				_OR_
 					_AND_
