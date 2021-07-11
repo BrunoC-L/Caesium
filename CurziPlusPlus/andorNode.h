@@ -3,9 +3,11 @@
 #include "grammarizer.h"
 
 class AndNode : public Node {
-	vNode nodes;
 public:
-	AndNode(vNode nodes) : nodes(nodes) { name = "AndNode"; }
+	AndNode(vNode v) {
+		name = "AndNode";
+		nodes = v;
+	}
 
 	virtual bool build(Grammarizer* g) override {
 		return g->And(nodes);
@@ -13,14 +15,17 @@ public:
 };
 
 class OrNode : public Node {
-	vNode nodes;
 public:
-	OrNode(vNode nodes) : nodes(nodes) { name = "OrNode"; }
+	OrNode(vNode v) {
+		name = "OrNode";
+		nodes = v;
+	}
 
 	virtual bool build(Grammarizer* g) override {
 		return g->Or(nodes);
 	}
 };
 
-#define _AND_ MAKE(AndNode)
-#define _OR_ MAKE(OrNode)
+#define _AND_ MAKE(AndNode)(vNode({
+#define _OR_ MAKE(OrNode)(vNode({
+#define __ }))

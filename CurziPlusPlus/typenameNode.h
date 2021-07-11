@@ -8,34 +8,32 @@
 class TypenameNode : public Node {
 public:
 	baseCtor(TypenameNode);
-	virtual bool build(Grammarizer* g) override;
+	virtual void build() override;
 };
 
 class NSTypenameNode : public Node {
 public:
 	baseCtor(NSTypenameNode);
-	virtual bool build(Grammarizer* g) override {
-		return
-		_AND_(vNode({
+
+	virtual void build() override {
+		nodes = {
+		_AND_
 			MAKE(TokenNode)(NS),
 			MAKE(TypenameNode)()
 		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		};
 	}
 };
 
 class TemplateListNode : public Node {
 public:
 	baseCtor(TemplateListNode);
-	virtual bool build(Grammarizer* g) override {
-		return
-		_OR_(vNode({
-			_AND_(vNode({
-				_AND_(vNode({
+
+	virtual void build() override {
+		nodes = {
+		_OR_
+			_AND_
+				_AND_
 					MAKE(TypenameNode)(),
 					MAKE(TokenNode)(COMMA),
 					MAKE(TemplateListNode)(),
@@ -43,28 +41,35 @@ public:
 			})),
 			MAKE(TypenameNode)(),
 		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		};
 	}
 };
 
 class TemplateTypenameNode : public Node {
 public:
 	baseCtor(TemplateTypenameNode);
-	virtual bool build(Grammarizer* g) override {
-		return
-		_AND_(vNode({
+
+	virtual void build() override {
+		nodes = {
+		_AND_
 			MAKE(TokenNode)(LT),
 			MAKE(TemplateListNode)(),
 			MAKE(TokenNode)(GT),
 		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		};
+	}
+};
+
+class PointerTypenameNode : public Node {
+public:
+	baseCtor(PointerTypenameNode);
+
+	virtual void build() override {
+		nodes = {
+		_OR_
+			MAKE(TokenNode)(ASTERISK),
+			MAKE(TokenNode)(AMPERSAND),
+		}))
+		};
 	}
 };

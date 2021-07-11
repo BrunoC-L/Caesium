@@ -25,6 +25,8 @@ enum TOKEN {
 	PARENOPEN,
 	PARENCLOSE,
 	ASTERISK,
+	SLASH,
+	PERCENT,
 	AMPERSAND,
 	QUESTION,
 	POUND,
@@ -50,9 +52,6 @@ enum TOKEN {
 	PRIVATE,
 	PROTECTED,
 
-	INT,
-	FLOAT,
-	DOUBLE,
 	TOKENS_SIZE
 };
 
@@ -61,7 +60,7 @@ using TOKENVALUE = std::pair<TOKEN, std::string>;
 class Tokenizer {
 private:
 	std::string program;
-	int index = 0;
+	unsigned index = 0;
 public:
 	static std::string tokenLookup[TOKENS_SIZE];
 	Tokenizer(std::string program) : program(program) {
@@ -86,6 +85,8 @@ public:
         tokenLookup[PARENOPEN] = "(";
         tokenLookup[PARENCLOSE] = ")";
         tokenLookup[ASTERISK] = "*";
+		tokenLookup[SLASH] = "/",
+		tokenLookup[PERCENT] = "%",
         tokenLookup[AMPERSAND] = "&";
         tokenLookup[QUESTION] = "?";
         tokenLookup[POUND] = "#";
@@ -110,10 +111,6 @@ public:
         tokenLookup[PUBLIC] = "PUBLIC";
         tokenLookup[PRIVATE] = "PRIVATE";
         tokenLookup[PROTECTED] = "PROTECTED";
-
-        tokenLookup[INT] = "INT";
-        tokenLookup[FLOAT] = "FLOAT";
-        tokenLookup[DOUBLE] = "DOUBLE";
 	}
 
 	std::forward_list<TOKENVALUE> read() {
@@ -240,6 +237,12 @@ private:
 		case '*':
 			index += 1;
 			return { ASTERISK, "*" };
+		case '/':
+			index += 1;
+			return { SLASH, "/" };
+		case '%':
+			index += 1;
+			return { PERCENT, "%" };
 		case '&':
 			index += 1;
 			return { AMPERSAND, "&" };
@@ -288,13 +291,6 @@ private:
 				return { PRIVATE, word };
 			if (word == "protected")
 				return { PROTECTED, word };
-
-			if (word == "int")
-				return { INT, word };
-			if (word == "float")
-				return { FLOAT, word };
-			if (word == "double")
-				return { DOUBLE, word };
 
 			return { WORD, word };
 		}

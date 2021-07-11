@@ -3,8 +3,55 @@
 #include "tokenizer.h"
 #include "grammarizer.h"
 #include "classNode.h"
+#include "statementsNode.h"
+#include <algorithm>
 
-void printOutFileTranspiled(const std::string& fileName) {
+void transpile(const std::string& fileName);
+void test();
+
+int main(int argc, char* argv[]) {
+#ifdef DEBUG
+	bool testing = true;
+#else
+	bool testing = false;
+#endif // DEBUG
+	//testing = false;
+
+	if (testing)
+		test();
+	else
+		for (int i = 1; i < argc; ++i)
+			transpile(argv[i]);
+	return 0;
+}
+
+void test(std::string program, std::shared_ptr<Node> expected) {
+	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
+	Grammarizer g(tokens);
+	bool nodeBuilt = expected->build(&g);
+	auto temp = g.it;
+	bool programReadEntirely = (++temp) == g.tokens.end();
+
+	std::cout << "\n" << ((nodeBuilt && programReadEntirely) ? "PASS" : "FAIL") << "\n\n";
+	for (auto it = g.tokens.begin(); it != g.it; ++it)
+		std::cout << it->second;
+	std::cout << "\n" << program + "\n\n";
+}
+
+void test() {
+	std::vector<std::pair<std::string, std::shared_ptr<Node>>> tests = {
+		{
+			"a.a.a().a(a.a.a() * a.a()()(), a()(), a.a().a.a)().a * a()() * a.a * a;",
+			MAKE(StatementNode)(),
+		},
+	};
+	for (auto& t : tests)
+		test(t.first, t.second);
+}
+
+void transpile(const std::string& fileName) {
+	if (fileName.substr(std::max(unsigned(0), fileName.length() - 6)) != ".curzi")
+		throw std::exception("bad filename, .curzi please");
 	std::string program;
 	{
 		std::ifstream t(fileName);
@@ -14,18 +61,13 @@ void printOutFileTranspiled(const std::string& fileName) {
 	}
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
+	ClassNode expected;
+	bool nodeBuilt = expected.build(&g);
+	auto temp = g.it;
+	bool programReadEntirely = (++temp) == g.tokens.end();
 
-	ClassNode node;
-#ifdef DEBUG
-	std::cout << "\n" << fileName << ": " << (node.debugbuild(&g) ? "PASS" : "FAIL") << "\n";
-#else
-	std::cout << fileName << ": " << (node.build(&g) ? "PASS" : "FAIL") << "\n";
-#endif // DEBUG
-	std::cout << "\n" + program  + "\n";
-}
-
-int main(int argc, char* argv[]) {
-	for (int i = 1; i < argc; ++i)
-		printOutFileTranspiled(argv[i]);
-	return 0;
+	std::cout << fileName << ": " << ((nodeBuilt && programReadEntirely) ? "PASS" : "FAIL") << "\n\n";
+	for (auto it = g.tokens.begin(); it != g.it; ++it)
+		std::cout << it->second;
+	std::cout << "\n\n" << program + "\n";
 }

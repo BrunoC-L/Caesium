@@ -8,18 +8,14 @@ class UsingNode : public Node {
 public:
 	baseCtor(UsingNode);
 
-	virtual bool build(Grammarizer* g) override {
-		return
-		_AND_(vNode({
+	virtual void build() override {
+		nodes = {
+		_AND_
 			MAKE(TokenNode)(USING),
 			MAKE(TokenNode)(WORD),
 			MAKE(TokenNode)(EQUAL),
 			MAKE(TypenameNode)(),
 		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		};
 	}
 };

@@ -5,17 +5,14 @@
 class PPPQualifierNode : public Node {
 public:
 	baseCtor(PPPQualifierNode);
-	virtual bool build(Grammarizer* g) override {
-		return
-		_OR_(vNode({
+
+	virtual void build() override {
+		nodes = {
+		_OR_
 			MAKE(TokenNode)(PRIVATE),
 			MAKE(TokenNode)(PROTECTED),
 			MAKE(TokenNode)(PUBLIC)
 		}))
-#ifdef DEBUG
-			->debugbuild(g);
-#else
-			->build(g);
-#endif // DEBUG
+		};
 	}
 };

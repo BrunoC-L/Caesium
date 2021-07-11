@@ -5,7 +5,7 @@
 class EmptyNode : public Node {
 public:
 	baseCtor(EmptyNode);
-	virtual bool build(Grammarizer* g) override {
-		return true;
+	virtual void build() override {
+		nodes = { _AND_})) };
 	}
 };

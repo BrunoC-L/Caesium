@@ -4,7 +4,7 @@
 
 #define DEBUG
 
-#define MAX_INDENTS 200
+#define MAX_INDENTS 1000
 
 class Grammarizer {
 protected:
@@ -15,6 +15,7 @@ public:
 	std::forward_list<TOKENVALUE>::iterator it;
 
 	const std::string& getIndent() {
+		_ASSERT(indent < MAX_INDENTS);
 		return indents[indent];
 	}
 	void inc() {
@@ -30,24 +31,6 @@ public:
 			indents[i] = indents[i - 1] + "|";
 	}
 
-#ifdef DEBUG
-	bool And(const vNode& wishlist) {
-		auto temp = it;
-		for (const auto& w : wishlist)
-			if (!w->debugbuild(this)) {
-				it = temp;
-				return false;
-			}
-		return true;
-	}
-
-	bool Or(const vNode& wishlist) {
-		for (const auto& w : wishlist)
-			if (w->debugbuild(this))
-				return true;
-		return false;
-	}
-#else
 	bool And(const vNode& wishlist) {
 		auto temp = it;
 		for (const auto& w : wishlist)
@@ -64,5 +47,4 @@ public:
 				return true;
 		return false;
 	}
-#endif // DEBUG
 };

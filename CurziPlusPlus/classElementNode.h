@@ -9,18 +9,13 @@
 class ClassElementNode : public Node {
 public:
 	baseCtor(ClassElementNode);
-	virtual bool build(Grammarizer* g) override {
-		return
-		_OR_(vNode({
-			_AND_(vNode({MAKE(PPPQualifierNode)(), MAKE(TokenNode)(COLON)})),
+
+	virtual void build() override {
+		nodes = { _OR_
+			_AND_MAKE(PPPQualifierNode)(), MAKE(TokenNode)(COLON)})),
 			MAKE(UsingNode)(),
 			MAKE(MacroNode)(),
 			MAKE(ClassMemberNode)(),
-		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		})) };
 	}
 };

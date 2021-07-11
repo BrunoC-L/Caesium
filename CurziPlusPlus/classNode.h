@@ -5,24 +5,23 @@
 class ClassNode : public Node {
 public:
 	baseCtor(ClassNode);
+
 	virtual bool build(Grammarizer* g) override {
-		return
-		_AND_(vNode({
+		return Node::build(g);
+	}
+
+	virtual void build() override {
+		nodes = {
+		_AND_
 				MAKE(TokenNode)(CLASS),
 				MAKE(TokenNode)(WORD),
-				_OR_(
-					vNode({
-						MAKE(ClassInheritanceNode)(),
-						MAKE(EmptyNode)()
-					})
-				),
+				_OR_
+					MAKE(ClassInheritanceNode)(),
+					MAKE(EmptyNode)()
+				__,
 				MAKE(TokenNode)(BRACEOPEN),
-			//MAKE(ClassElementsNode)(),
-		}))
-#ifdef DEBUG
-			->debugbuild(g);
-#else
-			->build(g);
-#endif // DEBUG
+			MAKE(ClassElementsNode)(),
+		__,
+		};
 	}
 };

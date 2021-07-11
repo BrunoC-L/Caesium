@@ -3,14 +3,15 @@
 
 // May have missed something but damn this looks bad but it works
 
-bool TypenameNode::build(Grammarizer* g) {
-	return
-	_AND_(vNode({
+void TypenameNode::build() {
+	nodes = {
+	_AND_
 		MAKE(TokenNode)(WORD),
-		_OR_(vNode({
+		_OR_
 			MAKE(NSTypenameNode)(),
-			_OR_(vNode({
-				_AND_(vNode({
+			MAKE(PointerTypenameNode)(),
+			_OR_
+				_AND_
 					MAKE(TemplateTypenameNode)(),
 					MAKE(NSTypenameNode)(),
 				})),
@@ -19,9 +20,5 @@ bool TypenameNode::build(Grammarizer* g) {
 			MAKE(EmptyNode)()
 		}))
 	}))
-#ifdef DEBUG
-	->debugbuild(g);
-#else
-	->build(g);
-#endif // DEBUG
+	};
 }

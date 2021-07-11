@@ -8,16 +8,18 @@ class ClassMemberQualifiers : public Node {
 public:
 	baseCtor(ClassMemberQualifiers);
 
-	virtual bool build(Grammarizer* g) override {
-		return
-		_AND_(vNode({
-			_OR_(MAKE(PPPQualifierNode)(), MAKE(EmptyNode)()),
-			_OR_(MAKE(TokenNode)(STATIC) , MAKE(EmptyNode)()),
+	virtual void build() override {
+		nodes = {
+		_AND_
+			_OR_
+				MAKE(PPPQualifierNode)(),
+				MAKE(EmptyNode)(),
+			})),
+			_OR_
+				MAKE(TokenNode)(STATIC),
+				MAKE(EmptyNode)(),
+			})),
 		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		};
 	}
 };

@@ -5,16 +5,13 @@
 class ClassInheritanceNode : public Node {
 public:
 	baseCtor(ClassInheritanceNode);
-	virtual bool build(Grammarizer* g) {
-		return
-		_AND_(vNode({
+
+	virtual void build() override {
+		nodes = {
+		_AND_
 			MAKE(TokenNode)(COLON),
 			MAKE(MultipleInheritanceNode)(),
 		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		};
 	}
 };

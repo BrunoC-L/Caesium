@@ -11,24 +11,22 @@ class ClassMemberNode : public Node {
 public:
 	baseCtor(ClassMemberNode);
 
-	virtual bool build(Grammarizer* g) override {
-		return
-		_AND_(vNode({
+	virtual void build() override {
+		nodes = {
+		_AND_
 			MAKE(ClassMemberQualifiers)(),
 			MAKE(TypenameNode)(),
 			MAKE(TokenNode)(WORD),
-			_OR_(vNode({
-				_AND_(vNode({
-					MAKE(ArgumentsNode)(),
+			_OR_
+				_AND_
+					MAKE(TokenNode)(PARENOPEN),
+					MAKE(ArgumentsSignatureNode)(),
+					MAKE(TokenNode)(PARENCLOSE),
 					MAKE(CodeBlockNode)(),
-				})),
+				__,
 				MAKE(TokenNode)(SEMICOLON),
-			})),
-		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+			__,
+		__,
+		};
 	}
 };

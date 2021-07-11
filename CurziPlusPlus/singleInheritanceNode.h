@@ -7,16 +7,13 @@
 class SingleInheritanceNode : public Node {
 public:
 	baseCtor(SingleInheritanceNode);
-	virtual bool build(Grammarizer* g) {
-		return
-		_AND_(vNode({
+
+	virtual void build() override {
+		nodes = {
+		_AND_
 			MAKE(PPPQualifierNode)(),
 			MAKE(TypenameNode)()
 		}))
-#ifdef DEBUG
-			->debugbuild(g);
-#else
-			->build(g);
-#endif // DEBUG
+		};
 	}
 };

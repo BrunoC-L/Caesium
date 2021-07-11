@@ -4,12 +4,11 @@
 #include "tokenNode.h"
 #include "typenameNode.h"
 #include "emptyNode.h"
+#include "untilTokenNode.h"
 
 class CodeBlockNode : public Node {
 public:
 	baseCtor(CodeBlockNode);
 
-	virtual bool build(Grammarizer* g) override {
-		return false;
-	}
+	virtual void build() override;
 };

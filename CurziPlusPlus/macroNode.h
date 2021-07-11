@@ -9,18 +9,14 @@ class MacroNode : public Node {
 public:
 	baseCtor(MacroNode);
 
-	virtual bool build(Grammarizer* g) override {
-		return
-		_AND_(vNode({
+	virtual void build() override {
+		nodes = {
+		_AND_
 			MAKE(TokenNode)(DEFINE),
 			MAKE(TokenNode)(WORD),
 			MAKE(TokenNode)(EQUAL),
 			MAKE(UntilTokenNode)(NEWLINE),
 		}))
-#ifdef DEBUG
-		->debugbuild(g);
-#else
-		->build(g);
-#endif // DEBUG
+		};
 	}
 };

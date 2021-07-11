@@ -7,10 +7,10 @@ class Grammarizer;
 
 class Node {
 public:
+	std::vector<std::shared_ptr<Node>> nodes;
 	std::string name = "Node";
-	virtual bool build(Grammarizer* g) = 0;
-
-	virtual bool debugbuild(Grammarizer* g);
+	virtual void build() {}
+	virtual bool build(Grammarizer* g);
 };
 
 using vNode = std::vector<std::shared_ptr<Node>>;
@@ -18,3 +18,9 @@ using vNode = std::vector<std::shared_ptr<Node>>;
 #define baseCtor(T) T() {\
 	name = #T;\
 }
+
+#define nodeclass(T) class T : public Node {\
+public:\
+	baseCtor(T);\
+	virtual void build() override;\
+};

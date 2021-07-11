@@ -139,8 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="codeBlockNode.cpp" />
+    <ClCompile Include="expressionNode.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="node.cpp" />
+    <ClCompile Include="statementNode.cpp" />
     <ClCompile Include="tokenizer.cpp" />
     <ClCompile Include="typenameNode.cpp" />
   </ItemGroup>
@@ -152,7 +155,9 @@
     <ClInclude Include="classMember.h" />
     <ClInclude Include="classNode.h" />
     <ClInclude Include="codeBlockNode.h" />
+    <ClInclude Include="constructor.h" />
     <ClInclude Include="emptyNode.h" />
+    <ClInclude Include="expressionNode.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="classMemberQualifiers.h" />
     <ClInclude Include="macroNode.h" />
@@ -161,6 +166,9 @@
     <ClInclude Include="andorNode.h" />
     <ClInclude Include="pppQualifierNode.h" />
     <ClInclude Include="singleInheritanceNode.h" />
+    <ClInclude Include="kNode.h" />
+    <ClInclude Include="statementNode.h" />
+    <ClInclude Include="statementsNode.h" />
     <ClInclude Include="tokenizer.h" />
     <ClInclude Include="tokenNode.h" />
     <ClInclude Include="typenameNode.h" />
