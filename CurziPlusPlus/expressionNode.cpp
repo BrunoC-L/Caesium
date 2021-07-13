@@ -7,6 +7,231 @@
 #include "codeBlockNode.h"
 #include "argumentsNode.h"
 
+void ExpressionNode::build() {
+	nodes = {
+		MAKE(AssignmentExpressionNode)(),
+	};
+}
+
+void AssignmentExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(ConditionalExpressionNode)(),
+			_STAR_
+				_AND_
+					_OR_
+						MAKE(TokenNode)(EQUAL), // TODO or all the += -= %= operators
+					__,
+					MAKE(ConditionalExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void ConditionalExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(OrExpressionNode)(),
+			_STAR_
+				_AND_
+					MAKE(TokenNode)(QUESTION),
+					MAKE(OrExpressionNode)(),
+					MAKE(TokenNode)(COLON),
+					MAKE(OrExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void OrExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(AndExpressionNode)(),
+			_STAR_
+				_AND_
+					MAKE(TokenNode)(OROR),
+					MAKE(AndExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void AndExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(BitOrExpressionNode)(),
+			_STAR_
+				_AND_
+					MAKE(TokenNode)(ANDAND),
+					MAKE(BitOrExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void BitOrExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(BitXorExpressionNode)(),
+			_STAR_
+				_AND_
+					MAKE(TokenNode)(BITOR),
+					MAKE(BitXorExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void BitXorExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(BitAndExpressionNode)(),
+			_STAR_
+				_AND_
+					MAKE(TokenNode)(CARET),
+					MAKE(BitAndExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void BitAndExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(EqualityExpressionNode)(),
+			_STAR_
+				_AND_
+					MAKE(TokenNode)(AMPERSAND),
+					MAKE(EqualityExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void EqualityExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(CompareExpressionNode)(),
+			_STAR_
+				_AND_
+					MAKE(TokenNode)(EQUALEQUAL),
+					MAKE(CompareExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void CompareExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(BitShiftExpressionNode)(),
+			_STAR_
+				_AND_
+					_OR_
+						MAKE(TokenNode)(LT),
+						MAKE(TokenNode)(LTE),
+						MAKE(TokenNode)(GT),
+						MAKE(TokenNode)(GTE),
+					__,
+					MAKE(BitShiftExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void BitShiftExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(AdditiveExpressionNode)(),
+			_STAR_
+				_AND_
+					_OR_
+						MAKE(TokenNode)(LT), // todo operators
+					__,
+					MAKE(AdditiveExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void AdditiveExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(MultiplicativeExpressionNode)(),
+			_STAR_
+				_AND_
+					_OR_
+						MAKE(TokenNode)(PLUS),
+						MAKE(TokenNode)(DASH),
+					__,
+					MAKE(MultiplicativeExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void MultiplicativeExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(UnaryExpressionNode)(),
+			_STAR_
+				_AND_
+					_OR_
+						MAKE(TokenNode)(ASTERISK),
+						MAKE(TokenNode)(SLASH),
+						MAKE(TokenNode)(PERCENT),
+					__,
+					MAKE(UnaryExpressionNode)(),
+				__
+			___
+		__
+	};
+}
+
+void UnaryExpressionNode::build() {
+	nodes = {
+		_AND_
+			_STAR_
+				_OR_
+					MAKE(TokenNode)(NOT),
+					MAKE(TokenNode)(PLUS),
+					MAKE(TokenNode)(DASH)
+				__
+			___,
+			MAKE(PostfixExpressionNode)(),
+		__
+	};
+}
+
+void PostfixExpressionNode::build() {
+	nodes = {
+		_AND_
+			MAKE(ParenExpressionNode)(),
+			_STAR_
+				_OR_
+					_AND_
+						MAKE(TokenNode)(DOT),
+						MAKE(TokenNode)(WORD),
+					__,
+					MAKE(ParenArgumentsNode)(),
+					MAKE(BracketArgumentsNode)(),
+				__
+			___
+		__,
+	};
+}
+
 void ParenExpressionNode::build() {
 	nodes = {
 		_OR_
@@ -16,55 +241,6 @@ void ParenExpressionNode::build() {
 				MAKE(TokenNode)(PARENCLOSE),
 			__,
 			MAKE(TokenNode)(WORD),
-		__
-	};
-}
-
-void ExpressionNode::build() {
-	nodes = {
-		MAKE(MultiplicativeExpressionNode)(),
-	};
-	/*_OR_
-		_AND_
-			MAKE(TokenNode)(PARENOPEN),
-			MAKE(ExpressionNode)(),
-			MAKE(TokenNode)(PARENCLOSE),
-		__,
-		MAKE(PostfixExpressionNode)(),
-	__,*/
-}
-
-void PostfixExpressionNode::build() {
-	nodes = {
-		_AND_
-			MAKE(ParenExpressionNode)(),
-			__STAR
-				_OR_
-					_AND_
-						MAKE(TokenNode)(DOT),
-						MAKE(TokenNode)(WORD),
-					__,
-					MAKE(ArgumentsNode)(),
-				__
-			STAR__
-		__,
-	};
-}
-
-void MultiplicativeExpressionNode::build() {
-	nodes = {
-		_AND_
-			MAKE(PostfixExpressionNode)(),
-			__STAR
-				_AND_
-					_OR_
-						MAKE(TokenNode)(ASTERISK),
-						MAKE(TokenNode)(SLASH),
-						MAKE(TokenNode)(PERCENT),
-					__,
-					MAKE(PostfixExpressionNode)(),
-				__
-			STAR__
 		__
 	};
 }

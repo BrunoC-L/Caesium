@@ -13,13 +13,12 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_OR_
+		__OPT
 			_AND_
 				MAKE(StatementNode)(),
 				MAKE(StatementsNode)(),
-			__,
-			MAKE(EmptyNode)()
-		__
+			__
+		___
 		};
 	}
 };

@@ -43,9 +43,9 @@ public:
 	}
 };
 
-class Opt1Node : public KNode {
+class OPTNode : public KNode {
 public:
-	Opt1Node(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {
+	OPTNode(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {
 		name = "PlusNode";
 	}
 	virtual bool cnd() override {
@@ -53,11 +53,7 @@ public:
 	}
 };
 
-#define __STAR MAKE(StarNode)([&](){ return 
-#define STAR__ ;})
-
-#define __PLUS MAKE(PlusNode)([&](){ return 
-#define PLUS__ ;})
-
-#define __OPT1 MAKE(Opt1Node)([&](){ return 
-#define OPT1__ ;})
+#define _STAR_ MAKE(StarNode)([&](){ return
+#define __PLUS MAKE(PlusNode)([&](){ return
+#define __OPT MAKE(OPTNode)([&](){ return
+#define ___ ;})

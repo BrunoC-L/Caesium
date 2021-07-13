@@ -30,6 +30,18 @@ enum TOKEN {
 	AMPERSAND,
 	QUESTION,
 	POUND,
+	NOT,
+	CARET,
+	BITOR,
+	BITAND,
+	PLUS,
+
+	EQUALEQUAL,
+	NEQUAL,
+	GTE,
+	LTE,
+	ANDAND,
+	OROR,
 
 	WORD,
 	NUMBER,
@@ -90,6 +102,18 @@ public:
         tokenLookup[AMPERSAND] = "&";
         tokenLookup[QUESTION] = "?";
         tokenLookup[POUND] = "#";
+		tokenLookup[NOT] = "!";
+		tokenLookup[CARET] = "^";
+		tokenLookup[BITOR] = "|";
+		tokenLookup[BITAND] = "&";
+		tokenLookup[PLUS] = "+";
+
+		tokenLookup[EQUALEQUAL] = "==";
+		tokenLookup[NEQUAL] = "!=";
+		tokenLookup[GTE] = ">=";
+		tokenLookup[LTE] = "<=";
+		tokenLookup[ANDAND] = "&&";
+		tokenLookup[OROR] = "||";
 
         tokenLookup[WORD] = "WORD";
         tokenLookup[NUMBER] = "NUMBER";
@@ -224,16 +248,38 @@ private:
 			return { COMMA, "," };
 		case '=':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { EQUALEQUAL, "==" };
+			}
 			return { EQUAL, "=" };
+		case '!':
+			index += 1;
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { NEQUAL, "!=" };
+			}
+			return { NOT, "!" };
 		case '<':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { LTE, "<=" };
+			}
 			return { LT, "<" };
 		case '>':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { GTE, ">=" };
+			}
 			return { GT, ">" };
 		case '-':
 			index += 1;
 			return { DASH, "-" };
+		case '+':
+			index += 1;
+			return { PLUS, "+" };
 		case '*':
 			index += 1;
 			return { ASTERISK, "*" };
@@ -245,6 +291,10 @@ private:
 			return { PERCENT, "%" };
 		case '&':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '&') {
+				index += 1;
+				return { ANDAND, "&&" };
+			}
 			return { AMPERSAND, "&" };
 		case '?':
 			index += 1;
@@ -256,6 +306,12 @@ private:
 				return { DEFINE, "#define" };
 			}
 			return { POUND, "#" };
+		case '^':
+			index += 1;
+			return { CARET, "^" };
+		case '|':
+			index += 1;
+			return { BITOR, "|" };
 		}
 
 		std::string word = parseWord();
