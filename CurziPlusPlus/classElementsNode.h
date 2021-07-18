@@ -26,20 +26,3 @@ public:
 		};
 	}
 };
-
-
-class ClassElementsNode : public Node {
-public:
-	baseCtor(ClassElementsNode);
-	virtual bool build(Grammarizer* g) override {
-		return
-		_OR_
-			_AND_
-				MAKE(ClassElementNode)(),
-				MAKE(ClassElementsNode)(),
-			})),
-			MAKE(EmptyNode)(),
-		}))
-		->build(g);
-	}
-};

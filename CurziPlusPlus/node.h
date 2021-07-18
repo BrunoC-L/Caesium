@@ -14,13 +14,3 @@ public:
 };
 
 using vNode = std::vector<std::shared_ptr<Node>>;
-#define MAKE(T) std::make_shared<T>
-#define baseCtor(T) T() {\
-	name = #T;\
-}
-
-#define nodeclass(T) class T : public Node {\
-public:\
-	baseCtor(T);\
-	virtual void build() override;\
-};

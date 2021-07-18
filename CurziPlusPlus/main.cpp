@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 #else
 	bool testing = false;
 #endif // DEBUG
-	//testing = false;
+	testing = false;
 
 	if (testing)
 		test();

@@ -25,7 +25,3 @@ public:
 		return g->Or(nodes);
 	}
 };
-
-#define _AND_ MAKE(AndNode)(vNode({
-#define _OR_ MAKE(OrNode)(vNode({
-#define __ }))

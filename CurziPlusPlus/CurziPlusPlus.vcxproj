@@ -161,6 +161,7 @@
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="classMemberQualifiers.h" />
     <ClInclude Include="macroNode.h" />
+    <ClInclude Include="macros.h" />
     <ClInclude Include="multipleInheritanceNode.h" />
     <ClInclude Include="node.h" />
     <ClInclude Include="andorNode.h" />

@@ -146,6 +146,9 @@
     <ClInclude Include="kNode.h">
       <Filter>Source Files\nodes\base</Filter>
     </ClInclude>
+    <ClInclude Include="macros.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

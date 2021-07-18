@@ -3,6 +3,7 @@
 #include "grammarizer.h"
 #include "emptyNode.h"
 #include "pppQualifierNode.h"
+#include "kNode.h"
 
 class ClassMemberQualifiers : public Node {
 public:
@@ -10,16 +11,14 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_AND_
-			_OR_
-				MAKE(PPPQualifierNode)(),
-				MAKE(EmptyNode)(),
-			})),
-			_OR_
-				MAKE(TokenNode)(STATIC),
-				MAKE(EmptyNode)(),
-			})),
-		}))
+			_AND_
+				_OPT_
+					MAKE(PPPQualifierNode)()
+				___,
+				_OPT_
+					MAKE(TokenNode)(STATIC)
+				___,
+			__
 		};
 	}
 };

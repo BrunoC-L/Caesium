@@ -13,19 +13,19 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_AND_
-			_OR_
-				MAKE(PPPQualifierNode)(),
-				MAKE(EmptyNode)(),
-			})),
-			MAKE(TokenNode)(WORD),
 			_AND_
-				MAKE(TokenNode)(PARENOPEN),
-				MAKE(ArgumentsSignatureNode)(),
-				MAKE(TokenNode)(PARENCLOSE),
-				MAKE(CodeBlockNode)(),
-			})),
-		}))
+				_OR_
+					MAKE(PPPQualifierNode)(),
+					MAKE(EmptyNode)(),
+				__,
+				MAKE(TokenNode)(WORD),
+				_AND_
+					MAKE(TokenNode)(PARENOPEN),
+					MAKE(ArgumentsSignatureNode)(),
+					MAKE(TokenNode)(PARENCLOSE),
+					MAKE(CodeBlockNode)(),
+				__,
+			__
 		};
 	}
 };

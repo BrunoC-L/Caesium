@@ -13,20 +13,20 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_AND_
-			MAKE(ClassMemberQualifiers)(),
-			MAKE(TypenameNode)(),
-			MAKE(TokenNode)(WORD),
-			_OR_
-				_AND_
-					MAKE(TokenNode)(PARENOPEN),
-					MAKE(ArgumentsSignatureNode)(),
-					MAKE(TokenNode)(PARENCLOSE),
-					MAKE(CodeBlockNode)(),
+			_AND_
+				MAKE(ClassMemberQualifiers)(),
+				MAKE(TypenameNode)(),
+				MAKE(TokenNode)(WORD),
+				_OR_
+					_AND_
+						MAKE(TokenNode)(PARENOPEN),
+						MAKE(ArgumentsSignatureNode)(),
+						MAKE(TokenNode)(PARENCLOSE),
+						MAKE(CodeBlockNode)(),
+					__,
+					MAKE(TokenNode)(SEMICOLON),
 				__,
-				MAKE(TokenNode)(SEMICOLON),
 			__,
-		__,
 		};
 	}
 };

@@ -35,13 +35,31 @@ enum TOKEN {
 	BITOR,
 	BITAND,
 	PLUS,
+	TILDE,
 
 	EQUALEQUAL,
 	NEQUAL,
+	PLUSEQUAL,
+	MINUSEQUAL,
+	TIMESEQUAL,
+	DIVEQUAL,
+	MODEQUAL,
+	ANDEQUAL,
+	OREQUAL,
+	XOREQUAL,
+
 	GTE,
 	LTE,
 	ANDAND,
 	OROR,
+
+	LSHIFT,
+	RSHIFT,
+
+	PLUSPLUS,
+	MINUSMINUS,
+
+	ARROW,
 
 	WORD,
 	NUMBER,
@@ -110,6 +128,20 @@ public:
 
 		tokenLookup[EQUALEQUAL] = "==";
 		tokenLookup[NEQUAL] = "!=";
+		tokenLookup[PLUSEQUAL] = "+=";
+		tokenLookup[MINUSEQUAL] = "-=";
+		tokenLookup[TIMESEQUAL] = "*=";
+		tokenLookup[DIVEQUAL] = "/=";
+		tokenLookup[MODEQUAL] = "%=";
+		tokenLookup[ANDEQUAL] = "&=";
+		tokenLookup[OREQUAL] = "|=";
+		tokenLookup[XOREQUAL] = "^=";
+
+		tokenLookup[LSHIFT] = "<<";
+		tokenLookup[RSHIFT] = ">>";
+
+
+
 		tokenLookup[GTE] = ">=";
 		tokenLookup[LTE] = "<=";
 		tokenLookup[ANDAND] = "&&";
@@ -262,38 +294,91 @@ private:
 			return { NOT, "!" };
 		case '<':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
-				index += 1;
-				return { LTE, "<=" };
+			if (index + 1 <= program.size()) {
+				if (program[index] == '=') {
+					index += 1;
+						return { LTE, "<=" };
+				}
+				else if (program[index] == '<') {
+					index += 1;
+					return { LSHIFT, "<<" };
+				}
 			}
 			return { LT, "<" };
 		case '>':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
-				index += 1;
-				return { GTE, ">=" };
+			if (index + 1 <= program.size()) {
+				if (program[index] == '=') {
+					index += 1;
+						return { GTE, ">=" };
+				}
+				else if (program[index] == '>') {
+					index += 1;
+					return { RSHIFT, ">>" };
+				}
 			}
 			return { GT, ">" };
 		case '-':
 			index += 1;
+			if (index + 1 <= program.size()) {
+				if (program[index] == '=') {
+					index += 1;
+					return { MINUSEQUAL, "-=" };
+				}
+				else if (program[index] == '-') {
+					index += 1;
+					return { MINUSMINUS, "--" };
+				}
+				else if (program[index] == '>') {
+					index += 1;
+					return { ARROW, "->" };
+				}
+			}
 			return { DASH, "-" };
 		case '+':
 			index += 1;
+			if (index + 1 <= program.size()) {
+				if (program[index] == '=') {
+					index += 1;
+						return { PLUSEQUAL, "+=" };
+				}
+				else if (program[index] == '+') {
+					index += 1;
+					return { PLUSPLUS, "++" };
+				}
+			}
 			return { PLUS, "+" };
 		case '*':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { TIMESEQUAL, "*=" };
+			}
 			return { ASTERISK, "*" };
 		case '/':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { DIVEQUAL, "/=" };
+			}
 			return { SLASH, "/" };
 		case '%':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { MODEQUAL, "%=" };
+			}
 			return { PERCENT, "%" };
 		case '&':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '&') {
-				index += 1;
-				return { ANDAND, "&&" };
+			if (index + 1 <= program.size()) {
+				if (program[index] == '&') {
+					index += 1;
+					return { ANDAND, "&&" };
+				} else if (program[index] == '=') {
+					index += 1;
+					return { ANDEQUAL, "&=" };
+				}
 			}
 			return { AMPERSAND, "&" };
 		case '?':
@@ -308,9 +393,23 @@ private:
 			return { POUND, "#" };
 		case '^':
 			index += 1;
+			if (index + 1 <= program.size() && program[index] == '^') {
+				index += 1;
+				return { XOREQUAL, "^=" };
+			}
 			return { CARET, "^" };
 		case '|':
 			index += 1;
+			if (index + 1 <= program.size()) {
+				if (program[index] == '|') {
+					index += 1;
+					return { OROR, "||" };
+				}
+				else if (program[index] == '=') {
+					index += 1;
+					return { OREQUAL, "|=" };
+				}
+			}
 			return { BITOR, "|" };
 		}
 

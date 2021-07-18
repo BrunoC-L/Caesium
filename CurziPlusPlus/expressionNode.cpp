@@ -6,6 +6,7 @@
 #include "emptyNode.h"
 #include "codeBlockNode.h"
 #include "argumentsNode.h"
+#include "macros.h"
 
 void ExpressionNode::build() {
 	nodes = {
@@ -20,7 +21,15 @@ void AssignmentExpressionNode::build() {
 			_STAR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(EQUAL), // TODO or all the += -= %= operators
+						MAKE(TokenNode)(EQUAL),
+						MAKE(TokenNode)(PLUSEQUAL),
+						MAKE(TokenNode)(MINUSEQUAL),
+						MAKE(TokenNode)(TIMESEQUAL),
+						MAKE(TokenNode)(DIVEQUAL),
+						MAKE(TokenNode)(MODEQUAL),
+						MAKE(TokenNode)(ANDEQUAL),
+						MAKE(TokenNode)(OREQUAL),
+						MAKE(TokenNode)(XOREQUAL),
 					__,
 					MAKE(ConditionalExpressionNode)(),
 				__
@@ -155,7 +164,8 @@ void BitShiftExpressionNode::build() {
 			_STAR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(LT), // todo operators
+						MAKE(TokenNode)(LSHIFT),
+						MAKE(TokenNode)(RSHIFT),
 					__,
 					MAKE(AdditiveExpressionNode)(),
 				__
@@ -206,7 +216,17 @@ void UnaryExpressionNode::build() {
 				_OR_
 					MAKE(TokenNode)(NOT),
 					MAKE(TokenNode)(PLUS),
-					MAKE(TokenNode)(DASH)
+					MAKE(TokenNode)(DASH),
+					MAKE(TokenNode)(PLUSPLUS),
+					MAKE(TokenNode)(MINUSMINUS),
+					MAKE(TokenNode)(TILDE),
+					MAKE(TokenNode)(ASTERISK),
+					MAKE(TokenNode)(AMPERSAND),
+					_AND_
+						MAKE(TokenNode)(PARENOPEN),
+						MAKE(TypenameNode)(),
+						MAKE(TokenNode)(PARENCLOSE),
+					__,
 				__
 			___,
 			MAKE(PostfixExpressionNode)(),
@@ -221,11 +241,16 @@ void PostfixExpressionNode::build() {
 			_STAR_
 				_OR_
 					_AND_
-						MAKE(TokenNode)(DOT),
+						_OR_
+							MAKE(TokenNode)(DOT),
+							MAKE(TokenNode)(ARROW),
+						__,
 						MAKE(TokenNode)(WORD),
 					__,
 					MAKE(ParenArgumentsNode)(),
 					MAKE(BracketArgumentsNode)(),
+					MAKE(TokenNode)(PLUSPLUS),
+					MAKE(TokenNode)(MINUSMINUS),
 				__
 			___
 		__,
@@ -240,7 +265,7 @@ void ParenExpressionNode::build() {
 				MAKE(ExpressionNode)(),
 				MAKE(TokenNode)(PARENCLOSE),
 			__,
-			MAKE(TokenNode)(WORD),
+						MAKE(TokenNode)(WORD),
 		__
 	};
 }

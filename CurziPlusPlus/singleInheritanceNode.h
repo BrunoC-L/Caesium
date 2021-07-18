@@ -3,6 +3,7 @@
 #include "tokenNode.h"
 #include "pppQualifierNode.h"
 #include "typenameNode.h"
+#include "macros.h"
 
 class SingleInheritanceNode : public Node {
 public:

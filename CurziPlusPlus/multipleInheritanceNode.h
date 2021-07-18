@@ -1,5 +1,6 @@
 #pragma once
 #include "singleInheritanceNode.h"
+#include "macros.h"
 
 class MultipleInheritanceNode : public Node {
 public:

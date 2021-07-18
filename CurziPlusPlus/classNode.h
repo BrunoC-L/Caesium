@@ -15,12 +15,14 @@ public:
 		_AND_
 				MAKE(TokenNode)(CLASS),
 				MAKE(TokenNode)(WORD),
-				_OR_
-					MAKE(ClassInheritanceNode)(),
-					MAKE(EmptyNode)()
-				__,
+				_OPT_
+					MAKE(ClassInheritanceNode)()
+				___,
 				MAKE(TokenNode)(BRACEOPEN),
-			MAKE(ClassElementsNode)(),
+				_STAR_
+					MAKE(ClassElementNode)()
+				___,
+				MAKE(TokenNode)(BRACECLOSE),
 		__,
 		};
 	}

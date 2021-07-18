@@ -6,6 +6,7 @@
 #include "emptyNode.h"
 #include "expressionNode.h"
 #include "kNode.h"
+#include "macros.h"
 
 class ArgumentsSignatureNode : public Node {
 public:
@@ -13,18 +14,14 @@ public:
 
 	virtual void build() override {
 		nodes = {
-			__OPT
-				_AND_
-					MAKE(TypenameNode)(),
-					MAKE(TokenNode)(WORD),
-					__OPT
-						_AND_
-							MAKE(TokenNode)(COMMA),
-							MAKE(ArgumentsSignatureNode)(),
-						__
-					___
-				__
-			___
+			_OPT_ _AND_
+				MAKE(TypenameNode)(),
+				MAKE(TokenNode)(WORD),
+				_OPT_ _AND_
+						MAKE(TokenNode)(COMMA),
+						MAKE(ArgumentsSignatureNode)(),
+				____
+			____
 		};
 	}
 };
@@ -35,21 +32,24 @@ public:
 
 	virtual void build() override {
 		nodes = {
-			_OR_
+			_OPT_
 				_AND_
 					MAKE(ExpressionNode)(),
-					_STAR_
+					_OPT_
 						_AND_
-							MAKE(TokenNode)(COMMA),
-							MAKE(ExpressionNode)(),
+							_PLUS_
+								_AND_
+									MAKE(TokenNode)(COMMA),
+									MAKE(ExpressionNode)(),
+								__
+							___,
+							_OPT_
+								MAKE(TokenNode)(COMMA) // JAVA & C++ don't even support this lol...
+							___
 						__
-					___,
-					__OPT
-						MAKE(TokenNode)(COMMA) // JAVA & C++ don't even support this lol...
 					___
-				__,
-				MAKE(EmptyNode)()
-			__
+				__
+			___
 		};
 	}
 };

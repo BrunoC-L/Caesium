@@ -13,7 +13,7 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		__OPT
+		_OPT_
 			_AND_
 				MAKE(StatementNode)(),
 				MAKE(StatementsNode)(),

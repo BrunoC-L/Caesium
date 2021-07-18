@@ -1,5 +1,6 @@
 #pragma once
 #include "node.h"
+#include "macros.h"
 
 nodeclass(ExpressionNode)
 nodeclass(AssignmentExpressionNode)
