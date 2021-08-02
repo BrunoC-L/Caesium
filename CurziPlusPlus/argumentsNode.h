@@ -3,7 +3,6 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 #include "typenameNode.h"
-#include "emptyNode.h"
 #include "expressionNode.h"
 #include "kNode.h"
 #include "macros.h"
@@ -32,24 +31,18 @@ public:
 
 	virtual void build() override {
 		nodes = {
-			_OPT_
-				_AND_
-					MAKE(ExpressionNode)(),
+			_OPT_ _AND_
+				MAKE(ExpressionNode)(),
+				_OPT_ _AND_
+					_PLUS_ _AND_
+						MAKE(TokenNode)(COMMA),
+						MAKE(ExpressionNode)(),
+					____,
 					_OPT_
-						_AND_
-							_PLUS_
-								_AND_
-									MAKE(TokenNode)(COMMA),
-									MAKE(ExpressionNode)(),
-								__
-							___,
-							_OPT_
-								MAKE(TokenNode)(COMMA) // JAVA & C++ don't even support this lol...
-							___
-						__
+						MAKE(TokenNode)(COMMA) // JAVA & C++ don't even support this lol...
 					___
-				__
-			___
+				____
+			____
 		};
 	}
 };

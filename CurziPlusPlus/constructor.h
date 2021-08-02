@@ -14,10 +14,9 @@ public:
 	virtual void build() override {
 		nodes = {
 			_AND_
-				_OR_
-					MAKE(PPPQualifierNode)(),
-					MAKE(EmptyNode)(),
-				__,
+				_OPT_
+					MAKE(PPPQualifierNode)()
+				___,
 				MAKE(TokenNode)(WORD),
 				_AND_
 					MAKE(TokenNode)(PARENOPEN),

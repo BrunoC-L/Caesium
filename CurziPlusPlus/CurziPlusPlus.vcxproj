@@ -88,6 +88,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,6 +142,7 @@
   <ItemGroup>
     <ClCompile Include="codeBlockNode.cpp" />
     <ClCompile Include="expressionNode.cpp" />
+    <ClCompile Include="json.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="node.cpp" />
     <ClCompile Include="statementNode.cpp" />
@@ -156,10 +158,11 @@
     <ClInclude Include="classNode.h" />
     <ClInclude Include="codeBlockNode.h" />
     <ClInclude Include="constructor.h" />
-    <ClInclude Include="emptyNode.h" />
     <ClInclude Include="expressionNode.h" />
+    <ClInclude Include="fileNode.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="classMemberQualifiers.h" />
+    <ClInclude Include="json.h" />
     <ClInclude Include="macroNode.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="multipleInheritanceNode.h" />

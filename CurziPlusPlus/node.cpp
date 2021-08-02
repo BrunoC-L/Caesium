@@ -16,3 +16,7 @@ bool Node::build(Grammarizer* g) {
 	return nodes[0]->build(g);
 #endif // DEBUG
 }
+
+JSON Node::toJSON() {
+	return nodes[0]->toJSON();
+}

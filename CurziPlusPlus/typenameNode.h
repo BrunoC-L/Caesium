@@ -3,7 +3,7 @@
 #include "grammarizer.h"
 #include "andorNode.h"
 #include "tokenNode.h"
-#include "emptyNode.h"
+#include "macros.h"
 
 class TypenameNode : public Node {
 public:
@@ -17,30 +17,30 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_AND_
-			MAKE(TokenNode)(NS),
-			MAKE(TypenameNode)()
-		}))
+			_AND_
+				MAKE(TokenNode)(NS),
+				MAKE(TypenameNode)()
+			__
 		};
 	}
 };
 
-class TemplateListNode : public Node {
+class TypenameListNode : public Node {
 public:
-	baseCtor(TemplateListNode);
+	baseCtor(TypenameListNode);
 
 	virtual void build() override {
 		nodes = {
-		_OR_
-			_AND_
+			_OR_
 				_AND_
-					MAKE(TypenameNode)(),
-					MAKE(TokenNode)(COMMA),
-					MAKE(TemplateListNode)(),
-				})),
-			})),
-			MAKE(TypenameNode)(),
-		}))
+					_AND_
+						MAKE(TypenameNode)(),
+						MAKE(TokenNode)(COMMA),
+						MAKE(TypenameListNode)(),
+					__
+				__,
+				MAKE(TypenameNode)(),
+			__
 		};
 	}
 };
@@ -51,11 +51,26 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_AND_
-			MAKE(TokenNode)(LT),
-			MAKE(TemplateListNode)(),
-			MAKE(TokenNode)(GT),
-		}))
+			_AND_
+				MAKE(TokenNode)(LT),
+				MAKE(TypenameListNode)(),
+				MAKE(TokenNode)(GT),
+			__
+		};
+	}
+};
+
+class ParenthesisTypenameNode : public Node {
+public:
+	baseCtor(ParenthesisTypenameNode);
+
+	virtual void build() override {
+		nodes = {
+			_AND_
+				MAKE(TokenNode)(PARENOPEN),
+				MAKE(TypenameListNode)(),
+				MAKE(TokenNode)(PARENCLOSE),
+			__
 		};
 	}
 };
@@ -66,10 +81,10 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_OR_
-			MAKE(TokenNode)(ASTERISK),
-			MAKE(TokenNode)(AMPERSAND),
-		}))
+			_OR_
+				MAKE(TokenNode)(ASTERISK),
+				MAKE(TokenNode)(AMPERSAND),
+			__
 		};
 	}
 };

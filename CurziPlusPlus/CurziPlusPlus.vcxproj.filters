@@ -57,14 +57,17 @@
     <ClCompile Include="node.cpp">
       <Filter>Source Files\nodes\base</Filter>
     </ClCompile>
-    <ClCompile Include="codeBlockNode.cpp">
-      <Filter>Source Files\nodes</Filter>
-    </ClCompile>
     <ClCompile Include="expressionNode.cpp">
       <Filter>Source Files\nodes\expressions</Filter>
     </ClCompile>
     <ClCompile Include="statementNode.cpp">
       <Filter>Source Files\nodes\statements</Filter>
+    </ClCompile>
+    <ClCompile Include="codeBlockNode.cpp">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="json.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -73,9 +76,6 @@
     </ClInclude>
     <ClInclude Include="classInheritanceNode.h">
       <Filter>Source Files\nodes\inheritance</Filter>
-    </ClInclude>
-    <ClInclude Include="emptyNode.h">
-      <Filter>Source Files\nodes\base</Filter>
     </ClInclude>
     <ClInclude Include="node.h">
       <Filter>Source Files\nodes\base</Filter>
@@ -148,6 +148,12 @@
     </ClInclude>
     <ClInclude Include="macros.h">
       <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="fileNode.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="json.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -6,13 +6,9 @@ class ClassNode : public Node {
 public:
 	baseCtor(ClassNode);
 
-	virtual bool build(Grammarizer* g) override {
-		return Node::build(g);
-	}
-
 	virtual void build() override {
 		nodes = {
-		_AND_
+			_AND_
 				MAKE(TokenNode)(CLASS),
 				MAKE(TokenNode)(WORD),
 				_OPT_
@@ -23,7 +19,7 @@ public:
 					MAKE(ClassElementNode)()
 				___,
 				MAKE(TokenNode)(BRACECLOSE),
-		__,
+			__,
 		};
 	}
 };

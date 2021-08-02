@@ -21,6 +21,13 @@ public:
 		}
 		return cnd();
 	}
+
+	virtual JSON toJSON() override {
+		JSON res("[]");
+		for (const auto& node : nodes)
+			res.push(node->toJSON());
+		return res;
+	}
 };
 
 class StarNode : public KNode {
@@ -50,5 +57,12 @@ public:
 	}
 	virtual bool cnd() override {
 		return nodes.size() <= 1;
+	}
+
+	virtual JSON toJSON() override {
+		if (nodes.size() == 0)
+			return JSON();
+		else
+			return Node::toJSON();
 	}
 };

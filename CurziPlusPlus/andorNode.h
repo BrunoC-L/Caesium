@@ -1,6 +1,7 @@
 #pragma once
 #include "node.h"
 #include "grammarizer.h"
+#include "tokenNode.h"
 
 class AndNode : public Node {
 public:
@@ -10,7 +11,31 @@ public:
 	}
 
 	virtual bool build(Grammarizer* g) override {
-		return g->And(nodes);
+		auto temp = g->it;
+		for (const auto& node : nodes)
+			if (!node->build(g)) {
+				g->it = temp;
+				return false;
+			}
+		return true;
+	}
+
+	virtual JSON toJSON() override {
+		JSON res;
+		for (const auto& node : nodes) {
+			if (node->name == "TokenNode") {
+				std::string key = Tokenizer::tokenLookup[((TokenNode*)&(*node))->t];
+				while (res.has(key))
+					key += "+";
+				res[Tokenizer::tokenLookup[((TokenNode*)&(*node))->t]] = node->toJSON();
+			}
+			else {
+				while (res.has(node->name))
+					node->name += "+";
+				res[node->name] = node->toJSON();
+			}
+		}
+		return res;
 	}
 };
 
@@ -22,6 +47,11 @@ public:
 	}
 
 	virtual bool build(Grammarizer* g) override {
-		return g->Or(nodes);
+		for (const auto& node : nodes)
+			if (node->build(g)) {
+				nodes = { node };
+				return true;
+			}
+		return false;
 	}
 };

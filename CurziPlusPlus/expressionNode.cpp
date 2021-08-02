@@ -3,7 +3,6 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 #include "typenameNode.h"
-#include "emptyNode.h"
 #include "codeBlockNode.h"
 #include "argumentsNode.h"
 #include "macros.h"
@@ -222,7 +221,7 @@ void UnaryExpressionNode::build() {
 					MAKE(TokenNode)(TILDE),
 					MAKE(TokenNode)(ASTERISK),
 					MAKE(TokenNode)(AMPERSAND),
-					_AND_
+					_AND_ // type cast operator
 						MAKE(TokenNode)(PARENOPEN),
 						MAKE(TypenameNode)(),
 						MAKE(TokenNode)(PARENCLOSE),
@@ -238,21 +237,19 @@ void PostfixExpressionNode::build() {
 	nodes = {
 		_AND_
 			MAKE(ParenExpressionNode)(),
-			_STAR_
-				_OR_
-					_AND_
-						_OR_
-							MAKE(TokenNode)(DOT),
-							MAKE(TokenNode)(ARROW),
-						__,
-						MAKE(TokenNode)(WORD),
+			_STAR_ _OR_
+				_AND_
+					_OR_
+						MAKE(TokenNode)(DOT),
+						MAKE(TokenNode)(ARROW),
 					__,
-					MAKE(ParenArgumentsNode)(),
-					MAKE(BracketArgumentsNode)(),
-					MAKE(TokenNode)(PLUSPLUS),
-					MAKE(TokenNode)(MINUSMINUS),
-				__
-			___
+					MAKE(TokenNode)(WORD),
+				__,
+				MAKE(ParenArgumentsNode)(),
+				MAKE(BracketArgumentsNode)(),
+				MAKE(TokenNode)(PLUSPLUS),
+				MAKE(TokenNode)(MINUSMINUS),
+			____
 		__,
 	};
 }
@@ -265,7 +262,8 @@ void ParenExpressionNode::build() {
 				MAKE(ExpressionNode)(),
 				MAKE(TokenNode)(PARENCLOSE),
 			__,
-						MAKE(TokenNode)(WORD),
+			MAKE(TypenameNode)(),
+			MAKE(TokenNode)(NUMBER),
 		__
 	};
 }

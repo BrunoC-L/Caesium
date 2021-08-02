@@ -1,6 +1,5 @@
 #pragma once
 #include "multipleInheritanceNode.h"
-#include "emptyNode.h"
 
 class ClassInheritanceNode : public Node {
 public:
@@ -8,10 +7,10 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_AND_
-			MAKE(TokenNode)(COLON),
-			MAKE(MultipleInheritanceNode)(),
-		}))
+			_AND_
+				MAKE(TokenNode)(COLON),
+				MAKE(MultipleInheritanceNode)(),
+			__
 		};
 	}
 };

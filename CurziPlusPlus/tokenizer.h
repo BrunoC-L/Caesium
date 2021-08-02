@@ -71,6 +71,7 @@ enum TOKEN {
 	FOR,
 	WHILE,
 	IF,
+	ELSE,
 	BREAK,
 	CASE,
 	DO,
@@ -157,6 +158,7 @@ public:
         tokenLookup[FOR] = "FOR";
         tokenLookup[WHILE] = "WHILE";
         tokenLookup[IF] = "IF";
+		tokenLookup[ELSE] = "ELSE";
         tokenLookup[BREAK] = "BREAK";
         tokenLookup[CASE] = "CASE";
         tokenLookup[DO] = "DO";
@@ -234,7 +236,7 @@ private:
 				index += 1;
 				return readToken();
 			}
-			return { BACKSLASH, "\\" };
+			return { BACKSLASH, "\\\\" };
 		case '{':
 			index += 1;
 			return { BRACEOPEN, "{" };
@@ -258,10 +260,10 @@ private:
 			return { SPACE, " " };
 		case '\n':
 			index += 1;
-			return { NEWLINE, "\n" };
+			return { NEWLINE, "\\n" };
 		case '\t':
 			index += 1;
-			return { TAB, "\t" };
+			return { TAB, "\\t" };
 		case '.':
 			index += 1;
 			return { DOT, "." };
@@ -429,6 +431,8 @@ private:
 				return { WHILE, word };
 			if (word == "if")
 				return { IF, word };
+			if (word == "else")
+				return { ELSE, word };
 			if (word == "break")
 				return { BREAK, word };
 			if (word == "case")

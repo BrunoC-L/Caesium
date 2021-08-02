@@ -3,7 +3,6 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 #include "typenameNode.h"
-#include "emptyNode.h"
 #include "statementNode.h"
 #include "kNode.h"
 

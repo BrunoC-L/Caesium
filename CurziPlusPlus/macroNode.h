@@ -11,12 +11,11 @@ public:
 
 	virtual void build() override {
 		nodes = {
-		_AND_
-			MAKE(TokenNode)(DEFINE),
-			MAKE(TokenNode)(WORD),
-			MAKE(TokenNode)(EQUAL),
-			MAKE(UntilTokenNode)(NEWLINE),
-		}))
+			_AND_
+				MAKE(TokenNode)(DEFINE),
+				MAKE(TokenNode)(WORD),
+				MAKE(UntilTokenNode)(NEWLINE),
+			__
 		};
 	}
 };
