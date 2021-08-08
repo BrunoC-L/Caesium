@@ -3,55 +3,49 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 
-class AndNode : public Node {
+template <typename T>
+class AndNode : public Node<T> {
 public:
-	AndNode(vNode v) {
-		name = "AndNode";
-		nodes = v;
+	AndNode(vNode<T> v) {
+		this->name = "AndNode";
+		this->nodes = v;
 	}
 
 	virtual bool build(Grammarizer* g) override {
 		auto temp = g->it;
-		for (const auto& node : nodes)
+		for (const auto& node : this->nodes)
 			if (!node->build(g)) {
 				g->it = temp;
+				this->nodes = {};
 				return false;
 			}
 		return true;
 	}
 
-	virtual JSON toJSON() override {
-		JSON res;
-		for (const auto& node : nodes) {
-			if (node->name == "TokenNode") {
-				std::string key = Tokenizer::tokenLookup[((TokenNode*)&(*node))->t];
-				while (res.has(key))
-					key += "+";
-				res[Tokenizer::tokenLookup[((TokenNode*)&(*node))->t]] = node->toJSON();
-			}
-			else {
-				while (res.has(node->name))
-					node->name += "+";
-				res[node->name] = node->toJSON();
-			}
-		}
-		return res;
+	virtual T accept(NodeVisitor<T>* v) override {
+		throw 1;
 	}
 };
 
-class OrNode : public Node {
+template <typename T>
+class OrNode : public Node<T> {
 public:
-	OrNode(vNode v) {
-		name = "OrNode";
-		nodes = v;
+	OrNode(vNode<T> v) {
+		this->name = "OrNode";
+		this->nodes = v;
 	}
 
 	virtual bool build(Grammarizer* g) override {
-		for (const auto& node : nodes)
+		for (const auto& node : this->nodes)
 			if (node->build(g)) {
-				nodes = { node };
+				this->nodes = { node };
 				return true;
 			}
+		this->nodes = {};
 		return false;
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

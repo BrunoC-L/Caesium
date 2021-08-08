@@ -1,13 +1,16 @@
 #include "codeBlockNode.h"
-#include "statementsNode.h"
+#include "statementNode.h"
 
-void CodeBlockNode::build() {
+template <typename T>
+void CodeBlockNode<T>::build() {
 
-	nodes = {
+	this->nodes = {
 		_OR_
 			_AND_
 				MAKE(TokenNode)(BRACEOPEN),
-				MAKE(StatementsNode)(),
+				_STAR_
+					MAKE(StatementNode)()
+				___,
 				MAKE(TokenNode)(BRACECLOSE),
 			__,
 			MAKE(StatementNode)()

@@ -5,22 +5,16 @@
 #include "pppQualifierNode.h"
 #include "macroNode.h"
 #include "classMember.h"
-#include "macros.h"
+#include "constructor.h"
 
-class ClassElementNode : public Node {
+template <typename T>
+class ClassElementNode : public Node<T> {
 public:
 	baseCtor(ClassElementNode);
 
-	virtual void build() override {
-		nodes = {
-			_OR_
-				_AND_
-					MAKE(PPPQualifierNode)(),
-					MAKE(TokenNode)(COLON)})),
-					MAKE(UsingNode)(),
-					MAKE(MacroNode)(),
-					MAKE(ClassMemberNode)(),
-				__
-			};
+	virtual void build() override;
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

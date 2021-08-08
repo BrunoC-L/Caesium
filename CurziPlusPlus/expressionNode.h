@@ -1,46 +1,31 @@
 #pragma once
 #include "node.h"
 #include "macros.h"
+#include "nodeVisitor.h"
 
-#define nodeclass(T) class T : public Node {\
+#define nodeclass(N) template <typename T>\
+class N : public Node<T> {\
 public:\
-	baseCtor(T);\
+	baseCtor(N);\
 	virtual void build() override;\
-};
-
-class CollapsableJSONNodeOutput : public Node {
-	virtual JSON toJSON() override {
-		JSON res = nodes[0]->toJSON();
-		try {
-			if (res.getChildren()[1].asString() == "[]")
-				return res.getChildren()[0];
-		}
-		catch (...) {
-
-		}
-		return res;
-	}
-};
-
-#define collapsablejsonnodeoutput(T) class T : public CollapsableJSONNodeOutput {\
-public:\
-	baseCtor(T);\
-	virtual void build() override;\
+	virtual T accept(NodeVisitor<T>* v) override {\
+		return v->visit(this);\
+	}\
 };
 
 nodeclass(ExpressionNode)
-collapsablejsonnodeoutput(AssignmentExpressionNode)
-collapsablejsonnodeoutput(ConditionalExpressionNode)
-collapsablejsonnodeoutput(OrExpressionNode)
-collapsablejsonnodeoutput(AndExpressionNode)
-collapsablejsonnodeoutput(BitOrExpressionNode)
-collapsablejsonnodeoutput(BitXorExpressionNode)
-collapsablejsonnodeoutput(BitAndExpressionNode)
-collapsablejsonnodeoutput(EqualityExpressionNode)
-collapsablejsonnodeoutput(CompareExpressionNode)
-collapsablejsonnodeoutput(BitShiftExpressionNode)
-collapsablejsonnodeoutput(AdditiveExpressionNode)
-collapsablejsonnodeoutput(MultiplicativeExpressionNode)
+nodeclass(AssignmentExpressionNode)
+nodeclass(ConditionalExpressionNode)
+nodeclass(OrExpressionNode)
+nodeclass(AndExpressionNode)
+nodeclass(BitOrExpressionNode)
+nodeclass(BitXorExpressionNode)
+nodeclass(BitAndExpressionNode)
+nodeclass(EqualityExpressionNode)
+nodeclass(CompareExpressionNode)
+nodeclass(BitShiftExpressionNode)
+nodeclass(AdditiveExpressionNode)
+nodeclass(MultiplicativeExpressionNode)
 nodeclass(UnaryExpressionNode)
-collapsablejsonnodeoutput(PostfixExpressionNode)
+nodeclass(PostfixExpressionNode)
 nodeclass(ParenExpressionNode)

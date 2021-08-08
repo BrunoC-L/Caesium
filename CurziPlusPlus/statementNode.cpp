@@ -1,7 +1,7 @@
 #include "statementNode.h"
-
-void StatementNode::build() {
-	nodes = {
+template <typename T>
+void StatementNode<T>::build() {
+	this->nodes = {
 		_OR_
 			_AND_
 				MAKE(ExpressionNode)(),

@@ -140,6 +140,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="classElementNode.cpp" />
+    <ClCompile Include="classMember.cpp" />
     <ClCompile Include="codeBlockNode.cpp" />
     <ClCompile Include="expressionNode.cpp" />
     <ClCompile Include="json.cpp" />
@@ -152,7 +154,6 @@
   <ItemGroup>
     <ClInclude Include="argumentsNode.h" />
     <ClInclude Include="classElementNode.h" />
-    <ClInclude Include="classElementsNode.h" />
     <ClInclude Include="classInheritanceNode.h" />
     <ClInclude Include="classMember.h" />
     <ClInclude Include="classNode.h" />
@@ -163,16 +164,17 @@
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="classMemberQualifiers.h" />
     <ClInclude Include="json.h" />
+    <ClInclude Include="JSONNodeVisitor.h" />
     <ClInclude Include="macroNode.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="multipleInheritanceNode.h" />
     <ClInclude Include="node.h" />
     <ClInclude Include="andorNode.h" />
+    <ClInclude Include="nodeVisitor.h" />
     <ClInclude Include="pppQualifierNode.h" />
     <ClInclude Include="singleInheritanceNode.h" />
     <ClInclude Include="kNode.h" />
     <ClInclude Include="statementNode.h" />
-    <ClInclude Include="statementsNode.h" />
     <ClInclude Include="tokenizer.h" />
     <ClInclude Include="tokenNode.h" />
     <ClInclude Include="typenameNode.h" />

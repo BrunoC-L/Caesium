@@ -7,33 +7,44 @@
 #include "argumentsNode.h"
 #include "expressionNode.h"
 
-class StatementNode : public Node {
+template <typename T>
+class StatementNode : public Node<T> {
 public:
 	baseCtor(StatementNode);
 
 	virtual void build() override;
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class ElseStatementNode : public Node {
+template <typename T>
+class ElseStatementNode : public Node<T> {
 public:
 	baseCtor(ElseStatementNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(ELSE),
 				MAKE(CodeBlockNode)(),
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class IfStatementNode : public Node {
+template <typename T>
+class IfStatementNode : public Node<T> {
 public:
 	baseCtor(IfStatementNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(IF),
 				MAKE(TokenNode)(PARENOPEN),
@@ -46,14 +57,19 @@ public:
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class ForStatementNode : public Node {
+template <typename T>
+class ForStatementNode : public Node<T> {
 public:
 	baseCtor(ForStatementNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(FOR),
 				MAKE(TokenNode)(PARENOPEN),
@@ -80,5 +96,9 @@ public:
 				MAKE(CodeBlockNode)(),
 			__
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

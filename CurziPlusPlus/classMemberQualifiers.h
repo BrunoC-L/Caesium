@@ -4,12 +4,13 @@
 #include "pppQualifierNode.h"
 #include "kNode.h"
 
-class ClassMemberQualifiers : public Node {
+template <typename T>
+class ClassMemberQualifiers : public Node<T> {
 public:
 	baseCtor(ClassMemberQualifiers);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				_OPT_
 					MAKE(PPPQualifierNode)()
@@ -19,5 +20,9 @@ public:
 				___,
 			__
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

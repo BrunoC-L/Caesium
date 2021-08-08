@@ -1,13 +1,14 @@
 #pragma once
 #include "classInheritanceNode.h"
-#include "classElementsNode.h"
+#include "classelementnode.h"
 
-class ClassNode : public Node {
+template <typename T>
+class ClassNode : public Node<T> {
 public:
 	baseCtor(ClassNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(CLASS),
 				MAKE(TokenNode)(WORD),
@@ -21,5 +22,9 @@ public:
 				MAKE(TokenNode)(BRACECLOSE),
 			__,
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) {
+		return v->visit(this);
 	}
 };

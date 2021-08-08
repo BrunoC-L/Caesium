@@ -4,18 +4,23 @@
 #include "tokenNode.h"
 #include "typenameNode.h"
 
-class UsingNode : public Node {
+template <typename T>
+class UsingNode : public Node<T> {
 public:
 	baseCtor(UsingNode);
 
 	virtual void build() override {
-		nodes = {
-		_AND_
-			MAKE(TokenNode)(USING),
-			MAKE(TokenNode)(WORD),
-			MAKE(TokenNode)(EQUAL),
-			MAKE(TypenameNode)(),
-		}))
+		this->nodes = {
+			_AND_
+				MAKE(TokenNode)(USING),
+				MAKE(TokenNode)(WORD),
+				MAKE(TokenNode)(EQUAL),
+				MAKE(TypenameNode)(),
+			__
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

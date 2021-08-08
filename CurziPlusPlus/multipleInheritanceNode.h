@@ -2,12 +2,13 @@
 #include "singleInheritanceNode.h"
 #include "macros.h"
 
-class MultipleInheritanceNode : public Node {
+template <typename T>
+class MultipleInheritanceNode : public Node<T> {
 public:
 	baseCtor(MultipleInheritanceNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 		_OR_
 			_AND_
 				MAKE(SingleInheritanceNode)(),
@@ -17,5 +18,9 @@ public:
 			MAKE(SingleInheritanceNode)(),
 		__,
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

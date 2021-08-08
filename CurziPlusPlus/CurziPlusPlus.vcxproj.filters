@@ -43,6 +43,9 @@
     <Filter Include="Source Files\nodes\expressions">
       <UniqueIdentifier>{edadb298-9989-400b-85c6-9c63540a9e8e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\json">
+      <UniqueIdentifier>{cae807d2-82b6-49ea-a310-c7f068b2e7f7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -63,11 +66,17 @@
     <ClCompile Include="statementNode.cpp">
       <Filter>Source Files\nodes\statements</Filter>
     </ClCompile>
-    <ClCompile Include="codeBlockNode.cpp">
-      <Filter>Source Files\nodes</Filter>
-    </ClCompile>
     <ClCompile Include="json.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="classElementNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="classMember.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="codeBlockNode.cpp">
+      <Filter>Source Files\nodes\statements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -101,14 +110,8 @@
     <ClInclude Include="untilTokenNode.h">
       <Filter>Source Files\nodes\base</Filter>
     </ClInclude>
-    <ClInclude Include="classElementsNode.h">
-      <Filter>Source Files\nodes\classElements</Filter>
-    </ClInclude>
     <ClInclude Include="classMemberQualifiers.h">
       <Filter>Source Files\nodes\classElements</Filter>
-    </ClInclude>
-    <ClInclude Include="argumentsNode.h">
-      <Filter>Source Files\nodes</Filter>
     </ClInclude>
     <ClInclude Include="pppQualifierNode.h">
       <Filter>Source Files\nodes\types</Filter>
@@ -137,9 +140,6 @@
     <ClInclude Include="statementNode.h">
       <Filter>Source Files\nodes\statements</Filter>
     </ClInclude>
-    <ClInclude Include="statementsNode.h">
-      <Filter>Source Files\nodes\statements</Filter>
-    </ClInclude>
     <ClInclude Include="expressionNode.h">
       <Filter>Source Files\nodes\expressions</Filter>
     </ClInclude>
@@ -154,6 +154,15 @@
     </ClInclude>
     <ClInclude Include="json.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeVisitor.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="argumentsNode.h">
+      <Filter>Source Files\nodes\other</Filter>
+    </ClInclude>
+    <ClInclude Include="JSONNodeVisitor.h">
+      <Filter>Source Files\json</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

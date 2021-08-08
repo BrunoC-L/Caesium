@@ -7,24 +7,25 @@
 #include "argumentsNode.h"
 #include "codeBlockNode.h"
 
-class ConstructorNode : public Node {
+template <typename T>
+class ConstructorNode : public Node<T> {
 public:
 	baseCtor(ConstructorNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
-				_OPT_
-					MAKE(PPPQualifierNode)()
-				___,
+				MAKE(ClassMemberQualifiers)(),
 				MAKE(TokenNode)(WORD),
-				_AND_
-					MAKE(TokenNode)(PARENOPEN),
-					MAKE(ArgumentsSignatureNode)(),
-					MAKE(TokenNode)(PARENCLOSE),
-					MAKE(CodeBlockNode)(),
-				__,
+				MAKE(TokenNode)(PARENOPEN),
+				MAKE(ArgumentsSignatureNode)(),
+				MAKE(TokenNode)(PARENCLOSE),
+				MAKE(CodeBlockNode)(),
 			__
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

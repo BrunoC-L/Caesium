@@ -5,32 +5,43 @@
 #include "tokenNode.h"
 #include "macros.h"
 
-class TypenameNode : public Node {
+template <typename T>
+class TypenameNode : public Node<T> {
 public:
 	baseCtor(TypenameNode);
 	virtual void build() override;
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class NSTypenameNode : public Node {
+template <typename T>
+class NSTypenameNode : public Node<T> {
 public:
 	baseCtor(NSTypenameNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(NS),
 				MAKE(TypenameNode)()
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class TypenameListNode : public Node {
+template <typename T>
+class TypenameListNode : public Node<T> {
 public:
 	baseCtor(TypenameListNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_OR_
 				_AND_
 					_AND_
@@ -43,14 +54,19 @@ public:
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class TemplateTypenameNode : public Node {
+template <typename T>
+class TemplateTypenameNode : public Node<T> {
 public:
 	baseCtor(TemplateTypenameNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(LT),
 				MAKE(TypenameListNode)(),
@@ -58,14 +74,19 @@ public:
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class ParenthesisTypenameNode : public Node {
+template <typename T>
+class ParenthesisTypenameNode : public Node<T> {
 public:
 	baseCtor(ParenthesisTypenameNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(PARENOPEN),
 				MAKE(TypenameListNode)(),
@@ -73,18 +94,27 @@ public:
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class PointerTypenameNode : public Node {
+template <typename T>
+class PointerTypenameNode : public Node<T> {
 public:
 	baseCtor(PointerTypenameNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_OR_
 				MAKE(TokenNode)(ASTERISK),
 				MAKE(TokenNode)(AMPERSAND),
 			__
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

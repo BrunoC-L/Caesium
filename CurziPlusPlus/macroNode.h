@@ -5,17 +5,22 @@
 #include "typenameNode.h"
 #include "untilTokenNode.h"
 
-class MacroNode : public Node {
+template <typename T>
+class MacroNode : public Node<T> {
 public:
 	baseCtor(MacroNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(DEFINE),
 				MAKE(TokenNode)(WORD),
 				MAKE(UntilTokenNode)(NEWLINE),
 			__
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

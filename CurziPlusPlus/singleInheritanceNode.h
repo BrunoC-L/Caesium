@@ -5,16 +5,21 @@
 #include "typenameNode.h"
 #include "macros.h"
 
-class SingleInheritanceNode : public Node {
+template <typename T>
+class SingleInheritanceNode : public Node<T> {
 public:
 	baseCtor(SingleInheritanceNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 		_AND_
 			MAKE(PPPQualifierNode)(),
 			MAKE(TypenameNode)()
 		}))
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

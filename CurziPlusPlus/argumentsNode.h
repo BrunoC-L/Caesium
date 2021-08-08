@@ -7,12 +7,13 @@
 #include "kNode.h"
 #include "macros.h"
 
-class ArgumentsSignatureNode : public Node {
+template <typename T>
+class ArgumentsSignatureNode : public Node<T> {
 public:
 	baseCtor(ArgumentsSignatureNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_OPT_ _AND_
 				MAKE(TypenameNode)(),
 				MAKE(TokenNode)(WORD),
@@ -23,14 +24,19 @@ public:
 			____
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class InnerArgumentsNode : public Node {
+template <typename T>
+class InnerArgumentsNode : public Node<T> {
 public:
 	baseCtor(InnerArgumentsNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_OPT_ _AND_
 				MAKE(ExpressionNode)(),
 				_OPT_ _AND_
@@ -45,14 +51,19 @@ public:
 			____
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class ParenArgumentsNode : public Node {
+template <typename T>
+class ParenArgumentsNode : public Node<T> {
 public:
 	baseCtor(ParenArgumentsNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(PARENOPEN),
 				MAKE(InnerArgumentsNode)(),
@@ -60,14 +71,19 @@ public:
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class BracketArgumentsNode : public Node {
+template <typename T>
+class BracketArgumentsNode : public Node<T> {
 public:
 	baseCtor(BracketArgumentsNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(BRACKETOPEN),
 				MAKE(InnerArgumentsNode)(),
@@ -75,19 +91,28 @@ public:
 			__
 		};
 	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
+	}
 };
 
-class BraceArgumentsNode : public Node {
+template <typename T>
+class BraceArgumentsNode : public Node<T> {
 public:
 	baseCtor(BraceArgumentsNode);
 
 	virtual void build() override {
-		nodes = {
+		this->nodes = {
 			_AND_
 				MAKE(TokenNode)(BRACEOPEN),
 				MAKE(InnerArgumentsNode)(),
 				MAKE(TokenNode)(BRACECLOSE),
 			__
 		};
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

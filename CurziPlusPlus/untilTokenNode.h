@@ -3,11 +3,12 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 
-class UntilTokenNode : public Node {
+template <typename T>
+class UntilTokenNode : public Node<T> {
 public:
 	TOKEN t;
 	std::string value;
-	UntilTokenNode(TOKEN t) : t(t) { name = "UntilTokenNode"; }
+	UntilTokenNode(TOKEN t) : t(t) { this->name = "UntilTokenNode"; }
 
 	virtual bool build(Grammarizer* g) override {
 		while (g->it != g->tokens.end()) {
@@ -18,5 +19,9 @@ public:
 				return true;
 		}
 		return false;
+	}
+
+	virtual T accept(NodeVisitor<T>* v) override {
+		return v->visit(this);
 	}
 };

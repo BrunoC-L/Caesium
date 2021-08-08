@@ -2,17 +2,19 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "json.h"
+#include "nodeVisitor.h"
 
 class Grammarizer;
 
+template <typename T>
 class Node {
 public:
 	std::vector<std::shared_ptr<Node>> nodes;
 	std::string name = "Node";
 	virtual void build() {}
 	virtual bool build(Grammarizer* g);
-	virtual JSON toJSON();
+	virtual T accept(NodeVisitor<T>* v) = 0;
 };
 
-using vNode = std::vector<std::shared_ptr<Node>>;
+template <typename T>
+using vNode = std::vector<std::shared_ptr<Node<T>>>;
