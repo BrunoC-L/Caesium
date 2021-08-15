@@ -1,8 +1,7 @@
 #include "typenameNode.h"
 #include "kNode.h"
 
-template <typename T>
-void TypenameNode<T>::build() {
+void TypenameNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(TokenNode)(WORD),

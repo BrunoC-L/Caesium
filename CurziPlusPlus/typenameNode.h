@@ -4,20 +4,19 @@
 #include "andorNode.h"
 #include "tokenNode.h"
 #include "macros.h"
+#include "kNode.h"
 
-template <typename T>
-class TypenameNode : public Node<T> {
+class TypenameNode : public Node {
 public:
 	baseCtor(TypenameNode);
 	virtual void build() override;
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class NSTypenameNode : public Node<T> {
+class NSTypenameNode : public Node {
 public:
 	baseCtor(NSTypenameNode);
 
@@ -30,38 +29,36 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class TypenameListNode : public Node<T> {
+class TypenameListNode : public Node {
 public:
 	baseCtor(TypenameListNode);
 
 	virtual void build() override {
 		this->nodes = {
-			_OR_
-				_AND_
-					_AND_
-						MAKE(TypenameNode)(),
-						MAKE(TokenNode)(COMMA),
-						MAKE(TypenameListNode)(),
-					__
-				__,
+			_AND_
 				MAKE(TypenameNode)(),
+				_STAR_ _AND_
+					MAKE(TokenNode)(COMMA),
+					MAKE(TypenameNode)()
+				____,
+				_OPT_
+					MAKE(TokenNode)(COMMA)
+				___
 			__
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class TemplateTypenameNode : public Node<T> {
+class TemplateTypenameNode : public Node {
 public:
 	baseCtor(TemplateTypenameNode);
 
@@ -75,13 +72,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class ParenthesisTypenameNode : public Node<T> {
+class ParenthesisTypenameNode : public Node {
 public:
 	baseCtor(ParenthesisTypenameNode);
 
@@ -95,13 +91,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class PointerTypenameNode : public Node<T> {
+class PointerTypenameNode : public Node {
 public:
 	baseCtor(PointerTypenameNode);
 
@@ -114,7 +109,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

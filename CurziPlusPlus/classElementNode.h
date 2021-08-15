@@ -7,14 +7,13 @@
 #include "classMember.h"
 #include "constructor.h"
 
-template <typename T>
-class ClassElementNode : public Node<T> {
+class ClassElementNode : public Node {
 public:
 	baseCtor(ClassElementNode);
 
 	virtual void build() override;
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

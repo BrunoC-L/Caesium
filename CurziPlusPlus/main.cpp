@@ -8,14 +8,6 @@
 #include "statementNode.h"
 #include "JSONNodeVisitor.h"
 
-#include "node.cpp"
-#include "classMember.cpp"
-#include "codeBlockNode.cpp"
-#include "expressionNode.cpp"
-#include "statementNode.cpp"
-#include "typenameNode.cpp"
-#include "classElementNode.cpp"
-
 void transpile(const std::filesystem::path& fileName, const std::filesystem::path& outFileName);
 
 int main(int argc, char* argv[]) {
@@ -38,13 +30,14 @@ void transpile(const std::filesystem::path& fileName, const std::filesystem::pat
 	}
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
-	Node<JSON>* expected = new FileNode<JSON>();
+	Node* expected = new FileNode();
 	bool nodeBuilt = expected->build(&g);
 	bool programReadEntirely = g.it == g.tokens.end();
 
 	if (nodeBuilt && programReadEntirely) {
 		JSONNodeVisitor* v = new JSONNodeVisitor();
-		JSON out = expected->accept(v);
+		expected->accept(v);
+		JSON out = v->getValue();
 		std::ofstream output(outFileName);
 		output << out.asString(" ", false) << std::endl;
 	}

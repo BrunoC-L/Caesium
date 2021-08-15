@@ -7,8 +7,7 @@
 #include "kNode.h"
 #include "macros.h"
 
-template <typename T>
-class ArgumentsSignatureNode : public Node<T> {
+class ArgumentsSignatureNode : public Node {
 public:
 	baseCtor(ArgumentsSignatureNode);
 
@@ -25,13 +24,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class InnerArgumentsNode : public Node<T> {
+class InnerArgumentsNode : public Node {
 public:
 	baseCtor(InnerArgumentsNode);
 
@@ -45,20 +43,19 @@ public:
 						MAKE(ExpressionNode)(),
 					____,
 					_OPT_
-						MAKE(TokenNode)(COMMA) // JAVA & C++ don't even support this lol...
+						MAKE(TokenNode)(COMMA)
 					___
 				____
 			____
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class ParenArgumentsNode : public Node<T> {
+class ParenArgumentsNode : public Node {
 public:
 	baseCtor(ParenArgumentsNode);
 
@@ -72,13 +69,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class BracketArgumentsNode : public Node<T> {
+class BracketArgumentsNode : public Node {
 public:
 	baseCtor(BracketArgumentsNode);
 
@@ -92,13 +88,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class BraceArgumentsNode : public Node<T> {
+class BraceArgumentsNode : public Node {
 public:
 	baseCtor(BraceArgumentsNode);
 
@@ -112,7 +107,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

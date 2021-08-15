@@ -5,8 +5,7 @@
 #include "typenameNode.h"
 #include "untilTokenNode.h"
 
-template <typename T>
-class MacroNode : public Node<T> {
+class MacroNode : public Node {
 public:
 	baseCtor(MacroNode);
 
@@ -20,7 +19,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

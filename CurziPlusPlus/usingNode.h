@@ -4,8 +4,7 @@
 #include "tokenNode.h"
 #include "typenameNode.h"
 
-template <typename T>
-class UsingNode : public Node<T> {
+class UsingNode : public Node {
 public:
 	baseCtor(UsingNode);
 
@@ -20,7 +19,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

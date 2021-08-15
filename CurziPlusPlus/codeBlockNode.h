@@ -2,14 +2,24 @@
 #include "node.h"
 #include "macros.h"
 
-template <typename T>
-class CodeBlockNode : public Node<T> {
+class CodeBlockNode : public Node {
 public:
 	baseCtor(CodeBlockNode);
 
 	virtual void build() override;
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class BracedCodeBlockNode : public Node {
+public:
+	baseCtor(BracedCodeBlockNode);
+
+	virtual void build() override;
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

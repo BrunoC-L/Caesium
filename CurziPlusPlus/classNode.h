@@ -2,8 +2,7 @@
 #include "classInheritanceNode.h"
 #include "classelementnode.h"
 
-template <typename T>
-class ClassNode : public Node<T> {
+class ClassNode : public Node {
 public:
 	baseCtor(ClassNode);
 
@@ -24,7 +23,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) {
+		v->visit(this);
 	}
 };

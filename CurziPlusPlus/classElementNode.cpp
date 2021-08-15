@@ -1,7 +1,6 @@
 #include "classElementNode.h"
 
-template <typename T>
-void ClassElementNode<T>::build() {
+void ClassElementNode::build() {
 	this->nodes = {
 		_OR_
 			_AND_

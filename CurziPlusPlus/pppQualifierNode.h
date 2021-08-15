@@ -3,8 +3,7 @@
 #include "andorNode.h"
 #include "macros.h"
 
-template <typename T>
-class PPPQualifierNode : public Node<T> {
+class PPPQualifierNode : public Node {
 public:
 	baseCtor(PPPQualifierNode);
 
@@ -18,7 +17,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

@@ -7,20 +7,18 @@
 #include "argumentsNode.h"
 #include "codeBlockNode.h"
 
-template <typename T>
-class ClassMemberNode : public Node<T> {
+class ClassMemberNode : public Node {
 public:
 	baseCtor(ClassMemberNode);
 
 	virtual void build() override;
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class MethodNode : public Node<T> {
+class MethodNode : public Node {
 public:
 	baseCtor(MethodNode);
 
@@ -38,13 +36,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class MemberVariableNode : public Node<T> {
+class MemberVariableNode : public Node {
 public:
 	baseCtor(MemberVariableNode);
 
@@ -59,7 +56,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

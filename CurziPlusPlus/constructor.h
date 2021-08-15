@@ -7,8 +7,7 @@
 #include "argumentsNode.h"
 #include "codeBlockNode.h"
 
-template <typename T>
-class ConstructorNode : public Node<T> {
+class ConstructorNode : public Node {
 public:
 	baseCtor(ConstructorNode);
 
@@ -25,7 +24,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

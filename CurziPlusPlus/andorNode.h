@@ -3,10 +3,9 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 
-template <typename T>
-class AndNode : public Node<T> {
+class AndNode : public Node {
 public:
-	AndNode(vNode<T> v) {
+	AndNode(vNode v) {
 		this->name = "AndNode";
 		this->nodes = v;
 	}
@@ -22,15 +21,14 @@ public:
 		return true;
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
+	virtual void accept(NodeVisitor* v) override {
 		throw 1;
 	}
 };
 
-template <typename T>
-class OrNode : public Node<T> {
+class OrNode : public Node {
 public:
-	OrNode(vNode<T> v) {
+	OrNode(vNode v) {
 		this->name = "OrNode";
 		this->nodes = v;
 	}
@@ -45,7 +43,7 @@ public:
 		return false;
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

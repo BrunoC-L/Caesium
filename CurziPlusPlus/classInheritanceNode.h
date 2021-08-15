@@ -1,8 +1,7 @@
 #pragma once
 #include "multipleInheritanceNode.h"
 
-template <typename T>
-class ClassInheritanceNode : public Node<T> {
+class ClassInheritanceNode : public Node {
 public:
 	baseCtor(ClassInheritanceNode);
 
@@ -15,7 +14,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

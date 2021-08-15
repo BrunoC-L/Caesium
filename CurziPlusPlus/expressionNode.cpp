@@ -7,15 +7,13 @@
 #include "argumentsNode.h"
 #include "macros.h"
 
-template <typename T>
-void ExpressionNode<T>::build() {
+void ExpressionNode::build() {
 	this->nodes = {
 		MAKE(AssignmentExpressionNode)(),
 	};
 }
 
-template <typename T>
-void AssignmentExpressionNode<T>::build() {
+void AssignmentExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(ConditionalExpressionNode)(),
@@ -39,8 +37,7 @@ void AssignmentExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void ConditionalExpressionNode<T>::build() {
+void ConditionalExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(OrExpressionNode)(),
@@ -56,8 +53,7 @@ void ConditionalExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void OrExpressionNode<T>::build() {
+void OrExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(AndExpressionNode)(),
@@ -71,8 +67,7 @@ void OrExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void AndExpressionNode<T>::build() {
+void AndExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(BitOrExpressionNode)(),
@@ -86,8 +81,7 @@ void AndExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void BitOrExpressionNode<T>::build() {
+void BitOrExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(BitXorExpressionNode)(),
@@ -101,8 +95,7 @@ void BitOrExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void BitXorExpressionNode<T>::build() {
+void BitXorExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(BitAndExpressionNode)(),
@@ -116,8 +109,7 @@ void BitXorExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void BitAndExpressionNode<T>::build() {
+void BitAndExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(EqualityExpressionNode)(),
@@ -131,8 +123,7 @@ void BitAndExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void EqualityExpressionNode<T>::build() {
+void EqualityExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(CompareExpressionNode)(),
@@ -146,8 +137,7 @@ void EqualityExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void CompareExpressionNode<T>::build() {
+void CompareExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(BitShiftExpressionNode)(),
@@ -166,8 +156,7 @@ void CompareExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void BitShiftExpressionNode<T>::build() {
+void BitShiftExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(AdditiveExpressionNode)(),
@@ -184,8 +173,7 @@ void BitShiftExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void AdditiveExpressionNode<T>::build() {
+void AdditiveExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(MultiplicativeExpressionNode)(),
@@ -202,8 +190,7 @@ void AdditiveExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void MultiplicativeExpressionNode<T>::build() {
+void MultiplicativeExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(UnaryExpressionNode)(),
@@ -221,8 +208,7 @@ void MultiplicativeExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void UnaryExpressionNode<T>::build() {
+void UnaryExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			_STAR_
@@ -247,8 +233,7 @@ void UnaryExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void PostfixExpressionNode<T>::build() {
+void PostfixExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(ParenExpressionNode)(),
@@ -269,8 +254,7 @@ void PostfixExpressionNode<T>::build() {
 	};
 }
 
-template <typename T>
-void ParenExpressionNode<T>::build() {
+void ParenExpressionNode::build() {
 	this->nodes = {
 		_OR_
 			_AND_

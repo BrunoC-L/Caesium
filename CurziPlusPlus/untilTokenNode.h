@@ -3,8 +3,7 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 
-template <typename T>
-class UntilTokenNode : public Node<T> {
+class UntilTokenNode : public Node {
 public:
 	TOKEN t;
 	std::string value;
@@ -21,7 +20,7 @@ public:
 		return false;
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

@@ -5,8 +5,7 @@
 #include "typenameNode.h"
 #include "macros.h"
 
-template <typename T>
-class SingleInheritanceNode : public Node<T> {
+class SingleInheritanceNode : public Node {
 public:
 	baseCtor(SingleInheritanceNode);
 
@@ -19,7 +18,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

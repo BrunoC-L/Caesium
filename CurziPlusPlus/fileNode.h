@@ -1,8 +1,7 @@
 #pragma once
 #include "classNode.h"
 
-template <typename T>
-class FileNode : public Node<T> {
+class FileNode : public Node {
 public:
 	baseCtor(FileNode);
 
@@ -15,7 +14,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

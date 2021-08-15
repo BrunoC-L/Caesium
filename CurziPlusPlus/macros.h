@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
 
-#define MAKE(N) std::make_shared<N<T>>
+#define MAKE(T) std::make_shared<T>
 
-#define _AND_ MAKE(AndNode)(vNode<T>({
-#define _OR_ MAKE(OrNode)(vNode<T>({
+#define _AND_ MAKE(AndNode)(vNode({
+#define _OR_ MAKE(OrNode)(vNode({
 
 #define _STAR_ MAKE(StarNode)([&](){ return
 #define _PLUS_ MAKE(PlusNode)([&](){ return

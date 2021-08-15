@@ -7,20 +7,36 @@
 #include "argumentsNode.h"
 #include "expressionNode.h"
 
-template <typename T>
-class StatementNode : public Node<T> {
+class StatementNode : public Node {
 public:
 	baseCtor(StatementNode);
 
 	virtual void build() override;
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class ElseStatementNode : public Node<T> {
+class ExpressionStatementNode : public Node {
+public:
+	baseCtor(ExpressionStatementNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				MAKE(ExpressionNode)(),
+				MAKE(TokenNode)(SEMICOLON),
+			__
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class ElseStatementNode : public Node {
 public:
 	baseCtor(ElseStatementNode);
 
@@ -33,13 +49,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class IfStatementNode : public Node<T> {
+class IfStatementNode : public Node {
 public:
 	baseCtor(IfStatementNode);
 
@@ -58,13 +73,12 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class ForStatementNode : public Node<T> {
+class ForStatementNode : public Node {
 public:
 	baseCtor(ForStatementNode);
 
@@ -98,7 +112,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

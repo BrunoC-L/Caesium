@@ -6,15 +6,13 @@
 
 class Grammarizer;
 
-template <typename T>
 class Node {
 public:
 	std::vector<std::shared_ptr<Node>> nodes;
 	std::string name = "Node";
 	virtual void build() {}
 	virtual bool build(Grammarizer* g);
-	virtual T accept(NodeVisitor<T>* v) = 0;
+	virtual void accept(NodeVisitor* v) = 0;
 };
 
-template <typename T>
-using vNode = std::vector<std::shared_ptr<Node<T>>>;
+using vNode = std::vector<std::shared_ptr<Node>>;

@@ -2,16 +2,15 @@
 #include "node.h"
 #include "grammarizer.h"
 
-template <typename T>
-class TokenNode : public Node<T> {
+class TokenNode : public Node {
 public:
 	TOKEN t;
 	std::string value;
 	std::stringstream stream;
 	TokenNode(TOKEN t) : t(t) { this->name = "TokenNode"; }
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 
 	virtual bool build(Grammarizer* g) override {

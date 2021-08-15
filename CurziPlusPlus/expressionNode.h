@@ -3,13 +3,12 @@
 #include "macros.h"
 #include "nodeVisitor.h"
 
-#define nodeclass(N) template <typename T>\
-class N : public Node<T> {\
+#define nodeclass(N) class N : public Node {\
 public:\
 	baseCtor(N);\
 	virtual void build() override;\
-	virtual T accept(NodeVisitor<T>* v) override {\
-		return v->visit(this);\
+	virtual void accept(NodeVisitor* v) override {\
+		v->visit(this);\
 	}\
 };
 

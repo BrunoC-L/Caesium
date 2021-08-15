@@ -1,7 +1,7 @@
 #include "classMember.h"
 
-template <typename T>
-void ClassMemberNode<T>::build() {
+
+void ClassMemberNode::build() {
 	this->nodes = {
 		_OR_
 			MAKE(MethodNode)(),

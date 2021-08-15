@@ -4,8 +4,7 @@
 #include "pppQualifierNode.h"
 #include "kNode.h"
 
-template <typename T>
-class ClassMemberQualifiers : public Node<T> {
+class ClassMemberQualifiers : public Node {
 public:
 	baseCtor(ClassMemberQualifiers);
 
@@ -22,7 +21,7 @@ public:
 		};
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };

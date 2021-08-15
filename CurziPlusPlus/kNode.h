@@ -3,17 +3,16 @@
 #include "grammarizer.h"
 #include <functional>
 
-template <typename T>
-class KNode : public Node<T> {
+class KNode : public Node {
 protected:
-	std::function<std::shared_ptr<Node<T>>()> builder;
+	std::function<std::shared_ptr<Node>()> builder;
 public:
-	KNode(std::function<std::shared_ptr<Node<T>>()> builder) : builder(builder) {}
+	KNode(std::function<std::shared_ptr<Node>()> builder) : builder(builder) {}
 	virtual bool cnd() = 0;
 
 	virtual bool build(Grammarizer* g) override {
 		while (true) {
-			std::shared_ptr<Node<T>> node = this->builder();
+			std::shared_ptr<Node> node = this->builder();
 			bool parsed = node->build(g);
 			if (parsed)
 				this->nodes.push_back(node);
@@ -24,40 +23,37 @@ public:
 	}
 };
 
-template <typename T>
-class StarNode : public KNode<T> {
+class StarNode : public KNode {
 public:
-	StarNode(std::function<std::shared_ptr<Node<T>>()> builder) : KNode<T>(builder) {
+	StarNode(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {
 		this->name = "StarNode";
 	}
 	virtual bool cnd() override {
 		return true;
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class PlusNode : public KNode<T> {
+class PlusNode : public KNode {
 public:
-	PlusNode(std::function<std::shared_ptr<Node<T>>()> builder) : KNode<T>(builder) {
+	PlusNode(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {
 		this->name = "PlusNode";
 	}
 	virtual bool cnd() override {
 		return this->nodes.size() > 0;
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
 
-template <typename T>
-class OPTNode : public KNode<T> {
+class OPTNode : public KNode {
 public:
-	OPTNode(std::function<std::shared_ptr<Node<T>>()> builder) : KNode<T>(builder) {
+	OPTNode(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {
 		this->name = "OPTNode";
 	}
 
@@ -65,7 +61,7 @@ public:
 		return this->nodes.size() <= 1;
 	}
 
-	virtual T accept(NodeVisitor<T>* v) override {
-		return v->visit(this);
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
 	}
 };
