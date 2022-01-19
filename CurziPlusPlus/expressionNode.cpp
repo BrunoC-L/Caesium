@@ -3,7 +3,7 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 #include "typenameNode.h"
-#include "codeBlockNode.h"
+#include "statementNode.h"
 #include "argumentsNode.h"
 #include "macros.h"
 
@@ -20,15 +20,15 @@ void AssignmentExpressionNode::build() {
 			_STAR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(EQUAL),
-						MAKE(TokenNode)(PLUSEQUAL),
-						MAKE(TokenNode)(MINUSEQUAL),
-						MAKE(TokenNode)(TIMESEQUAL),
-						MAKE(TokenNode)(DIVEQUAL),
-						MAKE(TokenNode)(MODEQUAL),
-						MAKE(TokenNode)(ANDEQUAL),
-						MAKE(TokenNode)(OREQUAL),
-						MAKE(TokenNode)(XOREQUAL),
+						TOKEN(EQUAL),
+						TOKEN(PLUSEQUAL),
+						TOKEN(MINUSEQUAL),
+						TOKEN(TIMESEQUAL),
+						TOKEN(DIVEQUAL),
+						TOKEN(MODEQUAL),
+						TOKEN(ANDEQUAL),
+						TOKEN(OREQUAL),
+						TOKEN(XOREQUAL),
 					__,
 					MAKE(ConditionalExpressionNode)(),
 				__
@@ -43,9 +43,9 @@ void ConditionalExpressionNode::build() {
 			MAKE(OrExpressionNode)(),
 			_STAR_
 				_AND_
-					MAKE(TokenNode)(QUESTION),
+					TOKEN(QUESTION),
 					MAKE(OrExpressionNode)(),
-					MAKE(TokenNode)(COLON),
+					TOKEN(COLON),
 					MAKE(OrExpressionNode)(),
 				__
 			___
@@ -59,7 +59,7 @@ void OrExpressionNode::build() {
 			MAKE(AndExpressionNode)(),
 			_STAR_
 				_AND_
-					MAKE(TokenNode)(OROR),
+					TOKEN(OROR),
 					MAKE(AndExpressionNode)(),
 				__
 			___
@@ -73,7 +73,7 @@ void AndExpressionNode::build() {
 			MAKE(BitOrExpressionNode)(),
 			_STAR_
 				_AND_
-					MAKE(TokenNode)(ANDAND),
+					TOKEN(ANDAND),
 					MAKE(BitOrExpressionNode)(),
 				__
 			___
@@ -87,7 +87,7 @@ void BitOrExpressionNode::build() {
 			MAKE(BitXorExpressionNode)(),
 			_STAR_
 				_AND_
-					MAKE(TokenNode)(BITOR),
+					TOKEN(BITOR),
 					MAKE(BitXorExpressionNode)(),
 				__
 			___
@@ -101,7 +101,7 @@ void BitXorExpressionNode::build() {
 			MAKE(BitAndExpressionNode)(),
 			_STAR_
 				_AND_
-					MAKE(TokenNode)(CARET),
+					TOKEN(CARET),
 					MAKE(BitAndExpressionNode)(),
 				__
 			___
@@ -115,7 +115,7 @@ void BitAndExpressionNode::build() {
 			MAKE(EqualityExpressionNode)(),
 			_STAR_
 				_AND_
-					MAKE(TokenNode)(AMPERSAND),
+					TOKEN(AMPERSAND),
 					MAKE(EqualityExpressionNode)(),
 				__
 			___
@@ -129,7 +129,7 @@ void EqualityExpressionNode::build() {
 			MAKE(CompareExpressionNode)(),
 			_STAR_
 				_AND_
-					MAKE(TokenNode)(EQUALEQUAL),
+					TOKEN(EQUALEQUAL),
 					MAKE(CompareExpressionNode)(),
 				__
 			___
@@ -144,10 +144,10 @@ void CompareExpressionNode::build() {
 			_STAR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(LT),
-						MAKE(TokenNode)(LTE),
-						MAKE(TokenNode)(GT),
-						MAKE(TokenNode)(GTE),
+						TOKEN(LT),
+						TOKEN(LTE),
+						TOKEN(GT),
+						TOKEN(GTE),
 					__,
 					MAKE(BitShiftExpressionNode)(),
 				__
@@ -163,8 +163,8 @@ void BitShiftExpressionNode::build() {
 			_STAR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(LSHIFT),
-						MAKE(TokenNode)(RSHIFT),
+						TOKEN(LSHIFT),
+						TOKEN(RSHIFT),
 					__,
 					MAKE(AdditiveExpressionNode)(),
 				__
@@ -180,8 +180,8 @@ void AdditiveExpressionNode::build() {
 			_STAR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(PLUS),
-						MAKE(TokenNode)(DASH),
+						TOKEN(PLUS),
+						TOKEN(DASH),
 					__,
 					MAKE(MultiplicativeExpressionNode)(),
 				__
@@ -197,9 +197,9 @@ void MultiplicativeExpressionNode::build() {
 			_STAR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(ASTERISK),
-						MAKE(TokenNode)(SLASH),
-						MAKE(TokenNode)(PERCENT),
+						TOKEN(ASTERISK),
+						TOKEN(SLASH),
+						TOKEN(PERCENT),
 					__,
 					MAKE(UnaryExpressionNode)(),
 				__
@@ -210,24 +210,25 @@ void MultiplicativeExpressionNode::build() {
 
 void UnaryExpressionNode::build() {
 	this->nodes = {
-		_AND_
-			_STAR_
+		_OR_
+			_AND_
 				_OR_
-					MAKE(TokenNode)(NOT),
-					MAKE(TokenNode)(PLUS),
-					MAKE(TokenNode)(DASH),
-					MAKE(TokenNode)(PLUSPLUS),
-					MAKE(TokenNode)(MINUSMINUS),
-					MAKE(TokenNode)(TILDE),
-					MAKE(TokenNode)(ASTERISK),
-					MAKE(TokenNode)(AMPERSAND),
+					TOKEN(NOT),
+					TOKEN(PLUS),
+					TOKEN(DASH),
+					TOKEN(PLUSPLUS),
+					TOKEN(MINUSMINUS),
+					TOKEN(TILDE),
+					TOKEN(ASTERISK),
+					TOKEN(AMPERSAND),
 					_AND_ // type cast operator
-						MAKE(TokenNode)(PARENOPEN),
+						TOKEN(PARENOPEN),
 						MAKE(TypenameNode)(),
-						MAKE(TokenNode)(PARENCLOSE),
+						TOKEN(PARENCLOSE),
 					__,
-				__
-			___,
+				__,
+				MAKE(UnaryExpressionNode)(), // has to be recursive because of the type cast operator taking the same shape as a ParenExpression
+			__,
 			MAKE(PostfixExpressionNode)(),
 		__
 	};
@@ -240,15 +241,15 @@ void PostfixExpressionNode::build() {
 			_STAR_ _OR_
 				_AND_
 					_OR_
-						MAKE(TokenNode)(DOT),
-						MAKE(TokenNode)(ARROW),
+						TOKEN(DOT),
+						TOKEN(ARROW),
 					__,
-					MAKE(TokenNode)(WORD),
+					TOKEN(WORD),
 				__,
 				MAKE(ParenArgumentsNode)(),
 				MAKE(BracketArgumentsNode)(),
-				MAKE(TokenNode)(PLUSPLUS),
-				MAKE(TokenNode)(MINUSMINUS),
+				TOKEN(PLUSPLUS),
+				TOKEN(MINUSMINUS),
 			____
 		__,
 	};
@@ -258,12 +259,12 @@ void ParenExpressionNode::build() {
 	this->nodes = {
 		_OR_
 			_AND_
-				MAKE(TokenNode)(PARENOPEN),
+				TOKEN(PARENOPEN),
 				MAKE(ExpressionNode)(),
-				MAKE(TokenNode)(PARENCLOSE),
+				TOKEN(PARENCLOSE),
 			__,
 			MAKE(TypenameNode)(),
-			MAKE(TokenNode)(NUMBER),
+			TOKEN(NUMBER),
 		__
 	};
 }

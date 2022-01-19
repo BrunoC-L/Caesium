@@ -1,6 +1,7 @@
 #pragma once
 #include "classInheritanceNode.h"
 #include "classelementnode.h"
+#include "indentNode.h"
 
 class ClassNode : public Node {
 public:
@@ -9,16 +10,19 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(CLASS),
-				MAKE(TokenNode)(WORD),
+				TOKEN(CLASS),
+				TOKEN(WORD),
 				_OPT_
 					MAKE(ClassInheritanceNode)()
 				___,
-				MAKE(TokenNode)(BRACEOPEN),
+				TOKEN(COLON),
+				TOKEN(NEWLINE),
 				_STAR_
-					MAKE(ClassElementNode)()
+					_AND_
+						MAKE(IndentNode)(n_indent + 1),
+						MAKE(ClassElementNode)(n_indent + 1),
+					__
 				___,
-				MAKE(TokenNode)(BRACECLOSE),
 			__,
 		};
 	}

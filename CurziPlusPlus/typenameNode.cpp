@@ -4,7 +4,7 @@
 void TypenameNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE(TokenNode)(WORD),
+			TOKEN(WORD),
 			_STAR_ _OR_
 				MAKE(NSTypenameNode)(),
 				MAKE(PointerTypenameNode)(),

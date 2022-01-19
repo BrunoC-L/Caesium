@@ -5,7 +5,6 @@
 #include "typenameNode.h"
 #include "classMemberQualifiers.h"
 #include "argumentsNode.h"
-#include "codeBlockNode.h"
 
 class ConstructorNode : public Node {
 public:
@@ -15,11 +14,11 @@ public:
 		this->nodes = {
 			_AND_
 				MAKE(ClassMemberQualifiers)(),
-				MAKE(TokenNode)(WORD),
-				MAKE(TokenNode)(PARENOPEN),
+				TOKEN(WORD),
+				TOKEN(PARENOPEN),
 				MAKE(ArgumentsSignatureNode)(),
-				MAKE(TokenNode)(PARENCLOSE),
-				MAKE(CodeBlockNode)(),
+				TOKEN(PARENCLOSE),
+				MAKE(ColonIndentCodeBlockNode)(n_indent),
 			__
 		};
 	}

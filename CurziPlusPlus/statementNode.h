@@ -3,15 +3,51 @@
 #include "grammarizer.h"
 #include "tokenNode.h"
 #include "typenameNode.h"
-#include "codeBlockNode.h"
 #include "argumentsNode.h"
 #include "expressionNode.h"
+#include "indentNode.h"
 
 class StatementNode : public Node {
 public:
 	baseCtor(StatementNode);
 
 	virtual void build() override;
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class CodeBlockNode : public Node {
+public:
+	baseCtor(CodeBlockNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_STAR_
+				MAKE(StatementNode)(n_indent)
+			___
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class ColonIndentCodeBlockNode : public Node {
+public:
+	baseCtor(ColonIndentCodeBlockNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				TOKEN(COLON),
+				TOKEN(NEWLINE),
+				MAKE(CodeBlockNode)(n_indent + 1)
+			__
+		};
+	}
 
 	virtual void accept(NodeVisitor* v) override {
 		v->visit(this);
@@ -26,7 +62,7 @@ public:
 		this->nodes = {
 			_AND_
 				MAKE(ExpressionNode)(),
-				MAKE(TokenNode)(SEMICOLON),
+				TOKEN(NEWLINE),
 			__
 		};
 	}
@@ -43,8 +79,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(ELSE),
-				MAKE(CodeBlockNode)(),
+				MAKE(IndentNode)(n_indent),
+				TOKEN(ELSE),
+				MAKE(ColonIndentCodeBlockNode)(n_indent),
 			__
 		};
 	}
@@ -61,13 +98,11 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(IF),
-				MAKE(TokenNode)(PARENOPEN),
-				MAKE(ExpressionNode)(),
-				MAKE(TokenNode)(PARENCLOSE),
-				MAKE(CodeBlockNode)(),
+				TOKEN(IF),
+				MAKE(ExpressionNode)(n_indent),
+				MAKE(ColonIndentCodeBlockNode)(n_indent),
 				_OPT_
-					MAKE(ElseStatementNode)()
+					MAKE(ElseStatementNode)(n_indent)
 				___
 			__
 		};
@@ -85,29 +120,46 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(FOR),
-				MAKE(TokenNode)(PARENOPEN),
-				_OPT_ _OR_
+				TOKEN(FOR),
+				_OR_
 					_AND_
 						MAKE(TypenameNode)(),
-						MAKE(TokenNode)(WORD),
-						_OPT_ _AND_
-							MAKE(TokenNode)(EQUAL),
-							MAKE(ExpressionNode)(),
-						____
+						TOKEN(WORD),
 					__,
-					MAKE(ExpressionNode)(),
-				____,
-				MAKE(TokenNode)(SEMICOLON),
-				_OPT_
-					MAKE(ExpressionNode)()
-				___,
-				MAKE(TokenNode)(SEMICOLON),
-				_OPT_
-					MAKE(ExpressionNode)()
-				___,
-				MAKE(TokenNode)(PARENCLOSE),
-				MAKE(CodeBlockNode)(),
+					TOKEN(WORD),
+				__,
+				TOKEN(IN),
+				MAKE(ExpressionNode)(),
+				MAKE(ColonIndentCodeBlockNode)(n_indent),
+			__
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class IForStatementNode : public Node {
+public:
+	baseCtor(IForStatementNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				TOKEN(IFOR),
+				TOKEN(WORD),
+				TOKEN(COMMA),
+				_OR_
+					_AND_
+						MAKE(TypenameNode)(),
+						TOKEN(WORD),
+					__,
+					TOKEN(WORD),
+				__,
+				TOKEN(IN),
+				MAKE(ExpressionNode)(),
+				MAKE(ColonIndentCodeBlockNode)(n_indent),
 			__
 		};
 	}

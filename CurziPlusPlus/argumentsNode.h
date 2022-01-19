@@ -13,13 +13,10 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_OPT_ _AND_
-				MAKE(TypenameNode)(),
-				MAKE(TokenNode)(WORD),
-				_OPT_ _AND_
-						MAKE(TokenNode)(COMMA),
-						MAKE(ArgumentsSignatureNode)(),
-				____
+			_COMMA_STAR_
+				_AND_
+					MAKE(TypenameNode)(),
+					TOKEN(WORD),
 			____
 		};
 	}
@@ -35,18 +32,9 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_OPT_ _AND_
-				MAKE(ExpressionNode)(),
-				_OPT_ _AND_
-					_PLUS_ _AND_
-						MAKE(TokenNode)(COMMA),
-						MAKE(ExpressionNode)(),
-					____,
-					_OPT_
-						MAKE(TokenNode)(COMMA)
-					___
-				____
-			____
+			_COMMA_STAR_
+				MAKE(ExpressionNode)()
+			___
 		};
 	}
 
@@ -62,9 +50,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(PARENOPEN),
+				TOKEN(PARENOPEN),
 				MAKE(InnerArgumentsNode)(),
-				MAKE(TokenNode)(PARENCLOSE),
+				TOKEN(PARENCLOSE),
 			__
 		};
 	}
@@ -81,9 +69,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(BRACKETOPEN),
+				TOKEN(BRACKETOPEN),
 				MAKE(InnerArgumentsNode)(),
-				MAKE(TokenNode)(BRACKETCLOSE),
+				TOKEN(BRACKETCLOSE),
 			__
 		};
 	}
@@ -100,9 +88,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(BRACEOPEN),
+				TOKEN(BRACEOPEN),
 				MAKE(InnerArgumentsNode)(),
-				MAKE(TokenNode)(BRACECLOSE),
+				TOKEN(BRACECLOSE),
 			__
 		};
 	}

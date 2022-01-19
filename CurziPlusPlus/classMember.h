@@ -5,7 +5,7 @@
 #include "typenameNode.h"
 #include "classMemberQualifiers.h"
 #include "argumentsNode.h"
-#include "codeBlockNode.h"
+#include "statementNode.h"
 
 class ClassMemberNode : public Node {
 public:
@@ -27,11 +27,11 @@ public:
 			_AND_
 				MAKE(ClassMemberQualifiers)(),
 				MAKE(TypenameNode)(),
-				MAKE(TokenNode)(WORD),
-				MAKE(TokenNode)(PARENOPEN),
+				TOKEN(WORD),
+				TOKEN(PARENOPEN),
 				MAKE(ArgumentsSignatureNode)(),
-				MAKE(TokenNode)(PARENCLOSE),
-				MAKE(CodeBlockNode)(),
+				TOKEN(PARENCLOSE),
+				MAKE(ColonIndentCodeBlockNode)(n_indent),
 			__,
 		};
 	}
@@ -50,8 +50,8 @@ public:
 			_AND_
 				MAKE(ClassMemberQualifiers)(),
 				MAKE(TypenameNode)(),
-				MAKE(TokenNode)(WORD),
-				MAKE(TokenNode)(SEMICOLON),
+				TOKEN(WORD),
+				TOKEN(NEWLINE),
 			__,
 		};
 	}

@@ -12,8 +12,8 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(DEFINE),
-				MAKE(TokenNode)(WORD),
+				TOKEN(DEFINE),
+				TOKEN(WORD),
 				MAKE(UntilTokenNode)(NEWLINE),
 			__
 		};

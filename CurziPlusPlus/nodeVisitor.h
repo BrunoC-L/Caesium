@@ -5,9 +5,13 @@ class ClassNode;
 class OPTNode;
 class StarNode;
 class PlusNode;
+class CommaStarNode;
+class CommaPlusNode;
+class AndNode;
 class OrNode;
-class TokenNode;
+class TokenNode_;
 class UntilTokenNode;
+class IndentNode;
 
 class ClassElementNode;
 class ClassMemberNode;
@@ -35,7 +39,7 @@ class ParenExpressionNode;
 
 class ClassInheritanceNode;
 class MultipleInheritanceNode;
-class SingleInheritanceNode;
+//class SingleInheritanceNode;
 class MacroNode;
 class UsingNode;
 
@@ -44,10 +48,12 @@ class ExpressionStatementNode;
 class ElseStatementNode;
 class IfStatementNode;
 class ForStatementNode;
+class IForStatementNode;
 
 class TypenameNode;
 class NSTypenameNode;
 class TypenameListNode;
+class TypenameListNodeEndingWithRShift;
 class TemplateTypenameNode;
 class ParenthesisTypenameNode;
 class PointerTypenameNode;
@@ -59,7 +65,7 @@ class ParenArgumentsNode;
 class BracketArgumentsNode;
 class BraceArgumentsNode;
 class CodeBlockNode;
-class BracedCodeBlockNode;
+class ColonIndentCodeBlockNode;
 
 class NodeVisitor {
 public:
@@ -68,9 +74,13 @@ public:
 	virtual void visit(OPTNode* node) = 0;
 	virtual void visit(StarNode* node) = 0;
 	virtual void visit(PlusNode* node) = 0;
+	virtual void visit(CommaStarNode* node) = 0;
+	virtual void visit(CommaPlusNode* node) = 0;
 	virtual void visit(OrNode* node) = 0;
-	virtual void visit(TokenNode* node) = 0;
+	virtual void visit(AndNode* node) = 0;
+	virtual void visit(TokenNode_* node) = 0;
 	virtual void visit(UntilTokenNode* node) = 0;
+	virtual void visit(IndentNode* node) = 0;
 
 	virtual void visit(ClassElementNode* node) = 0;
 	virtual void visit(ClassMemberNode* node) = 0;
@@ -98,7 +108,7 @@ public:
 
 	virtual void visit(ClassInheritanceNode* node) = 0;
 	virtual void visit(MultipleInheritanceNode* node) = 0;
-	virtual void visit(SingleInheritanceNode* node) = 0;
+	//virtual void visit(SingleInheritanceNode* node) = 0;
 	virtual void visit(MacroNode* node) = 0;
 	virtual void visit(UsingNode* node) = 0;
 
@@ -107,10 +117,12 @@ public:
 	virtual void visit(ElseStatementNode* node) = 0;
 	virtual void visit(IfStatementNode* node) = 0;
 	virtual void visit(ForStatementNode* node) = 0;
+	virtual void visit(IForStatementNode* node) = 0;
 
 	virtual void visit(TypenameNode* node) = 0;
 	virtual void visit(NSTypenameNode* node) = 0;
 	virtual void visit(TypenameListNode* node) = 0;
+	virtual void visit(TypenameListNodeEndingWithRShift* node) = 0;
 	virtual void visit(TemplateTypenameNode* node) = 0;
 	virtual void visit(ParenthesisTypenameNode* node) = 0;
 	virtual void visit(PointerTypenameNode* node) = 0;
@@ -121,6 +133,6 @@ public:
 	virtual void visit(ParenArgumentsNode* node) = 0;
 	virtual void visit(BracketArgumentsNode* node) = 0;
 	virtual void visit(BraceArgumentsNode* node) = 0;
-	virtual void visit(CodeBlockNode* node) = 0;
-	virtual void visit(BracedCodeBlockNode* node) = 0;
+	virtual void visit(CodeBlockNode* node) = 0; 
+	virtual void visit(ColonIndentCodeBlockNode* node) = 0;
 };

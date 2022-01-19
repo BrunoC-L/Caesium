@@ -103,6 +103,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -117,6 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -131,6 +133,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,9 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="classElementNode.cpp" />
     <ClCompile Include="classMember.cpp" />
-    <ClCompile Include="codeBlockNode.cpp" />
     <ClCompile Include="expressionNode.cpp" />
     <ClCompile Include="json.cpp" />
     <ClCompile Include="main.cpp" />
@@ -157,12 +158,12 @@
     <ClInclude Include="classInheritanceNode.h" />
     <ClInclude Include="classMember.h" />
     <ClInclude Include="classNode.h" />
-    <ClInclude Include="codeBlockNode.h" />
     <ClInclude Include="constructor.h" />
     <ClInclude Include="expressionNode.h" />
     <ClInclude Include="fileNode.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="classMemberQualifiers.h" />
+    <ClInclude Include="indentNode.h" />
     <ClInclude Include="json.h" />
     <ClInclude Include="JSONNodeVisitor.h" />
     <ClInclude Include="macroNode.h" />
@@ -177,6 +178,7 @@
     <ClInclude Include="statementNode.h" />
     <ClInclude Include="tokenizer.h" />
     <ClInclude Include="tokenNode.h" />
+    <ClInclude Include="transpiler.h" />
     <ClInclude Include="typenameNode.h" />
     <ClInclude Include="untilTokenNode.h" />
     <ClInclude Include="usingNode.h" />

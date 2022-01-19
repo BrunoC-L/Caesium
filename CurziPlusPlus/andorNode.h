@@ -5,7 +5,7 @@
 
 class AndNode : public Node {
 public:
-	AndNode(vNode v) {
+	AndNode(vNode v, int n_indent = 0) : Node(n_indent) {
 		this->name = "AndNode";
 		this->nodes = v;
 	}
@@ -22,13 +22,13 @@ public:
 	}
 
 	virtual void accept(NodeVisitor* v) override {
-		throw 1;
+		v->visit(this);
 	}
 };
 
 class OrNode : public Node {
 public:
-	OrNode(vNode v) {
+	OrNode(vNode v, int n_indent = 0) : Node(n_indent) {
 		this->name = "OrNode";
 		this->nodes = v;
 	}

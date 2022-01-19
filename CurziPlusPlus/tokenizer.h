@@ -3,7 +3,7 @@
 #include <vector>
 #include <forward_list>
 
-enum TOKEN {
+enum TOKENS {
 	END,
 	SEMICOLON,
 	COLON,
@@ -68,6 +68,8 @@ enum TOKEN {
 	RETURN,
 	NEW,
 	SWITCH,
+	IN,
+	IFOR,
 	FOR,
 	WHILE,
 	IF,
@@ -78,6 +80,7 @@ enum TOKEN {
 	USING,
 	DEFINE,
 	STATIC,
+	EXTENDS,
 
 	PUBLIC,
 	PRIVATE,
@@ -86,7 +89,7 @@ enum TOKEN {
 	TOKENS_SIZE
 };
 
-using TOKENVALUE = std::pair<TOKEN, std::string>;
+using TOKENVALUE = std::pair<TOKENS, std::string>;
 
 class Tokenizer {
 private:
@@ -155,7 +158,9 @@ public:
         tokenLookup[RETURN] = "RETURN";
         tokenLookup[NEW] = "NEW";
         tokenLookup[SWITCH] = "SWITCH";
-        tokenLookup[FOR] = "FOR";
+		tokenLookup[IN] = "IN";
+		tokenLookup[IFOR] = "IFOR";
+		tokenLookup[FOR] = "FOR";
         tokenLookup[WHILE] = "WHILE";
         tokenLookup[IF] = "IF";
 		tokenLookup[ELSE] = "ELSE";
@@ -169,6 +174,7 @@ public:
         tokenLookup[PUBLIC] = "PUBLIC";
         tokenLookup[PRIVATE] = "PRIVATE";
         tokenLookup[PROTECTED] = "PROTECTED";
+		tokenLookup[EXTENDS] = "EXTENDS";
 	}
 
 	std::forward_list<TOKENVALUE> read() {
@@ -257,6 +263,12 @@ private:
 			return { BRACKETCLOSE, "]" };
 		case ' ':
 			index += 1;
+			if (index + 1 <= program.size() && program[index + 0] == ' ' &&
+				index + 2 <= program.size() && program[index + 1] == ' ' &&
+				index + 3 <= program.size() && program[index + 2] == ' ') {
+				index += 3;
+				return { TAB, "\t" };
+			}
 			return { SPACE, " " };
 		case '\n':
 			index += 1;
@@ -425,6 +437,10 @@ private:
 				return { NEW, word };
 			if (word == "switch")
 				return { SWITCH, word };
+			if (word == "in")
+				return { IN, word };
+			if (word == "ifor")
+				return { IFOR, word };
 			if (word == "for")
 				return { FOR, word };
 			if (word == "while")
@@ -450,6 +466,8 @@ private:
 				return { PRIVATE, word };
 			if (word == "protected")
 				return { PROTECTED, word };
+			if (word == "extends")
+				return { EXTENDS, word };
 
 			return { WORD, word };
 		}

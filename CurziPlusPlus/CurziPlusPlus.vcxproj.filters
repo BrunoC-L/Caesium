@@ -46,6 +46,9 @@
     <Filter Include="Source Files\json">
       <UniqueIdentifier>{cae807d2-82b6-49ea-a310-c7f068b2e7f7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\toc++">
+      <UniqueIdentifier>{93210e7b-2110-4e6b-b27d-0101fdc5ad5d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -69,14 +72,8 @@
     <ClCompile Include="json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="classElementNode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="classMember.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="codeBlockNode.cpp">
-      <Filter>Source Files\nodes\statements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -131,9 +128,6 @@
     <ClInclude Include="grammarizer.h">
       <Filter>Source Files\grammarizer</Filter>
     </ClInclude>
-    <ClInclude Include="codeBlockNode.h">
-      <Filter>Source Files\nodes\statements</Filter>
-    </ClInclude>
     <ClInclude Include="constructor.h">
       <Filter>Source Files\nodes\classElements</Filter>
     </ClInclude>
@@ -163,6 +157,12 @@
     </ClInclude>
     <ClInclude Include="JSONNodeVisitor.h">
       <Filter>Source Files\json</Filter>
+    </ClInclude>
+    <ClInclude Include="transpiler.h">
+      <Filter>Source Files\toc++</Filter>
+    </ClInclude>
+    <ClInclude Include="indentNode.h">
+      <Filter>Source Files\nodes\base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

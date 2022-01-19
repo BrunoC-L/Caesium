@@ -1,5 +1,8 @@
 #pragma once
-#include "singleInheritanceNode.h"
+#include "andorNode.h"
+#include "tokenNode.h"
+#include "pppQualifierNode.h"
+#include "typenameNode.h"
 #include "macros.h"
 
 class MultipleInheritanceNode : public Node {
@@ -8,14 +11,9 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-		_OR_
-			_AND_
-				MAKE(SingleInheritanceNode)(),
-				MAKE(TokenNode)(COMMA),
-				MAKE(MultipleInheritanceNode)()
-			__,
-			MAKE(SingleInheritanceNode)(),
-		__,
+			_COMMA_PLUS_
+				MAKE(TypenameNode)()
+			___
 		};
 	}
 

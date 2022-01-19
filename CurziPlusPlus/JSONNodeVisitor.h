@@ -1,7 +1,7 @@
 #pragma once
 #include "nodeVisitor.h"
 #include "json.h"
-#include "fileNode.h";
+#include "fileNode.h"
 
 class JSONNodeVisitor : public NodeVisitor {
 protected:
@@ -15,7 +15,7 @@ public:
         JSON res;
         if (node->nodes[0]->nodes.size()) {
             node->nodes[0]->nodes[0]->accept(this);
-            res["class"] = value;
+            res["classes"] = value;
         }
         value = res;
     }
@@ -25,10 +25,10 @@ public:
         auto& children = node->nodes[0]->nodes;
         children[1]->accept(this);
         res["className"] = value;
-        children[2]->accept(this);
+        /*children[2]->accept(this);
         res["inheritance"] = value;
         children[4]->accept(this);
-        res["classElements"] = value;
+        res["classElements"] = value;*/
         value = res;
     }
     
@@ -38,8 +38,8 @@ public:
         else
             node->nodes[0]->accept(this);
     }
-    
-	virtual void visit(StarNode* node) override {
+
+    virtual void visit(StarNode* node) override {
         JSON res("[]");
         for (const auto& node : node->nodes) {
             node->accept(this);
@@ -47,22 +47,55 @@ public:
         }
         value = res;
     }
-    
-	virtual void visit(PlusNode* node) override {
+
+    virtual void visit(CommaStarNode* node) override {
+        JSON res("[]");
+        for (const auto& node : node->nodes) {
+            node->accept(this);
+            res.push(value);
+        }
+        value = res;
+    }
+
+    virtual void visit(PlusNode* node) override {
         JSON res;
         res["which"] = node->name;
         value = res;
     }
-    
-	virtual void visit(OrNode* node) override {
+
+    virtual void visit(CommaPlusNode* node) override {
+        JSON res;
+        res["which"] = node->name;
+        value = res;
+    }
+
+    virtual void visit(OrNode* node) override {
         if (node->nodes.size() == 0)
             value = JSON();
         else
             node->nodes[0]->accept(this);
     }
-    
-	virtual void visit(TokenNode* node) override {
+
+    virtual void visit(AndNode* node) override {
+        JSON res;
+        res["which"] = node->name;
+        res["members"] = "[]";
+        for (const auto& child : node->nodes) {
+            child->accept(this);
+            res["members"].push(value);
+        }
+        value = res;
+    }
+
+    virtual void visit(TokenNode_* node) override {
         value = "'" + node->value + "'";
+    }
+
+    virtual void visit(IndentNode* node) override {
+        std::stringstream ss;
+        for (int i = 0; i < node->n_indent; ++i)
+            ss << "\t";
+        value = '"' + ss.str() + '"';
     }
     
 	virtual void visit(UntilTokenNode* node) override {
@@ -119,7 +152,10 @@ public:
     
 	virtual void visit(ClassMemberQualifiers* node) override {
         JSON res;
-        res["which"] = node->name;
+        node->nodes[0]->nodes[0]->accept(this);
+        res["PPP"] = value;
+        node->nodes[0]->nodes[1]->accept(this);
+        res["static"] = value;
         value = res;
     }
     
@@ -239,22 +275,26 @@ public:
     
 
 	virtual void visit(ClassInheritanceNode* node) override {
-        JSON res;
-        res["which"] = node->name;
+        JSON res("[]");
+        for (const auto& child : node->nodes[0]->nodes[1]->nodes[0]->nodes) {
+            child->accept(this);
+            res.push(value);
+        }
         value = res;
     }
     
 	virtual void visit(MultipleInheritanceNode* node) override {
-        JSON res;
-        res["which"] = node->name;
-        value = res;
+        throw 1;
     }
-    
+    /*
 	virtual void visit(SingleInheritanceNode* node) override {
         JSON res;
-        res["which"] = node->name;
+        node->nodes[0]->nodes[0]->accept(this);
+        res["PPP"] = value;
+        node->nodes[0]->nodes[1]->accept(this);
+        res["type"] = value;
         value = res;
-    }
+    }*/
     
 	virtual void visit(MacroNode* node) override {
         JSON res;
@@ -267,7 +307,6 @@ public:
         res["which"] = node->name;
         value = res;
     }
-    
 
 	virtual void visit(StatementNode* node) override {
         return node->nodes[0]->accept(this);
@@ -298,18 +337,24 @@ public:
         res["which"] = node->name;
         value = res;
     }
-    
+
+    virtual void visit(IForStatementNode* node) override {
+        JSON res;
+        res["which"] = node->name;
+        value = res;
+    }
 
 	virtual void visit(TypenameNode* node) override {
         JSON res;
         res["which"] = node->name;
-        res["type"] = "[]";
+        res["types"] = "[]";
         node->nodes[0]->nodes[0]->accept(this);
-        res["type"].push(value);
+        res["types"].push(value);
         for (const auto& child : node->nodes[0]->nodes[1]->nodes) {
-            child->accept(this);
-            res["type"].push(value);
+            child->nodes[0]->accept(this);
+            res["types"].push(value);
         }
+        std::string s = res.asString();
         value = res;
     }
     
@@ -320,21 +365,50 @@ public:
         res["type"] = value;
         value = res;
     }
-    
-	virtual void visit(TypenameListNode* node) override {
+
+    virtual void visit(TypenameListNode* node) override {
         JSON res;
-        res["which"] = node->name;
+        res["types"] = "[]";
+        for (auto& node : node->nodes[0]->nodes) {
+            node->accept(this);
+            res["types"].push(value);
+        }
+        value = res;
+    }
+
+    virtual void visit(TypenameListNodeEndingWithRShift* node) override {
+        JSON res;
+        res = "[]";
+        for (auto& node : node->nodes[0]->nodes[0]->nodes) {
+            node->nodes[0]->accept(this);
+            res.push(value);
+        }
+        JSON wrapper;
+        wrapper["which"] = "TypenameNode";
+        wrapper["types"] = "[]";
         node->nodes[0]->nodes[1]->accept(this);
-        res["type"] = value;
+        wrapper["types"].push(value);
+        node->nodes[0]->nodes[3]->accept(this);
+        value["which"] = "TemplateTypenameNode";
+        wrapper["types"].push(value);
+        res.push(wrapper);
         value = res;
     }
     
 	virtual void visit(TemplateTypenameNode* node) override {
         JSON res;
         res["which"] = node->name;
-        node->nodes[0]->nodes[1]->accept(this);
-        res["type"] = value;
+        auto templateNodeType = node->nodes[0]->nodes[1]->nodes[0];
+        if (templateNodeType->name == "TypenameListNodeEndingWithRShift") {
+            templateNodeType->accept(this);
+            res["types"] = value;
+        }
+        else {
+            templateNodeType->nodes[0]->accept(this);
+            res["types"] = value["types"];
+        }
         value = res;
+        std::string s = value.asString();
     }
     
 	virtual void visit(ParenthesisTypenameNode* node) override {
@@ -350,15 +424,21 @@ public:
     }
     
 	virtual void visit(PPPQualifierNode* node) override {
-        JSON res;
-        res["which"] = node->name;
-        value = res;
+        auto orNodeMatch = node->nodes[0]->nodes;
+        value = std::dynamic_pointer_cast<TokenNode_>(orNodeMatch[0])->value;
     }
-    
 
 	virtual void visit(ArgumentsSignatureNode* node) override {
         JSON res;
-        res["which"] = node->name;
+        res = "[]";
+        for (const auto& node : node->nodes[0]->nodes) {
+            JSON arg;
+            node->nodes[0]->accept(this);
+            arg["type"] = value;
+            node->nodes[1]->accept(this);
+            arg["name"] = value;
+            res.push(arg);
+        }
         value = res;
     }
     
@@ -385,12 +465,12 @@ public:
         res["which"] = node->name;
         value = res;
     }
-    
-	virtual void visit(CodeBlockNode* node) override {
+
+    virtual void visit(CodeBlockNode* node) override {
         node->nodes[0]->accept(this);
     }
 
-    virtual void visit(BracedCodeBlockNode* node) override {
-        node->nodes[0]->nodes[1]->accept(this);
+    virtual void visit(ColonIndentCodeBlockNode* node) override {
+        node->nodes[0]->accept(this);
     }
 };

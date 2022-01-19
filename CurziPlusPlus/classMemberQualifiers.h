@@ -15,7 +15,7 @@ public:
 					MAKE(PPPQualifierNode)()
 				___,
 				_OPT_
-					MAKE(TokenNode)(STATIC)
+					TOKEN(STATIC)
 				___,
 			__
 		};

@@ -23,7 +23,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(NS),
+				TOKEN(NS),
 				MAKE(TypenameNode)()
 			__
 		};
@@ -40,14 +40,34 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
+			_COMMA_STAR_
+				MAKE(TypenameNode)()
+			___
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class TypenameListNodeEndingWithRShift : public Node {
+public:
+	baseCtor(TypenameListNodeEndingWithRShift);
+
+	virtual void build() override {
+		this->nodes = {
 			_AND_
-				MAKE(TypenameNode)(),
 				_STAR_ _AND_
-					MAKE(TokenNode)(COMMA),
-					MAKE(TypenameNode)()
+					MAKE(TypenameNode)(),
+					TOKEN(COMMA),
 				____,
+				TOKEN(WORD),
+				TOKEN(LT),
+				MAKE(TypenameListNode)(),
+				TOKEN(RSHIFT),
 				_OPT_
-					MAKE(TokenNode)(COMMA)
+					TOKEN(COMMA)
 				___
 			__
 		};
@@ -65,9 +85,14 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(LT),
-				MAKE(TypenameListNode)(),
-				MAKE(TokenNode)(GT),
+				TOKEN(LT),
+				_OR_
+					_AND_
+						MAKE(TypenameListNode)(),
+						TOKEN(GT),
+					__,
+					MAKE(TypenameListNodeEndingWithRShift)(),
+				__
 			__
 		};
 	}
@@ -84,9 +109,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(PARENOPEN),
+				TOKEN(PARENOPEN),
 				MAKE(TypenameListNode)(),
-				MAKE(TokenNode)(PARENCLOSE),
+				TOKEN(PARENCLOSE),
 			__
 		};
 	}
@@ -103,8 +128,8 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_OR_
-				MAKE(TokenNode)(ASTERISK),
-				MAKE(TokenNode)(AMPERSAND),
+				TOKEN(ASTERISK),
+				TOKEN(AMPERSAND),
 			__
 		};
 	}

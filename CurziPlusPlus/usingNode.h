@@ -11,9 +11,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(USING),
-				MAKE(TokenNode)(WORD),
-				MAKE(TokenNode)(EQUAL),
+				TOKEN(USING),
+				TOKEN(WORD),
+				TOKEN(EQUAL),
 				MAKE(TypenameNode)(),
 			__
 		};

@@ -8,8 +8,10 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(ClassNode)(),
-				MAKE(TokenNode)(END)
+				_STAR_
+					MAKE(ClassNode)()
+				___,
+				TOKEN(END)
 			__
 		};
 	}

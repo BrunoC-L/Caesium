@@ -8,7 +8,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(TokenNode)(COLON),
+				TOKEN(EXTENDS),
 				MAKE(MultipleInheritanceNode)(),
 			__
 		};
