@@ -1,7 +1,5 @@
 #pragma once
 
-class FileNode;
-class ClassNode;
 class OPTNode;
 class StarNode;
 class PlusNode;
@@ -10,8 +8,14 @@ class CommaPlusNode;
 class AndNode;
 class OrNode;
 class TokenNode_;
+class WordTokenNode;
+class NumberTokenNode;
 class UntilTokenNode;
 class IndentNode;
+
+class FileNode;
+class ClassNode;
+class FunctionNode;
 
 class ClassElementNode;
 class ClassMemberNode;
@@ -39,7 +43,6 @@ class ParenExpressionNode;
 
 class ClassInheritanceNode;
 class MultipleInheritanceNode;
-//class SingleInheritanceNode;
 class MacroNode;
 class UsingNode;
 
@@ -49,6 +52,9 @@ class ElseStatementNode;
 class IfStatementNode;
 class ForStatementNode;
 class IForStatementNode;
+class WhileStatementNode;
+class ReturnStatementNode;
+class BreakStatementNode;
 
 class TypenameNode;
 class NSTypenameNode;
@@ -69,8 +75,6 @@ class ColonIndentCodeBlockNode;
 
 class NodeVisitor {
 public:
-	virtual void visit(FileNode* node) = 0;
-	virtual void visit(ClassNode* node) = 0;
 	virtual void visit(OPTNode* node) = 0;
 	virtual void visit(StarNode* node) = 0;
 	virtual void visit(PlusNode* node) = 0;
@@ -79,8 +83,14 @@ public:
 	virtual void visit(OrNode* node) = 0;
 	virtual void visit(AndNode* node) = 0;
 	virtual void visit(TokenNode_* node) = 0;
+	virtual void visit(WordTokenNode* node) = 0;
+	virtual void visit(NumberTokenNode* node) = 0;
 	virtual void visit(UntilTokenNode* node) = 0;
 	virtual void visit(IndentNode* node) = 0;
+
+	virtual void visit(FileNode* node) = 0;
+	virtual void visit(ClassNode* node) = 0;
+	virtual void visit(FunctionNode* node) = 0;
 
 	virtual void visit(ClassElementNode* node) = 0;
 	virtual void visit(ClassMemberNode* node) = 0;
@@ -118,6 +128,9 @@ public:
 	virtual void visit(IfStatementNode* node) = 0;
 	virtual void visit(ForStatementNode* node) = 0;
 	virtual void visit(IForStatementNode* node) = 0;
+	virtual void visit(WhileStatementNode* node) = 0;
+	virtual void visit(ReturnStatementNode* node) = 0;
+	virtual void visit(BreakStatementNode* node) = 0;
 
 	virtual void visit(TypenameNode* node) = 0;
 	virtual void visit(NSTypenameNode* node) = 0;

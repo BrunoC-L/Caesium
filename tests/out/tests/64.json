@@ -1,0 +1,16 @@
+{
+  "which": "MethodNode",
+  "qualifiers": {
+    "opt_ppp": {},
+    "opt_static": 
+  },
+  "type": {
+    "which": "TypenameNode",
+    "types": [
+      "void"
+    ]
+  },
+  "name": "a",
+  "arguments": [],
+  "code": []
+}

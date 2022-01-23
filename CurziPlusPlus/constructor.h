@@ -14,7 +14,7 @@ public:
 		this->nodes = {
 			_AND_
 				MAKE(ClassMemberQualifiers)(),
-				TOKEN(WORD),
+				WORD_TOKEN(),
 				TOKEN(PARENOPEN),
 				MAKE(ArgumentsSignatureNode)(),
 				TOKEN(PARENCLOSE),

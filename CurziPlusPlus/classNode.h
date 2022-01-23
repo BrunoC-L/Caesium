@@ -11,7 +11,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(CLASS),
-				TOKEN(WORD),
+				WORD_TOKEN(),
 				_OPT_
 					MAKE(ClassInheritanceNode)()
 				___,

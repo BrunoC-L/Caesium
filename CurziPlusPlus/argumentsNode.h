@@ -16,7 +16,7 @@ public:
 			_COMMA_STAR_
 				_AND_
 					MAKE(TypenameNode)(),
-					TOKEN(WORD),
+					WORD_TOKEN(),
 			____
 		};
 	}

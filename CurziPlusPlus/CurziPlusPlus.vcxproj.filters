@@ -43,43 +43,43 @@
     <Filter Include="Source Files\nodes\expressions">
       <UniqueIdentifier>{edadb298-9989-400b-85c6-9c63540a9e8e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\json">
+    <Filter Include="Source Files\transpiler">
+      <UniqueIdentifier>{5af13a78-f2bc-4cd8-a037-08db077b9784}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\transpiler\json">
       <UniqueIdentifier>{cae807d2-82b6-49ea-a310-c7f068b2e7f7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\toc++">
+    <Filter Include="Source Files\transpiler\toc++">
       <UniqueIdentifier>{93210e7b-2110-4e6b-b27d-0101fdc5ad5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\transpiler\toc++\elements">
+      <UniqueIdentifier>{f38fb13e-150b-48e0-9b20-afd4a8062722}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\transpiler\toc++\base">
+      <UniqueIdentifier>{c9c9a78b-838d-46f5-a47c-7696be483ea8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="typenameNode.cpp">
-      <Filter>Source Files\nodes\types</Filter>
-    </ClCompile>
-    <ClCompile Include="tokenizer.cpp">
-      <Filter>Source Files\grammarizer\tokenizer</Filter>
-    </ClCompile>
-    <ClCompile Include="node.cpp">
-      <Filter>Source Files\nodes\base</Filter>
-    </ClCompile>
     <ClCompile Include="expressionNode.cpp">
       <Filter>Source Files\nodes\expressions</Filter>
-    </ClCompile>
-    <ClCompile Include="statementNode.cpp">
-      <Filter>Source Files\nodes\statements</Filter>
     </ClCompile>
     <ClCompile Include="json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="classMember.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="typenameNode.cpp">
+      <Filter>Source Files\nodes\types</Filter>
+    </ClCompile>
+    <ClCompile Include="cppElements.cpp">
+      <Filter>Source Files\transpiler\toc++\elements</Filter>
+    </ClCompile>
+    <ClCompile Include="factory.cpp">
+      <Filter>Source Files\transpiler\toc++\base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="classNode.h">
-      <Filter>Source Files\nodes</Filter>
-    </ClInclude>
     <ClInclude Include="classInheritanceNode.h">
       <Filter>Source Files\nodes\inheritance</Filter>
     </ClInclude>
@@ -143,29 +143,46 @@
     <ClInclude Include="macros.h">
       <Filter>Source Files\nodes</Filter>
     </ClInclude>
-    <ClInclude Include="fileNode.h">
-      <Filter>Source Files\nodes</Filter>
-    </ClInclude>
     <ClInclude Include="json.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="nodeVisitor.h">
-      <Filter>Source Files\nodes</Filter>
     </ClInclude>
     <ClInclude Include="argumentsNode.h">
       <Filter>Source Files\nodes\other</Filter>
     </ClInclude>
     <ClInclude Include="JSONNodeVisitor.h">
-      <Filter>Source Files\json</Filter>
-    </ClInclude>
-    <ClInclude Include="transpiler.h">
-      <Filter>Source Files\toc++</Filter>
+      <Filter>Source Files\transpiler\json</Filter>
     </ClInclude>
     <ClInclude Include="indentNode.h">
       <Filter>Source Files\nodes\base</Filter>
     </ClInclude>
+    <ClInclude Include="classNode.h">
+      <Filter>Source Files\nodes\classElements</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeVisitor.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fileNode.h">
+      <Filter>Source Files\nodes\other</Filter>
+    </ClInclude>
+    <ClInclude Include="functionNode.h">
+      <Filter>Source Files\nodes\other</Filter>
+    </ClInclude>
+    <ClInclude Include="cppElements.h">
+      <Filter>Source Files\transpiler\toc++\elements</Filter>
+    </ClInclude>
+    <ClInclude Include="factory.h">
+      <Filter>Source Files\transpiler\toc++\base</Filter>
+    </ClInclude>
+    <ClInclude Include="cppElementVisitor.h">
+      <Filter>Source Files\transpiler\toc++\base</Filter>
+    </ClInclude>
+    <ClInclude Include="cppElement.h">
+      <Filter>Source Files\transpiler\toc++\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cpp.hint" />
+    <None Include="cpp.hint">
+      <Filter>Source Files\grammarizer</Filter>
+    </None>
   </ItemGroup>
 </Project>

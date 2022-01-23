@@ -1,0 +1,401 @@
+{
+  "classes_and_functions": [
+    {
+      "which": "ClassNode",
+      "className": "A",
+      "inheritance": {},
+      "classElements": [
+        {
+          "which": "ClassMemberNode",
+          "member": {
+            "which": "MemberVariableNode",
+            "qualifiers": {
+              "opt_ppp": {},
+              "opt_static": 
+            },
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "B"
+              ]
+            },
+            "name": "b"
+          }
+        },
+        {
+          "which": "ClassMemberNode",
+          "member": {
+            "which": "MemberVariableNode",
+            "qualifiers": {
+              "opt_ppp": {},
+              "opt_static": 
+            },
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "C",
+                {
+                  "which": "PointerTypenameNode"
+                }
+              ]
+            },
+            "name": "c"
+          }
+        },
+        {
+          "which": "ClassMemberNode",
+          "member": {
+            "which": "MemberVariableNode",
+            "qualifiers": {
+              "opt_ppp": {},
+              "opt_static": 
+            },
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "int"
+              ]
+            },
+            "name": "x"
+          }
+        },
+        {
+          "which": "ClassMemberNode",
+          "member": {
+            "which": "MemberVariableNode",
+            "qualifiers": {
+              "opt_ppp": {},
+              "opt_static": 
+            },
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "int",
+                {
+                  "which": "PointerTypenameNode"
+                }
+              ]
+            },
+            "name": "y"
+          }
+        },
+        {
+          "which": "ClassMemberNode",
+          "member": {
+            "which": "MethodNode",
+            "qualifiers": {
+              "opt_ppp": {},
+              "opt_static": 
+            },
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "A"
+              ]
+            },
+            "name": "a",
+            "arguments": [
+              {
+                "type": {
+                  "which": "TypenameNode",
+                  "types": [
+                    "B"
+                  ]
+                },
+                "name": "b"
+              },
+              {
+                "type": {
+                  "which": "TypenameNode",
+                  "types": [
+                    "D"
+                  ]
+                },
+                "name": "d"
+              }
+            ],
+            "code": [
+              {
+                "which": "ExpressionStatementNode",
+                "expression": {
+                  "which": "ExpressionNode"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "B"
+                ]
+              },
+              "name": "b"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        },
+        {
+          "which": "ClassMemberNode",
+          "member": {
+            "which": "MethodNode",
+            "qualifiers": {
+              "opt_ppp": {},
+              "opt_static": 
+            },
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "void"
+              ]
+            },
+            "name": "a",
+            "arguments": [],
+            "code": [
+              {
+                "which": "IfStatementNode"
+              }
+            ]
+          }
+        },
+        {
+          "which": "ClassMemberNode",
+          "member": {
+            "which": "MethodNode",
+            "qualifiers": {
+              "opt_ppp": {},
+              "opt_static": 
+            },
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "void"
+              ]
+            },
+            "name": "a",
+            "arguments": [],
+            "code": [
+              {
+                "which": "IfStatementNode"
+              }
+            ]
+          }
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "C",
+                  {
+                    "which": "PointerTypenameNode"
+                  }
+                ]
+              },
+              "name": "c"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "B"
+                ]
+              },
+              "name": "b"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "C",
+                  {
+                    "which": "PointerTypenameNode"
+                  }
+                ]
+              },
+              "name": "c"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "C",
+                  {
+                    "which": "PointerTypenameNode"
+                  }
+                ]
+              },
+              "name": "c"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "B"
+                ]
+              },
+              "name": "b"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "B"
+                ]
+              },
+              "name": "b"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        },
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "B"
+                ]
+              },
+              "name": "b"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

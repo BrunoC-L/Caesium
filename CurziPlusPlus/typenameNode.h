@@ -62,7 +62,7 @@ public:
 					MAKE(TypenameNode)(),
 					TOKEN(COMMA),
 				____,
-				TOKEN(WORD),
+				WORD_TOKEN(),
 				TOKEN(LT),
 				MAKE(TypenameListNode)(),
 				TOKEN(RSHIFT),

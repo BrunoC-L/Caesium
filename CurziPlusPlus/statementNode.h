@@ -7,17 +7,6 @@
 #include "expressionNode.h"
 #include "indentNode.h"
 
-class StatementNode : public Node {
-public:
-	baseCtor(StatementNode);
-
-	virtual void build() override;
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
-};
-
 class CodeBlockNode : public Node {
 public:
 	baseCtor(CodeBlockNode);
@@ -124,12 +113,20 @@ public:
 				_OR_
 					_AND_
 						MAKE(TypenameNode)(),
-						TOKEN(WORD),
+						WORD_TOKEN(),
 					__,
-					TOKEN(WORD),
+					WORD_TOKEN(),
 				__,
 				TOKEN(IN),
 				MAKE(ExpressionNode)(),
+				_OPT_ _AND_
+					TOKEN(IF),
+					MAKE(ExpressionNode)(),
+				____,
+				_OPT_ _AND_
+					TOKEN(WHILE),
+					MAKE(ExpressionNode)(),
+				____,
 				MAKE(ColonIndentCodeBlockNode)(n_indent),
 			__
 		};
@@ -148,18 +145,122 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(IFOR),
-				TOKEN(WORD),
+				WORD_TOKEN(),
 				TOKEN(COMMA),
 				_OR_
 					_AND_
 						MAKE(TypenameNode)(),
-						TOKEN(WORD),
+						WORD_TOKEN(),
 					__,
-					TOKEN(WORD),
+					WORD_TOKEN(),
 				__,
 				TOKEN(IN),
 				MAKE(ExpressionNode)(),
+				_OPT_ _AND_
+					TOKEN(IF),
+					MAKE(ExpressionNode)(),
+				____,
+				_OPT_ _AND_
+					TOKEN(WHILE),
+					MAKE(ExpressionNode)(),
+				____,
 				MAKE(ColonIndentCodeBlockNode)(n_indent),
+			__
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class WhileStatementNode : public Node {
+public:
+	baseCtor(WhileStatementNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				TOKEN(WHILE),
+				MAKE(ExpressionNode)(),
+				MAKE(ColonIndentCodeBlockNode)(n_indent),
+			__
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class ReturnStatementNode : public Node {
+public:
+	baseCtor(ReturnStatementNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				TOKEN(RETURN),
+				_COMMA_STAR_
+					MAKE(ExpressionNode)()
+				___,
+				_OPT_ _AND_
+					TOKEN(IF),
+					MAKE(ExpressionNode)(),
+					_OPT_ _AND_
+						TOKEN(ELSE),
+						MAKE(ExpressionNode)(),
+					____,
+				____,
+				TOKEN(NEWLINE),
+			__
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class BreakStatementNode : public Node {
+public:
+	baseCtor(BreakStatementNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				TOKEN(BREAK),
+				_OPT_ _AND_
+					TOKEN(IF),
+					MAKE(ExpressionNode)(),
+				____,
+				TOKEN(NEWLINE),
+			__
+		};
+	}
+
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class StatementNode : public Node {
+public:
+	baseCtor(StatementNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				MAKE(IndentNode)(n_indent),
+				_OR_
+					MAKE(ExpressionStatementNode)(n_indent),
+					MAKE(IfStatementNode)(n_indent),
+					MAKE(ForStatementNode)(n_indent),
+					MAKE(IForStatementNode)(n_indent),
+					MAKE(WhileStatementNode)(n_indent),
+					MAKE(ReturnStatementNode)(n_indent),
+					MAKE(BreakStatementNode)(n_indent),
+				__
 			__
 		};
 	}

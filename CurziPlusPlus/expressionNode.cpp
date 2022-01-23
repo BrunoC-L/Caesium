@@ -41,14 +41,20 @@ void ConditionalExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE(OrExpressionNode)(),
-			_STAR_
-				_AND_
-					TOKEN(QUESTION),
+			/*_OPT_ _AND_
+				TOKEN(QUESTION),
+				MAKE(OrExpressionNode)(),
+				TOKEN(COLON),
+				MAKE(OrExpressionNode)()
+			____*/
+			_OPT_ _AND_
+				TOKEN(IF),
+				MAKE(OrExpressionNode)(),
+				_OPT_ _AND_
+					TOKEN(ELSE),
 					MAKE(OrExpressionNode)(),
-					TOKEN(COLON),
-					MAKE(OrExpressionNode)(),
-				__
-			___
+				____,
+			____
 		__
 	};
 }
@@ -59,7 +65,7 @@ void OrExpressionNode::build() {
 			MAKE(AndExpressionNode)(),
 			_STAR_
 				_AND_
-					TOKEN(OROR),
+					TOKEN(OR), // OR = 'or', OROR = '||'
 					MAKE(AndExpressionNode)(),
 				__
 			___
@@ -73,7 +79,7 @@ void AndExpressionNode::build() {
 			MAKE(BitOrExpressionNode)(),
 			_STAR_
 				_AND_
-					TOKEN(ANDAND),
+					TOKEN(AND), // AND = 'and', ANDAND = '&&'
 					MAKE(BitOrExpressionNode)(),
 				__
 			___
@@ -244,7 +250,7 @@ void PostfixExpressionNode::build() {
 						TOKEN(DOT),
 						TOKEN(ARROW),
 					__,
-					TOKEN(WORD),
+					WORD_TOKEN(),
 				__,
 				MAKE(ParenArgumentsNode)(),
 				MAKE(BracketArgumentsNode)(),
@@ -264,7 +270,7 @@ void ParenExpressionNode::build() {
 				TOKEN(PARENCLOSE),
 			__,
 			MAKE(TypenameNode)(),
-			TOKEN(NUMBER),
+			NUMBER_TOKEN(),
 		__
 	};
 }

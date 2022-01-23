@@ -1,0 +1,13 @@
+{
+  "which": "ClassNode",
+  "className": "A",
+  "inheritance": [
+    {
+      "which": "TypenameNode",
+      "types": [
+        "B"
+      ]
+    }
+  ],
+  "classElements": []
+}

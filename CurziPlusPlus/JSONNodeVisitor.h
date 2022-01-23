@@ -15,20 +15,30 @@ public:
         JSON res;
         if (node->nodes[0]->nodes.size()) {
             node->nodes[0]->nodes[0]->accept(this);
-            res["classes"] = value;
+            res["classes_and_functions"] = value;
         }
         value = res;
     }
-    
-	virtual void visit(ClassNode* node) override {
+
+    virtual void visit(ClassNode* node) override {
         JSON res;
+        res["which"] = node->name;
         auto& children = node->nodes[0]->nodes;
         children[1]->accept(this);
         res["className"] = value;
-        /*children[2]->accept(this);
+        children[2]->accept(this);
         res["inheritance"] = value;
-        children[4]->accept(this);
-        res["classElements"] = value;*/
+        res["classElements"] = "[]";
+        for (auto& andNode : children[5]->nodes) {
+            andNode->nodes[1]->accept(this);
+            res["classElements"].push(value);
+        }
+        value = res;
+    }
+
+    virtual void visit(FunctionNode* node) override {
+        JSON res;
+        res["which"] = node->name;
         value = res;
     }
     
@@ -88,14 +98,19 @@ public:
     }
 
     virtual void visit(TokenNode_* node) override {
+        throw std::exception("most likely user error trying to get value of token node");
+    }
+
+    virtual void visit(WordTokenNode* node) {
+        value = "'" + node->value + "'";
+    }
+
+    virtual void visit(NumberTokenNode* node) {
         value = "'" + node->value + "'";
     }
 
     virtual void visit(IndentNode* node) override {
-        std::stringstream ss;
-        for (int i = 0; i < node->n_indent; ++i)
-            ss << "\t";
-        value = '"' + ss.str() + '"';
+        throw std::exception("most likely user error trying to get value of indent node");
     }
     
 	virtual void visit(UntilTokenNode* node) override {
@@ -122,7 +137,7 @@ public:
     
 	virtual void visit(MemberVariableNode* node) override {
         JSON res;
-        auto children = node->nodes[0]->nodes;
+        auto& children = node->nodes[0]->nodes;
         res["which"] = node->name;
         children[0]->accept(this);
         res["qualifiers"] = value;
@@ -135,7 +150,7 @@ public:
     
 	virtual void visit(MethodNode* node) override {
         JSON res;
-        const auto children = node->nodes[0]->nodes;
+        const auto& children = node->nodes[0]->nodes;
         res["which"] = node->name;
         children[0]->accept(this);
         res["qualifiers"] = value;
@@ -153,22 +168,19 @@ public:
 	virtual void visit(ClassMemberQualifiers* node) override {
         JSON res;
         node->nodes[0]->nodes[0]->accept(this);
-        res["PPP"] = value;
-        node->nodes[0]->nodes[1]->accept(this);
-        res["static"] = value;
+        res["opt_ppp"] = value;
+        res["opt_static"] = node->nodes[0]->nodes[1]->nodes.size() ? "static" : "";
         value = res;
     }
     
 	virtual void visit(ConstructorNode* node) override {
         JSON res;
-        const auto children = node->nodes[0]->nodes;
+        const auto& children = node->nodes[0]->nodes;
         res["which"] = node->name;
         children[0]->accept(this);
         res["qualifiers"] = value;
         children[1]->accept(this);
         res["type"] = value;
-        children[2]->accept(this);
-        res["name"] = value;
         children[3]->accept(this);
         res["arguments"] = value;
         children[5]->accept(this);
@@ -309,7 +321,7 @@ public:
     }
 
 	virtual void visit(StatementNode* node) override {
-        return node->nodes[0]->accept(this);
+        return node->nodes[0]->nodes[1]->accept(this);
     }
 
     virtual void visit(ExpressionStatementNode* node) override {
@@ -339,6 +351,24 @@ public:
     }
 
     virtual void visit(IForStatementNode* node) override {
+        JSON res;
+        res["which"] = node->name;
+        value = res;
+    }
+
+    virtual void visit(WhileStatementNode* node) override {
+        JSON res;
+        res["which"] = node->name;
+        value = res;
+    }
+
+    virtual void visit(ReturnStatementNode* node) override {
+        JSON res;
+        res["which"] = node->name;
+        value = res;
+    }
+
+    virtual void visit(BreakStatementNode* node) override {
         JSON res;
         res["which"] = node->name;
         value = res;
@@ -398,7 +428,7 @@ public:
 	virtual void visit(TemplateTypenameNode* node) override {
         JSON res;
         res["which"] = node->name;
-        auto templateNodeType = node->nodes[0]->nodes[1]->nodes[0];
+        auto& templateNodeType = node->nodes[0]->nodes[1]->nodes[0];
         if (templateNodeType->name == "TypenameListNodeEndingWithRShift") {
             templateNodeType->accept(this);
             res["types"] = value;
@@ -424,7 +454,7 @@ public:
     }
     
 	virtual void visit(PPPQualifierNode* node) override {
-        auto orNodeMatch = node->nodes[0]->nodes;
+        auto& orNodeMatch = node->nodes[0]->nodes;
         value = std::dynamic_pointer_cast<TokenNode_>(orNodeMatch[0])->value;
     }
 
@@ -471,6 +501,6 @@ public:
     }
 
     virtual void visit(ColonIndentCodeBlockNode* node) override {
-        node->nodes[0]->accept(this);
+        node->nodes[0]->nodes[2]->accept(this);
     }
 };

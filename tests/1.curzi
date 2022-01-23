@@ -1,0 +1,6 @@
+class A extends F<H<T>, I>:
+    private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):
+        for i in arr:
+        for i in someContainer:
+        for i in std::f::f<f>:
+    B::T<U,V>* member1

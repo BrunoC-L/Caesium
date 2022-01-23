@@ -1,0 +1,44 @@
+{
+  "classes_and_functions": [
+    {
+      "which": "ClassNode",
+      "className": "A",
+      "inheritance": {},
+      "classElements": [
+        {
+          "which": "ConstructorNode",
+          "qualifiers": {
+            "opt_ppp": {},
+            "opt_static": 
+          },
+          "type": "A",
+          "arguments": [
+            {
+              "type": {
+                "which": "TypenameNode",
+                "types": [
+                  "C",
+                  {
+                    "which": "PointerTypenameNode"
+                  }
+                ]
+              },
+              "name": "c"
+            }
+          ],
+          "code": [
+            {
+              "which": "ExpressionStatementNode",
+              "expression": {
+                "which": "ExpressionNode"
+              }
+            },
+            {
+              "which": "IForStatementNode"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

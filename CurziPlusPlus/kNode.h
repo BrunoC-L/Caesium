@@ -33,7 +33,7 @@ public:
 			std::shared_ptr<Node> node = this->builder();
 			bool parsed = node->build(g);
 			if (parsed) {
-				TokenNode<COMMA>().build(g);
+				parsed = TokenNode<COMMA>().build(g);
 				this->nodes.push_back(node);
 			}
 			if (!parsed)

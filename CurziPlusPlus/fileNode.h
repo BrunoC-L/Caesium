@@ -1,5 +1,6 @@
 #pragma once
 #include "classNode.h"
+#include "functionNode.h"
 
 class FileNode : public Node {
 public:
@@ -8,9 +9,10 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				_STAR_
-					MAKE(ClassNode)()
-				___,
+				_STAR_ _OR_
+					MAKE(ClassNode)(),
+					MAKE(FunctionNode)(),
+				____,
 				TOKEN(END)
 			__
 		};

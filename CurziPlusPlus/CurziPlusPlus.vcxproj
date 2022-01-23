@@ -143,13 +143,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="classMember.cpp" />
     <ClCompile Include="expressionNode.cpp" />
+    <ClCompile Include="factory.cpp" />
     <ClCompile Include="json.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="node.cpp" />
-    <ClCompile Include="statementNode.cpp" />
-    <ClCompile Include="tokenizer.cpp" />
+    <ClCompile Include="cppElements.cpp" />
     <ClCompile Include="typenameNode.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -159,8 +157,13 @@
     <ClInclude Include="classMember.h" />
     <ClInclude Include="classNode.h" />
     <ClInclude Include="constructor.h" />
+    <ClInclude Include="cppElement.h" />
+    <ClInclude Include="cppElements.h" />
+    <ClInclude Include="cppElementVisitor.h" />
     <ClInclude Include="expressionNode.h" />
+    <ClInclude Include="factory.h" />
     <ClInclude Include="fileNode.h" />
+    <ClInclude Include="functionNode.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="classMemberQualifiers.h" />
     <ClInclude Include="indentNode.h" />
@@ -178,7 +181,6 @@
     <ClInclude Include="statementNode.h" />
     <ClInclude Include="tokenizer.h" />
     <ClInclude Include="tokenNode.h" />
-    <ClInclude Include="transpiler.h" />
     <ClInclude Include="typenameNode.h" />
     <ClInclude Include="untilTokenNode.h" />
     <ClInclude Include="usingNode.h" />

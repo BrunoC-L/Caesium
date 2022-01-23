@@ -13,7 +13,10 @@ public:
 	std::vector<std::shared_ptr<Node>> nodes;
 	std::string name = "Node";
 	virtual void build() {}
-	virtual bool build(Grammarizer* g);
+	virtual bool build(Grammarizer* g) {
+		build();
+		return nodes[0]->build(g);
+	}
 	virtual void accept(NodeVisitor* v) = 0;
 };
 

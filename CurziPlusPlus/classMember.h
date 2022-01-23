@@ -7,17 +7,6 @@
 #include "argumentsNode.h"
 #include "statementNode.h"
 
-class ClassMemberNode : public Node {
-public:
-	baseCtor(ClassMemberNode);
-
-	virtual void build() override;
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
-};
-
 class MethodNode : public Node {
 public:
 	baseCtor(MethodNode);
@@ -27,7 +16,7 @@ public:
 			_AND_
 				MAKE(ClassMemberQualifiers)(),
 				MAKE(TypenameNode)(),
-				TOKEN(WORD),
+				WORD_TOKEN(),
 				TOKEN(PARENOPEN),
 				MAKE(ArgumentsSignatureNode)(),
 				TOKEN(PARENCLOSE),
@@ -50,13 +39,31 @@ public:
 			_AND_
 				MAKE(ClassMemberQualifiers)(),
 				MAKE(TypenameNode)(),
-				TOKEN(WORD),
+				WORD_TOKEN(),
 				TOKEN(NEWLINE),
 			__,
 		};
 	}
 
 	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class ClassMemberNode : public Node {
+public:
+	baseCtor(ClassMemberNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_OR_
+				MAKE(MethodNode)(n_indent),
+				MAKE(MemberVariableNode)(n_indent),
+			__,
+		};
+	}
+
+	virtual void accept(NodeVisitor * v) override {
 		v->visit(this);
 	}
 };

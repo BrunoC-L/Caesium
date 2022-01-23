@@ -3,6 +3,8 @@
 
 #define MAKE(T) std::make_shared<T>
 #define TOKEN(T) MAKE(TokenNode<T>)()
+#define WORD_TOKEN() MAKE(WordTokenNode)()
+#define NUMBER_TOKEN() MAKE(NumberTokenNode)()
 
 #define _AND_  MAKE(AndNode)(vNode({
 #define _OR_   MAKE(OrNode )(vNode({
@@ -17,7 +19,7 @@
 #define __ }))
 // for closing the others
 #define ___ ;})
-// for closing both at once (happens often)
+// for closing both at once
 #define ____ __ ___
 
 #define baseCtor(T)\

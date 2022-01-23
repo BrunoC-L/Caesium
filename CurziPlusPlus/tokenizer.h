@@ -5,6 +5,7 @@
 
 enum TOKENS {
 	END,
+
 	SEMICOLON,
 	COLON,
 	NS,
@@ -86,7 +87,9 @@ enum TOKENS {
 	PRIVATE,
 	PROTECTED,
 
-	TOKENS_SIZE
+	AND,
+	OR,
+	NULL_TOKEN,
 };
 
 using TOKENVALUE = std::pair<TOKENS, std::string>;
@@ -96,86 +99,7 @@ private:
 	std::string program;
 	unsigned index = 0;
 public:
-	static std::string tokenLookup[TOKENS_SIZE];
-	Tokenizer(std::string program) : program(program) {
-		tokenLookup[END] = "END";
-        tokenLookup[SEMICOLON] = ";";
-        tokenLookup[COLON] = ":";
-        tokenLookup[NS] = "::";
-        tokenLookup[BACKSLASH] = "\\";
-        tokenLookup[DOT] = ".";
-        tokenLookup[COMMA] = ",";
-        tokenLookup[EQUAL] = "=";
-        tokenLookup[LT] = "<";
-        tokenLookup[GT] = ">";
-        tokenLookup[DASH] = "-";
-        tokenLookup[SPACE] = "SPACE";
-        tokenLookup[TAB] = "TAB";
-        tokenLookup[NEWLINE] = "NEWLINE";
-        tokenLookup[BRACEOPEN] = "{";
-        tokenLookup[BRACECLOSE] = "}";
-        tokenLookup[BRACKETOPEN] = "[";
-        tokenLookup[BRACKETCLOSE] = "]";
-        tokenLookup[PARENOPEN] = "(";
-        tokenLookup[PARENCLOSE] = ")";
-        tokenLookup[ASTERISK] = "*";
-		tokenLookup[SLASH] = "/",
-		tokenLookup[PERCENT] = "%",
-        tokenLookup[AMPERSAND] = "&";
-        tokenLookup[QUESTION] = "?";
-        tokenLookup[POUND] = "#";
-		tokenLookup[NOT] = "!";
-		tokenLookup[CARET] = "^";
-		tokenLookup[BITOR] = "|";
-		tokenLookup[BITAND] = "&";
-		tokenLookup[PLUS] = "+";
-
-		tokenLookup[EQUALEQUAL] = "==";
-		tokenLookup[NEQUAL] = "!=";
-		tokenLookup[PLUSEQUAL] = "+=";
-		tokenLookup[MINUSEQUAL] = "-=";
-		tokenLookup[TIMESEQUAL] = "*=";
-		tokenLookup[DIVEQUAL] = "/=";
-		tokenLookup[MODEQUAL] = "%=";
-		tokenLookup[ANDEQUAL] = "&=";
-		tokenLookup[OREQUAL] = "|=";
-		tokenLookup[XOREQUAL] = "^=";
-
-		tokenLookup[LSHIFT] = "<<";
-		tokenLookup[RSHIFT] = ">>";
-
-
-
-		tokenLookup[GTE] = ">=";
-		tokenLookup[LTE] = "<=";
-		tokenLookup[ANDAND] = "&&";
-		tokenLookup[OROR] = "||";
-
-        tokenLookup[WORD] = "WORD";
-        tokenLookup[NUMBER] = "NUMBER";
-
-        tokenLookup[CLASS] = "CLASS";
-        tokenLookup[RETURN] = "RETURN";
-        tokenLookup[NEW] = "NEW";
-        tokenLookup[SWITCH] = "SWITCH";
-		tokenLookup[IN] = "IN";
-		tokenLookup[IFOR] = "IFOR";
-		tokenLookup[FOR] = "FOR";
-        tokenLookup[WHILE] = "WHILE";
-        tokenLookup[IF] = "IF";
-		tokenLookup[ELSE] = "ELSE";
-        tokenLookup[BREAK] = "BREAK";
-        tokenLookup[CASE] = "CASE";
-        tokenLookup[DO] = "DO";
-        tokenLookup[USING] = "USING";
-        tokenLookup[DEFINE] = "DEFINE";
-        tokenLookup[STATIC] = "STATIC";
-
-        tokenLookup[PUBLIC] = "PUBLIC";
-        tokenLookup[PRIVATE] = "PRIVATE";
-        tokenLookup[PROTECTED] = "PROTECTED";
-		tokenLookup[EXTENDS] = "EXTENDS";
-	}
+	Tokenizer(std::string program) : program(program) {}
 
 	std::forward_list<TOKENVALUE> read() {
 		std::forward_list<TOKENVALUE> out;
@@ -185,6 +109,9 @@ public:
 			t = readToken();
 			out.push_front(t);
 		} while (t.first != END);
+		// quick fix to allow for files not to end with a new line
+		out.front().first = NEWLINE;
+		out.push_front(TOKENVALUE(END, ""));
 		out.reverse();
 		return out;
 	}
@@ -262,13 +189,14 @@ private:
 			index += 1;
 			return { BRACKETCLOSE, "]" };
 		case ' ':
-			index += 1;
-			if (index + 1 <= program.size() && program[index + 0] == ' ' &&
-				index + 2 <= program.size() && program[index + 1] == ' ' &&
-				index + 3 <= program.size() && program[index + 2] == ' ') {
-				index += 3;
+			if (index + 3 <= program.size() &&
+				program[index + 1] == ' ' &&
+				program[index + 2] == ' ' &&
+				program[index + 3] == ' ') {
+				index += 4;
 				return { TAB, "\t" };
 			}
+			index += 1;
 			return { SPACE, " " };
 		case '\n':
 			index += 1;
@@ -429,45 +357,50 @@ private:
 
 		std::string word = parseWord();
 		if (word.length()) {
-			if (word == "class")
-				return { CLASS, word };
-			if (word == "return")
-				return { RETURN, word };
-			if (word == "new")
-				return { NEW, word };
-			if (word == "switch")
-				return { SWITCH, word };
-			if (word == "in")
-				return { IN, word };
-			if (word == "ifor")
-				return { IFOR, word };
-			if (word == "for")
-				return { FOR, word };
-			if (word == "while")
-				return { WHILE, word };
-			if (word == "if")
-				return { IF, word };
-			if (word == "else")
-				return { ELSE, word };
+			if (word == "and")
+				return { AND, word };
 			if (word == "break")
 				return { BREAK, word };
 			if (word == "case")
 				return { CASE, word };
+			if (word == "class")
+				return { CLASS, word };
 			if (word == "do")
 				return { DO, word };
-			if (word == "using")
-				return { USING, word };
-			if (word == "static")
-				return { STATIC, word };
-
+			if (word == "else")
+				return { ELSE, word };
+			if (word == "extends")
+				return { EXTENDS, word };
+			if (word == "for")
+				return { FOR, word };
+			if (word == "if")
+				return { IF, word };
+			if (word == "ifor")
+				return { IFOR, word };
+			if (word == "in")
+				return { IN, word };
+			if (word == "new")
+				return { NEW, word };
+			if (word == "null")
+				return { NULL_TOKEN, word };
+			if (word == "or")
+				return { OR, word };
 			if (word == "public")
 				return { PUBLIC, word };
 			if (word == "private")
 				return { PRIVATE, word };
 			if (word == "protected")
 				return { PROTECTED, word };
-			if (word == "extends")
-				return { EXTENDS, word };
+			if (word == "return")
+				return { RETURN, word };
+			if (word == "static")
+				return { STATIC, word };
+			if (word == "switch")
+				return { SWITCH, word };
+			if (word == "using")
+				return { USING, word };
+			if (word == "while")
+				return { WHILE, word };
 
 			return { WORD, word };
 		}

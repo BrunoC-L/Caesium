@@ -43,3 +43,15 @@ public:
 		return true;
 	}
 };
+
+class WordTokenNode : public TokenNode<WORD> {
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
+
+class NumberTokenNode : public TokenNode<NUMBER> {
+	virtual void accept(NodeVisitor* v) override {
+		v->visit(this);
+	}
+};
