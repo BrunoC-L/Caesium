@@ -1,131 +1,128 @@
 {
-  "which": "ClassMemberNode",
-  "member": {
-    "which": "MethodNode",
-    "qualifiers": {
-      "opt_ppp": "private",
-      "opt_static": "static"
-    },
-    "type": {
-      "which": "TypenameNode",
-      "types": [
-        "E",
-        {
-          "which": "TemplateTypenameNode",
-          "types": [
-            {
-              "which": "TypenameNode",
-              "types": [
-                "F",
-                {
-                  "types": [
-                    {
-                      "which": "TypenameNode",
-                      "types": [
-                        "H"
-                      ]
-                    },
-                    {
-                      "which": "TypenameNode",
-                      "types": [
-                        "I"
-                      ]
-                    }
-                  ],
-                  "which": "TemplateTypenameNode"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "which": "NSTypenameNode",
-          "type": {
+  "which": "MethodNode",
+  "qualifiers": {
+    "opt_ppp": "private",
+    "opt_static": "static"
+  },
+  "type": {
+    "which": "TypenameNode",
+    "types": [
+      "E",
+      {
+        "which": "TemplateTypenameNode",
+        "types": [
+          {
             "which": "TypenameNode",
             "types": [
-              "G"
+              "F",
+              {
+                "types": [
+                  {
+                    "which": "TypenameNode",
+                    "types": [
+                      "H"
+                    ]
+                  },
+                  {
+                    "which": "TypenameNode",
+                    "types": [
+                      "I"
+                    ]
+                  }
+                ],
+                "which": "TemplateTypenameNode"
+              }
             ]
           }
+        ]
+      },
+      {
+        "which": "NSTypenameNode",
+        "type": {
+          "which": "TypenameNode",
+          "types": [
+            "G"
+          ]
         }
-      ]
-    },
-    "name": "method1",
-    "arguments": [
-      {
-        "type": {
-          "which": "TypenameNode",
-          "types": [
-            "K"
-          ]
-        },
-        "name": "k"
-      },
-      {
-        "type": {
-          "which": "TypenameNode",
-          "types": [
-            "U"
-          ]
-        },
-        "name": "u"
-      },
-      {
-        "type": {
-          "which": "TypenameNode",
-          "types": [
-            "R",
-            {
-              "which": "TemplateTypenameNode",
-              "types": [
-                {
-                  "which": "TypenameNode",
-                  "types": [
-                    "U"
-                  ]
-                },
-                {
-                  "which": "TypenameNode",
-                  "types": [
-                    "E",
-                    {
-                      "which": "TemplateTypenameNode",
-                      "types": [
-                        {
-                          "which": "TypenameNode",
-                          "types": [
-                            "H"
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "which": "TypenameNode",
-                  "types": [
-                    "I"
-                  ]
-                }
-              ]
-            },
-            {
-              "which": "NSTypenameNode",
-              "type": {
-                "which": "TypenameNode",
-                "types": [
-                  "V"
-                ]
-              }
-            }
-          ]
-        },
-        "name": "kuv"
-      }
-    ],
-    "code": [
-      {
-        "which": "ForStatementNode"
       }
     ]
-  }
+  },
+  "name": "method1",
+  "arguments": [
+    {
+      "type": {
+        "which": "TypenameNode",
+        "types": [
+          "K"
+        ]
+      },
+      "name": "k"
+    },
+    {
+      "type": {
+        "which": "TypenameNode",
+        "types": [
+          "U"
+        ]
+      },
+      "name": "u"
+    },
+    {
+      "type": {
+        "which": "TypenameNode",
+        "types": [
+          "R",
+          {
+            "which": "TemplateTypenameNode",
+            "types": [
+              {
+                "which": "TypenameNode",
+                "types": [
+                  "U"
+                ]
+              },
+              {
+                "which": "TypenameNode",
+                "types": [
+                  "E",
+                  {
+                    "which": "TemplateTypenameNode",
+                    "types": [
+                      {
+                        "which": "TypenameNode",
+                        "types": [
+                          "H"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "which": "TypenameNode",
+                "types": [
+                  "I"
+                ]
+              }
+            ]
+          },
+          {
+            "which": "NSTypenameNode",
+            "type": {
+              "which": "TypenameNode",
+              "types": [
+                "V"
+              ]
+            }
+          }
+        ]
+      },
+      "name": "kuv"
+    }
+  ],
+  "code": [
+    {
+      "which": "ForStatementNode"
+    }
+  ]
 }

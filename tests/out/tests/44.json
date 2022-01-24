@@ -26,57 +26,6 @@
         },
         "name": "a"
       }
-    },
-    {
-      "which": "ClassMemberNode",
-      "member": {
-        "which": "MemberVariableNode",
-        "qualifiers": {
-          "opt_ppp": {},
-          "opt_static": 
-        },
-        "type": {
-          "which": "TypenameNode",
-          "types": [
-            "A"
-          ]
-        },
-        "name": "a"
-      }
-    },
-    {
-      "which": "ClassMemberNode",
-      "member": {
-        "which": "MemberVariableNode",
-        "qualifiers": {
-          "opt_ppp": {},
-          "opt_static": 
-        },
-        "type": {
-          "which": "TypenameNode",
-          "types": [
-            "A"
-          ]
-        },
-        "name": "a"
-      }
-    },
-    {
-      "which": "ClassMemberNode",
-      "member": {
-        "which": "MemberVariableNode",
-        "qualifiers": {
-          "opt_ppp": {},
-          "opt_static": 
-        },
-        "type": {
-          "which": "TypenameNode",
-          "types": [
-            "A"
-          ]
-        },
-        "name": "a"
-      }
     }
   ]
 }

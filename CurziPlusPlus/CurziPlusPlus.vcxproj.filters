@@ -78,6 +78,9 @@
     <ClCompile Include="factory.cpp">
       <Filter>Source Files\transpiler\toc++\base</Filter>
     </ClCompile>
+    <ClCompile Include="JSONNodeVisitor.cpp">
+      <Filter>Source Files\transpiler\json</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classInheritanceNode.h">
@@ -178,6 +181,9 @@
     </ClInclude>
     <ClInclude Include="cppElement.h">
       <Filter>Source Files\transpiler\toc++\base</Filter>
+    </ClInclude>
+    <ClInclude Include="simpleJSONVisitor.h">
+      <Filter>Source Files\transpiler\json</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -15,8 +15,8 @@ public:
 		this->nodes = {
 			_COMMA_STAR_
 				_AND_
-					MAKE(TypenameNode)(),
-					WORD_TOKEN(),
+					MAKE_NAMED(TypenameNode, "Typename"),
+					WORD_TOKEN("word"),
 			____
 		};
 	}
@@ -33,7 +33,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_COMMA_STAR_
-				MAKE(ExpressionNode)()
+				MAKE_NAMED(ExpressionNode, "expr")
 			___
 		};
 	}
@@ -51,7 +51,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(PARENOPEN),
-				MAKE(InnerArgumentsNode)(),
+				MAKE_NAMED(InnerArgumentsNode, "args"),
 				TOKEN(PARENCLOSE),
 			__
 		};
@@ -70,7 +70,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(BRACKETOPEN),
-				MAKE(InnerArgumentsNode)(),
+				MAKE_NAMED(InnerArgumentsNode, "args"),
 				TOKEN(BRACKETCLOSE),
 			__
 		};
@@ -89,7 +89,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(BRACEOPEN),
-				MAKE(InnerArgumentsNode)(),
+				MAKE_NAMED(InnerArgumentsNode, "args"),
 				TOKEN(BRACECLOSE),
 			__
 		};

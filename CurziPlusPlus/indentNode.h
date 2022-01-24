@@ -4,7 +4,7 @@
 
 class IndentNode : public Node {
 public:
-	IndentNode(int n_indent) : Node(n_indent) {}
+	IndentNode(int n_indent) : Node("indent", n_indent) {}
 
 	virtual void accept(NodeVisitor* v) override {
 		v->visit(this);

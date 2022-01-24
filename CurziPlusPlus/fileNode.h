@@ -10,8 +10,8 @@ public:
 		this->nodes = {
 			_AND_
 				_STAR_ _OR_
-					MAKE(ClassNode)(),
-					MAKE(FunctionNode)(),
+					MAKE_NAMED(ClassNode, "Class"),
+					MAKE_NAMED(FunctionNode, "Function"),
 				____,
 				TOKEN(END)
 			__

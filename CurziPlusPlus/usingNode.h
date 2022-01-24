@@ -12,9 +12,9 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(USING),
-				WORD_TOKEN(),
+				WORD_TOKEN("word"),
 				TOKEN(EQUAL),
-				MAKE(TypenameNode)(),
+				MAKE_NAMED(TypenameNode, "Typename"),
 			__
 		};
 	}

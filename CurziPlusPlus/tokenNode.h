@@ -5,7 +5,7 @@
 class TokenNode_ : public Node {
 public:
 	std::string value;
-	TokenNode_() { this->name = "TokenNode"; }
+	TokenNode_(std::string name = "") : Node(name) { this->name = "TokenNode"; }
 
 	virtual void accept(NodeVisitor* v) override {
 		v->visit(this);
@@ -17,6 +17,7 @@ class TokenNode : public TokenNode_ {
 	static_assert(token != TAB  , "Using TokenNode<TAB> will not work, trailing tabs are ignored, use IndentNode");
 	static_assert(token != SPACE, "Using TokenNode<SPACE> will not work, trailing spaces are ignored");
 public:
+	TokenNode(std::string name) : TokenNode_(name) {}
 	virtual bool build(Grammarizer* g) override {
 		bool isT = g->it->first == token;
 		if (isT && token != END)
@@ -45,12 +46,16 @@ public:
 };
 
 class WordTokenNode : public TokenNode<WORD> {
+public:
+	WordTokenNode(std::string name) : TokenNode<WORD>(name) {}
 	virtual void accept(NodeVisitor* v) override {
 		v->visit(this);
 	}
 };
 
 class NumberTokenNode : public TokenNode<NUMBER> {
+public:
+	NumberTokenNode(std::string name) : TokenNode<NUMBER>(name) {}
 	virtual void accept(NodeVisitor* v) override {
 		v->visit(this);
 	}

@@ -146,6 +146,7 @@
     <ClCompile Include="expressionNode.cpp" />
     <ClCompile Include="factory.cpp" />
     <ClCompile Include="json.cpp" />
+    <ClCompile Include="nodeVisitor.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="cppElements.cpp" />
     <ClCompile Include="typenameNode.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="andorNode.h" />
     <ClInclude Include="nodeVisitor.h" />
     <ClInclude Include="pppQualifierNode.h" />
+    <ClInclude Include="simpleJSONVisitor.h" />
     <ClInclude Include="singleInheritanceNode.h" />
     <ClInclude Include="kNode.h" />
     <ClInclude Include="statementNode.h" />

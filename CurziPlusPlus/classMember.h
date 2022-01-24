@@ -14,13 +14,13 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(ClassMemberQualifiers)(),
-				MAKE(TypenameNode)(),
-				WORD_TOKEN(),
+				MAKE_NAMED(ClassMemberQualifiers, "ClassMemberQualifiers"),
+				MAKE_NAMED(TypenameNode, "Typename"),
+				WORD_TOKEN("word"),
 				TOKEN(PARENOPEN),
-				MAKE(ArgumentsSignatureNode)(),
+				MAKE_NAMED(ArgumentsSignatureNode, "ArgumentsSignature"),
 				TOKEN(PARENCLOSE),
-				MAKE(ColonIndentCodeBlockNode)(n_indent),
+				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 			__,
 		};
 	}
@@ -37,9 +37,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(ClassMemberQualifiers)(),
-				MAKE(TypenameNode)(),
-				WORD_TOKEN(),
+				MAKE_NAMED(ClassMemberQualifiers, "ClassMemberQualifiers"),
+				MAKE_NAMED(TypenameNode, "Typename"),
+				WORD_TOKEN("varname"),
 				TOKEN(NEWLINE),
 			__,
 		};
@@ -57,8 +57,8 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_OR_
-				MAKE(MethodNode)(n_indent),
-				MAKE(MemberVariableNode)(n_indent),
+				MAKE_NAMED(MethodNode, "Method"),
+				MAKE_NAMED(MemberVariableNode, "MemberVariable"),
 			__,
 		};
 	}

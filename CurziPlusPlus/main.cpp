@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <filesystem>
 #include "JSONNodeVisitor.h"
+#include "simpleJSONVisitor.h"
 #include "cppElements.h"
 
 auto green = "\033[1;32m", red = "\033[1;31m", reset = "\033[0m";
@@ -38,34 +39,34 @@ void test(int i, std::tuple<std::shared_ptr<Node>, std::string>&& testCase) {
 void test() {
 	for (const auto& entry : std::filesystem::directory_iterator(testfolder))
 		std::filesystem::remove_all(entry.path());
-	test(__LINE__, { MAKE(ClassNode)(), "class A:\n" });
-	test(__LINE__, { MAKE(ClassNode)(), "class A extends B:\n" });
-	test(__LINE__, { MAKE(ClassNode)(), "class A extends B:\n\tA a\n" });
-	test(__LINE__, { MAKE(ClassNode)(), "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n" });
-	test(__LINE__, { MAKE(ClassNode)(1), "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n" });
-	test(__LINE__, { MAKE(ClassNode)(1), "class A extends B:\n\t\tA a\n" });
-	test(__LINE__, { MAKE(IfStatementNode)(), "if a:\n" });
-	test(__LINE__, { MAKE(StatementNode)(), "if a:\n" });
-	test(__LINE__, { MAKE(IfStatementNode)(), "if a:\n\tb\n" });
-	test(__LINE__, { MAKE(IfStatementNode)(), "if a:\n\tif a:\n\t\tb\n" });
-	test(__LINE__, { MAKE(IfStatementNode)(1), "if a:\n\t\tb\n" });
-	test(__LINE__, { MAKE(ForStatementNode)(), "for a in b:\n\tb\n" });
-	test(__LINE__, { MAKE(ForStatementNode)(), "for a in b:\n" });
-	test(__LINE__, { MAKE(StatementNode)(), "for a in b:\n\tif a:\n\t\tb\n" });
-	test(__LINE__, { MAKE(StatementNode)(), "for i in arr:\n" });
-	test(__LINE__, { MAKE(MethodNode)(), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n" });
-	test(__LINE__, { MAKE(MethodNode)(1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n" });
-	test(__LINE__, { MAKE(ClassNode)(), "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n" });
-	test(__LINE__, { MAKE(ClassNode)(), "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n" });
-	test(__LINE__, { MAKE(MethodNode)(1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n" });
-	test(__LINE__, { MAKE(MethodNode)(1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n" });
-	test(__LINE__, { MAKE(ClassElementNode)(1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n" });
-	test(__LINE__, { MAKE(StatementNode)(1), "\tfor i in arr:\n" });
-	test(__LINE__, { MAKE(MethodNode)(), "void a():\n" });
-	test(__LINE__, { MAKE(CodeBlockNode)(1), "\tif a:\n" });
-	test(__LINE__, { MAKE(WhileStatementNode)(), "while a:\n" });
-	test(__LINE__, { MAKE(ReturnStatementNode)(), "return a, b, \n" });
-	test(__LINE__, { MAKE(ReturnStatementNode)(), "return a, b\n" });
+	test(__LINE__, { MAKE(ClassNode)(""), "class A:\n" });
+	test(__LINE__, { MAKE(ClassNode)(""), "class A extends B:\n" });
+	test(__LINE__, { MAKE(ClassNode)(""), "class A extends B:\n\tA a\n" });
+	test(__LINE__, { MAKE(ClassNode)(""), "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n" });
+	test(__LINE__, { MAKE(ClassNode)("", 1), "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n" });
+	test(__LINE__, { MAKE(ClassNode)("", 1), "class A extends B:\n\t\tA a\n" });
+	test(__LINE__, { MAKE(IfStatementNode)(""), "if a:\n" });
+	test(__LINE__, { MAKE(StatementNode)(""), "if a:\n" });
+	test(__LINE__, { MAKE(IfStatementNode)(""), "if a:\n\tb\n" });
+	test(__LINE__, { MAKE(IfStatementNode)(""), "if a:\n\tif a:\n\t\tb\n" });
+	test(__LINE__, { MAKE(IfStatementNode)("", 1), "if a:\n\t\tb\n" });
+	test(__LINE__, { MAKE(ForStatementNode)(""), "for a in b:\n\tb\n" });
+	test(__LINE__, { MAKE(ForStatementNode)(""), "for a in b:\n" });
+	test(__LINE__, { MAKE(StatementNode)(""), "for a in b:\n\tif a:\n\t\tb\n" });
+	test(__LINE__, { MAKE(StatementNode)(""), "for i in arr:\n" });
+	test(__LINE__, { MAKE(MethodNode)(""), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n" });
+	test(__LINE__, { MAKE(MethodNode)("", 1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n" });
+	test(__LINE__, { MAKE(ClassNode)(""), "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n" });
+	test(__LINE__, { MAKE(ClassNode)(""), "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n" });
+	test(__LINE__, { MAKE(MethodNode)("", 1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n" });
+	test(__LINE__, { MAKE(MethodNode)("", 1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n" });
+	test(__LINE__, { MAKE(ClassElementNode)("", 1), "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n" });
+	test(__LINE__, { MAKE(StatementNode)("", 1), "\tfor i in arr:\n" });
+	test(__LINE__, { MAKE(MethodNode)(""), "void a():\n" });
+	test(__LINE__, { MAKE(CodeBlockNode)("", 1), "\tif a:\n" });
+	test(__LINE__, { MAKE(WhileStatementNode)(""), "while a:\n" });
+	test(__LINE__, { MAKE(ReturnStatementNode)(""), "return a, b, \n" });
+	test(__LINE__, { MAKE(ReturnStatementNode)(""), "return a, b\n" });
 }
 
 void toJSON(const std::filesystem::path& fileName, const std::string& outFileNameNoExt) {
@@ -78,7 +79,7 @@ void toJSON(const std::filesystem::path& fileName, const std::string& outFileNam
 	}
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
-	std::unique_ptr<Node> expected = std::make_unique<FileNode>();
+	std::unique_ptr<Node> expected = std::make_unique<FileNode>("file");
 	bool nodeBuilt = expected->build(&g);
 	bool programReadEntirely = g.it == g.tokens.end();
 	auto nodeBuiltColor = nodeBuilt ? green : red;
@@ -103,9 +104,9 @@ void toJSON(const std::filesystem::path& fileName, const std::string& outFileNam
 		std::cout << "\n\n";
 	}
 	if (nodeBuilt && programReadEntirely) {
-		std::unique_ptr<JSONNodeVisitor> v = std::make_unique<JSONNodeVisitor>();
-		expected->accept(v.get());
-		JSON out = v->getValue();
+		SimpleJSONNodeVisitor v;
+		expected->accept(&v);
+		const JSON& out = v.getValue();
 		std::string jsonFN = outFileNameNoExt + ".json";
 		std::ofstream output(jsonFN);
 		auto is_open = output.is_open();
@@ -140,7 +141,7 @@ void toCPP(const std::string& inFileNameNoExt, const std::string& outFileNameNoE
 void transpile(const std::filesystem::path& fileName, std::string folder) {
 	const std::string outFileNameNoExt = folder + std::string(reinterpret_cast<const char*>(fileName.stem().c_str())) + +"/out";
 	toJSON(fileName, outFileNameNoExt);
-	toCPP(outFileNameNoExt, outFileNameNoExt);
+	//toCPP(outFileNameNoExt, outFileNameNoExt);
 }
 
 int main(int argc, char* argv[]) {

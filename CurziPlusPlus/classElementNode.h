@@ -14,10 +14,10 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_OR_
-				MAKE(UsingNode)(n_indent),
-				MAKE(MacroNode)(n_indent),
-				MAKE(ClassMemberNode)(n_indent),
-				MAKE(ConstructorNode)(n_indent),
+				MAKE_NAMED(UsingNode, "using"),
+				MAKE_NAMED(MacroNode, "using"),
+				MAKE_NAMED(ClassMemberNode, "using"),
+				MAKE_NAMED(ConstructorNode, "using"),
 			__,
 		};
 	}

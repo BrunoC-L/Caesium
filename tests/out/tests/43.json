@@ -9,23 +9,5 @@
       ]
     }
   ],
-  "classElements": [
-    {
-      "which": "ClassMemberNode",
-      "member": {
-        "which": "MemberVariableNode",
-        "qualifiers": {
-          "opt_ppp": {},
-          "opt_static": 
-        },
-        "type": {
-          "which": "TypenameNode",
-          "types": [
-            "A"
-          ]
-        },
-        "name": "a"
-      }
-    }
-  ]
+  "classElements": []
 }

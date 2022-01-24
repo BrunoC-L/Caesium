@@ -13,7 +13,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(DEFINE),
-				WORD_TOKEN(),
+				WORD_TOKEN("word"),
 				MAKE(UntilTokenNode)(NEWLINE),
 			__
 		};

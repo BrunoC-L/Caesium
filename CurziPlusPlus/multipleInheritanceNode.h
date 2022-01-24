@@ -11,8 +11,8 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_COMMA_PLUS_
-				MAKE(TypenameNode)()
+			_COMMA_PLUS_("typenames")
+				MAKE_NAMED(TypenameNode, "Typename")
 			___
 		};
 	}

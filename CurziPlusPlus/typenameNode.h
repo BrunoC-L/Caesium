@@ -24,7 +24,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(NS),
-				MAKE(TypenameNode)()
+				MAKE_NAMED(TypenameNode, "NSTypename")
 			__
 		};
 	}
@@ -41,7 +41,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_COMMA_STAR_
-				MAKE(TypenameNode)()
+				MAKE_NAMED(TypenameNode, "Typename")
 			___
 		};
 	}
@@ -59,12 +59,12 @@ public:
 		this->nodes = {
 			_AND_
 				_STAR_ _AND_
-					MAKE(TypenameNode)(),
+					MAKE_NAMED(TypenameNode, "Typename"),
 					TOKEN(COMMA),
 				____,
-				WORD_TOKEN(),
+				std::make_shared<WordTokenNode>("word"),
 				TOKEN(LT),
-				MAKE(TypenameListNode)(),
+				MAKE_NAMED(TypenameListNode, "list"),
 				TOKEN(RSHIFT),
 				_OPT_
 					TOKEN(COMMA)
@@ -88,10 +88,10 @@ public:
 				TOKEN(LT),
 				_OR_
 					_AND_
-						MAKE(TypenameListNode)(),
+						MAKE_NAMED(TypenameListNode, "TypenameList"),
 						TOKEN(GT),
 					__,
-					MAKE(TypenameListNodeEndingWithRShift)(),
+					MAKE_NAMED(TypenameListNodeEndingWithRShift, "TypenameListNodeEndingWithRShift"),
 				__
 			__
 		};
@@ -110,7 +110,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(PARENOPEN),
-				MAKE(TypenameListNode)(),
+				MAKE_NAMED(TypenameListNode, "TypenameList"),
 				TOKEN(PARENCLOSE),
 			__
 		};

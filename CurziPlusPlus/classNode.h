@@ -11,16 +11,16 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(CLASS),
-				WORD_TOKEN(),
+				WORD_TOKEN("word"),
 				_OPT_
-					MAKE(ClassInheritanceNode)()
+					MAKE_NAMED(ClassInheritanceNode, "ClassInheritance")
 				___,
 				TOKEN(COLON),
 				TOKEN(NEWLINE),
 				_STAR_
 					_AND_
 						MAKE(IndentNode)(n_indent + 1),
-						MAKE(ClassElementNode)(n_indent + 1),
+						MAKE_NAMED_INDENTED(ClassElementNode, "ClassElement", n_indent + 1)
 					__
 				___,
 			__,

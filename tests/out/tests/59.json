@@ -151,11 +151,7 @@
             "name": "kuv"
           }
         ],
-        "code": [
-          {
-            "which": "ForStatementNode"
-          }
-        ]
+        "code": []
       }
     }
   ]

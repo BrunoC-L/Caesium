@@ -14,7 +14,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_STAR_
-				MAKE(StatementNode)(n_indent)
+				MAKE_NAMED(StatementNode, "Statement")
 			___
 		};
 	}
@@ -33,7 +33,7 @@ public:
 			_AND_
 				TOKEN(COLON),
 				TOKEN(NEWLINE),
-				MAKE(CodeBlockNode)(n_indent + 1)
+				MAKE_NAMED_INDENTED(CodeBlockNode, "CodeBlock", n_indent + 1)
 			__
 		};
 	}
@@ -50,7 +50,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE(ExpressionNode)(),
+				MAKE_NAMED(ExpressionNode, "Expression"),
 				TOKEN(NEWLINE),
 			__
 		};
@@ -70,7 +70,7 @@ public:
 			_AND_
 				MAKE(IndentNode)(n_indent),
 				TOKEN(ELSE),
-				MAKE(ColonIndentCodeBlockNode)(n_indent),
+				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 			__
 		};
 	}
@@ -88,10 +88,10 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(IF),
-				MAKE(ExpressionNode)(n_indent),
-				MAKE(ColonIndentCodeBlockNode)(n_indent),
+				MAKE_NAMED(ExpressionNode, "Expression"),
+				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 				_OPT_
-					MAKE(ElseStatementNode)(n_indent)
+					MAKE_NAMED(ElseStatementNode, "ElseStatement")
 				___
 			__
 		};
@@ -110,24 +110,26 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(FOR),
-				_OR_
-					_AND_
-						MAKE(TypenameNode)(),
-						WORD_TOKEN(),
-					__,
-					WORD_TOKEN(),
-				__,
+				_COMMA_PLUS_("iterators")
+					_OR_
+						_AND_
+							MAKE_NAMED(TypenameNode, "Typename"),
+							WORD_TOKEN("word"),
+						__,
+						WORD_TOKEN("word"),
+					__
+				___,
 				TOKEN(IN),
-				MAKE(ExpressionNode)(),
+				MAKE_NAMED(ExpressionNode, "Expression"),
 				_OPT_ _AND_
 					TOKEN(IF),
-					MAKE(ExpressionNode)(),
+					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
 				_OPT_ _AND_
 					TOKEN(WHILE),
-					MAKE(ExpressionNode)(),
+					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
-				MAKE(ColonIndentCodeBlockNode)(n_indent),
+				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 			__
 		};
 	}
@@ -145,26 +147,26 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(IFOR),
-				WORD_TOKEN(),
+				WORD_TOKEN("word"),
 				TOKEN(COMMA),
 				_OR_
 					_AND_
-						MAKE(TypenameNode)(),
-						WORD_TOKEN(),
+						MAKE_NAMED(TypenameNode, "Typename"),
+						WORD_TOKEN("word"),
 					__,
-					WORD_TOKEN(),
+					WORD_TOKEN("word"),
 				__,
 				TOKEN(IN),
-				MAKE(ExpressionNode)(),
+				MAKE_NAMED(ExpressionNode, "Expression"),
 				_OPT_ _AND_
 					TOKEN(IF),
-					MAKE(ExpressionNode)(),
+					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
 				_OPT_ _AND_
 					TOKEN(WHILE),
-					MAKE(ExpressionNode)(),
+					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
-				MAKE(ColonIndentCodeBlockNode)(n_indent),
+				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 			__
 		};
 	}
@@ -182,8 +184,8 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(WHILE),
-				MAKE(ExpressionNode)(),
-				MAKE(ColonIndentCodeBlockNode)(n_indent),
+				MAKE_NAMED(ExpressionNode, "Expression"),
+				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 			__
 		};
 	}
@@ -202,14 +204,14 @@ public:
 			_AND_
 				TOKEN(RETURN),
 				_COMMA_STAR_
-					MAKE(ExpressionNode)()
+					MAKE_NAMED(ExpressionNode, "Expression")
 				___,
 				_OPT_ _AND_
 					TOKEN(IF),
-					MAKE(ExpressionNode)(),
+					MAKE_NAMED(ExpressionNode, "Expression"),
 					_OPT_ _AND_
 						TOKEN(ELSE),
-						MAKE(ExpressionNode)(),
+						MAKE_NAMED(ExpressionNode, "Expression"),
 					____,
 				____,
 				TOKEN(NEWLINE),
@@ -232,7 +234,7 @@ public:
 				TOKEN(BREAK),
 				_OPT_ _AND_
 					TOKEN(IF),
-					MAKE(ExpressionNode)(),
+					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
 				TOKEN(NEWLINE),
 			__
@@ -253,13 +255,13 @@ public:
 			_AND_
 				MAKE(IndentNode)(n_indent),
 				_OR_
-					MAKE(ExpressionStatementNode)(n_indent),
-					MAKE(IfStatementNode)(n_indent),
-					MAKE(ForStatementNode)(n_indent),
-					MAKE(IForStatementNode)(n_indent),
-					MAKE(WhileStatementNode)(n_indent),
-					MAKE(ReturnStatementNode)(n_indent),
-					MAKE(BreakStatementNode)(n_indent),
+					MAKE_NAMED(ExpressionStatementNode, "ExpressionStatement"),
+					MAKE_NAMED(IfStatementNode, "IfStatement"),
+					MAKE_NAMED(ForStatementNode, "ForStatement"),
+					MAKE_NAMED(IForStatementNode, "IForStatement"),
+					MAKE_NAMED(WhileStatementNode, "WhileStatement"),
+					MAKE_NAMED(ReturnStatementNode, "ReturnStatement"),
+					MAKE_NAMED(BreakStatementNode, "BreakStatement"),
 				__
 			__
 		};

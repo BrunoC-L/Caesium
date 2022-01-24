@@ -12,7 +12,7 @@ public:
 		this->nodes = {
 			_AND_
 				_OPT_
-					MAKE(PPPQualifierNode)()
+					MAKE_NAMED(PPPQualifierNode, "PPPQualifier")
 				___,
 				_OPT_
 					TOKEN(STATIC)

@@ -2,18 +2,19 @@
 #include <memory>
 
 #define MAKE(T) std::make_shared<T>
-#define TOKEN(T) MAKE(TokenNode<T>)()
-#define WORD_TOKEN() MAKE(WordTokenNode)()
-#define NUMBER_TOKEN() MAKE(NumberTokenNode)()
+#define MAKE_NAMED(T, NAME) std::make_shared<T>(NAME, n_indent)
+#define MAKE_NAMED_INDENTED(T, NAME, INDENT) std::make_shared<T>(NAME, INDENT)
+#define TOKEN(T) std::make_shared<TokenNode<T>>("")
+#define WORD_TOKEN(NAME) MAKE(WordTokenNode)(NAME)
+#define NUMBER_TOKEN(NAME) MAKE(NumberTokenNode)(NAME)
 
-#define _AND_  MAKE(AndNode)(vNode({
-#define _OR_   MAKE(OrNode )(vNode({
-
-#define _STAR_       MAKE(StarNode     )([&](){ return
-#define _PLUS_       MAKE(PlusNode     )([&](){ return
-#define _OPT_        MAKE(OPTNode      )([&](){ return
-#define _COMMA_STAR_ MAKE(CommaStarNode)([&](){ return
-#define _COMMA_PLUS_ MAKE(CommaPlusNode)([&](){ return
+#define _AND_				MAKE(AndNode      )("and", vNode({
+#define _OR_				MAKE(OrNode       )("or", vNode({
+#define _STAR_				MAKE(StarNode     )("star", [&](){ return
+#define _PLUS_				MAKE(PlusNode     )("plus", [&](){ return
+#define _OPT_				MAKE(OPTNode      )("opt", [&](){ return
+#define _COMMA_STAR_		MAKE(CommaStarNode)("commastar", [&](){ return
+#define _COMMA_PLUS_(NAME)	MAKE(CommaPlusNode)(NAME, [&](){ return
 
 // for closing _AND_ & _OR_
 #define __ }))
@@ -23,6 +24,6 @@
 #define ____ __ ___
 
 #define baseCtor(T)\
-T(int n_indent = 0) : Node(n_indent) {\
+T(std::string name, int n_indent = 0) : Node(name, n_indent) {\
 	this->name = #T;\
 }

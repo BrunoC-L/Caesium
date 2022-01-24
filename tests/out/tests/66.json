@@ -1,3 +1,5 @@
-{
-  "which": "WhileStatementNode"
-}
+[
+  {
+    "which": "IfStatementNode"
+  }
+]

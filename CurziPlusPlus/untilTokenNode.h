@@ -7,7 +7,7 @@ class UntilTokenNode : public Node {
 public:
 	TOKENS t;
 	std::string value;
-	UntilTokenNode(TOKENS t) : t(t) { this->name = "UntilTokenNode"; }
+	UntilTokenNode(TOKENS t) : Node("UntilTokenNode"), t(t) { this->name = "UntilTokenNode"; }
 
 	virtual bool build(Grammarizer* g) override {
 		while (g->it != g->tokens.end()) {
