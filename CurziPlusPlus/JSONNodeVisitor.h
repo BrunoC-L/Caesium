@@ -219,24 +219,6 @@ public:
         value = res;
     }
     
-	virtual void visit(BitOrExpressionNode* node) override {
-        JSON res;
-        res["which"] = node->name;
-        value = res;
-    }
-    
-	virtual void visit(BitXorExpressionNode* node) override {
-        JSON res;
-        res["which"] = node->name;
-        value = res;
-    }
-    
-	virtual void visit(BitAndExpressionNode* node) override {
-        JSON res;
-        res["which"] = node->name;
-        value = res;
-    }
-    
 	virtual void visit(EqualityExpressionNode* node) override {
         JSON res;
         res["which"] = node->name;
@@ -244,12 +226,6 @@ public:
     }
     
 	virtual void visit(CompareExpressionNode* node) override {
-        JSON res;
-        res["which"] = node->name;
-        value = res;
-    }
-    
-	virtual void visit(BitShiftExpressionNode* node) override {
         JSON res;
         res["which"] = node->name;
         value = res;

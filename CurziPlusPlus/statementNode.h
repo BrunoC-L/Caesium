@@ -13,7 +13,7 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_STAR_
+			_STAR_("statements")
 				MAKE_NAMED(StatementNode, "Statement")
 			___
 		};
@@ -90,7 +90,7 @@ public:
 				TOKEN(IF),
 				MAKE_NAMED(ExpressionNode, "Expression"),
 				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
-				_OPT_
+				_OPT_("opt_else")
 					MAKE_NAMED(ElseStatementNode, "ElseStatement")
 				___
 			__
@@ -113,7 +113,7 @@ public:
 				_COMMA_PLUS_("iterators")
 					_OR_
 						_AND_
-							MAKE_NAMED(TypenameNode, "Typename"),
+							MAKE_NAMED(TypenameNode, "typename"),
 							WORD_TOKEN("word"),
 						__,
 						WORD_TOKEN("word"),
@@ -121,11 +121,11 @@ public:
 				___,
 				TOKEN(IN),
 				MAKE_NAMED(ExpressionNode, "Expression"),
-				_OPT_ _AND_
+				_OPT_("opt_if") _AND_
 					TOKEN(IF),
 					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
-				_OPT_ _AND_
+				_OPT_("opt_while") _AND_
 					TOKEN(WHILE),
 					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
@@ -151,18 +151,18 @@ public:
 				TOKEN(COMMA),
 				_OR_
 					_AND_
-						MAKE_NAMED(TypenameNode, "Typename"),
+						MAKE_NAMED(TypenameNode, "typename"),
 						WORD_TOKEN("word"),
 					__,
 					WORD_TOKEN("word"),
 				__,
 				TOKEN(IN),
 				MAKE_NAMED(ExpressionNode, "Expression"),
-				_OPT_ _AND_
+				_OPT_("opt_if") _AND_
 					TOKEN(IF),
 					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
-				_OPT_ _AND_
+				_OPT_("opt_while") _AND_
 					TOKEN(WHILE),
 					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,
@@ -203,13 +203,13 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(RETURN),
-				_COMMA_STAR_
+				_COMMA_STAR_("values")
 					MAKE_NAMED(ExpressionNode, "Expression")
 				___,
-				_OPT_ _AND_
+				_OPT_("opt_if") _AND_
 					TOKEN(IF),
 					MAKE_NAMED(ExpressionNode, "Expression"),
-					_OPT_ _AND_
+					_OPT_("opt_else") _AND_
 						TOKEN(ELSE),
 						MAKE_NAMED(ExpressionNode, "Expression"),
 					____,
@@ -232,7 +232,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(BREAK),
-				_OPT_ _AND_
+				_OPT_("opt_if") _AND_
 					TOKEN(IF),
 					MAKE_NAMED(ExpressionNode, "Expression"),
 				____,

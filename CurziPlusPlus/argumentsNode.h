@@ -13,9 +13,9 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_COMMA_STAR_
+			_COMMA_STAR_("arguments")
 				_AND_
-					MAKE_NAMED(TypenameNode, "Typename"),
+					MAKE_NAMED(TypenameNode, "typename"),
 					WORD_TOKEN("word"),
 			____
 		};
@@ -32,7 +32,7 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_COMMA_STAR_
+			_COMMA_STAR_("arguments")
 				MAKE_NAMED(ExpressionNode, "expr")
 			___
 		};

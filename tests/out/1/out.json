@@ -1,1201 +1,214 @@
 {
-  "type": "FileNode",
-  "value": {
-    "and": [
+  "FileNode": {
+    "classes_or_functions": [
       {
-        "star": [
-          {
-            "or": [
-              {
-                "type": "ClassNode",
-                "value": {
-                  "and": [
+        "ClassNode": {
+          "word": "A",
+          "opt_inheritance": [
+            {
+              "ClassInheritanceNode": {
+                "MultipleInheritanceNode": {
+                  "typenames": [
                     {
-                      "word": "A"
-                    },
-                    {
-                      "opt": [
-                        {
-                          "type": "ClassInheritanceNode",
-                          "value": {
-                            "and": [
-                              {
-                                "type": "MultipleInheritanceNode",
-                                "value": {
-                                  "typenames": [
-                                    {
-                                      "type": "TypenameNode",
-                                      "value": {
-                                        "and": [
-                                          {
-                                            "word": "F"
-                                          },
-                                          {
-                                            "star": [
-                                              {
-                                                "or": [
-                                                  {
-                                                    "type": "TemplateTypenameNode",
-                                                    "value": {
-                                                      "and": [
-                                                        {
-                                                          "or": [
-                                                            {
-                                                              "and": [
-                                                                {
-                                                                  "type": "TypenameListNode",
-                                                                  "value": {
-                                                                    "commastar": [
-                                                                      {
-                                                                        "type": "TypenameNode",
-                                                                        "value": {
-                                                                          "and": [
-                                                                            {
-                                                                              "word": "H"
-                                                                            },
-                                                                            {
-                                                                              "star": [
-                                                                                {
-                                                                                  "or": [
-                                                                                    {
-                                                                                      "type": "TemplateTypenameNode",
-                                                                                      "value": {
-                                                                                        "and": [
-                                                                                          {
-                                                                                            "or": [
-                                                                                              {
-                                                                                                "and": [
-                                                                                                  {
-                                                                                                    "type": "TypenameListNode",
-                                                                                                    "value": {
-                                                                                                      "commastar": [
-                                                                                                        {
-                                                                                                          "type": "TypenameNode",
-                                                                                                          "value": {
-                                                                                                            "and": [
-                                                                                                              {
-                                                                                                                "word": "T"
-                                                                                                              },
-                                                                                                              {
-                                                                                                                "star": []
-                                                                                                              }
-                                                                                                            ]
-                                                                                                          }
-                                                                                                        }
-                                                                                                      ]
-                                                                                                    }
-                                                                                                  }
-                                                                                                ]
-                                                                                              }
-                                                                                            ]
-                                                                                          }
-                                                                                        ]
-                                                                                      }
-                                                                                    }
-                                                                                  ]
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          ]
-                                                                        }
-                                                                      },
-                                                                      {
-                                                                        "type": "TypenameNode",
-                                                                        "value": {
-                                                                          "and": [
-                                                                            {
-                                                                              "word": "I"
-                                                                            },
-                                                                            {
-                                                                              "star": []
-                                                                            }
-                                                                          ]
-                                                                        }
-                                                                      }
-                                                                    ]
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          ]
-                                                        }
-                                                      ]
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            ]
-                                          }
-                                        ]
+                      "TypenameNode": {
+                        "word": "F",
+                        "typenameExtensions": [
+                          {
+                            "TypenameListNode": {
+                              "types": [
+                                {
+                                  "TypenameNode": {
+                                    "word": "H",
+                                    "typenameExtensions": [
+                                      {
+                                        "TypenameListNode": {
+                                          "types": [
+                                            {
+                                              "word": "T"
+                                            }
+                                          ]
+                                        }
                                       }
-                                    }
-                                  ]
+                                    ]
+                                  }
+                                },
+                                {
+                                  "word": "I"
                                 }
-                              }
-                            ]
+                              ]
+                            }
                           }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "classElements": [
+            {
+              "ClassElementNode": {
+                "ClassMemberNode": {
+                  "MethodNode": {
+                    "ClassMemberQualifiers": {
+                      "opt_ppp": [
+                        {
+                          "PPPQualifierNode": "private"
+                        }
+                      ],
+                      "opt_static": []
+                    },
+                    "TypenameNode": {
+                      "word": "E",
+                      "typenameExtensions": [
+                        {
+                          "TypenameListNodeEndingWithRShift": {
+                            "typenames": [],
+                            "word": "F",
+                            "TypenameListNode": {
+                              "types": [
+                                {
+                                  "word": "H"
+                                },
+                                {
+                                  "word": "I"
+                                }
+                              ]
+                            },
+                            "opt_trailing_comma": []
+                          }
+                        },
+                        {
+                          "word": "G"
                         }
                       ]
                     },
-                    {
-                      "star": [
+                    "word": "method1",
+                    "ArgumentsSignatureNode": {
+                      "arguments": [
                         {
-                          "and": [
-                            {
-                              "type": "ClassElementNode",
-                              "value": {
-                                "or": [
+                          "word": "k"
+                        },
+                        {
+                          "word": "u"
+                        },
+                        {
+                          "TypenameNode": {
+                            "word": "R",
+                            "typenameExtensions": [
+                              {
+                                "TypenameListNode": {
+                                  "types": [
+                                    {
+                                      "word": "U"
+                                    },
+                                    {
+                                      "TypenameNode": {
+                                        "word": "E",
+                                        "typenameExtensions": [
+                                          {
+                                            "TypenameListNode": {
+                                              "types": [
+                                                {
+                                                  "word": "H"
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "word": "I"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "word": "V"
+                              }
+                            ]
+                          },
+                          "word": "kuv"
+                        }
+                      ]
+                    },
+                    "ColonIndentCodeBlockNode": {
+                      "CodeBlockNode": {
+                        "statements": [
+                          {
+                            "StatementNode": {
+                              "ForStatementNode": {
+                                "iterators": [
                                   {
-                                    "type": "ClassMemberNode",
-                                    "value": {
-                                      "or": [
+                                    "word": "i"
+                                  }
+                                ],
+                                "UnaryExpressionNode": {
+                                  "ParenExpressionNode": {
+                                    "word": "arr"
+                                  }
+                                },
+                                "opt_if": [],
+                                "opt_while": [],
+                                "ColonIndentCodeBlockNode": {
+                                  "CodeBlockNode": {
+                                    "statements": []
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "StatementNode": {
+                              "ForStatementNode": {
+                                "iterators": [
+                                  {
+                                    "word": "i"
+                                  }
+                                ],
+                                "UnaryExpressionNode": {
+                                  "ParenExpressionNode": {
+                                    "word": "someContainer"
+                                  }
+                                },
+                                "opt_if": [],
+                                "opt_while": [],
+                                "ColonIndentCodeBlockNode": {
+                                  "CodeBlockNode": {
+                                    "statements": []
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "StatementNode": {
+                              "ForStatementNode": {
+                                "iterators": [
+                                  {
+                                    "word": "i"
+                                  }
+                                ],
+                                "UnaryExpressionNode": {
+                                  "ParenExpressionNode": {
+                                    "TypenameNode": {
+                                      "word": "std",
+                                      "typenameExtensions": [
                                         {
-                                          "type": "MethodNode",
-                                          "value": {
-                                            "and": [
+                                          "TypenameNode": {
+                                            "word": "f",
+                                            "typenameExtensions": [
                                               {
-                                                "type": "ClassMemberQualifiers",
-                                                "value": {
-                                                  "and": [
+                                                "TypenameNode": {
+                                                  "word": "f",
+                                                  "typenameExtensions": [
                                                     {
-                                                      "opt": [
-                                                        {
-                                                          "type": "PPPQualifierNode",
-                                                          "value": {
-                                                            "or": []
-                                                          }
-                                                        }
-                                                      ]
-                                                    },
-                                                    {
-                                                      "opt": []
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              {
-                                                "type": "TypenameNode",
-                                                "value": {
-                                                  "and": [
-                                                    {
-                                                      "word": "E"
-                                                    },
-                                                    {
-                                                      "star": [
-                                                        {
-                                                          "or": [
-                                                            {
-                                                              "type": "TemplateTypenameNode",
-                                                              "value": {
-                                                                "and": [
-                                                                  {
-                                                                    "or": [
-                                                                      {
-                                                                        "type": "TypenameListNodeEndingWithRShift",
-                                                                        "value": {
-                                                                          "and": [
-                                                                            {
-                                                                              "star": []
-                                                                            },
-                                                                            {
-                                                                              "word": "F"
-                                                                            },
-                                                                            {
-                                                                              "type": "TypenameListNode",
-                                                                              "value": {
-                                                                                "commastar": [
-                                                                                  {
-                                                                                    "type": "TypenameNode",
-                                                                                    "value": {
-                                                                                      "and": [
-                                                                                        {
-                                                                                          "word": "H"
-                                                                                        },
-                                                                                        {
-                                                                                          "star": []
-                                                                                        }
-                                                                                      ]
-                                                                                    }
-                                                                                  },
-                                                                                  {
-                                                                                    "type": "TypenameNode",
-                                                                                    "value": {
-                                                                                      "and": [
-                                                                                        {
-                                                                                          "word": "I"
-                                                                                        },
-                                                                                        {
-                                                                                          "star": []
-                                                                                        }
-                                                                                      ]
-                                                                                    }
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            },
-                                                                            {
-                                                                              "opt": []
-                                                                            }
-                                                                          ]
-                                                                        }
-                                                                      }
-                                                                    ]
-                                                                  }
-                                                                ]
-                                                              }
-                                                            }
-                                                          ]
-                                                        },
-                                                        {
-                                                          "or": [
-                                                            {
-                                                              "type": "NSTypenameNode",
-                                                              "value": {
-                                                                "and": [
-                                                                  {
-                                                                    "type": "TypenameNode",
-                                                                    "value": {
-                                                                      "and": [
-                                                                        {
-                                                                          "word": "G"
-                                                                        },
-                                                                        {
-                                                                          "star": []
-                                                                        }
-                                                                      ]
-                                                                    }
-                                                                  }
-                                                                ]
-                                                              }
-                                                            }
-                                                          ]
-                                                        }
-                                                      ]
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              {
-                                                "word": "method1"
-                                              },
-                                              {
-                                                "type": "ArgumentsSignatureNode",
-                                                "value": {
-                                                  "commastar": [
-                                                    {
-                                                      "and": [
-                                                        {
-                                                          "type": "TypenameNode",
-                                                          "value": {
-                                                            "and": [
-                                                              {
-                                                                "word": "K"
-                                                              },
-                                                              {
-                                                                "star": []
-                                                              }
-                                                            ]
-                                                          }
-                                                        },
-                                                        {
-                                                          "word": "k"
-                                                        }
-                                                      ]
-                                                    },
-                                                    {
-                                                      "and": [
-                                                        {
-                                                          "type": "TypenameNode",
-                                                          "value": {
-                                                            "and": [
-                                                              {
-                                                                "word": "U"
-                                                              },
-                                                              {
-                                                                "star": []
-                                                              }
-                                                            ]
-                                                          }
-                                                        },
-                                                        {
-                                                          "word": "u"
-                                                        }
-                                                      ]
-                                                    },
-                                                    {
-                                                      "and": [
-                                                        {
-                                                          "type": "TypenameNode",
-                                                          "value": {
-                                                            "and": [
-                                                              {
-                                                                "word": "R"
-                                                              },
-                                                              {
-                                                                "star": [
-                                                                  {
-                                                                    "or": [
-                                                                      {
-                                                                        "type": "TemplateTypenameNode",
-                                                                        "value": {
-                                                                          "and": [
-                                                                            {
-                                                                              "or": [
-                                                                                {
-                                                                                  "and": [
-                                                                                    {
-                                                                                      "type": "TypenameListNode",
-                                                                                      "value": {
-                                                                                        "commastar": [
-                                                                                          {
-                                                                                            "type": "TypenameNode",
-                                                                                            "value": {
-                                                                                              "and": [
-                                                                                                {
-                                                                                                  "word": "U"
-                                                                                                },
-                                                                                                {
-                                                                                                  "star": []
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          },
-                                                                                          {
-                                                                                            "type": "TypenameNode",
-                                                                                            "value": {
-                                                                                              "and": [
-                                                                                                {
-                                                                                                  "word": "E"
-                                                                                                },
-                                                                                                {
-                                                                                                  "star": [
-                                                                                                    {
-                                                                                                      "or": [
-                                                                                                        {
-                                                                                                          "type": "TemplateTypenameNode",
-                                                                                                          "value": {
-                                                                                                            "and": [
-                                                                                                              {
-                                                                                                                "or": [
-                                                                                                                  {
-                                                                                                                    "and": [
-                                                                                                                      {
-                                                                                                                        "type": "TypenameListNode",
-                                                                                                                        "value": {
-                                                                                                                          "commastar": [
-                                                                                                                            {
-                                                                                                                              "type": "TypenameNode",
-                                                                                                                              "value": {
-                                                                                                                                "and": [
-                                                                                                                                  {
-                                                                                                                                    "word": "H"
-                                                                                                                                  },
-                                                                                                                                  {
-                                                                                                                                    "star": []
-                                                                                                                                  }
-                                                                                                                                ]
-                                                                                                                              }
-                                                                                                                            }
-                                                                                                                          ]
-                                                                                                                        }
-                                                                                                                      }
-                                                                                                                    ]
-                                                                                                                  }
-                                                                                                                ]
-                                                                                                              }
-                                                                                                            ]
-                                                                                                          }
-                                                                                                        }
-                                                                                                      ]
-                                                                                                    }
-                                                                                                  ]
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          },
-                                                                                          {
-                                                                                            "type": "TypenameNode",
-                                                                                            "value": {
-                                                                                              "and": [
-                                                                                                {
-                                                                                                  "word": "I"
-                                                                                                },
-                                                                                                {
-                                                                                                  "star": []
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          }
-                                                                                        ]
-                                                                                      }
-                                                                                    }
-                                                                                  ]
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          ]
-                                                                        }
-                                                                      }
-                                                                    ]
-                                                                  },
-                                                                  {
-                                                                    "or": [
-                                                                      {
-                                                                        "type": "NSTypenameNode",
-                                                                        "value": {
-                                                                          "and": [
-                                                                            {
-                                                                              "type": "TypenameNode",
-                                                                              "value": {
-                                                                                "and": [
-                                                                                  {
-                                                                                    "word": "V"
-                                                                                  },
-                                                                                  {
-                                                                                    "star": []
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            }
-                                                                          ]
-                                                                        }
-                                                                      }
-                                                                    ]
-                                                                  }
-                                                                ]
-                                                              }
-                                                            ]
-                                                          }
-                                                        },
-                                                        {
-                                                          "word": "kuv"
-                                                        }
-                                                      ]
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              {
-                                                "type": "ColonIndentCodeBlockNode",
-                                                "value": {
-                                                  "and": [
-                                                    {
-                                                      "type": "CodeBlockNode",
-                                                      "value": {
-                                                        "star": [
+                                                      "TypenameListNode": {
+                                                        "types": [
                                                           {
-                                                            "type": "StatementNode",
-                                                            "value": {
-                                                              "and": [
-                                                                {
-                                                                  "or": [
-                                                                    {
-                                                                      "type": "ForStatementNode",
-                                                                      "value": {
-                                                                        "and": [
-                                                                          {
-                                                                            "iterators": [
-                                                                              {
-                                                                                "or": [
-                                                                                  {
-                                                                                    "word": "i"
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            ]
-                                                                          },
-                                                                          {
-                                                                            "type": "ExpressionNode",
-                                                                            "value": {
-                                                                              "type": "AssignmentExpressionNode",
-                                                                              "value": {
-                                                                                "and": [
-                                                                                  {
-                                                                                    "type": "ConditionalExpressionNode",
-                                                                                    "value": {
-                                                                                      "and": [
-                                                                                        {
-                                                                                          "type": "OrExpressionNode",
-                                                                                          "value": {
-                                                                                            "and": [
-                                                                                              {
-                                                                                                "type": "AndExpressionNode",
-                                                                                                "value": {
-                                                                                                  "and": [
-                                                                                                    {
-                                                                                                      "type": "BitOrExpressionNode",
-                                                                                                      "value": {
-                                                                                                        "and": [
-                                                                                                          {
-                                                                                                            "type": "BitXorExpressionNode",
-                                                                                                            "value": {
-                                                                                                              "and": [
-                                                                                                                {
-                                                                                                                  "type": "BitAndExpressionNode",
-                                                                                                                  "value": {
-                                                                                                                    "and": [
-                                                                                                                      {
-                                                                                                                        "type": "EqualityExpressionNode",
-                                                                                                                        "value": {
-                                                                                                                          "and": [
-                                                                                                                            {
-                                                                                                                              "type": "CompareExpressionNode",
-                                                                                                                              "value": {
-                                                                                                                                "and": [
-                                                                                                                                  {
-                                                                                                                                    "type": "BitShiftExpressionNode",
-                                                                                                                                    "value": {
-                                                                                                                                      "and": [
-                                                                                                                                        {
-                                                                                                                                          "type": "AdditiveExpressionNode",
-                                                                                                                                          "value": {
-                                                                                                                                            "and": [
-                                                                                                                                              {
-                                                                                                                                                "type": "MultiplicativeExpressionNode",
-                                                                                                                                                "value": {
-                                                                                                                                                  "and": [
-                                                                                                                                                    {
-                                                                                                                                                      "type": "UnaryExpressionNode",
-                                                                                                                                                      "value": {
-                                                                                                                                                        "or": [
-                                                                                                                                                          {
-                                                                                                                                                            "type": "PostfixExpressionNode",
-                                                                                                                                                            "value": {
-                                                                                                                                                              "and": [
-                                                                                                                                                                {
-                                                                                                                                                                  "type": "ParenExpressionNode",
-                                                                                                                                                                  "value": {
-                                                                                                                                                                    "or": [
-                                                                                                                                                                      {
-                                                                                                                                                                        "type": "TypenameNode",
-                                                                                                                                                                        "value": {
-                                                                                                                                                                          "and": [
-                                                                                                                                                                            {
-                                                                                                                                                                              "word": "arr"
-                                                                                                                                                                            },
-                                                                                                                                                                            {
-                                                                                                                                                                              "star": []
-                                                                                                                                                                            }
-                                                                                                                                                                          ]
-                                                                                                                                                                        }
-                                                                                                                                                                      }
-                                                                                                                                                                    ]
-                                                                                                                                                                  }
-                                                                                                                                                                },
-                                                                                                                                                                {
-                                                                                                                                                                  "star": []
-                                                                                                                                                                }
-                                                                                                                                                              ]
-                                                                                                                                                            }
-                                                                                                                                                          }
-                                                                                                                                                        ]
-                                                                                                                                                      }
-                                                                                                                                                    },
-                                                                                                                                                    {
-                                                                                                                                                      "star": []
-                                                                                                                                                    }
-                                                                                                                                                  ]
-                                                                                                                                                }
-                                                                                                                                              },
-                                                                                                                                              {
-                                                                                                                                                "star": []
-                                                                                                                                              }
-                                                                                                                                            ]
-                                                                                                                                          }
-                                                                                                                                        },
-                                                                                                                                        {
-                                                                                                                                          "star": []
-                                                                                                                                        }
-                                                                                                                                      ]
-                                                                                                                                    }
-                                                                                                                                  },
-                                                                                                                                  {
-                                                                                                                                    "star": []
-                                                                                                                                  }
-                                                                                                                                ]
-                                                                                                                              }
-                                                                                                                            },
-                                                                                                                            {
-                                                                                                                              "star": []
-                                                                                                                            }
-                                                                                                                          ]
-                                                                                                                        }
-                                                                                                                      },
-                                                                                                                      {
-                                                                                                                        "star": []
-                                                                                                                      }
-                                                                                                                    ]
-                                                                                                                  }
-                                                                                                                },
-                                                                                                                {
-                                                                                                                  "star": []
-                                                                                                                }
-                                                                                                              ]
-                                                                                                            }
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "star": []
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "star": []
-                                                                                                    }
-                                                                                                  ]
-                                                                                                }
-                                                                                              },
-                                                                                              {
-                                                                                                "star": []
-                                                                                              }
-                                                                                            ]
-                                                                                          }
-                                                                                        },
-                                                                                        {
-                                                                                          "opt": []
-                                                                                        }
-                                                                                      ]
-                                                                                    }
-                                                                                  },
-                                                                                  {
-                                                                                    "star": []
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "opt": []
-                                                                          },
-                                                                          {
-                                                                            "opt": []
-                                                                          },
-                                                                          {
-                                                                            "type": "ColonIndentCodeBlockNode",
-                                                                            "value": {
-                                                                              "and": [
-                                                                                {
-                                                                                  "type": "CodeBlockNode",
-                                                                                  "value": {
-                                                                                    "star": []
-                                                                                  }
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          }
-                                                                        ]
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          {
-                                                            "type": "StatementNode",
-                                                            "value": {
-                                                              "and": [
-                                                                {
-                                                                  "or": [
-                                                                    {
-                                                                      "type": "ForStatementNode",
-                                                                      "value": {
-                                                                        "and": [
-                                                                          {
-                                                                            "iterators": [
-                                                                              {
-                                                                                "or": [
-                                                                                  {
-                                                                                    "word": "i"
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            ]
-                                                                          },
-                                                                          {
-                                                                            "type": "ExpressionNode",
-                                                                            "value": {
-                                                                              "type": "AssignmentExpressionNode",
-                                                                              "value": {
-                                                                                "and": [
-                                                                                  {
-                                                                                    "type": "ConditionalExpressionNode",
-                                                                                    "value": {
-                                                                                      "and": [
-                                                                                        {
-                                                                                          "type": "OrExpressionNode",
-                                                                                          "value": {
-                                                                                            "and": [
-                                                                                              {
-                                                                                                "type": "AndExpressionNode",
-                                                                                                "value": {
-                                                                                                  "and": [
-                                                                                                    {
-                                                                                                      "type": "BitOrExpressionNode",
-                                                                                                      "value": {
-                                                                                                        "and": [
-                                                                                                          {
-                                                                                                            "type": "BitXorExpressionNode",
-                                                                                                            "value": {
-                                                                                                              "and": [
-                                                                                                                {
-                                                                                                                  "type": "BitAndExpressionNode",
-                                                                                                                  "value": {
-                                                                                                                    "and": [
-                                                                                                                      {
-                                                                                                                        "type": "EqualityExpressionNode",
-                                                                                                                        "value": {
-                                                                                                                          "and": [
-                                                                                                                            {
-                                                                                                                              "type": "CompareExpressionNode",
-                                                                                                                              "value": {
-                                                                                                                                "and": [
-                                                                                                                                  {
-                                                                                                                                    "type": "BitShiftExpressionNode",
-                                                                                                                                    "value": {
-                                                                                                                                      "and": [
-                                                                                                                                        {
-                                                                                                                                          "type": "AdditiveExpressionNode",
-                                                                                                                                          "value": {
-                                                                                                                                            "and": [
-                                                                                                                                              {
-                                                                                                                                                "type": "MultiplicativeExpressionNode",
-                                                                                                                                                "value": {
-                                                                                                                                                  "and": [
-                                                                                                                                                    {
-                                                                                                                                                      "type": "UnaryExpressionNode",
-                                                                                                                                                      "value": {
-                                                                                                                                                        "or": [
-                                                                                                                                                          {
-                                                                                                                                                            "type": "PostfixExpressionNode",
-                                                                                                                                                            "value": {
-                                                                                                                                                              "and": [
-                                                                                                                                                                {
-                                                                                                                                                                  "type": "ParenExpressionNode",
-                                                                                                                                                                  "value": {
-                                                                                                                                                                    "or": [
-                                                                                                                                                                      {
-                                                                                                                                                                        "type": "TypenameNode",
-                                                                                                                                                                        "value": {
-                                                                                                                                                                          "and": [
-                                                                                                                                                                            {
-                                                                                                                                                                              "word": "someContainer"
-                                                                                                                                                                            },
-                                                                                                                                                                            {
-                                                                                                                                                                              "star": []
-                                                                                                                                                                            }
-                                                                                                                                                                          ]
-                                                                                                                                                                        }
-                                                                                                                                                                      }
-                                                                                                                                                                    ]
-                                                                                                                                                                  }
-                                                                                                                                                                },
-                                                                                                                                                                {
-                                                                                                                                                                  "star": []
-                                                                                                                                                                }
-                                                                                                                                                              ]
-                                                                                                                                                            }
-                                                                                                                                                          }
-                                                                                                                                                        ]
-                                                                                                                                                      }
-                                                                                                                                                    },
-                                                                                                                                                    {
-                                                                                                                                                      "star": []
-                                                                                                                                                    }
-                                                                                                                                                  ]
-                                                                                                                                                }
-                                                                                                                                              },
-                                                                                                                                              {
-                                                                                                                                                "star": []
-                                                                                                                                              }
-                                                                                                                                            ]
-                                                                                                                                          }
-                                                                                                                                        },
-                                                                                                                                        {
-                                                                                                                                          "star": []
-                                                                                                                                        }
-                                                                                                                                      ]
-                                                                                                                                    }
-                                                                                                                                  },
-                                                                                                                                  {
-                                                                                                                                    "star": []
-                                                                                                                                  }
-                                                                                                                                ]
-                                                                                                                              }
-                                                                                                                            },
-                                                                                                                            {
-                                                                                                                              "star": []
-                                                                                                                            }
-                                                                                                                          ]
-                                                                                                                        }
-                                                                                                                      },
-                                                                                                                      {
-                                                                                                                        "star": []
-                                                                                                                      }
-                                                                                                                    ]
-                                                                                                                  }
-                                                                                                                },
-                                                                                                                {
-                                                                                                                  "star": []
-                                                                                                                }
-                                                                                                              ]
-                                                                                                            }
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "star": []
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "star": []
-                                                                                                    }
-                                                                                                  ]
-                                                                                                }
-                                                                                              },
-                                                                                              {
-                                                                                                "star": []
-                                                                                              }
-                                                                                            ]
-                                                                                          }
-                                                                                        },
-                                                                                        {
-                                                                                          "opt": []
-                                                                                        }
-                                                                                      ]
-                                                                                    }
-                                                                                  },
-                                                                                  {
-                                                                                    "star": []
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "opt": []
-                                                                          },
-                                                                          {
-                                                                            "opt": []
-                                                                          },
-                                                                          {
-                                                                            "type": "ColonIndentCodeBlockNode",
-                                                                            "value": {
-                                                                              "and": [
-                                                                                {
-                                                                                  "type": "CodeBlockNode",
-                                                                                  "value": {
-                                                                                    "star": []
-                                                                                  }
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          }
-                                                                        ]
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          {
-                                                            "type": "StatementNode",
-                                                            "value": {
-                                                              "and": [
-                                                                {
-                                                                  "or": [
-                                                                    {
-                                                                      "type": "ForStatementNode",
-                                                                      "value": {
-                                                                        "and": [
-                                                                          {
-                                                                            "iterators": [
-                                                                              {
-                                                                                "or": [
-                                                                                  {
-                                                                                    "word": "i"
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            ]
-                                                                          },
-                                                                          {
-                                                                            "type": "ExpressionNode",
-                                                                            "value": {
-                                                                              "type": "AssignmentExpressionNode",
-                                                                              "value": {
-                                                                                "and": [
-                                                                                  {
-                                                                                    "type": "ConditionalExpressionNode",
-                                                                                    "value": {
-                                                                                      "and": [
-                                                                                        {
-                                                                                          "type": "OrExpressionNode",
-                                                                                          "value": {
-                                                                                            "and": [
-                                                                                              {
-                                                                                                "type": "AndExpressionNode",
-                                                                                                "value": {
-                                                                                                  "and": [
-                                                                                                    {
-                                                                                                      "type": "BitOrExpressionNode",
-                                                                                                      "value": {
-                                                                                                        "and": [
-                                                                                                          {
-                                                                                                            "type": "BitXorExpressionNode",
-                                                                                                            "value": {
-                                                                                                              "and": [
-                                                                                                                {
-                                                                                                                  "type": "BitAndExpressionNode",
-                                                                                                                  "value": {
-                                                                                                                    "and": [
-                                                                                                                      {
-                                                                                                                        "type": "EqualityExpressionNode",
-                                                                                                                        "value": {
-                                                                                                                          "and": [
-                                                                                                                            {
-                                                                                                                              "type": "CompareExpressionNode",
-                                                                                                                              "value": {
-                                                                                                                                "and": [
-                                                                                                                                  {
-                                                                                                                                    "type": "BitShiftExpressionNode",
-                                                                                                                                    "value": {
-                                                                                                                                      "and": [
-                                                                                                                                        {
-                                                                                                                                          "type": "AdditiveExpressionNode",
-                                                                                                                                          "value": {
-                                                                                                                                            "and": [
-                                                                                                                                              {
-                                                                                                                                                "type": "MultiplicativeExpressionNode",
-                                                                                                                                                "value": {
-                                                                                                                                                  "and": [
-                                                                                                                                                    {
-                                                                                                                                                      "type": "UnaryExpressionNode",
-                                                                                                                                                      "value": {
-                                                                                                                                                        "or": [
-                                                                                                                                                          {
-                                                                                                                                                            "type": "PostfixExpressionNode",
-                                                                                                                                                            "value": {
-                                                                                                                                                              "and": [
-                                                                                                                                                                {
-                                                                                                                                                                  "type": "ParenExpressionNode",
-                                                                                                                                                                  "value": {
-                                                                                                                                                                    "or": [
-                                                                                                                                                                      {
-                                                                                                                                                                        "type": "TypenameNode",
-                                                                                                                                                                        "value": {
-                                                                                                                                                                          "and": [
-                                                                                                                                                                            {
-                                                                                                                                                                              "word": "std"
-                                                                                                                                                                            },
-                                                                                                                                                                            {
-                                                                                                                                                                              "star": [
-                                                                                                                                                                                {
-                                                                                                                                                                                  "or": [
-                                                                                                                                                                                    {
-                                                                                                                                                                                      "type": "NSTypenameNode",
-                                                                                                                                                                                      "value": {
-                                                                                                                                                                                        "and": [
-                                                                                                                                                                                          {
-                                                                                                                                                                                            "type": "TypenameNode",
-                                                                                                                                                                                            "value": {
-                                                                                                                                                                                              "and": [
-                                                                                                                                                                                                {
-                                                                                                                                                                                                  "word": "f"
-                                                                                                                                                                                                },
-                                                                                                                                                                                                {
-                                                                                                                                                                                                  "star": [
-                                                                                                                                                                                                    {
-                                                                                                                                                                                                      "or": [
-                                                                                                                                                                                                        {
-                                                                                                                                                                                                          "type": "NSTypenameNode",
-                                                                                                                                                                                                          "value": {
-                                                                                                                                                                                                            "and": [
-                                                                                                                                                                                                              {
-                                                                                                                                                                                                                "type": "TypenameNode",
-                                                                                                                                                                                                                "value": {
-                                                                                                                                                                                                                  "and": [
-                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                      "word": "f"
-                                                                                                                                                                                                                    },
-                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                      "star": [
-                                                                                                                                                                                                                        {
-                                                                                                                                                                                                                          "or": [
-                                                                                                                                                                                                                            {
-                                                                                                                                                                                                                              "type": "TemplateTypenameNode",
-                                                                                                                                                                                                                              "value": {
-                                                                                                                                                                                                                                "and": [
-                                                                                                                                                                                                                                  {
-                                                                                                                                                                                                                                    "or": [
-                                                                                                                                                                                                                                      {
-                                                                                                                                                                                                                                        "and": [
-                                                                                                                                                                                                                                          {
-                                                                                                                                                                                                                                            "type": "TypenameListNode",
-                                                                                                                                                                                                                                            "value": {
-                                                                                                                                                                                                                                              "commastar": [
-                                                                                                                                                                                                                                                {
-                                                                                                                                                                                                                                                  "type": "TypenameNode",
-                                                                                                                                                                                                                                                  "value": {
-                                                                                                                                                                                                                                                    "and": [
-                                                                                                                                                                                                                                                      {
-                                                                                                                                                                                                                                                        "word": "f"
-                                                                                                                                                                                                                                                      },
-                                                                                                                                                                                                                                                      {
-                                                                                                                                                                                                                                                        "star": []
-                                                                                                                                                                                                                                                      }
-                                                                                                                                                                                                                                                    ]
-                                                                                                                                                                                                                                                  }
-                                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                                              ]
-                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                          }
-                                                                                                                                                                                                                                        ]
-                                                                                                                                                                                                                                      }
-                                                                                                                                                                                                                                    ]
-                                                                                                                                                                                                                                  }
-                                                                                                                                                                                                                                ]
-                                                                                                                                                                                                                              }
-                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                          ]
-                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                      ]
-                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                  ]
-                                                                                                                                                                                                                }
-                                                                                                                                                                                                              }
-                                                                                                                                                                                                            ]
-                                                                                                                                                                                                          }
-                                                                                                                                                                                                        }
-                                                                                                                                                                                                      ]
-                                                                                                                                                                                                    }
-                                                                                                                                                                                                  ]
-                                                                                                                                                                                                }
-                                                                                                                                                                                              ]
-                                                                                                                                                                                            }
-                                                                                                                                                                                          }
-                                                                                                                                                                                        ]
-                                                                                                                                                                                      }
-                                                                                                                                                                                    }
-                                                                                                                                                                                  ]
-                                                                                                                                                                                }
-                                                                                                                                                                              ]
-                                                                                                                                                                            }
-                                                                                                                                                                          ]
-                                                                                                                                                                        }
-                                                                                                                                                                      }
-                                                                                                                                                                    ]
-                                                                                                                                                                  }
-                                                                                                                                                                },
-                                                                                                                                                                {
-                                                                                                                                                                  "star": []
-                                                                                                                                                                }
-                                                                                                                                                              ]
-                                                                                                                                                            }
-                                                                                                                                                          }
-                                                                                                                                                        ]
-                                                                                                                                                      }
-                                                                                                                                                    },
-                                                                                                                                                    {
-                                                                                                                                                      "star": []
-                                                                                                                                                    }
-                                                                                                                                                  ]
-                                                                                                                                                }
-                                                                                                                                              },
-                                                                                                                                              {
-                                                                                                                                                "star": []
-                                                                                                                                              }
-                                                                                                                                            ]
-                                                                                                                                          }
-                                                                                                                                        },
-                                                                                                                                        {
-                                                                                                                                          "star": []
-                                                                                                                                        }
-                                                                                                                                      ]
-                                                                                                                                    }
-                                                                                                                                  },
-                                                                                                                                  {
-                                                                                                                                    "star": []
-                                                                                                                                  }
-                                                                                                                                ]
-                                                                                                                              }
-                                                                                                                            },
-                                                                                                                            {
-                                                                                                                              "star": []
-                                                                                                                            }
-                                                                                                                          ]
-                                                                                                                        }
-                                                                                                                      },
-                                                                                                                      {
-                                                                                                                        "star": []
-                                                                                                                      }
-                                                                                                                    ]
-                                                                                                                  }
-                                                                                                                },
-                                                                                                                {
-                                                                                                                  "star": []
-                                                                                                                }
-                                                                                                              ]
-                                                                                                            }
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "star": []
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "star": []
-                                                                                                    }
-                                                                                                  ]
-                                                                                                }
-                                                                                              },
-                                                                                              {
-                                                                                                "star": []
-                                                                                              }
-                                                                                            ]
-                                                                                          }
-                                                                                        },
-                                                                                        {
-                                                                                          "opt": []
-                                                                                        }
-                                                                                      ]
-                                                                                    }
-                                                                                  },
-                                                                                  {
-                                                                                    "star": []
-                                                                                  }
-                                                                                ]
-                                                                              }
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "opt": []
-                                                                          },
-                                                                          {
-                                                                            "opt": []
-                                                                          },
-                                                                          {
-                                                                            "type": "ColonIndentCodeBlockNode",
-                                                                            "value": {
-                                                                              "and": [
-                                                                                {
-                                                                                  "type": "CodeBlockNode",
-                                                                                  "value": {
-                                                                                    "star": []
-                                                                                  }
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          }
-                                                                        ]
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              ]
-                                                            }
+                                                            "word": "f"
                                                           }
                                                         ]
                                                       }
@@ -1209,161 +222,63 @@
                                       ]
                                     }
                                   }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "and": [
-                            {
-                              "type": "ClassElementNode",
-                              "value": {
-                                "or": [
-                                  {
-                                    "type": "ClassMemberNode",
-                                    "value": {
-                                      "or": [
-                                        {
-                                          "type": "MemberVariableNode",
-                                          "value": {
-                                            "and": [
-                                              {
-                                                "type": "ClassMemberQualifiers",
-                                                "value": {
-                                                  "and": [
-                                                    {
-                                                      "opt": []
-                                                    },
-                                                    {
-                                                      "opt": []
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              {
-                                                "type": "TypenameNode",
-                                                "value": {
-                                                  "and": [
-                                                    {
-                                                      "word": "B"
-                                                    },
-                                                    {
-                                                      "star": [
-                                                        {
-                                                          "or": [
-                                                            {
-                                                              "type": "NSTypenameNode",
-                                                              "value": {
-                                                                "and": [
-                                                                  {
-                                                                    "type": "TypenameNode",
-                                                                    "value": {
-                                                                      "and": [
-                                                                        {
-                                                                          "word": "T"
-                                                                        },
-                                                                        {
-                                                                          "star": [
-                                                                            {
-                                                                              "or": [
-                                                                                {
-                                                                                  "type": "TemplateTypenameNode",
-                                                                                  "value": {
-                                                                                    "and": [
-                                                                                      {
-                                                                                        "or": [
-                                                                                          {
-                                                                                            "and": [
-                                                                                              {
-                                                                                                "type": "TypenameListNode",
-                                                                                                "value": {
-                                                                                                  "commastar": [
-                                                                                                    {
-                                                                                                      "type": "TypenameNode",
-                                                                                                      "value": {
-                                                                                                        "and": [
-                                                                                                          {
-                                                                                                            "word": "U"
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "star": []
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "type": "TypenameNode",
-                                                                                                      "value": {
-                                                                                                        "and": [
-                                                                                                          {
-                                                                                                            "word": "V"
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "star": []
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    }
-                                                                                                  ]
-                                                                                                }
-                                                                                              }
-                                                                                            ]
-                                                                                          }
-                                                                                        ]
-                                                                                      }
-                                                                                    ]
-                                                                                  }
-                                                                                }
-                                                                              ]
-                                                                            },
-                                                                            {
-                                                                              "or": [
-                                                                                {
-                                                                                  "type": "PointerTypenameNode",
-                                                                                  "value": {
-                                                                                    "or": []
-                                                                                  }
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          ]
-                                                                        }
-                                                                      ]
-                                                                    }
-                                                                  }
-                                                                ]
-                                                              }
-                                                            }
-                                                          ]
-                                                        }
-                                                      ]
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              {
-                                                "word": "member1"
-                                              }
-                                            ]
-                                          }
-                                        }
-                                      ]
-                                    }
+                                },
+                                "opt_if": [],
+                                "opt_while": [],
+                                "ColonIndentCodeBlockNode": {
+                                  "CodeBlockNode": {
+                                    "statements": []
                                   }
-                                ]
+                                }
                               }
                             }
-                          ]
-                        }
-                      ]
+                          }
+                        ]
+                      }
                     }
-                  ]
+                  }
                 }
               }
-            ]
-          }
-        ]
+            },
+            {
+              "ClassElementNode": {
+                "ClassMemberNode": {
+                  "MemberVariableNode": {
+                    "ClassMemberQualifiers": {
+                      "opt_ppp": [],
+                      "opt_static": []
+                    },
+                    "TypenameNode": {
+                      "word": "B",
+                      "typenameExtensions": [
+                        {
+                          "TypenameNode": {
+                            "word": "T",
+                            "typenameExtensions": [
+                              {
+                                "TypenameListNode": {
+                                  "types": [
+                                    {
+                                      "word": "U"
+                                    },
+                                    {
+                                      "word": "V"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "word": "member1"
+                  }
+                }
+              }
+            }
+          ]
+        }
       }
     ]
   }

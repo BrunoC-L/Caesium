@@ -10,7 +10,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE_NAMED(TypenameNode, "Typename"),
+				MAKE_NAMED(TypenameNode, "typename"),
 				WORD_TOKEN("word"),
 				TOKEN(PARENOPEN),
 				MAKE_NAMED(ArgumentsSignatureNode, "ArgumentsSignature"),

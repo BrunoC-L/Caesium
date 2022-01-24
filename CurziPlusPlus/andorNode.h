@@ -5,7 +5,7 @@
 
 class AndNode : public Node {
 public:
-	AndNode(std::string name, vNode v, int n_indent = 0) : Node(name, n_indent) {
+	AndNode(vNode v, int n_indent = 0) : Node("", n_indent) {
 		this->name = "AndNode";
 		this->nodes = v;
 	}
@@ -28,7 +28,7 @@ public:
 
 class OrNode : public Node {
 public:
-	OrNode(std::string name, vNode v, int n_indent = 0) : Node(name, n_indent) {
+	OrNode(vNode v, int n_indent = 0) : Node("", n_indent) {
 		this->name = "OrNode";
 		this->nodes = v;
 	}

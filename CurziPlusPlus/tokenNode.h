@@ -45,6 +45,24 @@ public:
 	}
 };
 
+class PublicToken : public TokenNode<PUBLIC> {
+public:
+	PublicToken() : TokenNode<PUBLIC>("") {}
+	virtual void accept(NodeVisitor* v) override { v->visit(this); }
+};
+
+class ProtectedToken : public TokenNode<PROTECTED> {
+public:
+	ProtectedToken() : TokenNode<PROTECTED>("") {}
+	virtual void accept(NodeVisitor* v) override { v->visit(this); }
+};
+
+class PrivateToken : public TokenNode<PRIVATE> {
+public:
+	PrivateToken() : TokenNode<PRIVATE>("") {}
+	virtual void accept(NodeVisitor* v) override { v->visit(this); }
+};
+
 class WordTokenNode : public TokenNode<WORD> {
 public:
 	WordTokenNode(std::string name) : TokenNode<WORD>(name) {}

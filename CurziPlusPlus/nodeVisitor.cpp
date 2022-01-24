@@ -2,6 +2,7 @@
 #include "fileNode.h"
 
 void NodeVisitor::default_behavior(Node* node) { throw std::exception("unsupported type"); }
+
 void NodeVisitor::visit(Node* node) { default_behavior(node); }
 void NodeVisitor::visit(OPTNode* node) { default_behavior(node); }
 void NodeVisitor::visit(StarNode* node) { default_behavior(node); }
@@ -11,6 +12,9 @@ void NodeVisitor::visit(CommaPlusNode* node) { default_behavior(node); }
 void NodeVisitor::visit(OrNode* node) { default_behavior(node); }
 void NodeVisitor::visit(AndNode* node) { default_behavior(node); }
 void NodeVisitor::visit(TokenNode_* node) { default_behavior(node); }
+void NodeVisitor::visit(PublicToken* node) { default_behavior(node); }
+void NodeVisitor::visit(ProtectedToken* node) { default_behavior(node); }
+void NodeVisitor::visit(PrivateToken* node) { default_behavior(node); }
 void NodeVisitor::visit(WordTokenNode* node) { default_behavior(node); }
 void NodeVisitor::visit(NumberTokenNode* node) { default_behavior(node); }
 void NodeVisitor::visit(UntilTokenNode* node) { default_behavior(node); }
@@ -29,12 +33,8 @@ void NodeVisitor::visit(AssignmentExpressionNode* node) { default_behavior(node)
 void NodeVisitor::visit(ConditionalExpressionNode* node) { default_behavior(node); }
 void NodeVisitor::visit(OrExpressionNode* node) { default_behavior(node); }
 void NodeVisitor::visit(AndExpressionNode* node) { default_behavior(node); }
-void NodeVisitor::visit(BitOrExpressionNode* node) { default_behavior(node); }
-void NodeVisitor::visit(BitXorExpressionNode* node) { default_behavior(node); }
-void NodeVisitor::visit(BitAndExpressionNode* node) { default_behavior(node); }
 void NodeVisitor::visit(EqualityExpressionNode* node) { default_behavior(node); }
 void NodeVisitor::visit(CompareExpressionNode* node) { default_behavior(node); }
-void NodeVisitor::visit(BitShiftExpressionNode* node) { default_behavior(node); }
 void NodeVisitor::visit(AdditiveExpressionNode* node) { default_behavior(node); }
 void NodeVisitor::visit(MultiplicativeExpressionNode* node) { default_behavior(node); }
 void NodeVisitor::visit(UnaryExpressionNode* node) { default_behavior(node); }

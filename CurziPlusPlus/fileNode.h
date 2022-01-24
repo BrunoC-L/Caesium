@@ -9,7 +9,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				_STAR_ _OR_
+				_STAR_("classes_or_functions") _OR_
 					MAKE_NAMED(ClassNode, "Class"),
 					MAKE_NAMED(FunctionNode, "Function"),
 				____,

@@ -14,7 +14,7 @@ public:
 				TOKEN(USING),
 				WORD_TOKEN("word"),
 				TOKEN(EQUAL),
-				MAKE_NAMED(TypenameNode, "Typename"),
+				MAKE_NAMED(TypenameNode, "typename"),
 			__
 		};
 	}

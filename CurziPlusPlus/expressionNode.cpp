@@ -17,7 +17,7 @@ void AssignmentExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE_NAMED(ConditionalExpressionNode, "ConditionalExpression"),
-			_STAR_
+			_STAR_("assignments")
 				_AND_
 					_OR_
 						TOKEN(EQUAL),
@@ -41,16 +41,10 @@ void ConditionalExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE_NAMED(OrExpressionNode, "OrExpression"),
-			/*_OPT_ _AND_
-				TOKEN(QUESTION),
-				MAKE_NAMED(OrExpressionNode, "OrExpression"),
-				TOKEN(COLON),
-				MAKE_NAMED(OrExpressionNode, "OrExpression")
-			____*/
-			_OPT_ _AND_
+			_OPT_("opt_conditional_if") _AND_
 				TOKEN(IF),
 				MAKE_NAMED(OrExpressionNode, "OrExpression"),
-				_OPT_ _AND_
+				_OPT_("opt_conditional_else") _AND_
 					TOKEN(ELSE),
 					MAKE_NAMED(OrExpressionNode, "OrExpression"),
 				____,
@@ -63,7 +57,7 @@ void OrExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE_NAMED(AndExpressionNode, "AndExpression"),
-			_STAR_
+			_STAR_("ors")
 				_AND_
 					TOKEN(OR), // OR = 'or', OROR = '||'
 					MAKE_NAMED(AndExpressionNode, "AndExpression"),
@@ -76,52 +70,10 @@ void OrExpressionNode::build() {
 void AndExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(BitOrExpressionNode, "BitOrExpression"),
-			_STAR_
+			MAKE_NAMED(EqualityExpressionNode, "EqualityExpression"),
+			_STAR_("ands")
 				_AND_
 					TOKEN(AND), // AND = 'and', ANDAND = '&&'
-					MAKE_NAMED(BitOrExpressionNode, "BitOrExpression"),
-				__
-			___
-		__
-	};
-}
-
-void BitOrExpressionNode::build() {
-	this->nodes = {
-		_AND_
-			MAKE_NAMED(BitXorExpressionNode, "BitXorExpression"),
-			_STAR_
-				_AND_
-					TOKEN(BITOR),
-					MAKE_NAMED(BitXorExpressionNode, "BitXorExpression"),
-				__
-			___
-		__
-	};
-}
-
-void BitXorExpressionNode::build() {
-	this->nodes = {
-		_AND_
-			MAKE_NAMED(BitAndExpressionNode, "BitAndExpression"),
-			_STAR_
-				_AND_
-					TOKEN(CARET),
-					MAKE_NAMED(BitAndExpressionNode, "BitAndExpression"),
-				__
-			___
-		__
-	};
-}
-
-void BitAndExpressionNode::build() {
-	this->nodes = {
-		_AND_
-			MAKE_NAMED(EqualityExpressionNode, "EqualityExpression"),
-			_STAR_
-				_AND_
-					TOKEN(AMPERSAND),
 					MAKE_NAMED(EqualityExpressionNode, "EqualityExpression"),
 				__
 			___
@@ -133,7 +85,7 @@ void EqualityExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE_NAMED(CompareExpressionNode, "CompareExpression"),
-			_STAR_
+			_STAR_("equalities")
 				_AND_
 					TOKEN(EQUALEQUAL),
 					MAKE_NAMED(CompareExpressionNode, "CompareExpression"),
@@ -146,31 +98,14 @@ void EqualityExpressionNode::build() {
 void CompareExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(BitShiftExpressionNode, "BitShiftExpression"),
-			_STAR_
+			MAKE_NAMED(AdditiveExpressionNode, "AdditiveExpression"),
+			_STAR_("comparisons")
 				_AND_
 					_OR_
 						TOKEN(LT),
 						TOKEN(LTE),
 						TOKEN(GT),
 						TOKEN(GTE),
-					__,
-					MAKE_NAMED(BitShiftExpressionNode, "BitShiftExpression"),
-				__
-			___
-		__
-	};
-}
-
-void BitShiftExpressionNode::build() {
-	this->nodes = {
-		_AND_
-			MAKE_NAMED(AdditiveExpressionNode, "AdditiveExpression"),
-			_STAR_
-				_AND_
-					_OR_
-						TOKEN(LSHIFT),
-						TOKEN(RSHIFT),
 					__,
 					MAKE_NAMED(AdditiveExpressionNode, "AdditiveExpression"),
 				__
@@ -183,7 +118,7 @@ void AdditiveExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE_NAMED(MultiplicativeExpressionNode, "MultiplicativeExpression"),
-			_STAR_
+			_STAR_("addsubs")
 				_AND_
 					_OR_
 						TOKEN(PLUS),
@@ -200,7 +135,7 @@ void MultiplicativeExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE_NAMED(UnaryExpressionNode, "UnaryExpression"),
-			_STAR_
+			_STAR_("muldivmod")
 				_AND_
 					_OR_
 						TOKEN(ASTERISK),
@@ -218,7 +153,8 @@ void UnaryExpressionNode::build() {
 	this->nodes = {
 		_OR_
 			_AND_
-				_OR_
+				_OR_ // has to be recursive because of the type cast operator taking the same shape as a ParenExpression
+                     // so instead of _STAR_ _OR_ ... ____ we refer to unary expressions inside the _OR_
 					TOKEN(NOT),
 					TOKEN(PLUS),
 					TOKEN(DASH),
@@ -229,11 +165,11 @@ void UnaryExpressionNode::build() {
 					TOKEN(AMPERSAND),
 					_AND_ // type cast operator
 						TOKEN(PARENOPEN),
-						MAKE_NAMED(TypenameNode, "Typename"),
+						MAKE_NAMED(TypenameNode, "typename"),
 						TOKEN(PARENCLOSE),
 					__,
 				__,
-				MAKE_NAMED(UnaryExpressionNode, "UnaryExpression"), // has to be recursive because of the type cast operator taking the same shape as a ParenExpression
+				MAKE_NAMED(UnaryExpressionNode, "UnaryExpression"),
 			__,
 			MAKE_NAMED(PostfixExpressionNode, "PostfixExpression"),
 		__
@@ -244,7 +180,7 @@ void PostfixExpressionNode::build() {
 	this->nodes = {
 		_AND_
 			MAKE_NAMED(ParenExpressionNode, "ParenExpression"),
-			_STAR_ _OR_
+			_STAR_("postfixes") _OR_
 				_AND_
 					_OR_
 						TOKEN(DOT),
@@ -269,7 +205,7 @@ void ParenExpressionNode::build() {
 				MAKE_NAMED(ExpressionNode, "Expression"),
 				TOKEN(PARENCLOSE),
 			__,
-			MAKE_NAMED(TypenameNode, "Typename"),
+			MAKE_NAMED(TypenameNode, "typename"),
 			NUMBER_TOKEN("num"),
 		__
 	};
