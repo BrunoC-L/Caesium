@@ -15,7 +15,7 @@ public:
 		this->nodes = {
 			_COMMA_STAR_("arguments")
 				_AND_
-					MAKE_NAMED(TypenameNode, "typename"),
+					MAKE_NAMED(TypenameNode, "Typename"),
 					WORD_TOKEN("word"),
 			____
 		};

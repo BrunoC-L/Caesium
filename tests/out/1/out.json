@@ -1,41 +1,51 @@
 {
-  "FileNode": {
+  "file": {
     "classes_or_functions": [
       {
-        "ClassNode": {
+        "Class": {
           "word": "A",
           "opt_inheritance": [
             {
-              "ClassInheritanceNode": {
+              "ClassInheritance": {
                 "MultipleInheritanceNode": {
                   "typenames": [
                     {
-                      "TypenameNode": {
+                      "Typename": {
                         "word": "F",
                         "typenameExtensions": [
                           {
-                            "TypenameListNode": {
-                              "types": [
-                                {
-                                  "TypenameNode": {
-                                    "word": "H",
-                                    "typenameExtensions": [
-                                      {
-                                        "TypenameListNode": {
-                                          "types": [
-                                            {
-                                              "word": "T"
+                            "TemplateTypename": {
+                              "TypenameList": {
+                                "types": [
+                                  {
+                                    "Typename": {
+                                      "word": "H",
+                                      "typenameExtensions": [
+                                        {
+                                          "TemplateTypename": {
+                                            "TypenameList": {
+                                              "types": [
+                                                {
+                                                  "Typename": {
+                                                    "word": "T",
+                                                    "typenameExtensions": []
+                                                  }
+                                                }
+                                              ]
                                             }
-                                          ]
+                                          }
                                         }
-                                      }
-                                    ]
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "Typename": {
+                                      "word": "I",
+                                      "typenameExtensions": []
+                                    }
                                   }
-                                },
-                                {
-                                  "word": "I"
-                                }
-                              ]
+                                ]
+                              }
                             }
                           }
                         ]
@@ -48,85 +58,129 @@
           ],
           "classElements": [
             {
-              "ClassElementNode": {
-                "ClassMemberNode": {
-                  "MethodNode": {
+              "Indent": 1,
+              "ClassElement": {
+                "using": {
+                  "Method": {
                     "ClassMemberQualifiers": {
                       "opt_ppp": [
                         {
-                          "PPPQualifierNode": "private"
+                          "PPPQualifier": {
+                            "TokenNode": "private"
+                          }
                         }
                       ],
-                      "opt_static": []
+                      "opt_static": [
+                        {}
+                      ]
                     },
-                    "TypenameNode": {
+                    "Typename": {
                       "word": "E",
                       "typenameExtensions": [
                         {
-                          "TypenameListNodeEndingWithRShift": {
-                            "typenames": [],
-                            "word": "F",
-                            "TypenameListNode": {
-                              "types": [
-                                {
-                                  "word": "H"
-                                },
-                                {
-                                  "word": "I"
-                                }
-                              ]
-                            },
-                            "opt_trailing_comma": []
+                          "TemplateTypename": {
+                            "TypenameListNodeEndingWithRShift": {
+                              "typenames": [],
+                              "word": "F",
+                              "list": {
+                                "types": [
+                                  {
+                                    "Typename": {
+                                      "word": "H",
+                                      "typenameExtensions": []
+                                    }
+                                  },
+                                  {
+                                    "Typename": {
+                                      "word": "I",
+                                      "typenameExtensions": []
+                                    }
+                                  }
+                                ]
+                              },
+                              "opt_trailing_comma": []
+                            }
                           }
                         },
                         {
-                          "word": "G"
+                          "NSTypename": {
+                            "NSTypename": {
+                              "word": "G",
+                              "typenameExtensions": []
+                            }
+                          }
                         }
                       ]
                     },
                     "word": "method1",
-                    "ArgumentsSignatureNode": {
+                    "ArgumentsSignature": {
                       "arguments": [
                         {
+                          "Typename": {
+                            "word": "K",
+                            "typenameExtensions": []
+                          },
                           "word": "k"
                         },
                         {
+                          "Typename": {
+                            "word": "U",
+                            "typenameExtensions": []
+                          },
                           "word": "u"
                         },
                         {
-                          "TypenameNode": {
+                          "Typename": {
                             "word": "R",
                             "typenameExtensions": [
                               {
-                                "TypenameListNode": {
-                                  "types": [
-                                    {
-                                      "word": "U"
-                                    },
-                                    {
-                                      "TypenameNode": {
-                                        "word": "E",
-                                        "typenameExtensions": [
-                                          {
-                                            "TypenameListNode": {
-                                              "types": [
-                                                {
-                                                  "word": "H"
+                                "TemplateTypename": {
+                                  "TypenameList": {
+                                    "types": [
+                                      {
+                                        "Typename": {
+                                          "word": "U",
+                                          "typenameExtensions": []
+                                        }
+                                      },
+                                      {
+                                        "Typename": {
+                                          "word": "E",
+                                          "typenameExtensions": [
+                                            {
+                                              "TemplateTypename": {
+                                                "TypenameList": {
+                                                  "types": [
+                                                    {
+                                                      "Typename": {
+                                                        "word": "H",
+                                                        "typenameExtensions": []
+                                                      }
+                                                    }
+                                                  ]
                                                 }
-                                              ]
+                                              }
                                             }
-                                          }
-                                        ]
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "Typename": {
+                                          "word": "I",
+                                          "typenameExtensions": []
+                                        }
                                       }
-                                    },
-                                    {
-                                      "word": "I"
-                                    }
-                                  ]
+                                    ]
+                                  }
                                 }
                               },
                               {
-                                "word": "V"
+                                "NSTypename": {
+                                  "NSTypename": {
+                                    "word": "V",
+                                    "typenameExtensions": []
+                                  }
+                                }
                               }
                             ]
                           },
@@ -134,99 +188,177 @@
                         }
                       ]
                     },
-                    "ColonIndentCodeBlockNode": {
-                      "CodeBlockNode": {
+                    "ColonIndentCodeBlock": {
+                      "CodeBlock": {
                         "statements": [
                           {
-                            "StatementNode": {
-                              "ForStatementNode": {
+                            "Statement": {
+                              "Indent": 2,
+                              "ForStatement": {
                                 "iterators": [
                                   {
-                                    "word": "i"
+                                    "iteratorName": "i"
                                   }
                                 ],
-                                "UnaryExpressionNode": {
-                                  "ParenExpressionNode": {
-                                    "word": "arr"
-                                  }
-                                },
-                                "opt_if": [],
-                                "opt_while": [],
-                                "ColonIndentCodeBlockNode": {
-                                  "CodeBlockNode": {
-                                    "statements": []
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "StatementNode": {
-                              "ForStatementNode": {
-                                "iterators": [
-                                  {
-                                    "word": "i"
-                                  }
-                                ],
-                                "UnaryExpressionNode": {
-                                  "ParenExpressionNode": {
-                                    "word": "someContainer"
-                                  }
-                                },
-                                "opt_if": [],
-                                "opt_while": [],
-                                "ColonIndentCodeBlockNode": {
-                                  "CodeBlockNode": {
-                                    "statements": []
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "StatementNode": {
-                              "ForStatementNode": {
-                                "iterators": [
-                                  {
-                                    "word": "i"
-                                  }
-                                ],
-                                "UnaryExpressionNode": {
-                                  "ParenExpressionNode": {
-                                    "TypenameNode": {
-                                      "word": "std",
-                                      "typenameExtensions": [
-                                        {
-                                          "TypenameNode": {
-                                            "word": "f",
-                                            "typenameExtensions": [
-                                              {
-                                                "TypenameNode": {
-                                                  "word": "f",
-                                                  "typenameExtensions": [
-                                                    {
-                                                      "TypenameListNode": {
-                                                        "types": [
-                                                          {
-                                                            "word": "f"
-                                                          }
-                                                        ]
+                                "ExpressionNode": {
+                                  "AssignmentExpressionNode": {
+                                    "ConditionalExpressionNode": {
+                                      "OrExpressionNode": {
+                                        "AndExpressionNode": {
+                                          "EqualityExpressionNode": {
+                                            "CompareExpressionNode": {
+                                              "AdditiveExpressionNode": {
+                                                "MultiplicativeExpressionNode": {
+                                                  "UnaryExpression": {
+                                                    "PostfixExpressionNode": {
+                                                      "ParenExpression": {
+                                                        "Typename": {
+                                                          "word": "arr",
+                                                          "typenameExtensions": []
+                                                        }
                                                       }
                                                     }
-                                                  ]
+                                                  }
                                                 }
                                               }
-                                            ]
+                                            }
                                           }
                                         }
-                                      ]
+                                      }
                                     }
                                   }
                                 },
                                 "opt_if": [],
                                 "opt_while": [],
-                                "ColonIndentCodeBlockNode": {
-                                  "CodeBlockNode": {
+                                "ColonIndentCodeBlock": {
+                                  "CodeBlock": {
+                                    "statements": []
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "Statement": {
+                              "Indent": 2,
+                              "ForStatement": {
+                                "iterators": [
+                                  {
+                                    "iteratorName": "i"
+                                  }
+                                ],
+                                "ExpressionNode": {
+                                  "AssignmentExpressionNode": {
+                                    "ConditionalExpressionNode": {
+                                      "OrExpressionNode": {
+                                        "AndExpressionNode": {
+                                          "EqualityExpressionNode": {
+                                            "CompareExpressionNode": {
+                                              "AdditiveExpressionNode": {
+                                                "MultiplicativeExpressionNode": {
+                                                  "UnaryExpression": {
+                                                    "PostfixExpressionNode": {
+                                                      "ParenExpression": {
+                                                        "Typename": {
+                                                          "word": "someContainer",
+                                                          "typenameExtensions": []
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "opt_if": [],
+                                "opt_while": [],
+                                "ColonIndentCodeBlock": {
+                                  "CodeBlock": {
+                                    "statements": []
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "Statement": {
+                              "Indent": 2,
+                              "ForStatement": {
+                                "iterators": [
+                                  {
+                                    "iteratorName": "i"
+                                  }
+                                ],
+                                "ExpressionNode": {
+                                  "AssignmentExpressionNode": {
+                                    "ConditionalExpressionNode": {
+                                      "OrExpressionNode": {
+                                        "AndExpressionNode": {
+                                          "EqualityExpressionNode": {
+                                            "CompareExpressionNode": {
+                                              "AdditiveExpressionNode": {
+                                                "MultiplicativeExpressionNode": {
+                                                  "UnaryExpression": {
+                                                    "PostfixExpressionNode": {
+                                                      "ParenExpression": {
+                                                        "Typename": {
+                                                          "word": "std",
+                                                          "typenameExtensions": [
+                                                            {
+                                                              "NSTypename": {
+                                                                "NSTypename": {
+                                                                  "word": "f",
+                                                                  "typenameExtensions": [
+                                                                    {
+                                                                      "NSTypename": {
+                                                                        "NSTypename": {
+                                                                          "word": "f",
+                                                                          "typenameExtensions": [
+                                                                            {
+                                                                              "TemplateTypename": {
+                                                                                "TypenameList": {
+                                                                                  "types": [
+                                                                                    {
+                                                                                      "Typename": {
+                                                                                        "word": "f",
+                                                                                        "typenameExtensions": []
+                                                                                      }
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "opt_if": [],
+                                "opt_while": [],
+                                "ColonIndentCodeBlock": {
+                                  "CodeBlock": {
                                     "statements": []
                                   }
                                 }
@@ -241,38 +373,52 @@
               }
             },
             {
-              "ClassElementNode": {
-                "ClassMemberNode": {
-                  "MemberVariableNode": {
+              "Indent": 1,
+              "ClassElement": {
+                "using": {
+                  "MemberVariable": {
                     "ClassMemberQualifiers": {
                       "opt_ppp": [],
                       "opt_static": []
                     },
-                    "TypenameNode": {
+                    "Typename": {
                       "word": "B",
                       "typenameExtensions": [
                         {
-                          "TypenameNode": {
-                            "word": "T",
-                            "typenameExtensions": [
-                              {
-                                "TypenameListNode": {
-                                  "types": [
-                                    {
-                                      "word": "U"
-                                    },
-                                    {
-                                      "word": "V"
+                          "NSTypename": {
+                            "NSTypename": {
+                              "word": "T",
+                              "typenameExtensions": [
+                                {
+                                  "TemplateTypename": {
+                                    "TypenameList": {
+                                      "types": [
+                                        {
+                                          "Typename": {
+                                            "word": "U",
+                                            "typenameExtensions": []
+                                          }
+                                        },
+                                        {
+                                          "Typename": {
+                                            "word": "V",
+                                            "typenameExtensions": []
+                                          }
+                                        }
+                                      ]
                                     }
-                                  ]
+                                  }
+                                },
+                                {
+                                  "PointerTypename": {}
                                 }
-                              }
-                            ]
+                              ]
+                            }
                           }
                         }
                       ]
                     },
-                    "word": "member1"
+                    "varname": "member1"
                   }
                 }
               }

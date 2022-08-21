@@ -78,8 +78,11 @@
     <ClCompile Include="factory.cpp">
       <Filter>Source Files\transpiler\toc++\base</Filter>
     </ClCompile>
-    <ClCompile Include="JSONNodeVisitor.cpp">
-      <Filter>Source Files\transpiler\json</Filter>
+    <ClCompile Include="nodeVisitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cppElementVisitor.cpp">
+      <Filter>Source Files\transpiler\toc++\base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

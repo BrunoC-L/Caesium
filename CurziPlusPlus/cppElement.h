@@ -20,4 +20,5 @@ virtual void accept(CPPelementVisitor* v) override {v->visit(this);}
 #define CPPelementClass(T) \
 class T : public CPPelement {\
 public:\
-	ctor(T);
+	ctor(T);\
+	virtual void default_behavior(CPPelement* e) override { e->toString(0); };

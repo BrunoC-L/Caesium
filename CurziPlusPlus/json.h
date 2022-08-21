@@ -63,6 +63,8 @@ public:
 	JSON& operator[](const std::string& propertyName);
 	JSON& operator[](int x);
 
+	bool operator==(const JSON& other) const;
+
 	void push(JSON&& json);
 	void push(const JSON& json);
 	void push(std::string str);

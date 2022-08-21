@@ -1,0 +1,1 @@
+class A : public F<H<T>, I>{};

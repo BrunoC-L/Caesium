@@ -15,7 +15,7 @@ public:
 		this->nodes = {
 			_AND_
 				MAKE_NAMED(ClassMemberQualifiers, "ClassMemberQualifiers"),
-				MAKE_NAMED(TypenameNode, "typename"),
+				MAKE_NAMED(TypenameNode, "Typename"),
 				WORD_TOKEN("word"),
 				TOKEN(PARENOPEN),
 				MAKE_NAMED(ArgumentsSignatureNode, "ArgumentsSignature"),
@@ -38,7 +38,7 @@ public:
 		this->nodes = {
 			_AND_
 				MAKE_NAMED(ClassMemberQualifiers, "ClassMemberQualifiers"),
-				MAKE_NAMED(TypenameNode, "typename"),
+				MAKE_NAMED(TypenameNode, "Typename"),
 				WORD_TOKEN("varname"),
 				TOKEN(NEWLINE),
 			__,

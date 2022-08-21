@@ -9,15 +9,10 @@
 
 CPPelementClass(File)
 	virtual void toString(int ntab) override;
-	virtual void visit(Class* e) override;
-	virtual void visit(Function* e) override;
 };
 
 CPPelementClass(Class)
 	virtual void toString(int ntab) override;
-	virtual void visit(Typename* e) override;
-	virtual void visit(ClassMember* e) override;
-	virtual void visit(Constructor* e) override;
 };
 
 CPPelementClass(Function)
@@ -26,23 +21,18 @@ CPPelementClass(Function)
 
 CPPelementClass(Typename)
 	virtual void toString(int ntab) override;
-	virtual void visit(TemplateTypename* e) override;
-	virtual void visit(NSTypename* e) override;
 };
 
 CPPelementClass(TemplateTypename)
 	virtual void toString(int ntab) override;
-	virtual void visit(Typename* e) override;
 };
 
 CPPelementClass(NSTypename)
 	virtual void toString(int ntab) override;
-	virtual void visit(Typename* e) override;
 };
 
 CPPelementClass(Method)
 	virtual void toString(int ntab) override;
-	virtual void visit(Typename* e) override;
 };
 
 CPPelementClass(MemberVariable)
@@ -59,6 +49,20 @@ CPPelementClass(Constructor)
 
 CPPelementClass(ClassMember)
 	virtual void toString(int ntab) override;
-	virtual void visit(Method* e) override;
-	virtual void visit(MemberVariable* e) override;
+};
+
+CPPelementClass(ClassInheritance)
+	virtual void toString(int ntab) override;
+};
+
+CPPelementClass(MultipleInheritance)
+	virtual void toString(int ntab) override;
+};
+
+CPPelementClass(TypenameList)
+	virtual void toString(int ntab) override;
+};
+
+CPPelementClass(Indent)
+	virtual void toString(int ntab) override;
 };

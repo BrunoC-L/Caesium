@@ -113,10 +113,10 @@ public:
 				_COMMA_PLUS_("iterators")
 					_OR_
 						_AND_
-							MAKE_NAMED(TypenameNode, "typename"),
-							WORD_TOKEN("word"),
+							MAKE_NAMED(TypenameNode, "Typename"),
+							WORD_TOKEN("iteratorName"),
 						__,
-						WORD_TOKEN("word"),
+						WORD_TOKEN("iteratorName"),
 					__
 				___,
 				TOKEN(IN),
@@ -147,14 +147,14 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(IFOR),
-				WORD_TOKEN("word"),
+				WORD_TOKEN("indexIteratorName"),
 				TOKEN(COMMA),
 				_OR_
 					_AND_
-						MAKE_NAMED(TypenameNode, "typename"),
-						WORD_TOKEN("word"),
+						MAKE_NAMED(TypenameNode, "Typename"),
+						WORD_TOKEN("iteratorName"),
 					__,
-					WORD_TOKEN("word"),
+					WORD_TOKEN("iteratorName"),
 				__,
 				TOKEN(IN),
 				MAKE_NAMED(ExpressionNode, "Expression"),

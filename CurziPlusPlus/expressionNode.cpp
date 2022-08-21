@@ -165,7 +165,7 @@ void UnaryExpressionNode::build() {
 					TOKEN(AMPERSAND),
 					_AND_ // type cast operator
 						TOKEN(PARENOPEN),
-						MAKE_NAMED(TypenameNode, "typename"),
+						MAKE_NAMED(TypenameNode, "Typename"),
 						TOKEN(PARENCLOSE),
 					__,
 				__,
@@ -205,7 +205,7 @@ void ParenExpressionNode::build() {
 				MAKE_NAMED(ExpressionNode, "Expression"),
 				TOKEN(PARENCLOSE),
 			__,
-			MAKE_NAMED(TypenameNode, "typename"),
+			MAKE_NAMED(TypenameNode, "Typename"),
 			NUMBER_TOKEN("num"),
 		__
 	};

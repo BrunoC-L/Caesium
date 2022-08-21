@@ -1,1 +1,1 @@
-class A {constructor};function
+class A {};function

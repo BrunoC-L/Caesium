@@ -41,7 +41,7 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_COMMA_STAR_("types")
-				MAKE_NAMED(TypenameNode, "typename")
+				MAKE_NAMED(TypenameNode, "Typename")
 			___
 		};
 	}
@@ -59,7 +59,7 @@ public:
 		this->nodes = {
 			_AND_
 				_STAR_("typenames") _AND_
-					MAKE_NAMED(TypenameNode, "typename"),
+					MAKE_NAMED(TypenameNode, "Typename"),
 					TOKEN(COMMA),
 				____,
 				std::make_shared<WordTokenNode>("word"),

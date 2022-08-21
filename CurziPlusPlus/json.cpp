@@ -72,6 +72,39 @@ JSON& JSON::operator[](int x) {
 	return children[x];
 }
 
+bool JSON::operator==(const JSON& other) const {
+	if (type != other.type)
+		return false;
+
+	if (type == Primitives::STRING)
+		return asString() == other.asString();
+
+	if (type == Primitives::NUMBER)
+		return asDouble() == other.asDouble();
+
+	if (size() != other.size())
+		return false;
+
+	if (type == Primitives::OBJECT)
+		for (int i = 0; i < size(); ++i) {
+			const auto& prop = properties.at(i);
+			if (other.find(prop) == other.getProperties().end())
+				return false;
+			const auto& mine = children.at(i);
+			const auto& theirs = other.get(prop);
+			if (mine != theirs)
+				return false;
+		}
+	if (type == Primitives::ARRAY)
+		for (int i = 0; i < size(); ++i) {
+			const auto& mine = children.at(i);
+			const auto& theirs = other.getChildren().at(i);
+			if (mine != theirs)
+				return false;
+		}
+	return true;
+}
+
 unsigned JSON::size() const {
 	return children.size();
 }

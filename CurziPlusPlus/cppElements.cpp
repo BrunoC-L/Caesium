@@ -1,15 +1,15 @@
 #include "cppElements.h"
 
 void Typename::toString(int ntab) {
-	const auto& types = data.get("types");
-	out.header << types.get(0).asString();
-	for (int i = 1; i < types.size(); ++i)
-		factory.create(types.get(i), out)->accept(this);
+	out.header << data.get("word").asString();
+	//std::cout << data.get("word").asString();
+	for (const auto& extension : data.get("typenameExtensions").getChildren())
+		factory.create(extension, out)->accept(this);
 }
 
 void TemplateTypename::toString(int ntab) {
 	out.header << "<";
-	const auto& types = data.get("types");
+	const auto& types = data.get("TypenameList").get("types");
 	for (int i = 0; i < types.size(); i++) {
 		if (i > 0)
 			out.header << ", ";
@@ -20,61 +20,30 @@ void TemplateTypename::toString(int ntab) {
 }
 
 void Class::toString(int ntab) {
-	auto className = data.get("className");
-	auto inheritance = data.get("inheritance");
+	auto className = data.get("word");
+	auto inheritance = data.get("opt_inheritance");
 	auto elements = data.get("classElements");
 	out.header << "class " << className.asString() << " ";
 	const unsigned size = inheritance.size();
 	if (size) {
 		out.header << ": ";
 		for (unsigned i = 0; i < size; ++i) {
+			const auto& child = inheritance.getChildren().at(i);
 			if (i > 0)
 				out.header << ", ";
 			out.header << "public ";
-			factory.create(inheritance.getChildren().at(i), out)->accept(this);
+			factory.create(child, out)->toString(ntab);
 		}
 	}
 	out.header << "{";
 	for (const auto& methodOrVariable : elements.getChildren())
-		factory.create(methodOrVariable, out)->accept(this);
+		factory.create(methodOrVariable, out)->toString(ntab);
 	out.header << "};";
 }
 
 void File::toString(int ntab) {
-	for (const auto& class_or_function : data.get("classes_and_functions").getChildren())
+	for (const auto& class_or_function : data.get("file").get("classes_or_functions").getChildren())
 		factory.create(class_or_function, out)->accept(this);
-}
-
-void File::visit(Class* e) {
-	e->toString(0);
-}
-
-void File::visit(Function* e) {
-	e->toString(0);
-}
-
-void Typename::visit(TemplateTypename* e) {
-	e->toString(0);
-}
-
-void Typename::visit(NSTypename* e) {
-	e->toString(0);
-}
-
-void Class::visit(Typename* e) {
-	e->toString(0);
-}
-
-void Class::visit(ClassMember* e) {
-	e->toString(1);
-}
-
-void Class::visit(Constructor* e) {
-	e->toString(1);
-}
-
-void TemplateTypename::visit(Typename* e) {
-	e->toString(0);
 }
 
 void Method::toString(int ntab) {
@@ -91,10 +60,6 @@ void Method::toString(int ntab) {
 	out.header << data.get("name").asString();
 	out.header << "(";
 	out.header << ");";
-}
-
-void Method::visit(Typename* e) {
-	e->toString(0);
 }
 
 void MemberVariable::toString(int ntab) {
@@ -117,20 +82,29 @@ void ClassMember::toString(int ntab) {
 	factory.create(data.get("member"), out)->accept(this);
 }
 
-void ClassMember::visit(Method* e) {
-	e->toString(1);
-}
-
-void ClassMember::visit(MemberVariable* e) {
-	e->toString(1);
-}
-
 void NSTypename::toString(int ntab) {
 	out.header << "::";
 	const auto& type = data.get("type");
 	factory.create(type, out)->accept(this);
 }
 
-void NSTypename::visit(Typename* e) {
-	e->toString(0);
+void ClassInheritance::toString(int ntab) {
+	const auto& child1 = data.get("MultipleInheritanceNode");
+	const auto& child2 = child1.get("typenames");
+	const std::vector<JSON>& children = child2.getChildren();
+	for (const auto& T : child2.getChildren())
+		factory.create(T, out)->toString(ntab);
+}
+
+void MultipleInheritance::toString(int ntab) {
+	JSON typenames = data.get("typenames");
+	for (const JSON& T : typenames.getChildren())
+		factory.create(T, out)->accept(this);
+}
+
+void TypenameList::toString(int ntab) {
+}
+
+void Indent::toString(int ntab) {
+
 }

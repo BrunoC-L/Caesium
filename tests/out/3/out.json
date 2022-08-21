@@ -1,124 +1,279 @@
 {
-  "FileNode": {
+  "file": {
     "classes_or_functions": [
       {
-        "ClassNode": {
+        "Class": {
           "word": "A",
           "opt_inheritance": [],
           "classElements": [
             {
-              "ClassElementNode": {
-                "ConstructorNode": {
+              "Indent": 1,
+              "ClassElement": {
+                "using": {
                   "ClassMemberQualifiers": {
                     "opt_ppp": [],
                     "opt_static": []
                   },
                   "word": "A",
-                  "ArgumentsSignatureNode": {
+                  "ArgumentsSignature": {
                     "arguments": [
                       {
+                        "Typename": {
+                          "word": "C",
+                          "typenameExtensions": [
+                            {
+                              "PointerTypename": {}
+                            }
+                          ]
+                        },
                         "word": "c"
                       }
                     ]
                   },
-                  "ColonIndentCodeBlockNode": {
-                    "CodeBlockNode": {
+                  "ColonIndentCodeBlock": {
+                    "CodeBlock": {
                       "statements": [
                         {
-                          "StatementNode": {
-                            "ExpressionStatementNode": {
-                              "AssignmentExpressionNode": {
-                                "UnaryExpressionNode": {
-                                  "PostfixExpressionNode": {
-                                    "ParenExpressionNode": {
-                                      "word": "this"
-                                    },
-                                    "postfixes": [
-                                      {
-                                        "word": "c"
-                                      }
-                                    ]
-                                  }
-                                },
-                                "assignments": [
-                                  {
-                                    "UnaryExpressionNode": {
-                                      "ParenExpressionNode": {
-                                        "TypenameNode": {
-                                          "word": "c",
-                                          "typenameExtensions": [
-                                            {
-                                              "ParenthesisTypenameNode": {
-                                                "TypenameListNode": {
-                                                  "types": []
+                          "Statement": {
+                            "Indent": 2,
+                            "ExpressionStatement": {
+                              "ExpressionNode": {
+                                "AssignmentExpressionNode": {
+                                  "AssignmentExpressionNode": {
+                                    "ConditionalExpressionNode": {
+                                      "OrExpressionNode": {
+                                        "AndExpressionNode": {
+                                          "EqualityExpressionNode": {
+                                            "CompareExpressionNode": {
+                                              "AdditiveExpressionNode": {
+                                                "MultiplicativeExpressionNode": {
+                                                  "UnaryExpression": {
+                                                    "PostfixExpressionNode": {
+                                                      "PostfixExpressionNode": {
+                                                        "ParenExpression": {
+                                                          "Typename": {
+                                                            "word": "this",
+                                                            "typenameExtensions": []
+                                                          }
+                                                        },
+                                                        "postfixes": [
+                                                          {
+                                                            "word": "c"
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  }
                                                 }
                                               }
                                             }
-                                          ]
+                                          }
                                         }
                                       }
-                                    }
+                                    },
+                                    "assignments": [
+                                      {
+                                        "ConditionalExpressionNode": {
+                                          "OrExpressionNode": {
+                                            "AndExpressionNode": {
+                                              "EqualityExpressionNode": {
+                                                "CompareExpressionNode": {
+                                                  "AdditiveExpressionNode": {
+                                                    "MultiplicativeExpressionNode": {
+                                                      "UnaryExpression": {
+                                                        "PostfixExpressionNode": {
+                                                          "ParenExpression": {
+                                                            "Typename": {
+                                                              "word": "c",
+                                                              "typenameExtensions": [
+                                                                {
+                                                                  "ParenthesisTypename": {
+                                                                    "TypenameList": {
+                                                                      "types": []
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
                                   }
-                                ]
+                                }
                               }
                             }
                           }
                         },
                         {
-                          "StatementNode": {
-                            "IForStatementNode": {
-                              "word": "e",
-                              "ConditionalExpressionNode": {
-                                "UnaryExpressionNode": {
-                                  "ParenExpressionNode": {
-                                    "word": "a"
+                          "Statement": {
+                            "Indent": 2,
+                            "IForStatement": {
+                              "indexIteratorName": "i",
+                              "iteratorName": "e",
+                              "ExpressionNode": {
+                                "AssignmentExpressionNode": {
+                                  "ConditionalExpressionNode": {
+                                    "ConditionalExpressionNode": {
+                                      "OrExpressionNode": {
+                                        "AndExpressionNode": {
+                                          "EqualityExpressionNode": {
+                                            "CompareExpressionNode": {
+                                              "AdditiveExpressionNode": {
+                                                "MultiplicativeExpressionNode": {
+                                                  "UnaryExpression": {
+                                                    "PostfixExpressionNode": {
+                                                      "ParenExpression": {
+                                                        "Typename": {
+                                                          "word": "a",
+                                                          "typenameExtensions": []
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "opt_conditional_if": [
+                                        {
+                                          "OrExpressionNode": {
+                                            "AndExpressionNode": {
+                                              "EqualityExpressionNode": {
+                                                "CompareExpressionNode": {
+                                                  "AdditiveExpressionNode": {
+                                                    "MultiplicativeExpressionNode": {
+                                                      "UnaryExpression": {
+                                                        "PostfixExpressionNode": {
+                                                          "ParenExpression": {
+                                                            "Typename": {
+                                                              "word": "b",
+                                                              "typenameExtensions": []
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "opt_conditional_else": []
+                                        }
+                                      ]
+                                    }
                                   }
-                                },
-                                "opt_conditional_if": [
-                                  {
-                                    "UnaryExpressionNode": {
-                                      "ParenExpressionNode": {
-                                        "word": "b"
-                                      }
-                                    },
-                                    "opt_conditional_else": []
-                                  }
-                                ]
+                                }
                               },
                               "opt_if": [],
                               "opt_while": [
                                 {
-                                  "UnaryExpressionNode": {
-                                    "ParenExpressionNode": {
-                                      "word": "c"
+                                  "ExpressionNode": {
+                                    "AssignmentExpressionNode": {
+                                      "ConditionalExpressionNode": {
+                                        "OrExpressionNode": {
+                                          "AndExpressionNode": {
+                                            "EqualityExpressionNode": {
+                                              "CompareExpressionNode": {
+                                                "AdditiveExpressionNode": {
+                                                  "MultiplicativeExpressionNode": {
+                                                    "UnaryExpression": {
+                                                      "PostfixExpressionNode": {
+                                                        "ParenExpression": {
+                                                          "Typename": {
+                                                            "word": "c",
+                                                            "typenameExtensions": []
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
                                     }
                                   }
                                 }
                               ],
-                              "ColonIndentCodeBlockNode": {
-                                "CodeBlockNode": {
+                              "ColonIndentCodeBlock": {
+                                "CodeBlock": {
                                   "statements": [
                                     {
-                                      "StatementNode": {
-                                        "ReturnStatementNode": {
+                                      "Statement": {
+                                        "Indent": 3,
+                                        "ReturnStatement": {
                                           "values": [
                                             {
-                                              "ConditionalExpressionNode": {
-                                                "UnaryExpressionNode": {
-                                                  "ParenExpressionNode": {
-                                                    "word": "c"
+                                              "ExpressionNode": {
+                                                "AssignmentExpressionNode": {
+                                                  "ConditionalExpressionNode": {
+                                                    "ConditionalExpressionNode": {
+                                                      "OrExpressionNode": {
+                                                        "AndExpressionNode": {
+                                                          "EqualityExpressionNode": {
+                                                            "CompareExpressionNode": {
+                                                              "AdditiveExpressionNode": {
+                                                                "MultiplicativeExpressionNode": {
+                                                                  "UnaryExpression": {
+                                                                    "PostfixExpressionNode": {
+                                                                      "ParenExpression": {
+                                                                        "Typename": {
+                                                                          "word": "c",
+                                                                          "typenameExtensions": []
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      "opt_conditional_if": [
+                                                        {
+                                                          "OrExpressionNode": {
+                                                            "AndExpressionNode": {
+                                                              "EqualityExpressionNode": {
+                                                                "CompareExpressionNode": {
+                                                                  "AdditiveExpressionNode": {
+                                                                    "MultiplicativeExpressionNode": {
+                                                                      "UnaryExpression": {
+                                                                        "PostfixExpressionNode": {
+                                                                          "ParenExpression": {
+                                                                            "Typename": {
+                                                                              "word": "b",
+                                                                              "typenameExtensions": []
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "opt_conditional_else": []
+                                                        }
+                                                      ]
+                                                    }
                                                   }
-                                                },
-                                                "opt_conditional_if": [
-                                                  {
-                                                    "UnaryExpressionNode": {
-                                                      "ParenExpressionNode": {
-                                                        "word": "b"
-                                                      }
-                                                    },
-                                                    "opt_conditional_else": []
-                                                  }
-                                                ]
+                                                }
                                               }
                                             }
                                           ],
@@ -127,13 +282,37 @@
                                       }
                                     },
                                     {
-                                      "StatementNode": {
-                                        "BreakStatementNode": {
+                                      "Statement": {
+                                        "Indent": 3,
+                                        "BreakStatement": {
                                           "opt_if": [
                                             {
-                                              "UnaryExpressionNode": {
-                                                "ParenExpressionNode": {
-                                                  "word": "c"
+                                              "ExpressionNode": {
+                                                "AssignmentExpressionNode": {
+                                                  "ConditionalExpressionNode": {
+                                                    "OrExpressionNode": {
+                                                      "AndExpressionNode": {
+                                                        "EqualityExpressionNode": {
+                                                          "CompareExpressionNode": {
+                                                            "AdditiveExpressionNode": {
+                                                              "MultiplicativeExpressionNode": {
+                                                                "UnaryExpression": {
+                                                                  "PostfixExpressionNode": {
+                                                                    "ParenExpression": {
+                                                                      "Typename": {
+                                                                        "word": "c",
+                                                                        "typenameExtensions": []
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
                                                 }
                                               }
                                             }
