@@ -110,8 +110,10 @@ public:
 			out.push_front(t);
 		} while (t.first != END);
 		// quick fix to allow for files not to end with a new line
-		out.front().first = NEWLINE;
-		out.push_front(TOKENVALUE(END, ""));
+		if (std::next(out.begin(), 1)->first != NEWLINE) {
+			out.front().first = NEWLINE; // replace END with newline
+			out.push_front(TOKENVALUE(END, "")); // add the new END
+		}
 		out.reverse();
 		return out;
 	}
@@ -156,6 +158,26 @@ private:
 				break;
 		}
 		return out;
+	}
+
+	TOKENS peek() {
+		unsigned peekFrom = index;
+		while (true) {
+			TOKENVALUE v = readToken();
+			if (v.first == SPACE || v.first == TAB || v.first == NEWLINE)
+				continue;
+			index = peekFrom;
+			return v.first;
+		}
+	}
+
+	TOKENS peek(int n) {
+		unsigned peekFrom = index;
+		TOKENS v = peek();
+		for (int i = 0; i < n; ++i)
+			v = peek();
+		index = peekFrom;
+		return v;
 	}
 
 	TOKENVALUE readToken() {
@@ -256,6 +278,14 @@ private:
 				}
 				else if (program[index] == '>') {
 					index += 1;
+					// basically when using templates you end up with A<B<C>> and you want to not parse >> as RSHIFT but as GT, GT
+					// we know we are in this scenario if the upcoming token is a comma or another >
+					// otherwise it might be like A<B<C>> but we can handle this simple case, unlike A<B<C<D>>,E>
+					TOKENS t = peek(1);
+					if (t == COMMA || t == GTE) {
+						index -= 1;
+						return { GT, ">" };
+					}
 					return { RSHIFT, ">>" };
 				}
 			}

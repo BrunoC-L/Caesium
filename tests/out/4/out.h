@@ -1,1 +1,1 @@
-class A {};function
+class A

@@ -19,8 +19,4 @@ public:
 		}
 		return false;
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };

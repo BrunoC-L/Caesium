@@ -20,7 +20,8 @@ public:
 		};
 	}
 
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
+	std::unique_ptr<NodeStructs::Function> getStruct() {
+		std::unique_ptr<NodeStructs::Function> res = std::make_unique<NodeStructs::Function>();
+		return res;
 	}
 };

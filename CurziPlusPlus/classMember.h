@@ -24,10 +24,6 @@ public:
 			__,
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class MemberVariableNode : public Node {
@@ -44,10 +40,6 @@ public:
 			__,
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class ClassMemberNode : public Node {
@@ -61,9 +53,5 @@ public:
 				MAKE_NAMED(MemberVariableNode, "MemberVariable"),
 			__,
 		};
-	}
-
-	virtual void accept(NodeVisitor * v) override {
-		v->visit(this);
 	}
 };

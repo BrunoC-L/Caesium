@@ -20,10 +20,6 @@ public:
 			}
 		return true;
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class OrNode : public Node {
@@ -41,9 +37,5 @@ public:
 			}
 		this->nodes = {};
 		return false;
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };

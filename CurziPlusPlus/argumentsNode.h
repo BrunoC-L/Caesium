@@ -20,10 +20,6 @@ public:
 			____
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class InnerArgumentsNode : public Node {
@@ -36,10 +32,6 @@ public:
 				MAKE_NAMED(ExpressionNode, "expr")
 			___
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -56,10 +48,6 @@ public:
 			__
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class BracketArgumentsNode : public Node {
@@ -75,10 +63,6 @@ public:
 			__
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class BraceArgumentsNode : public Node {
@@ -93,9 +77,5 @@ public:
 				TOKEN(BRACECLOSE),
 			__
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };

@@ -14,7 +14,7 @@ public:
 		};
 	}
 
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
+	std::vector<std::unique_ptr<NodeStructs::Typename>> getInheritance() {
+		return NODE_CAST(MultipleInheritanceNode, nodes[0]->nodes[1])->getInheritance();
 	}
 };

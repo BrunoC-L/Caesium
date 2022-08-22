@@ -6,10 +6,6 @@ class TokenNode_ : public Node {
 public:
 	std::string value;
 	TokenNode_(std::string name = "") : Node(name) { this->name = "TokenNode"; }
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 template <int token>
@@ -48,33 +44,24 @@ public:
 class PublicToken : public TokenNode<PUBLIC> {
 public:
 	PublicToken() : TokenNode<PUBLIC>("") {}
-	virtual void accept(NodeVisitor* v) override { v->visit(this); }
 };
 
 class ProtectedToken : public TokenNode<PROTECTED> {
 public:
 	ProtectedToken() : TokenNode<PROTECTED>("") {}
-	virtual void accept(NodeVisitor* v) override { v->visit(this); }
 };
 
 class PrivateToken : public TokenNode<PRIVATE> {
 public:
 	PrivateToken() : TokenNode<PRIVATE>("") {}
-	virtual void accept(NodeVisitor* v) override { v->visit(this); }
 };
 
 class WordTokenNode : public TokenNode<WORD> {
 public:
 	WordTokenNode(std::string name) : TokenNode<WORD>(name) {}
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class NumberTokenNode : public TokenNode<NUMBER> {
 public:
 	NumberTokenNode(std::string name) : TokenNode<NUMBER>(name) {}
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };

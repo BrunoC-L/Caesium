@@ -15,14 +15,10 @@ public:
 		this->nodes = {
 			_OR_
 				MAKE_NAMED(UsingNode, "using"),
-				MAKE_NAMED(MacroNode, "using"),
+				//MAKE_NAMED(MacroNode, "using"),
 				MAKE_NAMED(ClassMemberNode, "using"),
 				MAKE_NAMED(ConstructorNode, "using"),
 			__,
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };

@@ -6,10 +6,6 @@ class IndentNode : public Node {
 public:
 	IndentNode(int n_indent) : Node("Indent", n_indent) {}
 
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
-
 	virtual bool build(Grammarizer* g) override {
 		bool correct = true;
 		for (int i = 0; i < n_indent; ++i) {

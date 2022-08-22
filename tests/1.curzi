@@ -1,4 +1,4 @@
-class A extends F<H<T>, I>:
+class A extends F::G<H<T>,I,>::U:
     private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):
         for i in arr:
         for i in someContainer:

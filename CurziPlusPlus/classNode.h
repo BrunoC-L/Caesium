@@ -27,7 +27,11 @@ public:
 		};
 	}
 
-	virtual void accept(NodeVisitor* v) {
-		v->visit(this);
+	std::unique_ptr<NodeStructs::Class> getStruct() {
+		std::unique_ptr<NodeStructs::Class> res = std::make_unique<NodeStructs::Class>();
+		res->name = NODE_CAST(WordTokenNode, nodes[0]->nodes[1])->value;
+		if (nodes[0]->nodes[2]->nodes.size())
+			res->inheritances = NODE_CAST(ClassInheritanceNode, nodes[0]->nodes[2]->nodes[0])->getInheritance();
+		return res;
 	}
 };

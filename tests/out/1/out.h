@@ -1,1 +1,1 @@
-class A : public F<H<T>, I>{};
+class A : public F::G<H<T>, I>::U

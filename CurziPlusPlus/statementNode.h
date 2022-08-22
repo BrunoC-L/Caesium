@@ -11,17 +11,7 @@ class CodeBlockNode : public Node {
 public:
 	baseCtor(CodeBlockNode);
 
-	virtual void build() override {
-		this->nodes = {
-			_STAR_("statements")
-				MAKE_NAMED(StatementNode, "Statement")
-			___
-		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
+	virtual void build() override;
 };
 
 class ColonIndentCodeBlockNode : public Node {
@@ -37,10 +27,6 @@ public:
 			__
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class ExpressionStatementNode : public Node {
@@ -54,10 +40,6 @@ public:
 				TOKEN(NEWLINE),
 			__
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -73,10 +55,6 @@ public:
 				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 			__
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -95,10 +73,6 @@ public:
 				___
 			__
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -133,10 +107,6 @@ public:
 			__
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class IForStatementNode : public Node {
@@ -170,10 +140,6 @@ public:
 			__
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class WhileStatementNode : public Node {
@@ -188,10 +154,6 @@ public:
 				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
 			__
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -218,10 +180,6 @@ public:
 			__
 		};
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class BreakStatementNode : public Node {
@@ -239,10 +197,6 @@ public:
 				TOKEN(NEWLINE),
 			__
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -265,9 +219,5 @@ public:
 				__
 			__
 		};
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };

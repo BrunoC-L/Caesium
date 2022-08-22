@@ -33,8 +33,8 @@ public:
 			std::shared_ptr<Node> node = this->builder();
 			bool parsed = node->build(g);
 			if (parsed) {
-				parsed = TokenNode<COMMA>("comma").build(g);
 				this->nodes.push_back(node);
+				parsed = TokenNode<COMMA>("comma").build(g);
 			}
 			if (!parsed)
 				break;
@@ -51,10 +51,6 @@ public:
 	virtual bool cnd() override {
 		return true;
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class CommaStarNode : public CommaDelimitedKNode {
@@ -64,10 +60,6 @@ public:
 	}
 	virtual bool cnd() override {
 		return true;
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -79,10 +71,6 @@ public:
 	virtual bool cnd() override {
 		return this->nodes.size() > 0;
 	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
-	}
 };
 
 class CommaPlusNode : public CommaDelimitedKNode {
@@ -92,10 +80,6 @@ public:
 	}
 	virtual bool cnd() override {
 		return this->nodes.size() > 0;
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };
 
@@ -113,9 +97,5 @@ public:
 		if (parsed)
 			this->nodes.push_back(node);
 		return true;
-	}
-
-	virtual void accept(NodeVisitor* v) override {
-		v->visit(this);
 	}
 };

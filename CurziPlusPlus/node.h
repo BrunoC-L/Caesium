@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "nodeVisitor.h"
+#include "node_structs.h"
 
 class Grammarizer;
 
@@ -18,7 +18,6 @@ public:
 		build();
 		return nodes[0]->build(g);
 	}
-	virtual void accept(NodeVisitor* v) = 0;
 };
 
 using vNode = std::vector<std::shared_ptr<Node>>;
