@@ -57,6 +57,9 @@
     <ClCompile Include="statementNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="importNode.h">
+      <Filter>Source Files\nodes\other</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classInheritanceNode.h">

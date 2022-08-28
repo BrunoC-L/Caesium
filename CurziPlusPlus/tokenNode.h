@@ -16,10 +16,21 @@ public:
 	TokenNode(std::string name) : TokenNode_(name) {}
 	virtual bool build(Grammarizer* g) override {
 		bool isT = g->it->first == token;
-		if (isT && token != END)
+		if (isT)
 			value = g->it->second;
-		if (!isT)
+		if constexpr (token == END) {
+			while (g->it != g->tokens.end()) {
+				if (g->it->first == TAB || g->it->first == SPACE || g->it->first == NEWLINE)
+					g->it++;
+				else if (g->it->first == END)
+					return true;
+				else break;
+			}
 			return false;
+		}
+		else if (!isT)
+			return false;
+
 		g->it++;
 		if constexpr (token == NEWLINE) {
 			auto savepoint = g->it;

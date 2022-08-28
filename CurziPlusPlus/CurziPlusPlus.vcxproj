@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="expressionNode.cpp" />
+    <ClCompile Include="importNode.h" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="statementNode.cpp" />
     <ClCompile Include="typenameNode.cpp" />

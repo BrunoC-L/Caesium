@@ -64,6 +64,7 @@ enum TOKENS {
 
 	WORD,
 	NUMBER,
+	STRING,
 
 	CLASS,
 	RETURN,
@@ -71,6 +72,8 @@ enum TOKENS {
 	SWITCH,
 	IN,
 	IFOR,
+	IMPORT,
+	FROM,
 	FOR,
 	WHILE,
 	IF,
@@ -184,6 +187,7 @@ private:
 		if (index == program.length())
 			return { END, "" };
 		char c = program[index];
+		std::string str = "";
 		switch (c) {
 		case '\\':
 			index += 1;
@@ -191,7 +195,21 @@ private:
 				index += 1;
 				return readToken();
 			}
+			// TODO other \ 
 			return { BACKSLASH, "\\\\" };
+		case '\'':
+		case '`':
+		case '"':
+			while (true) {
+				index += 1;
+				if (index == program.length())
+					throw std::exception();
+				if (program[index] == c && !(program[index - 1] == '\\')) {
+					index += 1;
+					return { STRING, str };
+				}
+				str += program[index];
+			}
 		case '{':
 			index += 1;
 			return { BRACEOPEN, "{" };
@@ -263,10 +281,10 @@ private:
 					index += 1;
 						return { LTE, "<=" };
 				}
-				else if (program[index] == '<') {
+				/*else if (program[index] == '<') {
 					index += 1;
 					return { LSHIFT, "<<" };
-				}
+				}*/
 			}
 			return { LT, "<" };
 		case '>':
@@ -276,18 +294,18 @@ private:
 					index += 1;
 						return { GTE, ">=" };
 				}
-				else if (program[index] == '>') {
-					index += 1;
-					// basically when using templates you end up with A<B<C>> and you want to not parse >> as RSHIFT but as GT, GT
-					// we know we are in this scenario if the upcoming token is a comma or another >
-					// otherwise it might be like A<B<C>> but we can handle this simple case, unlike A<B<C<D>>,E>
-					TOKENS t = peek(1);
-					if (t == COMMA || t == GTE) {
-						index -= 1;
-						return { GT, ">" };
-					}
-					return { RSHIFT, ">>" };
-				}
+				//else if (program[index] == '>') {
+				//	index += 1;
+				//	// basically when using templates you end up with A<B<C>> and you want to not parse >> as RSHIFT but as GT, GT
+				//	// we know we are in this scenario if the upcoming token is a comma or another >
+				//	// otherwise it might be like A<B<C>> but we can handle this simple case, unlike A<B<C<D>>,E>
+				//	TOKENS t = peek(1);
+				//	if (t == COMMA || t == GTE) {
+				//		index -= 1;
+				//		return { GT, ">" };
+				//	}
+				//	return { RSHIFT, ">>" };
+				//}
 			}
 			return { GT, ">" };
 		case '-':
@@ -314,10 +332,10 @@ private:
 					index += 1;
 						return { PLUSEQUAL, "+=" };
 				}
-				else if (program[index] == '+') {
+				/*else if (program[index] == '+') {
 					index += 1;
 					return { PLUSPLUS, "++" };
-				}
+				}*/
 			}
 			return { PLUS, "+" };
 		case '*':
@@ -352,7 +370,8 @@ private:
 					return { ANDEQUAL, "&=" };
 				}
 			}
-			return { AMPERSAND, "&" };
+			throw std::exception();
+			//return { AMPERSAND, "&" };
 		case '?':
 			index += 1;
 			return { QUESTION, "?" };
@@ -407,6 +426,10 @@ private:
 				return { IF, word };
 			if (word == "ifor")
 				return { IFOR, word };
+			if (word == "import")
+				return { IMPORT, word };
+			if (word == "from")
+				return { FROM, word };
 			if (word == "in")
 				return { IN, word };
 			if (word == "new")

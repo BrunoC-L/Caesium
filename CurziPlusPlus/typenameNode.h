@@ -104,36 +104,36 @@ public:
 	}
 };
 
-class PointerTypenameNode : public Node {
-public:
-	baseCtor(PointerTypenameNode);
-
-	virtual void build() override {
-		this->nodes = {
-				_OR_
-					_AND_
-						_PLUS_("ptrs")
-							TOKEN(ASTERISK)
-						___,
-						_OPT_("ref")
-							TOKEN(AMPERSAND)
-						___,
-					__,
-					TOKEN(AMPERSAND)
-				__
-		};
-	}
-
-	std::vector<NodeStructs::TypenameExtension> getTypenameExtensions() {
-		std::vector<NodeStructs::TypenameExtension> res;
-		NodeStructs::PointerTypeExtension pt;
-		bool hasPtrs = nodes[0]->nodes[0]->nodes.size() == 2;
-		pt.isRef = !hasPtrs || nodes[0]->nodes[0]->nodes[1]->nodes.size();
-		pt.ptr_count = hasPtrs ? nodes[0]->nodes[0]->nodes[0]->nodes.size() : 0;
-		res.emplace_back(std::move(pt));
-		return res;
-	}
-};
+//class PointerTypenameNode : public Node {
+//public:
+//	baseCtor(PointerTypenameNode);
+//
+//	virtual void build() override {
+//		this->nodes = {
+//				_OR_
+//					_AND_
+//						_PLUS_("ptrs")
+//							TOKEN(ASTERISK)
+//						___,
+//						_OPT_("ref")
+//							TOKEN(AMPERSAND)
+//						___,
+//					__,
+//					TOKEN(AMPERSAND)
+//				__
+//		};
+//	}
+//
+//	std::vector<NodeStructs::TypenameExtension> getTypenameExtensions() {
+//		std::vector<NodeStructs::TypenameExtension> res;
+//		NodeStructs::PointerTypeExtension pt;
+//		bool hasPtrs = nodes[0]->nodes[0]->nodes.size() == 2;
+//		pt.isRef = !hasPtrs || nodes[0]->nodes[0]->nodes[1]->nodes.size();
+//		pt.ptr_count = hasPtrs ? nodes[0]->nodes[0]->nodes[0]->nodes.size() : 0;
+//		res.emplace_back(std::move(pt));
+//		return res;
+//	}
+//};
 
 class TemplateTypenameNode : public Node {
 public:
@@ -152,7 +152,7 @@ public:
 				__,
 				_OPT_("extension") _OR_
 					MAKE_NAMED(NSTypenameNode, "NSTypename"),
-					MAKE_NAMED(PointerTypenameNode, "PointerTypename"),
+					//MAKE_NAMED(PointerTypenameNode, "PointerTypename"),
 				____
 			__
 		};
@@ -176,8 +176,8 @@ public:
 			std::vector<NodeStructs::TypenameExtension> exts;
 			if (nodes[0]->nodes[2]->nodes[0]->nodes[0]->identifier == "NSTypename")
 				exts = NODE_CAST(NSTypenameNode, nodes[0]->nodes[2]->nodes[0]->nodes[0])->getTypenameExtensions();
-			else if (nodes[0]->nodes[2]->nodes[0]->nodes[0]->identifier == "PointerTypename")
-				exts = NODE_CAST(PointerTypenameNode, nodes[0]->nodes[2]->nodes[0]->nodes[0])->getTypenameExtensions();
+			/*else if (nodes[0]->nodes[2]->nodes[0]->nodes[0]->identifier == "PointerTypename")
+				exts = NODE_CAST(PointerTypenameNode, nodes[0]->nodes[2]->nodes[0]->nodes[0])->getTypenameExtensions();*/
 			else
 				throw std::exception();
 			std::move(exts.begin(), exts.end(), std::back_inserter(res));

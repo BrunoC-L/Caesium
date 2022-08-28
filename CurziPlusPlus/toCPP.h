@@ -10,17 +10,33 @@ public:
 	void transpile(std::ofstream& h, std::ofstream& cpp, const std::unique_ptr<NodeStructs::File>& file) {
 		for (const auto& Class : file->classes) {
 			h << "class " << Class->name;
-			if (Class->inheritances.size()) {
-				h << " : ";
-				bool first = true;
-				for (const auto& inheritance : Class->inheritances) {
-					if (!first)
-						h << ", ";
-					first = false;
-					h << "public ";
-					h << transpileType(inheritance);
+
+			bool firstInheritance = true;
+			for (const auto& inheritance : Class->inheritances) {
+				if (firstInheritance) {
+					firstInheritance = false;
+					h << " : ";
 				}
+				else
+					h << ", ";
+				h << "public " << transpileType(inheritance);
 			}
+			h << " {\n";
+			for (const auto& member : Class->memberVariables)
+				h << transpileType(member->type) << " " << member->name << ";\n";
+			for (const auto& method : Class->methods) {
+				h << transpileType(method->returnType) << " " << method->name << "(";
+				auto first = true;
+				for (const auto& t : method->parameterTypes) {
+					if (first)
+						first = false;
+					else
+						h << ", ";
+					h << transpileType(t);
+				}
+				h << ");\n";
+			}
+			h << "};\n";
 		}
 	}
 
@@ -30,7 +46,7 @@ public:
 		for (const auto& ext : type->extensions)
 			if (std::holds_alternative<NodeStructs::NSTypeExtension>(ext))
 				ss << "::" << std::get<NodeStructs::NSTypeExtension>(ext).NSTypename;
-			else if (std::holds_alternative<NodeStructs::TemplateTypeExtension>(ext)) {
+			else /*if (std::holds_alternative<NodeStructs::TemplateTypeExtension>(ext))*/ {
 				ss << "<";
 				bool isFirst = true;
 				for (const auto& T : std::get<NodeStructs::TemplateTypeExtension>(ext).templateTypes) {
@@ -41,7 +57,7 @@ public:
 				}
 				ss << ">";
 			}
-			else if (std::holds_alternative<NodeStructs::PointerTypeExtension>(ext)) {
+			/*else if (std::holds_alternative<NodeStructs::PointerTypeExtension>(ext)) {
 				const NodeStructs::PointerTypeExtension& pt = std::get<NodeStructs::PointerTypeExtension>(ext);
 				if (pt.ptr_count) {
 					std::stringstream temp;
@@ -54,7 +70,7 @@ public:
 				}
 				if (pt.isRef)
 					ss << "&";
-			}
+			}*/
 		return ss.str();
 	}
 };

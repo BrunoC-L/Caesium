@@ -21,4 +21,9 @@ public:
 			__,
 		};
 	}
+
+	std::unique_ptr<NodeStructs::ClassElement> getStruct() {
+		std::unique_ptr<NodeStructs::ClassElement> res = std::make_unique<NodeStructs::ClassElement>();
+		return res;
+	}
 };

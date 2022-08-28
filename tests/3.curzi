@@ -1,5 +1,5 @@
 class A:
-	A(C* c):
+	A(C c):
         this.c = c()
         ifor i, e in a if b while c:
             return c if b

@@ -3,4 +3,4 @@ class A extends F::G<H<T>,I,>::U:
         for i in arr:
         for i in someContainer:
         for i in std::f::f<f>:
-    B::T<U,V>* member1
+    B::T<U,V> member1

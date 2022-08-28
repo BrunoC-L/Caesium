@@ -9,10 +9,11 @@ namespace NodeStructs {
 
 	struct File;
 	struct Class;
-	struct Function;
-	struct Alias;
 	struct Constructor;
+	struct Function;
 	struct MemberVariable;
+	struct Alias;
+	using ClassElement = std::variant<Constructor, Function, MemberVariable, Alias>;
 	struct TemplateTypeExtension;
 	struct PointerTypeExtension;
 	struct NSTypeExtension;
@@ -75,6 +76,5 @@ namespace NodeStructs {
 	};
 
 	struct Statement {
-
 	};
 }

@@ -32,6 +32,10 @@ public:
 		res->name = NODE_CAST(WordTokenNode, nodes[0]->nodes[1])->value;
 		if (nodes[0]->nodes[2]->nodes.size())
 			res->inheritances = NODE_CAST(ClassInheritanceNode, nodes[0]->nodes[2]->nodes[0])->getInheritance();
+		for (const auto& classElementAnd : nodes[0]->nodes[5]->nodes) {
+			const std::shared_ptr<ClassElementNode>& classElement = NODE_CAST(ClassElementNode, classElementAnd->nodes[1]);
+			const auto& x = classElement->getStruct();
+		}
 		return res;
 	}
 };
