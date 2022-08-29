@@ -13,12 +13,12 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				MAKE_NAMED(ClassMemberQualifiers, "ClassMemberQualifiers"),
-				WORD_TOKEN("word"),
+				MAKE2(ClassMemberQualifiers),
+				TOKEN(WORD),
 				TOKEN(PARENOPEN),
-				MAKE_NAMED(ArgumentsSignatureNode, "ArgumentsSignature"),
+				MAKE2(ArgumentsSignatureNode),
 				TOKEN(PARENCLOSE),
-				MAKE_NAMED(ColonIndentCodeBlockNode, "ColonIndentCodeBlock"),
+				MAKE2(ColonIndentCodeBlockNode),
 			__
 		};
 	}

@@ -4,7 +4,7 @@
 
 class IndentNode : public Node {
 public:
-	IndentNode(int n_indent) : Node("Indent", n_indent) {}
+	IndentNode(int n_indent) : Node(n_indent) {}
 
 	virtual bool build(Grammarizer* g) override {
 		bool correct = true;

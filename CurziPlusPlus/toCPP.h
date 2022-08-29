@@ -46,7 +46,7 @@ public:
 		for (const auto& ext : type->extensions)
 			if (std::holds_alternative<NodeStructs::NSTypeExtension>(ext))
 				ss << "::" << std::get<NodeStructs::NSTypeExtension>(ext).NSTypename;
-			else /*if (std::holds_alternative<NodeStructs::TemplateTypeExtension>(ext))*/ {
+			else {
 				ss << "<";
 				bool isFirst = true;
 				for (const auto& T : std::get<NodeStructs::TemplateTypeExtension>(ext).templateTypes) {
@@ -57,20 +57,6 @@ public:
 				}
 				ss << ">";
 			}
-			/*else if (std::holds_alternative<NodeStructs::PointerTypeExtension>(ext)) {
-				const NodeStructs::PointerTypeExtension& pt = std::get<NodeStructs::PointerTypeExtension>(ext);
-				if (pt.ptr_count) {
-					std::stringstream temp;
-					for (int i = 0; i < pt.ptr_count; ++i)
-						temp << "std::shared_ptr<";
-					temp << ss.str();
-					for (int i = 0; i < pt.ptr_count; ++i)
-						temp << ">";
-					std::swap(ss, temp);
-				}
-				if (pt.isRef)
-					ss << "&";
-			}*/
 		return ss.str();
 	}
 };

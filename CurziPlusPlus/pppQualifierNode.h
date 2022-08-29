@@ -10,9 +10,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_OR_
-				MAKE(PrivateToken)(),
-				MAKE(ProtectedToken)(),
-				MAKE(PublicToken)(),
+				TOKEN(PRIVATE),
+				TOKEN(PUBLIC),
+				TOKEN(PROTECTED),
 			__
 		};
 	}

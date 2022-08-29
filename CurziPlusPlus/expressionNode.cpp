@@ -9,15 +9,15 @@
 
 void ExpressionNode::build() {
 	this->nodes = {
-		MAKE_NAMED(AssignmentExpressionNode, "AssignmentExpression"),
+		MAKE2(AssignmentExpressionNode),
 	};
 }
 
 void AssignmentExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(ConditionalExpressionNode, "ConditionalExpression"),
-			_STAR_("assignments")
+			MAKE2(ConditionalExpressionNode),
+			_STAR_
 				_AND_
 					_OR_
 						TOKEN(EQUAL),
@@ -30,7 +30,7 @@ void AssignmentExpressionNode::build() {
 						TOKEN(OREQUAL),
 						TOKEN(XOREQUAL),
 					__,
-					MAKE_NAMED(ConditionalExpressionNode, "ConditionalExpression"),
+					MAKE2(ConditionalExpressionNode),
 				__
 			___
 		__
@@ -40,13 +40,13 @@ void AssignmentExpressionNode::build() {
 void ConditionalExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(OrExpressionNode, "OrExpression"),
-			_OPT_("opt_conditional_if") _AND_
+			MAKE2(OrExpressionNode),
+			_OPT_ _AND_
 				TOKEN(IF),
-				MAKE_NAMED(OrExpressionNode, "OrExpression"),
-				_OPT_("opt_conditional_else") _AND_
+				MAKE2(OrExpressionNode),
+				_OPT_ _AND_
 					TOKEN(ELSE),
-					MAKE_NAMED(OrExpressionNode, "OrExpression"),
+					MAKE2(OrExpressionNode),
 				____,
 			____
 		__
@@ -56,11 +56,11 @@ void ConditionalExpressionNode::build() {
 void OrExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(AndExpressionNode, "AndExpression"),
-			_STAR_("ors")
+			MAKE2(AndExpressionNode),
+			_STAR_
 				_AND_
 					TOKEN(OR), // OR = 'or', OROR = '||'
-					MAKE_NAMED(AndExpressionNode, "AndExpression"),
+					MAKE2(AndExpressionNode),
 				__
 			___
 		__
@@ -70,11 +70,11 @@ void OrExpressionNode::build() {
 void AndExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(EqualityExpressionNode, "EqualityExpression"),
-			_STAR_("ands")
+			MAKE2(EqualityExpressionNode),
+			_STAR_
 				_AND_
 					TOKEN(AND), // AND = 'and', ANDAND = '&&'
-					MAKE_NAMED(EqualityExpressionNode, "EqualityExpression"),
+					MAKE2(EqualityExpressionNode),
 				__
 			___
 		__
@@ -84,11 +84,11 @@ void AndExpressionNode::build() {
 void EqualityExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(CompareExpressionNode, "CompareExpression"),
-			_STAR_("equalities")
+			MAKE2(CompareExpressionNode),
+			_STAR_
 				_AND_
 					TOKEN(EQUALEQUAL),
-					MAKE_NAMED(CompareExpressionNode, "CompareExpression"),
+					MAKE2(CompareExpressionNode),
 				__
 			___
 		__
@@ -98,8 +98,8 @@ void EqualityExpressionNode::build() {
 void CompareExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(AdditiveExpressionNode, "AdditiveExpression"),
-			_STAR_("comparisons")
+			MAKE2(AdditiveExpressionNode),
+			_STAR_
 				_AND_
 					_OR_
 						TOKEN(LT),
@@ -107,7 +107,7 @@ void CompareExpressionNode::build() {
 						TOKEN(GT),
 						TOKEN(GTE),
 					__,
-					MAKE_NAMED(AdditiveExpressionNode, "AdditiveExpression"),
+					MAKE2(AdditiveExpressionNode),
 				__
 			___
 		__
@@ -117,14 +117,14 @@ void CompareExpressionNode::build() {
 void AdditiveExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(MultiplicativeExpressionNode, "MultiplicativeExpression"),
-			_STAR_("addsubs")
+			MAKE2(MultiplicativeExpressionNode),
+			_STAR_
 				_AND_
 					_OR_
 						TOKEN(PLUS),
 						TOKEN(DASH),
 					__,
-					MAKE_NAMED(MultiplicativeExpressionNode, "MultiplicativeExpression"),
+					MAKE2(MultiplicativeExpressionNode),
 				__
 			___
 		__
@@ -134,15 +134,15 @@ void AdditiveExpressionNode::build() {
 void MultiplicativeExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(UnaryExpressionNode, "UnaryExpression"),
-			_STAR_("muldivmod")
+			MAKE2(UnaryExpressionNode),
+			_STAR_
 				_AND_
 					_OR_
 						TOKEN(ASTERISK),
 						TOKEN(SLASH),
 						TOKEN(PERCENT),
 					__,
-					MAKE_NAMED(UnaryExpressionNode, "UnaryExpression"),
+					MAKE2(UnaryExpressionNode),
 				__
 			___
 		__
@@ -165,13 +165,13 @@ void UnaryExpressionNode::build() {
 					TOKEN(AMPERSAND),
 					_AND_ // type cast operator
 						TOKEN(PARENOPEN),
-						MAKE_NAMED(TypenameNode, "Typename"),
+						MAKE2(TypenameNode),
 						TOKEN(PARENCLOSE),
 					__,
 				__,
-				MAKE_NAMED(UnaryExpressionNode, "UnaryExpression"),
+				MAKE2(UnaryExpressionNode),
 			__,
-			MAKE_NAMED(PostfixExpressionNode, "PostfixExpression"),
+			MAKE2(PostfixExpressionNode),
 		__
 	};
 }
@@ -179,17 +179,17 @@ void UnaryExpressionNode::build() {
 void PostfixExpressionNode::build() {
 	this->nodes = {
 		_AND_
-			MAKE_NAMED(ParenExpressionNode, "ParenExpression"),
-			_STAR_("postfixes") _OR_
+			MAKE2(ParenExpressionNode),
+			_STAR_ _OR_
 				_AND_
 					_OR_
 						TOKEN(DOT),
 						TOKEN(ARROW),
 					__,
-					WORD_TOKEN("word"),
+					TOKEN(WORD),
 				__,
-				MAKE_NAMED(ParenArgumentsNode, "ParenArguments"),
-				MAKE_NAMED(BracketArgumentsNode, "BracketArguments"),
+				MAKE2(ParenArgumentsNode),
+				MAKE2(BracketArgumentsNode),
 				TOKEN(PLUSPLUS),
 				TOKEN(MINUSMINUS),
 			____
@@ -202,11 +202,11 @@ void ParenExpressionNode::build() {
 		_OR_
 			_AND_
 				TOKEN(PARENOPEN),
-				MAKE_NAMED(ExpressionNode, "Expression"),
+				MAKE2(ExpressionNode),
 				TOKEN(PARENCLOSE),
 			__,
-			MAKE_NAMED(TypenameNode, "Typename"),
-			NUMBER_TOKEN("num"),
+			MAKE2(TypenameNode),
+			TOKEN(NUMBER),
 		__
 	};
 }

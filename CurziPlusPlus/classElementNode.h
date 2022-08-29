@@ -3,7 +3,6 @@
 #include "grammarizer.h"
 #include "usingNode.h"
 #include "pppQualifierNode.h"
-#include "macroNode.h"
 #include "classMember.h"
 #include "constructor.h"
 
@@ -14,10 +13,9 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_OR_
-				MAKE_NAMED(UsingNode, "using"),
-				//MAKE_NAMED(MacroNode, "using"),
-				MAKE_NAMED(ClassMemberNode, "using"),
-				MAKE_NAMED(ConstructorNode, "using"),
+				MAKE2(UsingNode),
+				MAKE2(ClassMemberNode),
+				MAKE2(ConstructorNode),
 			__,
 		};
 	}

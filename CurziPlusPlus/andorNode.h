@@ -5,8 +5,7 @@
 
 class AndNode : public Node {
 public:
-	AndNode(vNode v, int n_indent = 0) : Node("", n_indent) {
-		this->name = "AndNode";
+	AndNode(vNode v, int n_indent = 0) : Node(n_indent) {
 		this->nodes = v;
 	}
 
@@ -24,8 +23,7 @@ public:
 
 class OrNode : public Node {
 public:
-	OrNode(vNode v, int n_indent = 0) : Node("", n_indent) {
-		this->name = "OrNode";
+	OrNode(vNode v, int n_indent = 0) : Node(n_indent) {
 		this->nodes = v;
 	}
 

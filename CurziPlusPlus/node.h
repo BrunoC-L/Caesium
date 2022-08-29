@@ -8,11 +8,9 @@ class Grammarizer;
 
 class Node {
 public:
-	Node(std::string identifier, int n_indent = 0) : identifier(identifier), n_indent(n_indent) {}
+	Node(int n_indent = 0) : n_indent(n_indent) {}
 	int n_indent;
 	std::vector<std::shared_ptr<Node>> nodes;
-	std::string name = "Node";
-	std::string identifier;
 	virtual void build() {}
 	virtual bool build(Grammarizer* g) {
 		build();

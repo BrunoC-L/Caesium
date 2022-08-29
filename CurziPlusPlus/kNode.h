@@ -8,7 +8,7 @@ class KNode : public Node {
 protected:
 	std::function<std::shared_ptr<Node>()> builder;
 public:
-	KNode(std::string name, std::function<std::shared_ptr<Node>()> builder, int n_indent = 0) : Node(name, n_indent) , builder(builder) {}
+	KNode(std::function<std::shared_ptr<Node>()> builder, int n_indent = 0) : Node(n_indent) , builder(builder) {}
 	virtual bool cnd() = 0;
 
 	virtual bool build(Grammarizer* g) override {
@@ -26,7 +26,7 @@ public:
 
 class CommaDelimitedKNode : public KNode {
 public:
-	CommaDelimitedKNode(std::string name, std::function<std::shared_ptr<Node>()> builder) : KNode(name, builder) {}
+	CommaDelimitedKNode(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {}
 
 	virtual bool build(Grammarizer* g) override {
 		while (true) {
@@ -34,7 +34,7 @@ public:
 			bool parsed = node->build(g);
 			if (parsed) {
 				this->nodes.push_back(node);
-				parsed = TokenNode<COMMA>("comma").build(g);
+				parsed = TokenNode<COMMA>().build(g);
 			}
 			if (!parsed)
 				break;
@@ -45,9 +45,7 @@ public:
 
 class StarNode : public KNode {
 public:
-	StarNode(std::string name, std::function<std::shared_ptr<Node>()> builder) : KNode(name, builder) {
-		this->name = "StarNode";
-	}
+	StarNode(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {}
 	virtual bool cnd() override {
 		return true;
 	}
@@ -55,9 +53,7 @@ public:
 
 class CommaStarNode : public CommaDelimitedKNode {
 public:
-	CommaStarNode(std::string name, std::function<std::shared_ptr<Node>()> builder) : CommaDelimitedKNode(name, builder) {
-		this->name = "CommaStarNode";
-	}
+	CommaStarNode(std::function<std::shared_ptr<Node>()> builder) : CommaDelimitedKNode(builder) {}
 	virtual bool cnd() override {
 		return true;
 	}
@@ -65,9 +61,7 @@ public:
 
 class PlusNode : public KNode {
 public:
-	PlusNode(std::string name, std::function<std::shared_ptr<Node>()> builder) : KNode(name, builder) {
-		this->name = "PlusNode";
-	}
+	PlusNode(std::function<std::shared_ptr<Node>()> builder) : KNode(builder) {}
 	virtual bool cnd() override {
 		return this->nodes.size() > 0;
 	}
@@ -75,9 +69,7 @@ public:
 
 class CommaPlusNode : public CommaDelimitedKNode {
 public:
-	CommaPlusNode(std::string name, std::function<std::shared_ptr<Node>()> builder) : CommaDelimitedKNode(name, builder) {
-		this->name = "CommaPlusNode";
-	}
+	CommaPlusNode(std::function<std::shared_ptr<Node>()> builder) : CommaDelimitedKNode(builder) {}
 	virtual bool cnd() override {
 		return this->nodes.size() > 0;
 	}
@@ -87,9 +79,7 @@ public:
 class OPTNode : public Node {
 public:
 	std::function<std::shared_ptr<Node>()> builder;
-	OPTNode(std::string name, std::function<std::shared_ptr<Node>()> builder) : Node(name), builder(builder) {
-		this->name = "OPTNode";
-	}
+	OPTNode(std::function<std::shared_ptr<Node>()> builder) : Node(), builder(builder) {}
 
 	virtual bool build(Grammarizer* g) override {
 		std::shared_ptr<Node> node = this->builder();

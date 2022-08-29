@@ -9,7 +9,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(EXTENDS),
-				MAKE_NAMED(MultipleInheritanceNode, ""),
+				MAKE2(MultipleInheritanceNode),
 			__
 		};
 	}

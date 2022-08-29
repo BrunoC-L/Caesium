@@ -11,10 +11,10 @@ public:
 	virtual void build() override {
 		this->nodes = {
 			_AND_
-				_OPT_("opt_ppp")
-					MAKE_NAMED(PPPQualifierNode, "PPPQualifier")
+				_OPT_
+					MAKE2(PPPQualifierNode)
 				___,
-				_OPT_("opt_static")
+				_OPT_
 					TOKEN(STATIC)
 				___,
 			__

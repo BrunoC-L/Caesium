@@ -54,9 +54,6 @@ enum TOKENS {
 	ANDAND,
 	OROR,
 
-	LSHIFT,
-	RSHIFT,
-
 	PLUSPLUS,
 	MINUSMINUS,
 
@@ -82,7 +79,6 @@ enum TOKENS {
 	CASE,
 	DO,
 	USING,
-	DEFINE,
 	STATIC,
 	EXTENDS,
 
@@ -112,7 +108,7 @@ public:
 			t = readToken();
 			out.push_front(t);
 		} while (t.first != END);
-		// quick fix to allow for files not to end with a new line
+		// allow for files not to end with a new line
 		if (std::next(out.begin(), 1)->first != NEWLINE) {
 			out.front().first = NEWLINE; // replace END with newline
 			out.push_front(TOKENVALUE(END, "")); // add the new END
@@ -195,7 +191,7 @@ private:
 				index += 1;
 				return readToken();
 			}
-			// TODO other \ 
+			// TODO other \ cases
 			return { BACKSLASH, "\\\\" };
 		case '\'':
 		case '`':
@@ -281,31 +277,13 @@ private:
 					index += 1;
 						return { LTE, "<=" };
 				}
-				/*else if (program[index] == '<') {
-					index += 1;
-					return { LSHIFT, "<<" };
-				}*/
 			}
 			return { LT, "<" };
 		case '>':
 			index += 1;
-			if (index + 1 <= program.size()) {
-				if (program[index] == '=') {
-					index += 1;
-						return { GTE, ">=" };
-				}
-				//else if (program[index] == '>') {
-				//	index += 1;
-				//	// basically when using templates you end up with A<B<C>> and you want to not parse >> as RSHIFT but as GT, GT
-				//	// we know we are in this scenario if the upcoming token is a comma or another >
-				//	// otherwise it might be like A<B<C>> but we can handle this simple case, unlike A<B<C<D>>,E>
-				//	TOKENS t = peek(1);
-				//	if (t == COMMA || t == GTE) {
-				//		index -= 1;
-				//		return { GT, ">" };
-				//	}
-				//	return { RSHIFT, ">>" };
-				//}
+			if (index + 1 <= program.size() && program[index] == '=') {
+				index += 1;
+				return { GTE, ">=" };
 			}
 			return { GT, ">" };
 		case '-':
@@ -332,10 +310,6 @@ private:
 					index += 1;
 						return { PLUSEQUAL, "+=" };
 				}
-				/*else if (program[index] == '+') {
-					index += 1;
-					return { PLUSPLUS, "++" };
-				}*/
 			}
 			return { PLUS, "+" };
 		case '*':
@@ -370,17 +344,17 @@ private:
 					return { ANDEQUAL, "&=" };
 				}
 			}
-			throw std::exception();
 			//return { AMPERSAND, "&" };
+			throw std::exception();
 		case '?':
 			index += 1;
 			return { QUESTION, "?" };
 		case '#':
 			index += 1;
-			if (index + 6 <= program.size() && program.substr(index, index + 6) == "define") {
+			/*if (index + 6 <= program.size() && program.substr(index, index + 6) == "define") {
 				index += 6;
 				return { DEFINE, "#define" };
-			}
+			}*/
 			return { POUND, "#" };
 		case '^':
 			index += 1;

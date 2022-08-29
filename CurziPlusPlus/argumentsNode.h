@@ -13,10 +13,10 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_COMMA_STAR_("arguments")
+			_COMMA_STAR_
 				_AND_
-					MAKE_NAMED(TypenameNode, "Typename"),
-					WORD_TOKEN("word"),
+					MAKE2(TypenameNode),
+					TOKEN(WORD),
 			____
 		};
 	}
@@ -28,8 +28,8 @@ public:
 
 	virtual void build() override {
 		this->nodes = {
-			_COMMA_STAR_("arguments")
-				MAKE_NAMED(ExpressionNode, "expr")
+			_COMMA_STAR_
+				MAKE2(ExpressionNode)
 			___
 		};
 	}
@@ -43,7 +43,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(PARENOPEN),
-				MAKE_NAMED(InnerArgumentsNode, "args"),
+				MAKE2(InnerArgumentsNode),
 				TOKEN(PARENCLOSE),
 			__
 		};
@@ -58,7 +58,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(BRACKETOPEN),
-				MAKE_NAMED(InnerArgumentsNode, "args"),
+				MAKE2(InnerArgumentsNode),
 				TOKEN(BRACKETCLOSE),
 			__
 		};
@@ -73,7 +73,7 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(BRACEOPEN),
-				MAKE_NAMED(InnerArgumentsNode, "args"),
+				MAKE2(InnerArgumentsNode),
 				TOKEN(BRACECLOSE),
 			__
 		};

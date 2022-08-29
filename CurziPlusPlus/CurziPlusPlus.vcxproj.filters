@@ -101,9 +101,6 @@
     <ClInclude Include="typenameNode.h">
       <Filter>Source Files\nodes\types</Filter>
     </ClInclude>
-    <ClInclude Include="macroNode.h">
-      <Filter>Source Files\nodes\other</Filter>
-    </ClInclude>
     <ClInclude Include="tokenizer.h">
       <Filter>Source Files\grammarizer\tokenizer</Filter>
     </ClInclude>

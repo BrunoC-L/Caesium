@@ -15,10 +15,9 @@ namespace NodeStructs {
 	struct Alias;
 	using ClassElement = std::variant<Constructor, Function, MemberVariable, Alias>;
 	struct TemplateTypeExtension;
-	struct PointerTypeExtension;
 	struct NSTypeExtension;
 	struct Typename;
-	using TypenameExtension = std::variant<TemplateTypeExtension, PointerTypeExtension, NSTypeExtension>;
+	using TypenameExtension = std::variant<TemplateTypeExtension, NSTypeExtension>;
 	struct Statement;
 
 	struct File {
@@ -59,11 +58,6 @@ namespace NodeStructs {
 
 	struct TemplateTypeExtension {
 		std::vector<std::unique_ptr<Typename>> templateTypes;
-	};
-
-	struct PointerTypeExtension {
-		uint8_t ptr_count;
-		bool isRef;
 	};
 
 	struct NSTypeExtension {
