@@ -11,7 +11,10 @@ public:
 		this->nodes = {
 			_AND_
 				TOKEN(CLASS),
-				TOKEN(WORD),
+				_OR_
+					MAKE2(TemplateTypenameDeclarationNode),
+					TOKEN(WORD),
+				__,
 				_OPT_
 					MAKE2(ClassInheritanceNode)
 				___,
@@ -29,7 +32,12 @@ public:
 
 	std::unique_ptr<NodeStructs::Class> getStruct() {
 		std::unique_ptr<NodeStructs::Class> res = std::make_unique<NodeStructs::Class>();
-		res->name = NODE_CAST(TokenNode<WORD>, nodes[0]->nodes[1])->value;
+		if (auto classTemplate = NODE_CAST(TemplateTypenameDeclarationNode, nodes[0]->nodes[1]->nodes[0])) {
+			res->templated.emplace(std::move(classTemplate->getStruct()));
+			res->name = res->templated->type;
+		}
+		else
+			res->name = NODE_CAST(TokenNode<WORD>, nodes[0]->nodes[1]->nodes[0])->value;
 		if (nodes[0]->nodes[2]->nodes.size())
 			res->inheritances = NODE_CAST(ClassInheritanceNode, nodes[0]->nodes[2]->nodes[0])->getInheritance();
 		for (const auto& classElementAnd : nodes[0]->nodes[5]->nodes) {

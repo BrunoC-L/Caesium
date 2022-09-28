@@ -60,6 +60,37 @@ public:
 			res.emplace_back(NODE_CAST(TypenameNode, node)->getStruct());
 		return res;
 	}
+}; 
+
+class TemplateTypenameDeclarationNode : public Node {
+public:
+	baseCtor(TemplateTypenameDeclarationNode);
+
+	virtual void build() override {
+		this->nodes = {
+			_AND_
+				TOKEN(WORD),
+				TOKEN(LT),
+				_COMMA_PLUS_ _OR_
+					MAKE2(TemplateTypenameDeclarationNode),
+					TOKEN(WORD),
+				____,
+				TOKEN(GT),
+			__
+		};
+	}
+
+	NodeStructs::templateDeclaration getStruct() {
+		NodeStructs::templateDeclaration res;
+		res.type = NODE_CAST(TokenNode<WORD>, nodes[0]->nodes[0])->value;
+		for (const auto& ornode : nodes[0]->nodes[2]->nodes) {
+			if (const auto& templatedecnode = NODE_CAST(TemplateTypenameDeclarationNode, ornode->nodes[0]))
+				res.templated.emplace_back(templatedecnode->getStruct());
+			else
+				res.templated.emplace_back(NodeStructs::templateDeclaration{NODE_CAST(TokenNode<WORD>, ornode->nodes[0])->value, {} });
+		}
+		return res;
+	}
 };
 
 class TemplateTypenameNode : public Node {

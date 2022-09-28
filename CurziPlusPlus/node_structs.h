@@ -2,8 +2,12 @@
 #include <vector>
 #include <string>
 #include <variant>
+#include <optional>
 
 #define NODE_CAST(T, E) std::dynamic_pointer_cast<T>(E)
+
+template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
+template<class... Ts> overload(Ts...)->overload<Ts...>;
 
 namespace NodeStructs {
 
@@ -18,21 +22,8 @@ namespace NodeStructs {
 	struct NSTypeExtension;
 	struct Typename;
 	using TypenameExtension = std::variant<TemplateTypeExtension, NSTypeExtension>;
+	struct templateDeclaration;
 	struct Statement;
-
-	struct File {
-		std::vector<std::unique_ptr<Class>> classes;
-		std::vector<std::unique_ptr<Function>> functions;
-	};
-
-	struct Class {
-		std::string name;
-		std::vector<std::unique_ptr<Typename>> inheritances;
-		std::vector<std::unique_ptr<Alias>> aliases;
-		std::vector<std::unique_ptr<Constructor>> constructors;
-		std::vector<std::unique_ptr<Function>> methods;
-		std::vector<std::unique_ptr<MemberVariable>> memberVariables;
-	};
 
 	struct Function {
 		std::string name;
@@ -69,6 +60,26 @@ namespace NodeStructs {
 		std::vector<TypenameExtension> extensions;
 	};
 
+	struct templateDeclaration {
+		std::string type;
+		std::vector<templateDeclaration> templated;
+	};
+
 	struct Statement {
+	};
+
+	struct File {
+		std::vector<std::unique_ptr<Class>> classes;
+		std::vector<std::unique_ptr<Function>> functions;
+	};
+
+	struct Class {
+		std::string name;
+		std::optional<templateDeclaration> templated;
+		std::vector<std::unique_ptr<Typename>> inheritances;
+		std::vector<std::unique_ptr<Alias>> aliases;
+		std::vector<std::unique_ptr<Constructor>> constructors;
+		std::vector<std::unique_ptr<Function>> methods;
+		std::vector<std::unique_ptr<MemberVariable>> memberVariables;
 	};
 }
