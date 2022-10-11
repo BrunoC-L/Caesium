@@ -11,14 +11,14 @@ class CodeBlockNode : public Node {
 public:
 	baseCtor(CodeBlockNode);
 
-	virtual void build() override;
+	virtual void prepare() override;
 };
 
 class ColonIndentCodeBlockNode : public Node {
 public:
 	baseCtor(ColonIndentCodeBlockNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(COLON),
@@ -33,7 +33,7 @@ class ExpressionStatementNode : public Node {
 public:
 	baseCtor(ExpressionStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				MAKE2(ExpressionNode),
@@ -47,7 +47,7 @@ class ElseStatementNode : public Node {
 public:
 	baseCtor(ElseStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				MAKE(IndentNode)(n_indent),
@@ -62,7 +62,7 @@ class IfStatementNode : public Node {
 public:
 	baseCtor(IfStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(IF),
@@ -80,7 +80,7 @@ class ForStatementNode : public Node {
 public:
 	baseCtor(ForStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(FOR),
@@ -113,7 +113,7 @@ class IForStatementNode : public Node {
 public:
 	baseCtor(IForStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(IFOR),
@@ -146,7 +146,7 @@ class WhileStatementNode : public Node {
 public:
 	baseCtor(WhileStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(WHILE),
@@ -161,7 +161,7 @@ class ReturnStatementNode : public Node {
 public:
 	baseCtor(ReturnStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(RETURN),
@@ -186,7 +186,7 @@ class BreakStatementNode : public Node {
 public:
 	baseCtor(BreakStatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(BREAK),
@@ -204,7 +204,7 @@ class StatementNode : public Node {
 public:
 	baseCtor(StatementNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				MAKE(IndentNode)(n_indent),

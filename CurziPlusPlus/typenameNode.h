@@ -9,7 +9,7 @@
 class TypenameNode : public Node {
 public:
 	baseCtor(TypenameNode);
-	virtual void build() override;
+	virtual void prepare() override;
 
 	std::unique_ptr<NodeStructs::Typename> getStruct();
 };
@@ -18,7 +18,7 @@ class NSTypenameNode : public Node {
 public:
 	baseCtor(NSTypenameNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(NS),
@@ -46,7 +46,7 @@ class TypenameListNode : public Node {
 public:
 	baseCtor(TypenameListNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_COMMA_STAR_
 				MAKE2(TypenameNode)
@@ -66,7 +66,7 @@ class TemplateTypenameDeclarationNode : public Node {
 public:
 	baseCtor(TemplateTypenameDeclarationNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(WORD),
@@ -97,7 +97,7 @@ class TemplateTypenameNode : public Node {
 public:
 	baseCtor(TemplateTypenameNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(LT),

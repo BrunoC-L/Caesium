@@ -11,7 +11,7 @@ class ArgumentsSignatureNode : public Node {
 public:
 	baseCtor(ArgumentsSignatureNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_COMMA_STAR_
 				_AND_
@@ -26,7 +26,7 @@ class InnerArgumentsNode : public Node {
 public:
 	baseCtor(InnerArgumentsNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_COMMA_STAR_
 				MAKE2(ExpressionNode)
@@ -39,7 +39,7 @@ class ParenArgumentsNode : public Node {
 public:
 	baseCtor(ParenArgumentsNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(PARENOPEN),
@@ -54,7 +54,7 @@ class BracketArgumentsNode : public Node {
 public:
 	baseCtor(BracketArgumentsNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(BRACKETOPEN),
@@ -69,7 +69,7 @@ class BraceArgumentsNode : public Node {
 public:
 	baseCtor(BraceArgumentsNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(BRACEOPEN),

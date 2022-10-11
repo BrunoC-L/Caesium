@@ -5,7 +5,7 @@
 #define nodeclass(N) class N : public Node {\
 public:\
 	baseCtor(N);\
-	virtual void build() override;\
+	virtual void prepare() override;\
 };
 
 nodeclass(ExpressionNode)

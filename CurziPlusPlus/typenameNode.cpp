@@ -1,6 +1,6 @@
 #include "typenameNode.h"
 
-void TypenameNode::build() {
+void TypenameNode::prepare() {
 	this->nodes = {
 		_AND_
 			TOKEN(WORD),

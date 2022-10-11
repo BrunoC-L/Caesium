@@ -13,6 +13,7 @@ void testParse(int i, std::tuple<std::shared_ptr<Node>, std::string>&& testCase)
 	std::shared_ptr<Node>& expected = get<std::shared_ptr<Node>>(testCase);
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
+
 	bool nodeBuilt = expected->build(&g);
 	bool programReadEntirely = g.it == g.tokens.end();
 	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
@@ -109,7 +110,7 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 	FileNode fileNode;
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
-	bool b = ((Node*) &fileNode)->build(&g); // VS2022 :)
+	bool b = fileNode.build(&g);
 	if (!b)
 		throw std::exception("not built");
 	std::cout << fileName << ": built\n";
@@ -118,6 +119,11 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 }
 
 int main(int argc, char** argv) {
+
+	AndNode2<OrNode2<ClassNode, AndNode2<ClassNode>>, ClassNode> t;
+
+	t.build(nullptr);
+
 	std::cout << std::boolalpha;
 
 	testParse();

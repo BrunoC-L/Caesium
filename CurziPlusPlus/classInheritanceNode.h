@@ -5,7 +5,7 @@ class ClassInheritanceNode : public Node {
 public:
 	baseCtor(ClassInheritanceNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(EXTENDS),

@@ -8,7 +8,7 @@ class ClassMemberQualifiers : public Node {
 public:
 	baseCtor(ClassMemberQualifiers);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				_OPT_

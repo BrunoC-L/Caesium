@@ -7,7 +7,7 @@ class PPPQualifierNode : public Node {
 public:
 	baseCtor(PPPQualifierNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_OR_
 				TOKEN(PRIVATE),

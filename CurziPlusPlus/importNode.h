@@ -8,7 +8,7 @@ class ImportNode : public Node {
 public:
 	baseCtor(ImportNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(IMPORT),

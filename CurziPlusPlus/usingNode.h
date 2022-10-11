@@ -8,7 +8,7 @@ class UsingNode : public Node {
 public:
 	baseCtor(UsingNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(USING),

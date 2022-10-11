@@ -9,7 +9,7 @@ class MultipleInheritanceNode : public Node {
 public:
 	baseCtor(MultipleInheritanceNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_COMMA_PLUS_
 				MAKE2(TypenameNode)

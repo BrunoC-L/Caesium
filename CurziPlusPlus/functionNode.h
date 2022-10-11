@@ -7,7 +7,7 @@ class FunctionNode : public Node {
 public:
 	baseCtor(FunctionNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				MAKE2(TypenameNode),

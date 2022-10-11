@@ -10,7 +10,7 @@ class ConstructorNode : public Node {
 public:
 	baseCtor(ConstructorNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				MAKE2(ClassMemberQualifiers),

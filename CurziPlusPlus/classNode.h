@@ -7,7 +7,7 @@ class ClassNode : public Node {
 public:
 	baseCtor(ClassNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				TOKEN(CLASS),
@@ -40,9 +40,22 @@ public:
 			res->name = NODE_CAST(TokenNode<WORD>, nodes[0]->nodes[1]->nodes[0])->value;
 		if (nodes[0]->nodes[2]->nodes.size())
 			res->inheritances = NODE_CAST(ClassInheritanceNode, nodes[0]->nodes[2]->nodes[0])->getInheritance();
+
+		auto classElementF = overload(
+			[&res](const NodeStructs::Constructor&) {
+			},
+			[&res](const NodeStructs::Function&) {
+			},
+			[&res](const NodeStructs::MemberVariable&) {
+			},
+			[&res](const NodeStructs::Alias&) {
+			}
+		);
+
 		for (const auto& classElementAnd : nodes[0]->nodes[5]->nodes) {
 			const std::shared_ptr<ClassElementNode>& classElement = NODE_CAST(ClassElementNode, classElementAnd->nodes[1]);
 			const auto& x = classElement->getStruct();
+			std::visit(classElementF , *x.get());
 		}
 		return res;
 	}

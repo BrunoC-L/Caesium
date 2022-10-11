@@ -9,7 +9,7 @@ class FileNode : public Node {
 public:
 	baseCtor(FileNode);
 
-	virtual void build() override {
+	virtual void prepare() override {
 		this->nodes = {
 			_AND_
 				_STAR_

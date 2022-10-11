@@ -7,13 +7,13 @@
 #include "argumentsNode.h"
 #include "macros.h"
 
-void ExpressionNode::build() {
+void ExpressionNode::prepare() {
 	this->nodes = {
 		MAKE2(AssignmentExpressionNode),
 	};
 }
 
-void AssignmentExpressionNode::build() {
+void AssignmentExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(ConditionalExpressionNode),
@@ -37,7 +37,7 @@ void AssignmentExpressionNode::build() {
 	};
 }
 
-void ConditionalExpressionNode::build() {
+void ConditionalExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(OrExpressionNode),
@@ -53,7 +53,7 @@ void ConditionalExpressionNode::build() {
 	};
 }
 
-void OrExpressionNode::build() {
+void OrExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(AndExpressionNode),
@@ -67,7 +67,7 @@ void OrExpressionNode::build() {
 	};
 }
 
-void AndExpressionNode::build() {
+void AndExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(EqualityExpressionNode),
@@ -81,7 +81,7 @@ void AndExpressionNode::build() {
 	};
 }
 
-void EqualityExpressionNode::build() {
+void EqualityExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(CompareExpressionNode),
@@ -95,7 +95,7 @@ void EqualityExpressionNode::build() {
 	};
 }
 
-void CompareExpressionNode::build() {
+void CompareExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(AdditiveExpressionNode),
@@ -114,7 +114,7 @@ void CompareExpressionNode::build() {
 	};
 }
 
-void AdditiveExpressionNode::build() {
+void AdditiveExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(MultiplicativeExpressionNode),
@@ -131,7 +131,7 @@ void AdditiveExpressionNode::build() {
 	};
 }
 
-void MultiplicativeExpressionNode::build() {
+void MultiplicativeExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(UnaryExpressionNode),
@@ -149,7 +149,7 @@ void MultiplicativeExpressionNode::build() {
 	};
 }
 
-void UnaryExpressionNode::build() {
+void UnaryExpressionNode::prepare() {
 	this->nodes = {
 		_OR_
 			_AND_
@@ -176,7 +176,7 @@ void UnaryExpressionNode::build() {
 	};
 }
 
-void PostfixExpressionNode::build() {
+void PostfixExpressionNode::prepare() {
 	this->nodes = {
 		_AND_
 			MAKE2(ParenExpressionNode),
@@ -197,7 +197,7 @@ void PostfixExpressionNode::build() {
 	};
 }
 
-void ParenExpressionNode::build() {
+void ParenExpressionNode::prepare() {
 	this->nodes = {
 		_OR_
 			_AND_
