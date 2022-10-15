@@ -120,9 +120,24 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 
 int main(int argc, char** argv) {
 
-	AndNode2<OrNode2<ClassNode, AndNode2<ClassNode>>, ClassNode> t;
+	AndNode2<OrNode2<ClassNode, AndNode2<ClassNode>>, ClassNode> node1;
+	OrNode2<ClassNode, AndNode2<ClassNode>> x1 = node1.get<OrNode2<ClassNode, AndNode2<ClassNode>>>();
+	OrNode2<ClassNode, AndNode2<ClassNode>> x2 = node1.get<0>();
+	node1.build(nullptr);
 
-	t.build(nullptr);
+	OPTNode2<ClassNode> node2([]() { return ClassNode{}; });
+	node2.build(nullptr);
+
+	StarNode2<ClassNode> node3([]() { return ClassNode{}; }, 0);
+	CommaStarNode2<ClassNode> node4([]() { return ClassNode{}; }, 0);
+	PlusNode2<ClassNode> node5([]() { return ClassNode{}; }, 0);
+	CommaPlusNode2<ClassNode> node6([]() { return ClassNode{}; }, 0);
+
+	using c = ClassNode;
+	using ocac = OrNode2<c, AndNode2<c>>;
+	using acocac = AndNode2<c, ocac>;
+	StarNode2<acocac> node7([]() { return acocac{}; }, 0);
+	node7.get<ocac>();
 
 	std::cout << std::boolalpha;
 

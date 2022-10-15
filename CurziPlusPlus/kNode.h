@@ -75,7 +75,7 @@ public:
 	}
 };
 
-// technically isnt a KNode but at heart it is
+// technically isnt a KNode (inheritance wise), but at heart it is
 class OPTNode : public Node {
 public:
 	std::function<std::shared_ptr<Node>()> builder;
@@ -87,5 +87,94 @@ public:
 		if (parsed)
 			this->nodes.push_back(node);
 		return true;
+	}
+};
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+
+template <typename T, typename CND, bool requiresComma>
+class KNode2 : public CND {
+	std::function<T()> builder;
+	std::vector<T> nodes;
+	int n_indent;
+public:
+	KNode2(std::function<T()> builder, int n_indent = 0) : n_indent(n_indent), builder(builder) {}
+
+	bool build(Grammarizer* g) {
+		while (true) {
+			auto node = this->builder();
+			bool parsed = node.build(g);
+			if (parsed) {
+				nodes.push_back(node);
+				if constexpr (requiresComma)
+					parsed = TokenNode<COMMA>().build(g);
+			}
+			if (!parsed)
+				break;
+		}
+		return cnd(nodes);
+	}
+
+	// to get `list of b's` from `(abc)*` for example
+	template <typename T>
+	std::vector<T> get() const {
+		std::vector<T> res;
+		for (const auto& node : nodes)
+			res.push_back(node.get<T>());
+		return res;
+	}
+};
+
+class StarCnd {
+	template <typename T>
+	bool cnd(const std::vector<T>& nodes) {
+		return true;
+	}
+};
+
+class PlusCnd {
+	template <typename T>
+	bool cnd(const std::vector<T>& nodes) {
+		return nodes.size();
+	}
+};
+
+template <typename T>
+using StarNode2 = KNode2<T, StarCnd, false>;
+
+template <typename T>
+using CommaStarNode2 = KNode2<T, StarCnd, true>;
+
+template <typename T>
+using PlusNode2 = KNode2<T, PlusCnd, false>;
+
+template <typename T>
+using CommaPlusNode2 = KNode2<T, PlusCnd, true>;
+
+template <typename T>
+class OPTNode2 {
+public:
+	std::optional<T> node;
+	std::function<T()> builder;
+	OPTNode2(std::function<T()> builder): builder(builder) {}
+
+	bool build(Grammarizer* g) {
+		auto node = this->builder();
+		bool parsed = node.build(g);
+		if (parsed)
+			this->node = node;
+		return parsed;
 	}
 };

@@ -38,30 +38,6 @@ public:
 	}
 };
 
-template <typename... Ors>
-class OrNode2 {
-public:
-	int n_indent;
-	using variant_t = std::variant<Ors...>;
-	variant_t value;
-	OrNode2(int n_indent = 0) : n_indent(n_indent) {}
-
-	bool build(Grammarizer* g) {
-		bool populated = false;
-		([&]{
-			if (populated)
-				return;
-			Ors node = Ors(0);
-			bool built = node.build(g);
-			if (built) {
-				value = std::move(node);
-				populated = true;
-			}
-		}(), ...);
-		return populated;
-	}
-};
-
 // https://blog.tartanllama.xyz/exploding-tuples-fold-expressions/
 template <std::size_t... Idx> auto make_index_dispatcher(std::index_sequence<Idx...>) {return [](auto&& f) { (f(std::integral_constant<std::size_t, Idx>{}), ...); };}
 template <std::size_t N> auto make_index_dispatcher() {return make_index_dispatcher(std::make_index_sequence<N>{});}
@@ -76,6 +52,15 @@ public:
 	AndNode2(int n_indent = 0) : n_indent(n_indent) {
 		value = { Ands(n_indent)... };
 	}
+	template <typename T>
+	const T& get() const {
+		return std::get<T>(value);
+	}
+
+	template <int i>
+	decltype(std::get<i>(value)) get() {
+		return std::get<i>(value);
+	}
 
 	bool build(Grammarizer* g) {
 		bool failed = false;
@@ -87,5 +72,29 @@ public:
 			}
 		});
 		return !failed;
+	}
+};
+
+template <typename... Ors>
+class OrNode2 {
+public:
+	int n_indent;
+	using variant_t = std::variant<Ors...>;
+	variant_t value;
+	OrNode2(int n_indent = 0) : n_indent(n_indent) {}
+
+	bool build(Grammarizer* g) {
+		bool populated = false;
+		([&] {
+			if (populated)
+				return;
+			Ors node = Ors(0);
+			bool built = node.build(g);
+			if (built) {
+				value = std::move(node);
+				populated = true;
+			}
+			}(), ...);
+		return populated;
 	}
 };
