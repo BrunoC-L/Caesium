@@ -7,11 +7,11 @@ A language that eases some aspects of writing c++, while maintaining type safety
 The produced code is not meant to be used to interface with, just to run.
 
 ## Syntax
-
+```
 Python-like:
     indented:
         grammar
-
+```
 ## Types
 
 Type A:
