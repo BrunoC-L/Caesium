@@ -1,6 +1,5 @@
 #pragma once
 #include "tokenizer.h"
-#include "node.h"
 
 class Grammarizer {
 public:

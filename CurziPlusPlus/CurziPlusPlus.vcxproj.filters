@@ -13,140 +13,30 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\nodes">
-      <UniqueIdentifier>{a749ce57-8fe0-454e-b11b-0b53ab202397}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nodes\inheritance">
-      <UniqueIdentifier>{60e4fc0f-45a5-4405-8b4b-b7ca75fd8864}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nodes\base">
-      <UniqueIdentifier>{b7b490b9-7ea5-4f28-8f4e-8ff4acb7848f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nodes\classElements">
-      <UniqueIdentifier>{1f4b9173-206d-4f62-ab0d-c2c13425f39d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nodes\types">
-      <UniqueIdentifier>{02842abd-2ee0-4ca7-8f9a-7fb3b41d98a9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nodes\other">
-      <UniqueIdentifier>{6e3340b3-fdc4-4b00-b319-79e0a0da0844}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\grammarizer">
-      <UniqueIdentifier>{ff3a3b75-2fc7-46f2-a05c-856d99d3d0f4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\grammarizer\tokenizer">
-      <UniqueIdentifier>{485a5228-d6e8-4a62-a463-e26a46d4706f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nodes\statements">
-      <UniqueIdentifier>{2a27f368-f59f-4d28-b2bc-21b41bdaffbb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nodes\expressions">
-      <UniqueIdentifier>{edadb298-9989-400b-85c6-9c63540a9e8e}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="expressionNode.cpp">
-      <Filter>Source Files\nodes\expressions</Filter>
-    </ClCompile>
-    <ClCompile Include="typenameNode.cpp">
-      <Filter>Source Files\nodes\types</Filter>
-    </ClCompile>
-    <ClCompile Include="statementNode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="importNode.h">
-      <Filter>Source Files\nodes\other</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="classInheritanceNode.h">
-      <Filter>Source Files\nodes\inheritance</Filter>
-    </ClInclude>
-    <ClInclude Include="node.h">
-      <Filter>Source Files\nodes\base</Filter>
-    </ClInclude>
-    <ClInclude Include="andorNode.h">
-      <Filter>Source Files\nodes\base</Filter>
-    </ClInclude>
-    <ClInclude Include="tokenNode.h">
-      <Filter>Source Files\nodes\base</Filter>
-    </ClInclude>
-    <ClInclude Include="multipleInheritanceNode.h">
-      <Filter>Source Files\nodes\inheritance</Filter>
-    </ClInclude>
-    <ClInclude Include="singleInheritanceNode.h">
-      <Filter>Source Files\nodes\inheritance</Filter>
-    </ClInclude>
-    <ClInclude Include="classElementNode.h">
-      <Filter>Source Files\nodes\classElements</Filter>
-    </ClInclude>
-    <ClInclude Include="classMember.h">
-      <Filter>Source Files\nodes\classElements</Filter>
-    </ClInclude>
-    <ClInclude Include="untilTokenNode.h">
-      <Filter>Source Files\nodes\base</Filter>
-    </ClInclude>
-    <ClInclude Include="classMemberQualifiers.h">
-      <Filter>Source Files\nodes\classElements</Filter>
-    </ClInclude>
-    <ClInclude Include="pppQualifierNode.h">
-      <Filter>Source Files\nodes\types</Filter>
-    </ClInclude>
-    <ClInclude Include="usingNode.h">
-      <Filter>Source Files\nodes\other</Filter>
-    </ClInclude>
-    <ClInclude Include="typenameNode.h">
-      <Filter>Source Files\nodes\types</Filter>
-    </ClInclude>
-    <ClInclude Include="tokenizer.h">
-      <Filter>Source Files\grammarizer\tokenizer</Filter>
-    </ClInclude>
-    <ClInclude Include="grammarizer.h">
-      <Filter>Source Files\grammarizer</Filter>
-    </ClInclude>
-    <ClInclude Include="constructor.h">
-      <Filter>Source Files\nodes\classElements</Filter>
-    </ClInclude>
-    <ClInclude Include="statementNode.h">
-      <Filter>Source Files\nodes\statements</Filter>
-    </ClInclude>
-    <ClInclude Include="expressionNode.h">
-      <Filter>Source Files\nodes\expressions</Filter>
-    </ClInclude>
-    <ClInclude Include="kNode.h">
-      <Filter>Source Files\nodes\base</Filter>
-    </ClInclude>
-    <ClInclude Include="macros.h">
-      <Filter>Source Files\nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="argumentsNode.h">
-      <Filter>Source Files\nodes\other</Filter>
-    </ClInclude>
-    <ClInclude Include="indentNode.h">
-      <Filter>Source Files\nodes\base</Filter>
-    </ClInclude>
-    <ClInclude Include="classNode.h">
-      <Filter>Source Files\nodes\classElements</Filter>
-    </ClInclude>
-    <ClInclude Include="fileNode.h">
-      <Filter>Source Files\nodes\other</Filter>
-    </ClInclude>
-    <ClInclude Include="functionNode.h">
-      <Filter>Source Files\nodes\other</Filter>
-    </ClInclude>
     <ClInclude Include="node_structs.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="toCPP.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint">
-      <Filter>Source Files\grammarizer</Filter>
-    </None>
+    <ClInclude Include="grammar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="grammarizer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tokenizer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
