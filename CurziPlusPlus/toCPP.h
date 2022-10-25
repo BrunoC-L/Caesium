@@ -7,16 +7,16 @@
 
 class toCPP {
 public:
-	void transpile(std::ofstream& h, std::ofstream& cpp, const std::unique_ptr<NodeStructs::File>& file) {
-		for (const auto& Class : file->classes) {
+	void transpile(std::ofstream& h, std::ofstream& cpp, const NodeStructs::File& file) {
+		for (const auto& Class : file.classes) {
 
-			if (Class->templated.has_value())
-				transpileTypeTemplateDeclaration(Class->templated.value(), h);
+			if (Class.templated.has_value())
+				transpileTypeTemplateDeclaration(Class.templated.value(), h);
 
-			h << "class " << Class->name;
+			h << "class " << Class.name;
 
 			bool firstInheritance = true;
-			for (const auto& inheritance : Class->inheritances) {
+			for (const auto& inheritance : Class.inheritances) {
 				if (firstInheritance) {
 					firstInheritance = false;
 					h << " : ";
@@ -27,15 +27,15 @@ public:
 				transpileType(inheritance, h);
 			}
 			h << " {\n";
-			for (const auto& member : Class->memberVariables) {
-				transpileType(member->type, h);
-				h << " " << member->name << ";\n";
+			for (const auto& member : Class.memberVariables) {
+				transpileType(member.type, h);
+				h << " " << member.name << ";\n";
 			}
-			for (const auto& method : Class->methods) {
-				transpileType(method->returnType, h);
-				h << " " << method->name << "(";
+			for (const auto& method : Class.methods) {
+				transpileType(method.returnType, h);
+				h << " " << method.name << "(";
 				auto first = true;
-				for (const auto& t : method->parameterTypes) {
+				for (const auto& t : method.parameterTypes) {
 					if (first)
 						first = false;
 					else
@@ -49,7 +49,7 @@ public:
 	}
 
 	template <typename stream>
-	void transpileType(const std::unique_ptr<NodeStructs::Typename>& type, stream& ss) {
+	void transpileType(const NodeStructs::Typename& type, stream& ss) {
 		auto f = overload(
 			[&](const NodeStructs::NSTypeExtension& ext) {
 				ss << "::" << ext.NSTypename;

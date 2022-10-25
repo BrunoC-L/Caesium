@@ -6,12 +6,12 @@
 
 auto green = "\033[1;32m", red = "\033[1;31m", reset = "\033[0m";
 
-template <typename T>
+template <typename... Ts>
 void testParse(int i, int n_indent, std::string program, bool expectedToBuild = true) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
 
-	bool nodeBuilt = And<T>(n_indent).build(&g);
+	bool nodeBuilt = And<Ts...>(n_indent).build(&g);
 	bool programReadEntirely = g.it == g.tokens.end();
 	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
 		programReadEntirely = ++g.it == g.tokens.end();
@@ -28,6 +28,7 @@ void testParse(int i, int n_indent, std::string program, bool expectedToBuild = 
 			std::cout << g2.it->second << " ";
 			++g2.it;
 		}
+		std::cout << "\n";
 		return;
 	}
 }
@@ -38,14 +39,12 @@ void testParse() {
 	testParse<And<IndentToken, Token<WORD>>>(__LINE__, 3, "\t\t\ta");
 	testParse<CommaStar<Token<WORD>>>(__LINE__, 0, "y");
 	testParse<CommaStar<And<Token<WORD>>>>(__LINE__, 0, "y");
-	testParse<OPT<Import>>(__LINE__, 0, "\n");
+	testParse<Opt<Import>>(__LINE__, 0, "\n");
 	testParse<Class>(__LINE__, 0, "class A:\n");
 	testParse<Class>(__LINE__, 0, "class A extends B:\n");
 	testParse<Class>(__LINE__, 0, "class A extends B:\n\tA a\n");
 	testParse<Class>(__LINE__, 0, "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n");
-	testParse<Class>(__LINE__, 1, "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
 	testParse<Class>(__LINE__, 1, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");
-	testParse<Class>(__LINE__, 0, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 	testParse<Class>(__LINE__, 1, "class A extends B:\n\t\tA a\n");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n");
 	testParse<Statement>(__LINE__, 0, "if a:\n");
@@ -53,14 +52,6 @@ void testParse() {
 	testParse<IfStatement>(__LINE__, 0, "if a:\n\tb\n");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n\tif a:\n\t\tb\n");
 	testParse<IfStatement>(__LINE__, 1, "if a:\n\t\tb\n");
-	/*testParse(__LINE__, { _AND_
-		TOKEN(IF),
-			MAKE2(ExpressionNode),
-			MAKE2(ColonIndentCodeBlockNode),
-			_OPT_
-				MAKE2(ElseStatementNode)
-			___
-		__, "if a:\n\tb\n" });*/
 	testParse<ForStatement>(__LINE__, 0, "for a in b:\n\tb\n");
 	testParse<ForStatement>(__LINE__, 0, "for a in b:\n");
 	testParse<Statement>(__LINE__, 0, "for a in b:\n\tif a:\n\t\tb\n");
@@ -97,6 +88,10 @@ void testParse() {
 	testParse<File>(__LINE__, 0, "import OS from System");
 	testParse<Class>(__LINE__, 0, "class B:");
 	testParse<File>(__LINE__, 0, "class B:");
+	testParse<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
+	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
+	testParse<Class>(__LINE__, 1, "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
+	testParse<Class>(__LINE__, 0, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 }
 
 //void transpile(const std::filesystem::path& fileName, std::string folder) {
@@ -124,29 +119,7 @@ void testParse() {
 //}
 
 int main(int argc, char** argv) {
-
-	//And<Or<ClassNode, And<ClassNode>>, ClassNode> node1(0);
-	////Or<ClassNode, And<ClassNode>> x1 = node1.get<Or<ClassNode, And<ClassNode>>>();
-	////Or<ClassNode, And<ClassNode>> x2 = node1.get<0>();
-	//node1.build(nullptr);
-	//OPT<ClassNode> node2(0);
-	//node2.build(nullptr);
-
-	//Star<ClassNode> node3(0);
-	//CommaStar<ClassNode> node4(0);
-	//Plus<ClassNode> node5(0);
-	//CommaPlus<ClassNode> node6(0);
-
-	//using c = ClassNode;
-	//using ocac = Or<c, And<c>>;
-	//using acocac = And<c, ocac>;
-	//Star<acocac> node7(0);
-	////node7.get<ocac>();
-
-	//Indent<ClassNode> node8(0);
-
 	std::cout << std::boolalpha;
-
 	testParse();
 	/*std::cout << "\n\n";
 	for (int i = 1; i < argc; ++i)

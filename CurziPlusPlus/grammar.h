@@ -53,7 +53,7 @@ using BraceArguments   = ContainedArguments<Token<BRACEOPEN  >, Token<BRACECLOSE
 
 
 struct Typename {
-	And<Token<WORD>, OPT<Or<NSTypename, TemplateTypename>>> value;
+	And<Token<WORD>, Opt<Or<NSTypename, TemplateTypename>>> value;
 };
 
 struct NSTypename {
@@ -69,7 +69,7 @@ struct TemplateTypenameDeclaration {
 };
 
 struct TemplateTypename {
-	And<Token<LT>, TypenameList, Token<GT>, OPT<NSTypename>> value;
+	And<Token<LT>, TypenameList, Token<GT>, Opt<NSTypename>> value;
 };
 struct PPPQualifier {
 	Or<Token<PUBLIC>, Token<PRIVATE>, Token<PROTECTED>> value;
@@ -92,7 +92,7 @@ struct ElseStatement {
 };
 
 struct IfStatement {
-	And<Token<IF>, Expression, ColonIndentCodeBlock, OPT<ElseStatement>> value;
+	And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>> value;
 };
 
 struct ForStatement {
@@ -102,8 +102,8 @@ struct ForStatement {
 		Token<WORD>>>,
 		Token<IN>,
 		Expression,
-		OPT<And<Token<IF>, Expression>>,
-		OPT<And<Token<WHILE>, Expression>>,
+		Opt<And<Token<IF>, Expression>>,
+		Opt<And<Token<WHILE>, Expression>>,
 		ColonIndentCodeBlock
 	> value;
 };
@@ -116,8 +116,8 @@ struct IForStatement {
 		Token<WORD>>>,
 		Token<IN>,
 		Expression,
-		OPT<And<Token<IF>, Expression>>,
-		OPT<And<Token<WHILE>, Expression>>,
+		Opt<And<Token<IF>, Expression>>,
+		Opt<And<Token<WHILE>, Expression>>,
 		ColonIndentCodeBlock
 	> value;
 };
@@ -129,10 +129,10 @@ struct ReturnStatement {
 	And<
 		Token<RETURN>,
 		CommaStar<Expression>,
-		OPT<And<
+		Opt<And<
 			Token<IF>,
 			Expression,
-			OPT<And<
+			Opt<And<
 				Token<ELSE>,
 				Expression
 			>>
@@ -142,14 +142,14 @@ struct ReturnStatement {
 };
 
 struct BreakStatement {
-	And<Token<BREAK>, OPT<And<Token<IF>, Expression>>, Token<NEWLINE>> value;
+	And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Token<NEWLINE>> value;
 };
 
 struct Statement {
 	And<
 		IndentToken,
 		Or<
-			Expression,
+			And<Expression, Token<NEWLINE>>,
 			IfStatement,
 			ForStatement,
 			IForStatement,
@@ -189,10 +189,10 @@ struct AssignmentExpression {
 struct ConditionalExpression {
 	And<
 		OrExpression,
-		OPT<And<
+		Opt<And<
 			Token<IF>,
 			OrExpression,
-			OPT<And<
+			Opt<And<
 				Token<ELSE>,
 				OrExpression
 			>>
@@ -280,7 +280,7 @@ struct ParenExpression {
 	> value;
 };
 struct ClassMemberQualifiers {
-	And<OPT<PPPQualifier>, OPT<Token<STATIC>>> value;
+	And<Opt<PPPQualifier>, Opt<Token<STATIC>>> value;
 };
 struct Method {
 	And<ClassMemberQualifiers, Typename, Token<WORD>, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
@@ -298,7 +298,7 @@ struct Class {
 	And<
 		Token<CLASS>,
 		Or<TemplateTypenameDeclaration, Token<WORD>>,
-		OPT<ClassInheritance>,
+		Opt<ClassInheritance>,
 		Token<COLON>,
 		Token<NEWLINE>,
 		Indent<Star<And<

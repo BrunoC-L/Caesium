@@ -7,7 +7,7 @@
 template <typename...> class And;
 template <typename...> class Or;
 template <typename, typename, typename> class KNode;
-template <typename> class OPT;
+template <typename> class Opt;
 template <typename> struct Indent;
 struct IndentToken;
 template <int> struct Token;
@@ -42,7 +42,7 @@ template <class T>
 struct is_primitive_node_type : std::disjunction<
 	is_specialization<T, And>,
 	is_specialization<T, Or>,
-	is_specialization<T, OPT>,
+	is_specialization<T, Opt>,
 	is_specialization<T, KNode>,
 	is_specialization_int<T, Token>,
 	std::is_same<T, IndentToken>,
@@ -200,11 +200,11 @@ template <typename T>
 using CommaPlus = KNode<T, PlusCnd, std::true_type>;
 
 template <typename T>
-class OPT {
+class Opt {
 public:
 	std::optional<T> node;
 	int n_indent;
-	OPT(int n_indent) : n_indent(n_indent) {}
+	Opt(int n_indent) : n_indent(n_indent) {}
 
 	bool build(Grammarizer* g) {
 		T node(n_indent);
