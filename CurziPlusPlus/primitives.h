@@ -101,6 +101,93 @@ struct Token {
 	}
 };
 
+
+using End = Token<TOKENS::END>;
+using Semicolon = Token<TOKENS::SEMICOLON>;
+using Colon = Token<TOKENS::COLON>;
+using Ns = Token<TOKENS::NS>;
+using Backslash = Token<TOKENS::BACKSLASH>;
+using Dot = Token<TOKENS::DOT>;
+using Comma = Token<TOKENS::COMMA>;
+using Equal = Token<TOKENS::EQUAL>;
+using Lt = Token<TOKENS::LT>;
+using Gt = Token<TOKENS::GT>;
+using Dash = Token<TOKENS::DASH>;
+using Space = Token<TOKENS::SPACE>;
+using Tab = Token<TOKENS::TAB>;
+using Newline = Token<TOKENS::NEWLINE>;
+using Braceopen = Token<TOKENS::BRACEOPEN>;
+using Braceclose = Token<TOKENS::BRACECLOSE>;
+using Bracketopen = Token<TOKENS::BRACKETOPEN>;
+using Bracketclose = Token<TOKENS::BRACKETCLOSE>;
+using Parenopen = Token<TOKENS::PARENOPEN>;
+using Parenclose = Token<TOKENS::PARENCLOSE>;
+using Asterisk = Token<TOKENS::ASTERISK>;
+using Slash = Token<TOKENS::SLASH>;
+using Percent = Token<TOKENS::PERCENT>;
+using Ampersand = Token<TOKENS::AMPERSAND>;
+using Question = Token<TOKENS::QUESTION>;
+using Pound = Token<TOKENS::POUND>;
+using Not = Token<TOKENS::NOT>;
+using Caret = Token<TOKENS::CARET>;
+using Bitor = Token<TOKENS::BITOR>;
+using Bitand = Token<TOKENS::BITAND>;
+using PlusKW = Token<TOKENS::PLUS>;
+using Tilde = Token<TOKENS::TILDE>;
+
+using Equalequal = Token<TOKENS::EQUALEQUAL>;
+using Nequal = Token<TOKENS::NEQUAL>;
+using Plusequal = Token<TOKENS::PLUSEQUAL>;
+using Minusequal = Token<TOKENS::MINUSEQUAL>;
+using Timesequal = Token<TOKENS::TIMESEQUAL>;
+using Divequal = Token<TOKENS::DIVEQUAL>;
+using Modequal = Token<TOKENS::MODEQUAL>;
+using Andequal = Token<TOKENS::ANDEQUAL>;
+using Orequal = Token<TOKENS::OREQUAL>;
+using Xorequal = Token<TOKENS::XOREQUAL>;
+
+using Gte = Token<TOKENS::GTE>;
+using Lte = Token<TOKENS::LTE>;
+using Andand = Token<TOKENS::ANDAND>;
+using Oror = Token<TOKENS::OROR>;
+
+using Plusplus = Token<TOKENS::PLUSPLUS>;
+using Minusminus = Token<TOKENS::MINUSMINUS>;
+
+using Arrow = Token<TOKENS::ARROW>;
+
+using Word = Token<TOKENS::WORD>;
+using Number = Token<TOKENS::NUMBER>;
+using String = Token<TOKENS::STRING>;
+
+using ClassKW = Token<TOKENS::CLASS>;
+using Return = Token<TOKENS::RETURN>;
+using New = Token<TOKENS::NEW>;
+using Switch = Token<TOKENS::SWITCH>;
+using In = Token<TOKENS::IN>;
+using Ifor = Token<TOKENS::IFOR>;
+using ImportKW = Token<TOKENS::IMPORT>;
+using From = Token<TOKENS::FROM>;
+using For = Token<TOKENS::FOR>;
+using While = Token<TOKENS::WHILE>;
+using If = Token<TOKENS::IF>;
+using Else = Token<TOKENS::ELSE>;
+using Break = Token<TOKENS::BREAK>;
+using Case = Token<TOKENS::CASE>;
+using Do = Token<TOKENS::DO>;
+using UsingKW = Token<TOKENS::USING>;
+using Static = Token<TOKENS::STATIC>;
+using Extends = Token<TOKENS::EXTENDS>;
+
+using Public = Token<TOKENS::PUBLIC>;
+using Private = Token<TOKENS::PRIVATE>;
+using Protected = Token<TOKENS::PROTECTED>;
+
+using AndKW = Token<TOKENS::AND>;
+using OrKW = Token<TOKENS::OR>;
+using Null_token = Token<TOKENS::NULL_TOKEN>;
+
+
 struct UntilToken {
 	TOKENS t;
 	std::string value;
@@ -251,7 +338,7 @@ public:
 				g->it = temp;
 				failed = true;
 			}
-			});
+		});
 		return !failed;
 	}
 };
@@ -276,7 +363,7 @@ public:
 				value = std::make_unique<variant_t>(std::move(node));
 				populated = true;
 			}
-			}(), ...);
+		}(), ...);
 		return populated;
 	}
 };

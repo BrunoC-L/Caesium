@@ -1,155 +1,105 @@
 #pragma once
 #include "primitives.h"
 
+// forward declare recursive rules
 struct Typename;
-struct NSTypename;
-struct TemplateTypename;
-struct ArgumentsSignature;
-struct ColonIndentCodeBlock;
-struct Class;
 struct Statement;
+using Expression = struct AssignmentExpression;
 
-struct AssignmentExpression;
-struct ConditionalExpression;
-struct OrExpression;
-struct AndExpression;
-struct EqualityExpression;
-struct CompareExpression;
-struct AdditiveExpression;
-struct MultiplicativeExpression;
-struct UnaryExpression;
-struct PostfixExpression;
-struct PostfixExpression;
-struct ParenExpression;
-
-using Expression = AssignmentExpression;
 struct Import {
-	And<Token<IMPORT>, Token<WORD>, Token<FROM>, Token<WORD>, Token<NEWLINE>> value;
+	And<ImportKW, Word, From, Word, Newline> value;
 };
 struct Using {
-	And<Token<USING>, Token<WORD>, Token<EQUAL>, Typename> value;
-};
-struct Function {
-	And<Typename, Token<WORD>, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
-};
-struct File {
-	And<Star<Import>, Star<Or<Class, Function>>, Token<END>> value;
+	And<UsingKW, Word, Equal, Typename> value;
 };
 struct ArgumentsSignature {
-	CommaStar<And<Typename, Token<WORD>>> value;
+	CommaStar<And<Typename, Word>> value;
 };
-
-struct InnerArguments {
-	CommaStar<Expression> value;
+struct ColonIndentCodeBlock {
+	And<Colon, Newline, Indent<Star<Statement>>> value;
 };
-
-template <class Beg, class End>
-struct ContainedArguments {
-	And<Beg, InnerArguments, End> value;
+struct Function {
+	And<Typename, Word, Parenopen, ArgumentsSignature, Parenclose, ColonIndentCodeBlock> value;
 };
-using ParenArguments   = ContainedArguments<Token<PARENOPEN  >, Token<PARENCLOSE  >>;
-using BracketArguments = ContainedArguments<Token<BRACKETOPEN>, Token<BRACKETCLOSE>>;
-using BraceArguments   = ContainedArguments<Token<BRACEOPEN  >, Token<BRACECLOSE  >>;
-
-
-struct Typename {
-	And<Token<WORD>, Opt<Or<NSTypename, TemplateTypename>>> value;
+struct ParenArguments {
+	And<Parenopen, CommaStar<Expression>, Parenclose> value;
 };
-
+struct BracketArguments {
+	And<Bracketopen, CommaStar<Expression>, Bracketclose> value;
+};
 struct NSTypename {
-	And<Token<NS>, Typename> value;
+	And<Ns, Typename> value;
 };
-
-struct TypenameList {
-	CommaStar<Typename> value;
-};
-
-struct TemplateTypenameDeclaration {
-	And<Token<WORD>, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Token<WORD>>>, Token<GT>> value;
-};
-
 struct TemplateTypename {
-	And<Token<LT>, TypenameList, Token<GT>, Opt<NSTypename>> value;
+	And<Lt, CommaStar<Typename>, Gt, Opt<NSTypename>> value;
+};
+struct Typename {
+	And<Word, Opt<Or<NSTypename, TemplateTypename>>> value;
+};
+struct TemplateTypenameDeclaration {
+	And<Word, Lt, CommaPlus<Or<TemplateTypenameDeclaration, Word>>, Gt> value;
 };
 struct PPPQualifier {
-	Or<Token<PUBLIC>, Token<PRIVATE>, Token<PROTECTED>> value;
+	Or<Public, Private, Protected> value;
 };
-
-struct CodeBlock {
-	Star<Statement> value;
-};
-
-struct ColonIndentCodeBlock {
-	And<Token<COLON>, Token<NEWLINE>, Indent<CodeBlock>> value;
-};
-
 struct ExpressionStatement {
-	And<Expression, Token<NEWLINE>> value;
+	And<Expression, Newline> value;
 };
-
 struct ElseStatement {
-	And<IndentToken, Token<ELSE>, ColonIndentCodeBlock> value;
+	And<IndentToken, Else, ColonIndentCodeBlock> value;
 };
-
 struct IfStatement {
-	And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>> value;
+	And<If, Expression, ColonIndentCodeBlock, Opt<ElseStatement>> value;
 };
-
 struct ForStatement {
 	And<
-		Token<FOR>,
-		CommaPlus<Or<And<Typename, Token<WORD>>,
-		Token<WORD>>>,
-		Token<IN>,
+		For,
+		CommaPlus<Or<And<Typename, Word>, Word>>,
+		In,
 		Expression,
-		Opt<And<Token<IF>, Expression>>,
-		Opt<And<Token<WHILE>, Expression>>,
+		Opt<And<If, Expression>>,
+		Opt<And<While, Expression>>,
 		ColonIndentCodeBlock
 	> value;
 };
-
 struct IForStatement {
 	And<
-		Token<IFOR>,
-		And<Typename, Token<WORD>, Token<COMMA>>,
-		CommaPlus<Or<And<Typename, Token<WORD>>,
-		Token<WORD>>>,
-		Token<IN>,
+		Ifor,
+		And<Typename, Word, Comma>,
+		CommaPlus<Or<And<Typename, Word>, Word>>,
+		In,
 		Expression,
-		Opt<And<Token<IF>, Expression>>,
-		Opt<And<Token<WHILE>, Expression>>,
+		Opt<And<If, Expression>>,
+		Opt<And<While, Expression>>,
 		ColonIndentCodeBlock
 	> value;
 };
-
 struct WhileStatement {
-	And<Token<WHILE>, Expression, ColonIndentCodeBlock> value;
+	And<While, Expression, ColonIndentCodeBlock> value;
 };
 struct ReturnStatement {
 	And<
-		Token<RETURN>,
+		Return,
 		CommaStar<Expression>,
 		Opt<And<
-			Token<IF>,
+			If,
 			Expression,
 			Opt<And<
-				Token<ELSE>,
+				Else,
 				Expression
 			>>
 		>>,
-		Token<NEWLINE>
+		Newline
 	> value;
 };
-
 struct BreakStatement {
-	And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Token<NEWLINE>> value;
+	And<Break, Opt<And<If, Expression>>, Newline> value;
 };
-
 struct Statement {
 	And<
 		IndentToken,
 		Or<
-			And<Expression, Token<NEWLINE>>,
+			And<Expression, Newline>,
 			IfStatement,
 			ForStatement,
 			IForStatement,
@@ -163,84 +113,88 @@ struct MultipleInheritance {
 	CommaPlus<Typename> value;
 };
 struct ClassInheritance {
-	And<Token<EXTENDS>, MultipleInheritance> value;
+	And<Extends, MultipleInheritance> value;
 };
-
-struct AssignmentExpression {
+struct ClassMemberQualifiers {
+	And<Opt<PPPQualifier>, Opt<Static>> value;
+};
+struct Method {
+	And<ClassMemberQualifiers, Typename, Word, Parenopen, ArgumentsSignature, Parenclose, ColonIndentCodeBlock> value;
+};
+struct MemberVariable {
+	And<ClassMemberQualifiers, Typename, Word, Newline> value;
+};
+struct Constructor {
+	And<ClassMemberQualifiers, Word, Parenopen, ArgumentsSignature, Parenclose, ColonIndentCodeBlock> value;
+};
+struct ClassElement {
+	Or<Using, Method, MemberVariable, Constructor> value;
+};
+struct Class {
 	And<
-		ConditionalExpression,
-		Star<And<
-			Or<
-				Token<EQUAL>,
-				Token<PLUSEQUAL>,
-				Token<MINUSEQUAL>,
-				Token<TIMESEQUAL>,
-				Token<DIVEQUAL>,
-				Token<MODEQUAL>,
-				Token<ANDEQUAL>,
-				Token<OREQUAL>,
-				Token<XOREQUAL>
-			>,
-			ConditionalExpression
-		>>
+		ClassKW,
+		Or<TemplateTypenameDeclaration, Word>,
+		Opt<ClassInheritance>,
+		Colon,
+		Newline,
+		Indent<Star<And<
+            IndentToken,
+            ClassElement
+		>>>
+    > value;
+};
+struct File {
+	And<Star<Import>, Star<Or<Class, Function>>, End> value;
+};
+/*
+EXPRESSIONS
+*/
+struct ParenExpression {
+	Or<
+		And<
+			Parenopen,
+			Expression,
+			Parenclose
+		>,
+		Typename,
+		Number
 	> value;
 };
-
-struct ConditionalExpression {
+struct PostfixExpression {
 	And<
-		OrExpression,
-		Opt<And<
-			Token<IF>,
-			OrExpression,
-			Opt<And<
-				Token<ELSE>,
-				OrExpression
-			>>
+		ParenExpression,
+		Star<Or<
+            And<
+                Or<
+                    Dot,
+                    Arrow
+                >,
+                Word
+            >,
+            ParenArguments,
+            BracketArguments,
+            Plusplus,
+            Minusminus
 		>>
-	> value;
+    > value;
 };
-
-struct OrExpression {
-	And<AndExpression, Star<And<Token<OR>, AndExpression>>> value;
-};
-
-struct AndExpression {
-	And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>> value;
-};
-
-struct EqualityExpression {
-	And<CompareExpression, Star<And<Token<EQUALEQUAL>, CompareExpression>>> value;
-};
-
-struct CompareExpression {
-	And<AdditiveExpression, Star<And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, AdditiveExpression>>> value;
-};
-
-struct AdditiveExpression {
-	And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>> value;
-};
-
-struct MultiplicativeExpression {
-	And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>> value;
-};
-
 struct UnaryExpression {
 	Or <
 		And<
 			Or<	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
 				// so instead of Star<Or> ... ____ we refer to UnaryExpression inside the Or
-				Token<NOT>,
-				Token<PLUS>,
-				Token<DASH>,
-				Token<PLUSPLUS>,
-				Token<MINUSMINUS>,
-				Token<TILDE>,
-				Token<ASTERISK>,
-				Token<AMPERSAND>,
+				Not,
+				PlusKW,
+				Dash,
+				Plusplus,
+				Minusminus,
+				Tilde,
+				Asterisk,
+				Ampersand,
 				And< // type cast operator
-					Token<PARENOPEN>,
+					Parenopen,
 					Typename,
-					Token<PARENCLOSE>
+					Parenclose
 				>
 			>,
 			UnaryExpression // recursive
@@ -248,62 +202,53 @@ struct UnaryExpression {
 		PostfixExpression
 	> value;
 };
-
-struct PostfixExpression {
+struct MultiplicativeExpression {
+	And<UnaryExpression, Star<And<Or<Asterisk, Slash, Percent>, UnaryExpression>>> value;
+};
+struct AdditiveExpression {
+	And<MultiplicativeExpression, Star<And<Or<PlusKW, Dash>, MultiplicativeExpression>>> value;
+};
+struct CompareExpression {
+	And<AdditiveExpression, Star<And<Or<Lt, Lte, Gt, Gte>, AdditiveExpression>>> value;
+};
+struct EqualityExpression {
+	And<CompareExpression, Star<And<Equalequal, CompareExpression>>> value;
+};
+struct AndExpression {
+	And<EqualityExpression, Star<And<AndKW, EqualityExpression>>> value;
+};
+struct OrExpression {
+	And<AndExpression, Star<And<OrKW, AndExpression>>> value;
+};
+struct ConditionalExpression {
 	And<
-		ParenExpression,
-		Star<Or<
-			And<
-				Or<
-					Token<DOT>,
-					Token<ARROW>
-				>,
-				Token<WORD>
-			>,
-			ParenArguments,
-			BracketArguments,
-			Token<PLUSPLUS>,
-			Token<MINUSMINUS>
+		OrExpression,
+		Opt<And<
+			If,
+			OrExpression,
+			Opt<And<
+				Else,
+				OrExpression
+			>>
 		>>
 	> value;
 };
-
-struct ParenExpression {
-	Or<
-		And<
-			Token<PARENOPEN>,
-			Expression,
-			Token<PARENCLOSE>
-		>,
-		Typename,
-		Token<NUMBER>
-	> value;
-};
-struct ClassMemberQualifiers {
-	And<Opt<PPPQualifier>, Opt<Token<STATIC>>> value;
-};
-struct Method {
-	And<ClassMemberQualifiers, Typename, Token<WORD>, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
-};
-struct MemberVariable{
-	And<ClassMemberQualifiers, Typename, Token<WORD>, Token<NEWLINE>> value;
-};
-struct Constructor {
-	And<ClassMemberQualifiers, Token<WORD>, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
-};
-struct ClassElement {
-	Or<Using, Method, MemberVariable, Constructor> value;
-};
-struct Class {
+struct AssignmentExpression {
 	And<
-		Token<CLASS>,
-		Or<TemplateTypenameDeclaration, Token<WORD>>,
-		Opt<ClassInheritance>,
-		Token<COLON>,
-		Token<NEWLINE>,
-		Indent<Star<And<
-			IndentToken,
-			ClassElement
-		>>>
+		ConditionalExpression,
+		Star<And<
+			Or<
+				Equal,
+				Plusequal,
+				Minusequal,
+				Timesequal,
+				Divequal,
+				Modequal,
+				Andequal,
+				Orequal,
+				Xorequal
+			>,
+			ConditionalExpression
+		>>
 	> value;
 };

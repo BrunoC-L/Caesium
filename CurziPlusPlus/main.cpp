@@ -79,7 +79,7 @@ void testParse() {
 	testParse<ClassElement>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<Statement>(__LINE__, 1, "\tfor i in arr:\n");
 	testParse<Method>(__LINE__, 0, "void a():\n");
-	testParse<CodeBlock>(__LINE__, 1, "\tif a:\n");
+	testParse<Star<Statement>>(__LINE__, 1, "\tif a:\n");
 	testParse<WhileStatement>(__LINE__, 0, "while a:\n");
 	testParse<ReturnStatement>(__LINE__, 0, "return a, b, \n");
 	testParse<ReturnStatement>(__LINE__, 0, "return a, b\n");
@@ -89,7 +89,12 @@ void testParse() {
 	testParse<Class>(__LINE__, 0, "class B:");
 	testParse<File>(__LINE__, 0, "class B:");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
+	testParse<Indent<Indent<Indent<IfStatement>>>>(__LINE__, 0, "if a:\n\t\t\t\tb\n\t\t\telse:\n\t\t\t\tc\n");
+
 	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
+	// tests of expressions expected to fail to parse.
+	// some can "succeed" but skip part of the which
+	// can also be acceptable depending on the expression
 	testParse<Class>(__LINE__, 1, "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
 	testParse<Class>(__LINE__, 0, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 }
