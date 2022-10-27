@@ -101,93 +101,6 @@ struct Token {
 	}
 };
 
-
-using End = Token<TOKENS::END>;
-using Semicolon = Token<TOKENS::SEMICOLON>;
-using Colon = Token<TOKENS::COLON>;
-using Ns = Token<TOKENS::NS>;
-using Backslash = Token<TOKENS::BACKSLASH>;
-using Dot = Token<TOKENS::DOT>;
-using Comma = Token<TOKENS::COMMA>;
-using Equal = Token<TOKENS::EQUAL>;
-using Lt = Token<TOKENS::LT>;
-using Gt = Token<TOKENS::GT>;
-using Dash = Token<TOKENS::DASH>;
-using Space = Token<TOKENS::SPACE>;
-using Tab = Token<TOKENS::TAB>;
-using Newline = Token<TOKENS::NEWLINE>;
-using Braceopen = Token<TOKENS::BRACEOPEN>;
-using Braceclose = Token<TOKENS::BRACECLOSE>;
-using Bracketopen = Token<TOKENS::BRACKETOPEN>;
-using Bracketclose = Token<TOKENS::BRACKETCLOSE>;
-using Parenopen = Token<TOKENS::PARENOPEN>;
-using Parenclose = Token<TOKENS::PARENCLOSE>;
-using Asterisk = Token<TOKENS::ASTERISK>;
-using Slash = Token<TOKENS::SLASH>;
-using Percent = Token<TOKENS::PERCENT>;
-using Ampersand = Token<TOKENS::AMPERSAND>;
-using Question = Token<TOKENS::QUESTION>;
-using Pound = Token<TOKENS::POUND>;
-using Not = Token<TOKENS::NOT>;
-using Caret = Token<TOKENS::CARET>;
-using Bitor = Token<TOKENS::BITOR>;
-using Bitand = Token<TOKENS::BITAND>;
-using PlusKW = Token<TOKENS::PLUS>;
-using Tilde = Token<TOKENS::TILDE>;
-
-using Equalequal = Token<TOKENS::EQUALEQUAL>;
-using Nequal = Token<TOKENS::NEQUAL>;
-using Plusequal = Token<TOKENS::PLUSEQUAL>;
-using Minusequal = Token<TOKENS::MINUSEQUAL>;
-using Timesequal = Token<TOKENS::TIMESEQUAL>;
-using Divequal = Token<TOKENS::DIVEQUAL>;
-using Modequal = Token<TOKENS::MODEQUAL>;
-using Andequal = Token<TOKENS::ANDEQUAL>;
-using Orequal = Token<TOKENS::OREQUAL>;
-using Xorequal = Token<TOKENS::XOREQUAL>;
-
-using Gte = Token<TOKENS::GTE>;
-using Lte = Token<TOKENS::LTE>;
-using Andand = Token<TOKENS::ANDAND>;
-using Oror = Token<TOKENS::OROR>;
-
-using Plusplus = Token<TOKENS::PLUSPLUS>;
-using Minusminus = Token<TOKENS::MINUSMINUS>;
-
-using Arrow = Token<TOKENS::ARROW>;
-
-using Word = Token<TOKENS::WORD>;
-using Number = Token<TOKENS::NUMBER>;
-using String = Token<TOKENS::STRING>;
-
-using ClassKW = Token<TOKENS::CLASS>;
-using Return = Token<TOKENS::RETURN>;
-using New = Token<TOKENS::NEW>;
-using Switch = Token<TOKENS::SWITCH>;
-using In = Token<TOKENS::IN>;
-using Ifor = Token<TOKENS::IFOR>;
-using ImportKW = Token<TOKENS::IMPORT>;
-using From = Token<TOKENS::FROM>;
-using For = Token<TOKENS::FOR>;
-using While = Token<TOKENS::WHILE>;
-using If = Token<TOKENS::IF>;
-using Else = Token<TOKENS::ELSE>;
-using Break = Token<TOKENS::BREAK>;
-using Case = Token<TOKENS::CASE>;
-using Do = Token<TOKENS::DO>;
-using UsingKW = Token<TOKENS::USING>;
-using Static = Token<TOKENS::STATIC>;
-using Extends = Token<TOKENS::EXTENDS>;
-
-using Public = Token<TOKENS::PUBLIC>;
-using Private = Token<TOKENS::PRIVATE>;
-using Protected = Token<TOKENS::PROTECTED>;
-
-using AndKW = Token<TOKENS::AND>;
-using OrKW = Token<TOKENS::OR>;
-using Null_token = Token<TOKENS::NULL_TOKEN>;
-
-
 struct UntilToken {
 	TOKENS t;
 	std::string value;
@@ -251,12 +164,16 @@ public:
 	}
 
 	// to get `b*` from `(abc)*` for example
-	template <typename T>
-	std::vector<T> get() const {
-		std::vector<T> res;
-		for (const auto& node : nodes)
-			res.push_back(node.get<T>());
-		return res;
+	template <typename U>
+	const std::vector<U>& get() const {
+		if constexpr (std::is_same_v<U, T>)
+			return nodes;
+		else {
+			std::vector<U> res;
+			for (const auto& node : nodes)
+				res.push_back(node.get<U>());
+			return res;
+		}
 	}
 };
 
@@ -307,6 +224,22 @@ template <std::size_t... Idx> auto make_index_dispatcher(std::index_sequence<Idx
 template <std::size_t N> auto make_index_dispatcher() { return make_index_dispatcher(std::make_index_sequence<N>{}); }
 template <typename Tuple, typename Func> void for_each(Tuple&& t, Func&& f) { make_index_dispatcher<std::tuple_size<std::decay_t<Tuple>>::value>()([&f, &t](auto idx) { f(std::get<idx>(std::forward<Tuple>(t))); }); }
 
+template <typename TUPLE, typename T, int i, int cursor, typename U>
+const T& get_tuple_smart_cursor(const TUPLE& tuple) {
+	return std::get<cursor>(tuple);
+}
+
+template <typename TUPLE, typename T, int i, int cursor, typename U, typename... Rest>
+const T& get_tuple_smart_cursor(const TUPLE& tuple) {
+	if constexpr (std::is_same_v<T, std::remove_reference_t<std::remove_const_t<U>>>) {
+		if constexpr (i == 0)
+			return std::get<cursor>(tuple);
+		else
+			return get_tuple_smart_cursor<TUPLE, T, i - 1, cursor + 1, Rest...>(tuple);
+	}
+	else
+		return get_tuple_smart_cursor<TUPLE, T, i, cursor + 1, Rest...>(tuple);
+}
 
 template <typename... Ands>
 class And {
@@ -323,8 +256,14 @@ public:
 	}
 
 	template <int i>
-	decltype(std::get<i>(*value.get())) get() {
+	decltype(std::get<i>(*value.get())) get() const {
 		return std::get<i>(*value.get());
+	}
+
+	template <typename T, int i>
+	const T& get() const {
+		int u = 0;
+		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(*value.get());
 	}
 
 	bool build(Grammarizer* g) {

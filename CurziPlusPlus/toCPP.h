@@ -2,7 +2,6 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-
 #include "node_structs.h"
 
 class toCPP {
@@ -10,8 +9,8 @@ public:
 	void transpile(std::ofstream& h, std::ofstream& cpp, const NodeStructs::File& file) {
 		for (const auto& Class : file.classes) {
 
-			if (Class.templated.has_value())
-				transpileTypeTemplateDeclaration(Class.templated.value(), h);
+			/*if (Class.templated.has_value())
+				transpileTypeTemplateDeclaration(Class.templated.value(), h);*/
 
 			h << "class " << Class.name;
 
@@ -67,15 +66,15 @@ public:
 			}
 			);
 
-		ss << type->type;
-		for (const auto& ext : type->extensions)
+		ss << type.type;
+		for (const auto& ext : type.extensions)
 			std::visit(f, ext);
 	}
 
 /*	<U>   : template <typename U>
 	<U, V>: template <typename U, typename V>
 	<U<V>>: template <template <typename V> typename U>*/
-	template <typename stream>
+	/*template <typename stream>
 	void transpileTypeTemplateDeclaration(const NodeStructs::templateDeclaration& tmpl, stream& ss, bool printNameAtEnd = false) {
 		if (tmpl.templated.size())
 			ss << "template <";
@@ -90,5 +89,5 @@ public:
 			ss << "> ";
 		if (printNameAtEnd)
 			ss << "typename " << tmpl.type;
-	}
+	}*/
 };

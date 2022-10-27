@@ -151,6 +151,7 @@
     <ClInclude Include="node_structs.h" />
     <ClInclude Include="grammar.h" />
     <ClInclude Include="primitives.h" />
+    <ClInclude Include="structurizer.h" />
     <ClInclude Include="toCPP.h" />
     <ClInclude Include="tokenizer.h" />
   </ItemGroup>

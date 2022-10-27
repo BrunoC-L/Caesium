@@ -16,19 +16,19 @@ namespace NodeStructs {
 	struct Function;
 	struct MemberVariable;
 	struct Alias;
-	using ClassElement = std::variant<Constructor, Function, MemberVariable, Alias>;
 	struct TemplateTypeExtension;
 	struct NSTypeExtension;
 	struct Typename;
 	using TypenameExtension = std::variant<TemplateTypeExtension, NSTypeExtension>;
-	struct templateDeclaration;
 	struct Statement;
 
-	struct Function {
-		std::string name;
-		Typename returnType;
-		std::vector<Typename> parameterTypes;
-		std::vector<Statement> statements;
+	struct TemplateTypeExtension {
+		std::vector<Typename> templateTypes;
+	};
+
+	struct Typename {
+		std::string type;
+		std::vector<TypenameExtension> extensions;
 	};
 
 	struct Alias {
@@ -46,35 +46,34 @@ namespace NodeStructs {
 		Typename type;
 	};
 
-	struct TemplateTypeExtension {
-		std::vector<Typename> templateTypes;
-	};
-
 	struct NSTypeExtension {
 		std::string NSTypename;
-	};
-
-	struct Typename {
-		std::string type;
-		std::vector<TypenameExtension> extensions;
-	};
-
-	struct templateDeclaration {
-		std::string type;
-		std::vector<templateDeclaration> templated;
 	};
 
 	struct Statement {
 	};
 
+	struct Import {
+		std::string location;
+		std::vector<std::string> content;
+	};
+
+	struct Function {
+		std::string name;
+		NodeStructs::Typename returnType;
+		std::vector<Typename> parameterTypes;
+		std::vector<Statement> statements;
+	};
+
 	struct File {
+		std::vector<Import> imports;
 		std::vector<Class> classes;
 		std::vector<Function> functions;
 	};
 
 	struct Class {
 		std::string name;
-		std::optional<templateDeclaration> templated;
+		//std::optional<templateDeclaration> templated;
 		std::vector<Typename> inheritances;
 		std::vector<Alias> aliases;
 		std::vector<Constructor> constructors;

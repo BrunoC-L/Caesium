@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <filesystem>
 #include "grammar.h"
+#include "toCpp.h"
+#include "structurizer.h"
 
 auto green = "\033[1;32m", red = "\033[1;31m", reset = "\033[0m";
 
@@ -99,34 +101,34 @@ void testParse() {
 	testParse<Class>(__LINE__, 0, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 }
 
-//void transpile(const std::filesystem::path& fileName, std::string folder) {
-//	const std::string outFileNameNoExt = folder + std::string(reinterpret_cast<const char*>(fileName.stem().c_str())) + +"/out";
-//	std::ifstream caesium(fileName);
-//	std::ofstream h(outFileNameNoExt + ".h", std::ios::trunc);
-//	std::ofstream cpp(outFileNameNoExt + ".cpp", std::ios::trunc);
-//	if (!caesium.is_open())
-//		throw std::exception();
-//	if (!h.is_open())
-//		throw std::exception();
-//	if (!cpp.is_open())
-//		throw std::exception();
-//	std::string program;
-//	std::getline(caesium, program, '\0');
-//	FileNode fileNode;
-//	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
-//	Grammarizer g(tokens);
-//	bool b = fileNode.build(&g);
-//	if (!b)
-//		throw std::exception("not built");
-//	std::cout << fileName << ": built\n";
-//	std::unique_ptr<NodeStructs::File> f = fileNode.getStruct();
-//	toCPP{}.transpile(h, cpp, f);
-//}
+void transpile(const std::filesystem::path& fileName, std::string folder) {
+	const std::string outFileNameNoExt = folder + std::string(reinterpret_cast<const char*>(fileName.stem().c_str())) + +"/out";
+	std::ifstream caesium(fileName);
+	std::ofstream h(outFileNameNoExt + ".h", std::ios::trunc);
+	std::ofstream cpp(outFileNameNoExt + ".cpp", std::ios::trunc);
+	if (!caesium.is_open())
+		throw std::exception();
+	if (!h.is_open())
+		throw std::exception();
+	if (!cpp.is_open())
+		throw std::exception();
+	std::string program;
+	std::getline(caesium, program, '\0');
+	File file(0);
+	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
+	Grammarizer g(tokens);
+	bool b = build_optional_primitive(file, &g);
+	if (!b)
+		throw std::exception("not built");
+	std::cout << fileName << ": built\n";
+	NodeStructs::File f = getStruct(file);
+	toCPP{}.transpile(h, cpp, f);
+}
 
 int main(int argc, char** argv) {
 	std::cout << std::boolalpha;
 	testParse();
-	/*std::cout << "\n\n";
+	std::cout << "\n\n";
 	for (int i = 1; i < argc; ++i)
 		for (const auto& file : std::filesystem::directory_iterator(argv[i])) {
 			const std::filesystem::path& fileName = file.path();
@@ -137,6 +139,6 @@ int main(int argc, char** argv) {
 				catch (const std::exception& e) {
 					std::cerr << fileName << ": " << e.what() << "\n";
 				}
-		}*/
+		}
 	return 0;
 }
