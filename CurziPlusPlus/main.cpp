@@ -85,9 +85,9 @@ void testParse() {
 	testParse<WhileStatement>(__LINE__, 0, "while a:\n");
 	testParse<ReturnStatement>(__LINE__, 0, "return a, b, \n");
 	testParse<ReturnStatement>(__LINE__, 0, "return a, b\n");
-	testParse<Import>(__LINE__, 0, "import a from b");
+	testParse<Import>(__LINE__, 0, "import a");
 	testParse<Token<END>>(__LINE__, 0, "\n");
-	testParse<File>(__LINE__, 0, "import OS from System");
+	testParse<File>(__LINE__, 0, "import OS");
 	testParse<Class>(__LINE__, 0, "class B:");
 	testParse<File>(__LINE__, 0, "class B:");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
@@ -138,6 +138,7 @@ int main(int argc, char** argv) {
 				}
 				catch (const std::exception& e) {
 					std::cerr << fileName << ": " << e.what() << "\n";
+					throw e;
 				}
 		}
 	return 0;

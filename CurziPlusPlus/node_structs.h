@@ -10,21 +10,17 @@ template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
 template<class... Ts> overload(Ts...)->overload<Ts...>;
 
 namespace NodeStructs {
-	struct File;
-	struct Class;
-	struct Constructor;
-	struct Function;
-	struct MemberVariable;
-	struct Alias;
-	struct TemplateTypeExtension;
-	struct NSTypeExtension;
 	struct Typename;
-	using TypenameExtension = std::variant<TemplateTypeExtension, NSTypeExtension>;
-	struct Statement;
 
 	struct TemplateTypeExtension {
 		std::vector<Typename> templateTypes;
 	};
+
+	struct NSTypeExtension {
+		std::string NSTypename;
+	};
+
+	using TypenameExtension = std::variant<TemplateTypeExtension, NSTypeExtension>;
 
 	struct Typename {
 		std::string type;
@@ -36,6 +32,20 @@ namespace NodeStructs {
 		Typename aliasTo;
 	};
 
+	struct ForStatement {
+
+	};
+
+	struct IfStatement {
+
+	};
+
+	struct WhileStatement {
+
+	};
+
+	using Statement = std::variant<std::vector<Statement>, ForStatement, IfStatement, WhileStatement>;
+
 	struct Constructor {
 		std::vector<Typename> parameterTypes;
 		std::vector<Statement> statements;
@@ -46,38 +56,36 @@ namespace NodeStructs {
 		Typename type;
 	};
 
-	struct NSTypeExtension {
-		std::string NSTypename;
-	};
-
-	struct Statement {
-	};
-
 	struct Import {
-		std::string location;
-		std::vector<std::string> content;
+		std::string imported;
+	};
+
+	struct TemplateDeclaration {
+		std::string name;
+		std::vector<TemplateDeclaration> parameters;
 	};
 
 	struct Function {
 		std::string name;
+		std::optional<TemplateDeclaration> templated;
 		NodeStructs::Typename returnType;
 		std::vector<Typename> parameterTypes;
 		std::vector<Statement> statements;
+	};
+
+	struct Class {
+		std::string name;
+		std::optional<TemplateDeclaration> templated;
+		std::vector<Typename> inheritances;
+		std::vector<Alias> aliases;
+		std::vector<Constructor> constructors;
+		std::vector<Function> methods;
+		std::vector<MemberVariable> memberVariables;
 	};
 
 	struct File {
 		std::vector<Import> imports;
 		std::vector<Class> classes;
 		std::vector<Function> functions;
-	};
-
-	struct Class {
-		std::string name;
-		//std::optional<templateDeclaration> templated;
-		std::vector<Typename> inheritances;
-		std::vector<Alias> aliases;
-		std::vector<Constructor> constructors;
-		std::vector<Function> methods;
-		std::vector<MemberVariable> memberVariables;
 	};
 }

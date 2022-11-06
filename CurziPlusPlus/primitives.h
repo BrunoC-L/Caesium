@@ -151,7 +151,7 @@ public:
 			auto node = T(n_indent);
 			bool parsed = build_optional_primitive(node, g);
 			if (parsed) {
-				nodes.push_back(node);
+				nodes.emplace_back(std::move(node));
 				if constexpr (requiresComma::value) {
 					auto comma = Token<COMMA>(0);
 					parsed = build_optional_primitive(comma, g);
@@ -165,13 +165,26 @@ public:
 
 	// to get `b*` from `(abc)*` for example
 	template <typename U>
-	const std::vector<U>& get() const {
-		if constexpr (std::is_same_v<U, T>)
-			return nodes;
-		else {
-			std::vector<U> res;
+	std::vector<const U*> get() const {
+		if constexpr (std::is_same_v<U, T>) {
+			std::vector<const U*> res;
 			for (const auto& node : nodes)
-				res.push_back(node.get<U>());
+				res.push_back(&node);
+			return res;
+		}
+		else {
+			std::vector<const U*> res;
+			for (const auto& node : nodes) {
+				if constexpr (is_specialization<T, And>::value)
+					res.push_back(&node.get<U>());
+				else if constexpr (is_specialization<T, Or>::value) {
+					if (std::holds_alternative<U>(*node.value.get()))
+						res.push_back(&std::get<U>(*node.value.get()));
+				}
+				else {
+					static_assert(!sizeof(T*), "T is not supported");
+				}
+			}
 			return res;
 		}
 	}
@@ -214,7 +227,7 @@ public:
 		T node(n_indent);
 		bool parsed = build_optional_primitive(node, g);
 		if (parsed)
-			this->node.emplace(node);
+			this->node.emplace(std::move(node));
 		return true;
 	}
 };
@@ -248,8 +261,7 @@ public:
 	using tuple_t = std::tuple<Ands...>;
 	std::unique_ptr<tuple_t> value = nullptr;
 	And(int n_indent) : n_indent(n_indent) {}
-	And(const And<Ands...>& other) : n_indent(other.n_indent), value(other.value.get() ? std::make_unique<tuple_t>(*other.value.get()) : nullptr) {};
-
+	And(And<Ands...>&&) = default;
 	template <typename T>
 	const T& get() const {
 		return std::get<T>(*value.get());
@@ -269,7 +281,7 @@ public:
 	bool build(Grammarizer* g) {
 		bool failed = false;
 		auto temp = g->it;
-		value = std::move(std::make_unique<tuple_t>(tuple_t{ Ands(n_indent)... }));
+		value = std::make_unique<tuple_t>(tuple_t{ Ands(n_indent)... });
 		for_each(*value.get(), [&](auto& node) {
 			if (failed)
 				return;
@@ -286,10 +298,10 @@ template <typename... Ors>
 class Or {
 public:
 	int n_indent;
-	using variant_t = std::variant<std::monostate, Ors...>;
+	using variant_t = std::variant<Ors...>;
 	std::unique_ptr<variant_t> value;
 	Or(int n_indent) : n_indent(n_indent) {}
-	Or(const Or<Ors...>& other) : n_indent(other.n_indent), value(other.value.get() ? std::make_unique<variant_t>(*other.value.get()) : nullptr) {};
+	Or(Or<Ors...>&&) = default;
 
 	bool build(Grammarizer* g) {
 		bool populated = false;

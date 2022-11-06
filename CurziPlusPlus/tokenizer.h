@@ -186,25 +186,43 @@ private:
 		std::string str = "";
 		switch (c) {
 		case '\\':
-			index += 1;
-			if (index + 1 <= program.size() && program[index] == '\n') {
+			// backslash at the end of a line means ignore newline
+			if (index + 1 <= program.size() && program[index + 1] == '\n') {
 				index += 1;
+				// so we just return the next token
 				return readToken();
 			}
-			// TODO other \ cases
-			return { BACKSLASH, "\\\\" };
+			// else assume the backslash makes sense in context
+			return { BACKSLASH, "\\" };
+
+		// string begin
 		case '\'':
 		case '`':
 		case '"':
 			while (true) {
 				index += 1;
 				if (index == program.length())
-					throw std::exception();
-				if (program[index] == c && !(program[index - 1] == '\\')) {
+					throw std::runtime_error("Hit end of program before end of string token, parsed so far: " + str);
+				if (program[index] == '\\' && index + 1 <= program.size() && program[index + 1] == c) {
+					// backslash with open string character means dont close the string
+					// but all our transpiled strings use " for strings so we just replace that
 					index += 1;
-					return { STRING, str };
+					str += "\\\"";
 				}
-				str += program[index];
+				else {
+					// close string
+					if (program[index] == c) {
+						index += 1;
+						return { STRING, "\"" + str + "\"" };
+					}
+					// in case there are " in the string and the string uses ' or `, we need to replace them accordingly since
+					// our transpiled c++ string uses "
+					// so we just escape out of " not to end the string and the user will have his " in the string as expected
+					else if (c != '"' && program[index] == '"')
+						str += "\\\"";
+					else
+						str += program[index];
+				}
 			}
 		case '{':
 			index += 1;
@@ -345,16 +363,12 @@ private:
 				}
 			}
 			//return { AMPERSAND, "&" };
-			throw std::exception();
+			throw std::runtime_error("Unknown Symbol `&`");
 		case '?':
 			index += 1;
 			return { QUESTION, "?" };
 		case '#':
 			index += 1;
-			/*if (index + 6 <= program.size() && program.substr(index, index + 6) == "define") {
-				index += 6;
-				return { DEFINE, "#define" };
-			}*/
 			return { POUND, "#" };
 		case '^':
 			index += 1;

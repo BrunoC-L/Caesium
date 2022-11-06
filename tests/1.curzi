@@ -1,5 +1,4 @@
 class T:
-
 class F<T>:
 
 class U<T>:

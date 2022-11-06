@@ -8,22 +8,27 @@ using Expression = struct AssignmentExpression;
 
 // to save some space since these are the most used token
 using Word = Token<WORD>;
+using String = Token<STRING>;
 using Newline = Token<NEWLINE>;
 
+template <typename T> struct value_t{ T value; };
+
+//using Import = value_t<And<Token<IMPORT>, Or<Word, String>, Token<NEWLINE>>>;
+
 struct Import {
-	And<Token<IMPORT>, Token<WORD>, Token<FROM>, Word, Token<NEWLINE>> value;
+	And<Token<IMPORT>, Or<Word, String>, Token<NEWLINE>> value;
 };
 struct Alias {
-	And<Token<USING>, Token<WORD>, Token<EQUAL>, Typename> value;
+	And<Token<USING>, Word, Token<EQUAL>, Typename, Token<NEWLINE>> value;
 };
 struct ArgumentsSignature {
-	CommaStar<And<Typename, Token<WORD>>> value;
+	CommaStar<And<Typename, Word>> value;
 };
 struct ColonIndentCodeBlock {
 	And<Token<COLON>, Token<NEWLINE>, Indent<Star<Statement>>> value;
 };
 struct Function {
-	And<Typename, Token<WORD>, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
+	And<Typename, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
 };
 struct ParenArguments {
 	And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>> value;
@@ -38,10 +43,10 @@ struct TemplateTypename {
 	And<Token<LT>, CommaStar<Typename>, Token<GT>, Opt<NSTypename>> value;
 };
 struct Typename {
-	And<Token<WORD>, Opt<Or<NSTypename, TemplateTypename>>> value;
+	And<Word, Opt<Or<NSTypename, TemplateTypename>>> value;
 };
 struct TemplateTypenameDeclaration {
-	And<Word, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Token<WORD>>>, Token<GT>> value;
+	And<Word, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Word>>, Token<GT>> value;
 };
 struct PPPQualifier {
 	Or<Token<PUBLIC>, Token<PRIVATE>, Token<PROTECTED>> value;
@@ -69,8 +74,8 @@ struct ForStatement {
 struct IForStatement {
 	And<
 		Token<IFOR>,
-		And<Typename, Word, Token<COMMA>>,
-		CommaPlus<Or<And<Typename, Word>, Word>>,
+		And<Or<And<Typename, Word>, Word>, Token<COMMA>>, // require a variable for the index
+		CommaPlus<Or<And<Typename, Word>, Word>>, // and at least 1 variable iterating
 		Token<IN>,
 		Expression,
 		Opt<And<Token<IF>, Expression>>,

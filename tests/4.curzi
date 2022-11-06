@@ -12,4 +12,3 @@ a a():
             return a if c else b
         a = f if e
     a() if b = c
-

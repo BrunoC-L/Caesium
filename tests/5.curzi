@@ -1,9 +1,6 @@
-import OS from System
-import A from D
+import OS
 
-class B:
+class B<D>:
 
 class C:
     B b
-    
-

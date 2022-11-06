@@ -7,10 +7,16 @@
 class toCPP {
 public:
 	void transpile(std::ofstream& h, std::ofstream& cpp, const NodeStructs::File& file) {
-		for (const auto& Class : file.classes) {
+		h << "#pragma once\n";
+		for (const auto& import : file.imports) {
+			h << "#include " << import.imported << "\n";
+		}
+		h << "\n";
 
-			/*if (Class.templated.has_value())
-				transpileTypeTemplateDeclaration(Class.templated.value(), h);*/
+		for (const auto& Class : file.classes) {
+			
+			if (Class.templated.has_value())
+				transpileTypeTemplateDeclaration(Class.templated.value(), h);
 
 			h << "class " << Class.name;
 
@@ -43,7 +49,7 @@ public:
 				}
 				h << ");\n";
 			}
-			h << "};\n";
+			h << "};\n\n";
 		}
 	}
 
@@ -74,20 +80,22 @@ public:
 /*	<U>   : template <typename U>
 	<U, V>: template <typename U, typename V>
 	<U<V>>: template <template <typename V> typename U>*/
-	/*template <typename stream>
-	void transpileTypeTemplateDeclaration(const NodeStructs::templateDeclaration& tmpl, stream& ss, bool printNameAtEnd = false) {
-		if (tmpl.templated.size())
+	template <typename stream>
+	void transpileTypeTemplateDeclaration(const NodeStructs::TemplateDeclaration& tmpl, stream& ss, bool printNameAtEnd = false) {
+		if (tmpl.parameters.size())
 			ss << "template <";
 		bool first = true;
-		for (const auto& tmpl2 : tmpl.templated) {
+		for (const auto& tmpl2 : tmpl.parameters) {
 			if (!first)
 				ss << ", ";
 			first = false;
 			transpileTypeTemplateDeclaration(tmpl2, ss, true);
 		}
-		if (tmpl.templated.size())
+		if (tmpl.parameters.size())
 			ss << "> ";
 		if (printNameAtEnd)
-			ss << "typename " << tmpl.type;
-	}*/
+			ss << "typename " << tmpl.name;
+		else
+			ss << "\n";
+	}
 };
