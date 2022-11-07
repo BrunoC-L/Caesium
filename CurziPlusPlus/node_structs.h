@@ -7,7 +7,7 @@
 #define NODE_CAST(T, E) std::dynamic_pointer_cast<T>(E)
 
 template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-template<class... Ts> overload(Ts...)->overload<Ts...>;
+template<class... Ts> overload(Ts...)->overload<Ts...>; // to help IDE
 
 namespace NodeStructs {
 	struct Typename;
@@ -81,6 +81,19 @@ namespace NodeStructs {
 		std::vector<Constructor> constructors;
 		std::vector<Function> methods;
 		std::vector<MemberVariable> memberVariables;
+
+		template <typename T> std::vector<T>& get() {
+			if constexpr (std::is_same_v<T, Alias>)
+				return aliases;
+			else if constexpr (std::is_same_v<T, Constructor>)
+				return constructors;
+			else if constexpr (std::is_same_v<T, Function>)
+				return methods;
+			else if constexpr (std::is_same_v<T, MemberVariable>)
+				return memberVariables;
+			else
+				static_assert(!sizeof(T*), "T is not supported");
+		}
 	};
 
 	struct File {

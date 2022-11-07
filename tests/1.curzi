@@ -1,4 +1,6 @@
 class T:
+    T t
+
 class F<T>:
 
 class U<T>:
@@ -10,7 +12,7 @@ class K<U<V>>:
 class G<T, U<V>>:
 
 class A extends G<V,F>:
-    private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):
+    E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):
         for i in arr:
         for i in someContainer:
         for i in std::f::f<f>:

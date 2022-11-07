@@ -1,6 +1,7 @@
 #pragma once
 
 class T {
+	T t;
 };
 
 template <typename T> 
@@ -23,5 +24,7 @@ class G {
 };
 
 class A {
+	B::T<U, V> member1;
+	E<F<H, I>>::G method1();
 };
 

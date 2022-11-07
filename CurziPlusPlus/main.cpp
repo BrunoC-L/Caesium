@@ -72,15 +72,15 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E<E<E<E<E<E>>>>>");
 	testParse<Typename>(__LINE__, 0, "E<E<E<E < E<   E,>>,  > >,E < E < E<  E< E ,> >,>>>");
 	testParse<Typename>(__LINE__, 0, "E<F<H,I>>::G");
-	testParse<Method>(__LINE__, 0, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
-	testParse<Method>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
+	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
 	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
-	testParse<Method>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
-	testParse<Method>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
+	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<ClassElement>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<Statement>(__LINE__, 1, "\tfor i in arr:\n");
-	testParse<Method>(__LINE__, 0, "void a():\n");
+	testParse<Function>(__LINE__, 0, "void a():\n");
 	testParse<Star<Statement>>(__LINE__, 1, "\tif a:\n");
 	testParse<WhileStatement>(__LINE__, 0, "while a:\n");
 	testParse<ReturnStatement>(__LINE__, 0, "return a, b, \n");
@@ -133,13 +133,7 @@ int main(int argc, char** argv) {
 		for (const auto& file : std::filesystem::directory_iterator(argv[i])) {
 			const std::filesystem::path& fileName = file.path();
 			if (fileName.extension() == ".curzi")
-				try {
-					transpile(fileName, std::string(argv[i]) + "\\out\\");
-				}
-				catch (const std::exception& e) {
-					std::cerr << fileName << ": " << e.what() << "\n";
-					throw e;
-				}
+				transpile(fileName, std::string(argv[i]) + "\\out\\");
 		}
 	return 0;
 }

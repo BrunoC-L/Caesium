@@ -181,9 +181,8 @@ public:
 					if (std::holds_alternative<U>(*node.value.get()))
 						res.push_back(&std::get<U>(*node.value.get()));
 				}
-				else {
+				else
 					static_assert(!sizeof(T*), "T is not supported");
-				}
 			}
 			return res;
 		}

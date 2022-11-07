@@ -13,54 +13,29 @@ using Newline = Token<NEWLINE>;
 
 template <typename T> struct value_t{ T value; };
 
-//using Import = value_t<And<Token<IMPORT>, Or<Word, String>, Token<NEWLINE>>>;
-
-struct Import {
-	And<Token<IMPORT>, Or<Word, String>, Token<NEWLINE>> value;
-};
-struct Alias {
-	And<Token<USING>, Word, Token<EQUAL>, Typename, Token<NEWLINE>> value;
-};
-struct ArgumentsSignature {
-	CommaStar<And<Typename, Word>> value;
-};
-struct ColonIndentCodeBlock {
-	And<Token<COLON>, Token<NEWLINE>, Indent<Star<Statement>>> value;
-};
-struct Function {
-	And<Typename, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
-};
-struct ParenArguments {
-	And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>> value;
-};
-struct BracketArguments {
-	And<Token<BRACKETOPEN>, CommaStar<Expression>, Token<BRACKETCLOSE>> value;
-};
-struct NSTypename {
-	And<Token<NS>, Typename> value;
-};
-struct TemplateTypename {
-	And<Token<LT>, CommaStar<Typename>, Token<GT>, Opt<NSTypename>> value;
-};
-struct Typename {
-	And<Word, Opt<Or<NSTypename, TemplateTypename>>> value;
-};
-struct TemplateTypenameDeclaration {
-	And<Word, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Word>>, Token<GT>> value;
-};
-struct PPPQualifier {
-	Or<Token<PUBLIC>, Token<PRIVATE>, Token<PROTECTED>> value;
-};
-struct ExpressionStatement {
-	And<Expression, Newline> value;
-};
-struct ElseStatement {
-	And<IndentToken, Token<ELSE>, ColonIndentCodeBlock> value;
-};
-struct IfStatement {
-	And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>> value;
-};
-struct ForStatement {
+using Import = value_t<And<Token<IMPORT>, Or<Word, String>, Token<NEWLINE>>>;
+using Alias = value_t<And<Token<USING>, Word, Token<EQUAL>, Typename, Token<NEWLINE>>>;
+using ArgumentsSignature = value_t<CommaStar<And<Typename, Word>>>;
+using ColonIndentCodeBlock = value_t<And<Token<COLON>, Token<NEWLINE>, Indent<Star<Statement>>>>;
+using Function = value_t<And<Typename, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>>;
+using ParenArguments = value_t<And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>>;
+using BracketArguments = value_t<And<Token<BRACKETOPEN>, CommaStar<Expression>, Token<BRACKETCLOSE>>>;
+using NSTypename = value_t<And<Token<NS>, Typename>>;
+using TemplateTypename = value_t<And<Token<LT>, CommaStar<Typename>, Token<GT>, Opt<NSTypename>>>;
+struct Typename { And<Word, Opt<Or<NSTypename, TemplateTypename>>> value; };
+struct TemplateTypenameDeclaration { And<Word, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Word>>, Token<GT>> value; };
+using PPPQualifier = value_t<Or<Token<PUBLIC>, Token<PRIVATE>, Token<PROTECTED>>>;
+using ExpressionStatement = value_t<And<Expression, Newline>>;
+using ElseStatement = value_t<And<IndentToken, Token<ELSE>, ColonIndentCodeBlock>>;
+using IfStatement = value_t<And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>>>;
+using BreakStatement = value_t<And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>>;
+using MultipleInheritance = value_t<CommaPlus<Typename>>;
+using ClassInheritance = value_t<And<Token<EXTENDS>, MultipleInheritance>>;
+using ClassMemberQualifiers = value_t<And<Opt<PPPQualifier>, Opt<Token<STATIC>>>>;
+using MemberVariable = value_t<And<ClassMemberQualifiers, Typename, Word, Newline>>;
+using Constructor = value_t<And<ClassMemberQualifiers, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>>;
+using ClassElement = value_t<Or<Alias, Function, MemberVariable, Constructor>>;
+using ForStatement = value_t<
 	And<
 		Token<FOR>,
 		CommaPlus<Or<And<Typename, Word>, Word>>,
@@ -69,9 +44,8 @@ struct ForStatement {
 		Opt<And<Token<IF>, Expression>>,
 		Opt<And<Token<WHILE>, Expression>>,
 		ColonIndentCodeBlock
-	> value;
-};
-struct IForStatement {
+	>>;
+using IForStatement = value_t<
 	And<
 		Token<IFOR>,
 		And<Or<And<Typename, Word>, Word>, Token<COMMA>>, // require a variable for the index
@@ -81,12 +55,9 @@ struct IForStatement {
 		Opt<And<Token<IF>, Expression>>,
 		Opt<And<Token<WHILE>, Expression>>,
 		ColonIndentCodeBlock
-	> value;
-};
-struct WhileStatement {
-	And<Token<WHILE>, Expression, ColonIndentCodeBlock> value;
-};
-struct ReturnStatement {
+	>>;
+using WhileStatement = value_t<And<Token<WHILE>, Expression, ColonIndentCodeBlock>>;
+using ReturnStatement = value_t<
 	And<
 		Token<RETURN>,
 		CommaStar<Expression>,
@@ -99,11 +70,7 @@ struct ReturnStatement {
 			>>
 		>>,
 		Newline
-	> value;
-};
-struct BreakStatement {
-	And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline> value;
-};
+	>>;
 struct Statement {
 	And<
 		IndentToken,
@@ -118,28 +85,7 @@ struct Statement {
 		>
 	> value;
 };
-struct MultipleInheritance {
-	CommaPlus<Typename> value;
-};
-struct ClassInheritance {
-	And<Token<EXTENDS>, MultipleInheritance> value;
-};
-struct ClassMemberQualifiers {
-	And<Opt<PPPQualifier>, Opt<Token<STATIC>>> value;
-};
-struct Method {
-	And<ClassMemberQualifiers, Typename, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
-};
-struct MemberVariable {
-	And<ClassMemberQualifiers, Typename, Word, Newline> value;
-};
-struct Constructor {
-	And<ClassMemberQualifiers, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock> value;
-};
-struct ClassElement {
-	Or<Alias, Method, MemberVariable, Constructor> value;
-};
-struct Class {
+using Class = value_t<
 	And<
 		Token<CLASS>,
 		Or<TemplateTypenameDeclaration, Word>,
@@ -150,15 +96,13 @@ struct Class {
             IndentToken,
             ClassElement
 		>>>
-    > value;
-};
-struct File {
-	And<Star<Import>, Star<Or<Class, Function>>, Token<END>> value;
-};
+    >>;
+using File = value_t<
+	And<Star<Import>, Star<Or<Class, Function>>, Token<END>>>;
 /*
 EXPRESSIONS
 */
-struct ParenExpression {
+using ParenExpression = value_t<
 	Or<
 		And<
 			Token<PARENOPEN>,
@@ -167,9 +111,8 @@ struct ParenExpression {
 		>,
 		Typename,
 		Token<NUMBER>
-	> value;
-};
-struct PostfixExpression {
+	>>;
+using PostfixExpression = value_t<
 	And<
 		ParenExpression,
 		Star<Or<
@@ -185,8 +128,7 @@ struct PostfixExpression {
 			Token<PLUSPLUS>,
 			Token<MINUSMINUS>
 		>>
-    > value;
-};
+    >>;
 struct UnaryExpression {
 	Or <
 		And<
@@ -211,25 +153,13 @@ struct UnaryExpression {
 		PostfixExpression
 	> value;
 };
-struct MultiplicativeExpression {
-	And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>> value;
-};
-struct AdditiveExpression {
-	And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>> value;
-};
-struct CompareExpression {
-	And<AdditiveExpression, Star<And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, AdditiveExpression>>> value;
-};
-struct EqualityExpression {
-	And<CompareExpression, Star<And<Token<EQUALEQUAL>, CompareExpression>>> value;
-};
-struct AndExpression {
-	And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>> value;
-};
-struct OrExpression {
-	And<AndExpression, Star<And<Token<OR>, AndExpression>>> value;
-};
-struct ConditionalExpression {
+using MultiplicativeExpression = value_t<And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>>>;
+using AdditiveExpression = value_t<And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>>>;
+using CompareExpression = value_t<And<AdditiveExpression, Star<And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, AdditiveExpression>>>>;
+using EqualityExpression = value_t<And<CompareExpression, Star<And<Token<EQUALEQUAL>, CompareExpression>>>>;
+using AndExpression = value_t<And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>>;
+using OrExpression = value_t<And<AndExpression, Star<And<Token<OR>, AndExpression>>>>;
+using ConditionalExpression = value_t<
 	And<
 		OrExpression,
 		Opt<And<
@@ -240,8 +170,7 @@ struct ConditionalExpression {
 				OrExpression
 			>>
 		>>
-	> value;
-};
+	>>;
 struct AssignmentExpression {
 	And<
 		ConditionalExpression,

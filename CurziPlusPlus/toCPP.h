@@ -33,10 +33,12 @@ public:
 			}
 			h << " {\n";
 			for (const auto& member : Class.memberVariables) {
+				h << "\t";
 				transpileType(member.type, h);
 				h << " " << member.name << ";\n";
 			}
 			for (const auto& method : Class.methods) {
+				h << "\t";
 				transpileType(method.returnType, h);
 				h << " " << method.name << "(";
 				auto first = true;
