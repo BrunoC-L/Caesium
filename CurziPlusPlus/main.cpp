@@ -14,7 +14,7 @@ void testParse(int i, int n_indent, std::string program, bool expectedToBuild = 
 	Grammarizer g(tokens);
 
 	bool nodeBuilt = false;
-	if constexpr (expectedToBuild)
+	if (expectedToBuild)
 		nodeBuilt = And<Ts...>(n_indent).build(&g);
 	else
 		// if it is expected to fail, try to parse END to make sure it has to get the entire input
