@@ -17,7 +17,7 @@ class A extends G<V,F>:
         Set<int> someContainer
         for i in someContainer:
 
-        int[] arr
+        int arr
         for i in arr:
 
         Map<int, std::string> m
