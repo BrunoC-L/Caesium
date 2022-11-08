@@ -83,6 +83,10 @@ NodeStructs::Function getStruct(const Function& f) {
 	return res;
 }
 
+NodeStructs::Function getStruct(const MemberFunction& f) {
+	return getStruct(f.value.get<Function>());
+}
+
 NodeStructs::Constructor getStruct(const Constructor& f) {
 	NodeStructs::Constructor res;
 	return res;

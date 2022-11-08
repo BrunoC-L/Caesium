@@ -1,19 +1,24 @@
+class A<B>:
+class B:
 class T:
-    T t
+    A<B> t
 
-class F<T>:
+class F<A,B>:
 
-class U<T>:
-
-class V:
-
-class K<U<V>>:
-
-class G<T, U<V>>:
+class E<A>:
+    using G = A
+    using T = F
 
 class A extends G<V,F>:
-    E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):
-        for i in arr:
+    using C = A<B>
+    using K = F<B,C>
+    E<K>::T<B,C> member1
+    E<K>::G method1(K k, C u):
+        Set<int> someContainer
         for i in someContainer:
-        for i in std::f::f<f>:
-    B::T<U,V> member1
+
+        int[] arr
+        for i in arr:
+
+        Map<int, std::string> m
+        for k, v in m:

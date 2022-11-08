@@ -13,7 +13,14 @@ void testParse(int i, int n_indent, std::string program, bool expectedToBuild = 
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
 
-	bool nodeBuilt = And<Ts...>(n_indent).build(&g);
+	bool nodeBuilt = false;
+	if constexpr (expectedToBuild)
+		nodeBuilt = And<Ts...>(n_indent).build(&g);
+	else
+		// if it is expected to fail, try to parse END to make sure it has to get the entire input
+		// otherwise they might succeed by skipping tokens at the end with Star or Opts
+		nodeBuilt = And<Ts..., Token<END>>(n_indent).build(&g);
+
 	bool programReadEntirely = g.it == g.tokens.end();
 	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
 		programReadEntirely = ++g.it == g.tokens.end();
@@ -37,7 +44,7 @@ void testParse(int i, int n_indent, std::string program, bool expectedToBuild = 
 
 void testParse() {
 	testParse<CommaStar<And<Token<WORD>>>>(__LINE__, 0, "y");
-	testParse<Import>(__LINE__, 0, "import string from std\n");
+	testParse<Import>(__LINE__, 0, "import string\n");
 	testParse<And<IndentToken, Token<WORD>>>(__LINE__, 3, "\t\t\ta");
 	testParse<CommaStar<Token<WORD>>>(__LINE__, 0, "y");
 	testParse<CommaStar<And<Token<WORD>>>>(__LINE__, 0, "y");
@@ -75,10 +82,17 @@ void testParse() {
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
 	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tstatic E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1():\n");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tstatic E<F<H,I>>::G method1():\n");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tstatic E<F<H,I>>::G method1");
 	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<ClassElement>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
+	testParse<ClassElement>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Statement>(__LINE__, 1, "\tfor i in arr:\n");
 	testParse<Function>(__LINE__, 0, "void a():\n");
 	testParse<Star<Statement>>(__LINE__, 1, "\tif a:\n");
@@ -92,11 +106,14 @@ void testParse() {
 	testParse<File>(__LINE__, 0, "class B:");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
 	testParse<Indent<Indent<Indent<IfStatement>>>>(__LINE__, 0, "if a:\n\t\t\t\tb\n\t\t\telse:\n\t\t\t\tc\n");
+	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer\n");
+	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer\nSet<int> someContainer\n");
+	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer\nfor i in someContainer:\n");
+	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer\nfor i in someContainer:\nvector<int> arr\nfor i in arr :\nMap<int, std::string> m\nfor k, v in m:\n");
 
 	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
-	// tests of expressions expected to fail to parse.
-	// some can "succeed" but skip part of the which
-	// can also be acceptable depending on the expression
+	// basically previous tests are against false negatives (good code should work)
+	// and these tests are against false positives (bad code should fail)
 	testParse<Class>(__LINE__, 1, "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
 	testParse<Class>(__LINE__, 0, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 }

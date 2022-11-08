@@ -7,7 +7,9 @@
 class toCPP {
 public:
 	void transpile(std::ofstream& h, std::ofstream& cpp, const NodeStructs::File& file) {
-		h << "#pragma once\n";
+		h << "#pragma once\n"
+			"#include <memory>\n"
+			"\n";
 		for (const auto& import : file.imports) {
 			h << "#include " << import.imported << "\n";
 		}
@@ -72,11 +74,12 @@ public:
 				}
 				ss << ">";
 			}
-			);
-
+		);
+		ss << "std::shared_ptr<";
 		ss << type.type;
 		for (const auto& ext : type.extensions)
 			std::visit(f, ext);
+		ss << ">";
 	}
 
 /*	<U>   : template <typename U>
@@ -87,11 +90,11 @@ public:
 		if (tmpl.parameters.size())
 			ss << "template <";
 		bool first = true;
-		for (const auto& tmpl2 : tmpl.parameters) {
+		for (const auto& templateParameterType : tmpl.parameters) {
 			if (!first)
 				ss << ", ";
 			first = false;
-			transpileTypeTemplateDeclaration(tmpl2, ss, true);
+			transpileTypeTemplateDeclaration(templateParameterType, ss, true);
 		}
 		if (tmpl.parameters.size())
 			ss << "> ";
