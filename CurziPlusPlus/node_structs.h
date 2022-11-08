@@ -32,7 +32,21 @@ namespace NodeStructs {
 		Typename aliasTo;
 	};
 
+	struct Statement;
+
+	struct ExpressionStatement {
+
+	};
+
+	struct VariableDeclarationStatement {
+
+	};
+
 	struct ForStatement {
+
+	};
+
+	struct IForStatement {
 
 	};
 
@@ -44,7 +58,27 @@ namespace NodeStructs {
 
 	};
 
-	using Statement = std::variant<std::vector<Statement>, ForStatement, IfStatement, WhileStatement>;
+	struct BreakStatement {
+
+	};
+
+	struct ReturnStatement {
+
+	};
+
+	struct Statement {
+		std::variant<
+			std::vector<Statement>,
+			ExpressionStatement,
+			VariableDeclarationStatement,
+			ForStatement,
+			IForStatement,
+			IfStatement,
+			WhileStatement,
+			BreakStatement,
+			ReturnStatement
+		> statement;
+	};
 
 	struct Constructor {
 		std::vector<Typename> parameterTypes;

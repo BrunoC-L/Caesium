@@ -81,18 +81,15 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E<F<H,I>>::G");
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tstatic E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1():\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tstatic E<F<H,I>>::G method1():\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tstatic E<F<H,I>>::G method1");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tprivate static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G method1():\n");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G member1");
+	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
-	testParse<ClassElement>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
-	testParse<ClassElement>(__LINE__, 1, "private static E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
+	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Statement>(__LINE__, 1, "\tfor i in arr:\n");
 	testParse<Function>(__LINE__, 0, "void a():\n");
 	testParse<Star<Statement>>(__LINE__, 1, "\tif a:\n");
@@ -134,12 +131,13 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 	File file(0);
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
 	Grammarizer g(tokens);
-	bool b = build_optional_primitive(file, &g);
-	if (!b)
+	if (build_optional_primitive(file, &g)) {
+		std::cout << fileName << ": built\n";
+		NodeStructs::File f = getStruct(file);
+		toCPP{}.transpile(h, cpp, f);
+	}
+	else
 		throw std::exception("not built");
-	std::cout << fileName << ": built\n";
-	NodeStructs::File f = getStruct(file);
-	toCPP{}.transpile(h, cpp, f);
 }
 
 int main(int argc, char** argv) {

@@ -4,10 +4,10 @@
 #include "OS.h"
 
 template <typename D> 
-class B {
+struct B {
 };
 
-class C {
+struct C {
 	std::shared_ptr<B> b;
 };
 

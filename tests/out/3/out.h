@@ -2,6 +2,6 @@
 #include <memory>
 
 
-class A {
+struct A {
 };
 

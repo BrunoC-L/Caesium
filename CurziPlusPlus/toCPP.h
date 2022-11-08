@@ -10,9 +10,10 @@ public:
 		h << "#pragma once\n"
 			"#include <memory>\n"
 			"\n";
-		for (const auto& import : file.imports) {
+
+		for (const auto& import : file.imports)
 			h << "#include " << import.imported << "\n";
-		}
+
 		h << "\n";
 
 		for (const auto& Class : file.classes) {
@@ -20,7 +21,7 @@ public:
 			if (Class.templated.has_value())
 				transpileTypeTemplateDeclaration(Class.templated.value(), h);
 
-			h << "class " << Class.name;
+			h << "struct " << Class.name;
 
 			bool firstInheritance = true;
 			for (const auto& inheritance : Class.inheritances) {
@@ -30,15 +31,25 @@ public:
 				}
 				else
 					h << ", ";
-				h << "public ";
-				transpileType(inheritance, h);
+				transpileType(inheritance, h, false);
 			}
 			h << " {\n";
+
+
+			for (const auto& alias : Class.aliases) {
+				h << "\tusing ";
+				transpileType(alias.aliasFrom, h, false);
+				h << " = ";
+				transpileType(alias.aliasTo, h, false);
+				h << ";\n";
+			}
+
 			for (const auto& member : Class.memberVariables) {
 				h << "\t";
 				transpileType(member.type, h);
 				h << " " << member.name << ";\n";
 			}
+
 			for (const auto& method : Class.methods) {
 				h << "\t";
 				transpileType(method.returnType, h);
@@ -51,14 +62,73 @@ public:
 						h << ", ";
 					transpileType(t, h);
 				}
-				h << ");\n";
+				h << ") {\n";
+				for (const auto& statement : method.statements)
+					std::visit([&](const auto& stmt) {
+						transpileStatement(stmt, h, 1);
+					}, statement.statement);
+				h << "\t}\n";
 			}
 			h << "};\n\n";
 		}
 	}
 
 	template <typename stream>
-	void transpileType(const NodeStructs::Typename& type, stream& ss) {
+	void transpileStatement(const std::vector<NodeStructs::Statement>& statements, stream& ss, int indent) {
+		for (const auto& statement : statements)
+			std::visit([&](const auto& stmt) {
+				transpileStatement(stmt, ss, indent);
+			}, statement.statement);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::ExpressionStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::VariableDeclarationStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::ForStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::IForStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::IfStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::WhileStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::BreakStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::ReturnStatement& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+	}
+
+	template <typename stream>
+	void indent(stream& ss, int n) {
+		for (int i = 0; i < n; ++i)
+			ss << "\t";
+	}
+
+	template <typename stream>
+	void transpileType(const NodeStructs::Typename& type, stream& ss, bool shared_ptr = true) {
 		auto f = overload(
 			[&](const NodeStructs::NSTypeExtension& ext) {
 				ss << "::" << ext.NSTypename;
@@ -70,16 +140,18 @@ public:
 					if (!isFirst)
 						ss << ", ";
 					isFirst = false;
-					transpileType(T, ss);
+					transpileType(T, ss, true);
 				}
 				ss << ">";
 			}
 		);
-		ss << "std::shared_ptr<";
+		if (shared_ptr)
+			ss << "std::shared_ptr<";
 		ss << type.type;
 		for (const auto& ext : type.extensions)
 			std::visit(f, ext);
-		ss << ">";
+		if (shared_ptr)
+			ss << ">";
 	}
 
 /*	<U>   : template <typename U>

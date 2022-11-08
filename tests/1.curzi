@@ -1,7 +1,14 @@
 class A<B>:
+    using C = B
+
 class B:
+    using C = B
+
 class T:
-    A<B> t
+    A<B> a
+    B::C b
+    A<B>::C c
+    A<B::C> d
 
 class F<A,B>:
 
@@ -9,10 +16,10 @@ class E<A>:
     using G = A
     using T = F
 
-class A extends G<V,F>:
+class R<V, F> extends F<V,F>, F<E<B>,A<B>>:
     using C = A<B>
-    using K = F<B,C>
-    E<K>::T<B,C> member1
+    using K = F<B, C>
+    E<K>::T<B, C> member1
     E<K>::G method1(K k, C u):
         Set<int> someContainer
         for i in someContainer:

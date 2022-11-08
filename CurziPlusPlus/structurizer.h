@@ -83,10 +83,6 @@ NodeStructs::Function getStruct(const Function& f) {
 	return res;
 }
 
-NodeStructs::Function getStruct(const MemberFunction& f) {
-	return getStruct(f.value.get<Function>());
-}
-
 NodeStructs::Constructor getStruct(const Constructor& f) {
 	NodeStructs::Constructor res;
 	return res;
@@ -101,11 +97,13 @@ NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
 
 NodeStructs::Alias getStruct(const Alias& f) {
 	NodeStructs::Alias res;
+	res.aliasFrom = NodeStructs::Typename{ f.value.get<Word>().value, {} };
+	res.aliasTo = getStruct(f.value.get<Typename>());
 	return res;
 }
 
 NodeStructs::Class getStruct(const Class& cl) {
-	NodeStructs::Class computedClassNameAndInheritance = std::visit(overload(
+	NodeStructs::Class computedClass = std::visit(overload(
 		[](const TemplateTypenameDeclaration& templateTypename) {
 			NodeStructs::Class res;
 			res.name = templateTypename.value.get<Word>().value;
@@ -120,10 +118,16 @@ NodeStructs::Class getStruct(const Class& cl) {
 		}
 	), *cl.value.get<Or<TemplateTypenameDeclaration, Word>>().value.get());
 	for (const ClassElement* ce : cl.value.get<Indent<Star<And<IndentToken, ClassElement>>>>().get<ClassElement>())
-		std::visit([&computedClassNameAndInheritance](const auto& e) {
-			computedClassNameAndInheritance.get<decltype(getStruct(e))>().emplace_back(getStruct(e));
+		std::visit([&computedClass](const auto& e) {
+			computedClass.get<decltype(getStruct(e))>().emplace_back(getStruct(e));
 		}, *ce->value.value.get());
-	return computedClassNameAndInheritance;
+	if (cl.value.get<Opt<ClassInheritance>>().node.has_value())
+		for (const Typename* t : cl.value
+									.get<Opt<ClassInheritance>>().node.value().value
+									.get<CommaPlus<Typename>>()
+									.get<Typename>())
+			computedClass.inheritances.emplace_back(getStruct(*t));
+	return computedClass;
 }
 
 NodeStructs::File getStruct(const File& f) {

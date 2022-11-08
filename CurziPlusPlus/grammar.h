@@ -26,21 +26,16 @@ using NSTypename = and_t<Token<NS>, Typename>;
 using TemplateTypename = and_t<Token<LT>, CommaStar<Typename>, Token<GT>, Opt<NSTypename>>;
 struct Typename { And<Word, Opt<Or<NSTypename, TemplateTypename>>> value; };
 struct TemplateTypenameDeclaration { And<Word, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Word>>, Token<GT>> value; };
-using PPPQualifier = or_t<Token<PUBLIC>, Token<PRIVATE>, Token<PROTECTED>>;
 using ExpressionStatement = and_t<Expression, Newline>;
 using ElseStatement = and_t<IndentToken, Token<ELSE>, ColonIndentCodeBlock>;
 using VariableDeclarationStatement = and_t<Typename, Word, Newline>;
 using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>>;
 using BreakStatement = and_t<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
-using MultipleInheritance = value_t<CommaPlus<Typename>>;
-using ClassInheritance = and_t<Token<EXTENDS>, MultipleInheritance>;
-using ClassMemberQualifiers = and_t<Opt<PPPQualifier>, Opt<Token<STATIC>>>;
-using MemberVariable = and_t<ClassMemberQualifiers, Typename, Word, Newline>;
-using MemberFunction = and_t<ClassMemberQualifiers, Function>;
-using Constructor = and_t<ClassMemberQualifiers, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
-using ClassElement = or_t<Alias, MemberFunction, MemberVariable, Constructor>;
-using ForStatement = value_t<
-	And<
+using ClassInheritance = and_t<Token<EXTENDS>, CommaPlus<Typename>>;
+using MemberVariable = and_t<Typename, Word, Newline>;
+using Constructor = and_t<Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
+using ForStatement = and_t<
 		Token<FOR>,
 		CommaPlus<Or<And<Typename, Word>, Word>>,
 		Token<IN>,
@@ -48,9 +43,8 @@ using ForStatement = value_t<
 		Opt<And<Token<IF>, Expression>>,
 		Opt<And<Token<WHILE>, Expression>>,
 		ColonIndentCodeBlock
-	>>;
-using IForStatement = value_t<
-	And<
+	>;
+using IForStatement = and_t<
 		Token<IFOR>,
 		And<Or<And<Typename, Word>, Word>, Token<COMMA>>, // require a variable for the index
 		CommaPlus<Or<And<Typename, Word>, Word>>, // and at least 1 variable iterating
@@ -59,10 +53,9 @@ using IForStatement = value_t<
 		Opt<And<Token<IF>, Expression>>,
 		Opt<And<Token<WHILE>, Expression>>,
 		ColonIndentCodeBlock
-	>>;
+	>;
 using WhileStatement = and_t<Token<WHILE>, Expression, ColonIndentCodeBlock>;
-using ReturnStatement = value_t<
-	And<
+using ReturnStatement = and_t<
 		Token<RETURN>,
 		CommaStar<Expression>,
 		Opt<And<
@@ -74,7 +67,7 @@ using ReturnStatement = value_t<
 			>>
 		>>,
 		Newline
-	>>;
+	>;
 struct Statement {
 	And<
 		IndentToken,
@@ -90,8 +83,7 @@ struct Statement {
 		>
 	> value;
 };
-using Class = value_t<
-	And<
+using Class = and_t<
 		Token<CLASS>,
 		Or<TemplateTypenameDeclaration, Word>,
 		Opt<ClassInheritance>,
@@ -101,7 +93,7 @@ using Class = value_t<
             IndentToken,
             ClassElement
 		>>>
-    >>;
+    >;
 using File = and_t<Star<Import>, Star<Or<Class, Function>>, Token<END>>;
 /*
 EXPRESSIONS
