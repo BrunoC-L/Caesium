@@ -1,3 +1,6 @@
-.vs/*
-Debug/*
-CurziPlusPlus/Debug/*
+!**.gitignore
+**.vcxproj.user
+**/x64/*
+**/Debug/*
+**/.vs/*
+**/.vscode/*
