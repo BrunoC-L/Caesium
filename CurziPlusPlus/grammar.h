@@ -15,10 +15,10 @@ template <typename T> struct value_t{ T value; };
 template <typename... Ts> struct and_t { And<Ts...> value; };
 template <typename... Ts> struct or_t { Or<Ts...> value; };
 
-using Import = and_t<Token<IMPORT>, Or<Word, String>, Token<NEWLINE>>;
-using Alias = and_t<Token<USING>, Word, Token<EQUAL>, Typename, Token<NEWLINE>>;
+using Import = and_t<Token<IMPORT>, Or<Word, String>, Newline>;
+using Alias = and_t<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
 using ArgumentsSignature = value_t<CommaStar<And<Typename, Word>>>;
-using ColonIndentCodeBlock = and_t<Token<COLON>, Token<NEWLINE>, Indent<Star<Statement>>>;
+using ColonIndentCodeBlock = and_t<Token<COLON>, Newline, Indent<Star<Statement>>>;
 using Function = and_t<Typename, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ParenArguments = and_t<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>;
 using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<Expression>, Token<BRACKETCLOSE>>;

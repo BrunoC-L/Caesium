@@ -133,7 +133,7 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 	Grammarizer g(tokens);
 	if (build_optional_primitive(file, &g)) {
 		std::cout << fileName << ": built\n";
-		NodeStructs::File f = getStruct(file);
+		const NodeStructs::File& f = getStruct(file);
 		toCPP{}.transpile(h, cpp, f);
 	}
 	else
@@ -141,6 +141,7 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 }
 
 int main(int argc, char** argv) {
+
 	std::cout << std::boolalpha;
 	testParse();
 	std::cout << "\n\n";

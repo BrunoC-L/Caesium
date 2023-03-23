@@ -46,13 +46,13 @@ public:
 
 			for (const auto& member : Class.memberVariables) {
 				h << "\t";
-				transpileType(member.type, h);
+				transpileType(member.type, h, false); // change to true for shared (removed for now)
 				h << " " << member.name << ";\n";
 			}
 
 			for (const auto& method : Class.methods) {
 				h << "\t";
-				transpileType(method.returnType, h);
+				transpileType(method.returnType, h, false); // change to true for shared (removed for now)
 				h << " " << method.name << "(";
 				auto first = true;
 				for (const auto& t : method.parameterTypes) {
@@ -60,7 +60,7 @@ public:
 						first = false;
 					else
 						h << ", ";
-					transpileType(t, h);
+					transpileType(t, h, false); // change to true for shared (removed for now)
 				}
 				h << ") {\n";
 				for (const auto& statement : method.statements)
@@ -128,7 +128,7 @@ public:
 	}
 
 	template <typename stream>
-	void transpileType(const NodeStructs::Typename& type, stream& ss, bool shared_ptr = true) {
+	void transpileType(const NodeStructs::Typename& type, stream& ss, bool shared_ptr) {
 		auto f = overload(
 			[&](const NodeStructs::NSTypeExtension& ext) {
 				ss << "::" << ext.NSTypename;
@@ -140,7 +140,7 @@ public:
 					if (!isFirst)
 						ss << ", ";
 					isFirst = false;
-					transpileType(T, ss, true);
+					transpileType(T, ss, shared_ptr);
 				}
 				ss << ">";
 			}

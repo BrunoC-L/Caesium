@@ -12,10 +12,10 @@ struct B {
 };
 
 struct T {
-	std::shared_ptr<A<std::shared_ptr<B>>> a;
-	std::shared_ptr<B::C> b;
-	std::shared_ptr<A<std::shared_ptr<B>>::C> c;
-	std::shared_ptr<A<std::shared_ptr<B::C>>> d;
+	A<B> a;
+	B::C b;
+	A<B>::C c;
+	A<B::C> d;
 };
 
 template <typename A, typename B> 
@@ -29,11 +29,11 @@ struct E {
 };
 
 template <typename V, typename F> 
-struct R : F<std::shared_ptr<V>, std::shared_ptr<F>>, F<std::shared_ptr<E<std::shared_ptr<B>>>, std::shared_ptr<A<std::shared_ptr<B>>>> {
-	using C = A<std::shared_ptr<B>>;
-	using K = F<std::shared_ptr<B>, std::shared_ptr<C>>;
-	std::shared_ptr<E<std::shared_ptr<K>>::T<std::shared_ptr<B>, std::shared_ptr<C>>> member1;
-	std::shared_ptr<E<std::shared_ptr<K>>::G> method1() {
+struct R : F<V, F>, F<E<B>, A<B>> {
+	using C = A<B>;
+	using K = F<B, C>;
+	E<K>::T<B, C> member1;
+	E<K>::G method1() {
 	}
 };
 

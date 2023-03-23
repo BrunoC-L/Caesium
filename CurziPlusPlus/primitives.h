@@ -4,41 +4,41 @@
 #include <optional>
 #include <variant>
 
-template <typename...> class And;
-template <typename...> class Or;
-template <typename, typename, typename> class KNode;
-template <typename> class Opt;
+template <typename...> struct And;
+template <typename...> struct Or;
+template <typename, typename, typename> struct KNode;
+template <typename> struct Opt;
 template <typename> struct Indent;
 struct IndentToken;
 template <int> struct Token;
 
-template <class T> struct is_primitive_node_type;
+template <typename T> struct is_primitive_node_type;
 
-template <class T, template <class...> class Template>
+template <typename T, template <typename...> typename Template>
 struct is_specialization : std::false_type {};
 
-template <template <class...> class Template, class... Args>
+template <template <typename...> typename Template, typename... Args>
 struct is_specialization<Template<Args...>, Template> : std::true_type {};
 
-template <class T, template <int...> class Template>
+template <typename T, template <int...> typename Template>
 struct is_specialization_int : std::false_type {};
 
-template <template <int> class Template, int Arg>
+template <template <int> typename Template, int Arg>
 struct is_specialization_int<Template<Arg>, Template> : std::true_type {};
 
-template <class T>
+template <typename T>
 struct is_specialization_indent : std::false_type {};
 
-template <class T>
+template <typename T>
 struct is_specialization_indent<Indent<T>> : std::true_type {};
 
-template <class T>
+template <typename T>
 struct is_primitive_indent : std::false_type {};
 
-template <class T>
+template <typename T>
 struct is_primitive_indent<Indent<T>> : is_primitive_node_type<T> {};
 
-template <class T>
+template <typename T>
 struct is_primitive_node_type : std::disjunction<
 	is_specialization<T, And>,
 	is_specialization<T, Or>,
@@ -106,6 +106,9 @@ struct UntilToken {
 	std::string value;
 	UntilToken(TOKENS t) : t(t) {}
 
+	UntilToken(UntilToken&&) = default;
+	UntilToken(const UntilToken&) = default;
+
 	bool build(Grammarizer* g) {
 		while (g->it != g->tokens.end()) {
 			value += g->it->second;
@@ -140,11 +143,13 @@ struct Indent : public T {
 };
 
 template <typename T, typename CND, typename requiresComma>
-class KNode {
+struct KNode {
 	std::vector<T> nodes;
 	int n_indent;
-public:
 	KNode(int n_indent) : n_indent(n_indent) {}
+
+	KNode(KNode&&) = default;
+	KNode(const KNode&) = default;
 
 	bool build(Grammarizer* g) {
 		while (true) {
@@ -165,21 +170,23 @@ public:
 
 	// to get `b*` from `(abc)*` for example
 	template <typename U>
-	std::vector<const U*> get() const {
+	std::vector<U> get() const {
 		if constexpr (std::is_same_v<U, T>) {
-			std::vector<const U*> res;
+			std::vector<U> res;
 			for (const auto& node : nodes)
-				res.push_back(&node);
+				res.push_back(U{ node });
 			return res;
 		}
 		else {
-			std::vector<const U*> res;
+			std::vector<U> res;
 			for (const auto& node : nodes) {
-				if constexpr (is_specialization<T, And>::value)
-					res.push_back(&node.get<U>());
+				if constexpr (is_specialization<T, And>::value) {
+					int x = 0;
+					res.push_back(node.get<U>());
+				}
 				else if constexpr (is_specialization<T, Or>::value) {
-					if (std::holds_alternative<U>(*node.value.get()))
-						res.push_back(&std::get<U>(*node.value.get()));
+					if (std::holds_alternative<U>(node.value.value()))
+						res.push_back(std::get<U>(node.value.value()));
 				}
 				else
 					static_assert(!sizeof(T*), "T is not supported");
@@ -216,11 +223,13 @@ template <typename T>
 using CommaPlus = KNode<T, PlusCnd, std::true_type>;
 
 template <typename T>
-class Opt {
-public:
+struct Opt {
 	std::optional<T> node;
 	int n_indent;
 	Opt(int n_indent) : n_indent(n_indent) {}
+
+	Opt(Opt&&) = default;
+	Opt(const Opt&) = default;
 
 	bool build(Grammarizer* g) {
 		T node(n_indent);
@@ -254,13 +263,20 @@ const T& get_tuple_smart_cursor(const TUPLE& tuple) {
 }
 
 template <typename... Ands>
-class And {
-public:
+struct And {
 	int n_indent;
 	using tuple_t = std::tuple<Ands...>;
+
+	// using unique_ptr because we can't use std::optional, it requires the size
+	// and some rules are recursive so we would end up generating
+	// types similar to: SomeStruct { SomeStruct value; };
 	std::unique_ptr<tuple_t> value = nullptr;
+
 	And(int n_indent) : n_indent(n_indent) {}
-	And(And<Ands...>&&) = default;
+
+	And(And&&) = default;
+	And(const And& other) : n_indent(other.n_indent), value(std::make_unique<tuple_t>(*other.value.get())) {};
+
 	template <typename T>
 	const T& get() const {
 		return std::get<T>(*value.get());
@@ -273,7 +289,6 @@ public:
 
 	template <typename T, int i>
 	const T& get() const {
-		int u = 0;
 		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(*value.get());
 	}
 
@@ -294,13 +309,14 @@ public:
 };
 
 template <typename... Ors>
-class Or {
-public:
+struct Or {
 	int n_indent;
 	using variant_t = std::variant<Ors...>;
-	std::unique_ptr<variant_t> value;
-	Or(int n_indent) : n_indent(n_indent) {}
-	Or(Or<Ors...>&&) = default;
+	std::optional<variant_t> value;
+	Or(int n_indent) : n_indent(n_indent) {};
+
+	Or(Or&&) = default;
+	Or(const Or&) = default;
 
 	bool build(Grammarizer* g) {
 		bool populated = false;
@@ -310,7 +326,7 @@ public:
 			Ors node = Ors(n_indent);
 			bool built = build_optional_primitive(node, g);
 			if (built) {
-				value = std::make_unique<variant_t>(std::move(node));
+				value.emplace(std::move(node));
 				populated = true;
 			}
 		}(), ...);
