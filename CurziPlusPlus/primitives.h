@@ -8,6 +8,7 @@ template <typename...> struct And;
 template <typename...> struct Or;
 template <typename, typename, typename> struct KNode;
 template <typename> struct Opt;
+template <typename> struct Alloc;
 template <typename> struct Indent;
 struct IndentToken;
 template <int> struct Token;
@@ -44,6 +45,7 @@ struct is_primitive_node_type : std::disjunction<
 	is_specialization<T, Or>,
 	is_specialization<T, Opt>,
 	is_specialization<T, KNode>,
+	is_specialization<T, Alloc>,
 	is_specialization_int<T, Token>,
 	std::is_same<T, IndentToken>,
 	is_primitive_indent<T>> {};
@@ -140,6 +142,29 @@ struct IndentToken {
 template <typename T>
 struct Indent : public T {
 	Indent(int n_indent): T(n_indent + 1) {}
+};
+
+template <typename T>
+struct Alloc {
+	std::unique_ptr<T> value;
+	int n_indent;
+	Alloc(int n_indent) : n_indent(n_indent) {}
+
+	Alloc(Alloc&&) = default;
+
+	// sadly need to allocate
+	// this happens in Star<Alloc<T>>::get<Alloc<T>>() for example
+	// which returns a vector of Alloc<T> by value
+	Alloc(const Alloc&) : value(std::make_unique<T>(*value.get())), n_indent(n_indent) {}
+
+	bool build(Grammarizer* g) {
+		T t(n_indent);
+		if (build_optional_primitive(t, g)) {
+			value = std::make_unique<T>(std::move(t));
+			return true;
+		}
+		return false;
+	}
 };
 
 template <typename T, typename CND, typename requiresComma>
@@ -275,6 +300,10 @@ struct And {
 	And(int n_indent) : n_indent(n_indent) {}
 
 	And(And&&) = default;
+
+	// sadly need to allocate
+	// this happens in Star<Alloc<T>>::get<Alloc<T>>() for example
+	// which returns a vector of Alloc<T> by value
 	And(const And& other) : n_indent(other.n_indent), value(std::make_unique<tuple_t>(*other.value.get())) {};
 
 	template <typename T>

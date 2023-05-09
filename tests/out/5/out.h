@@ -3,7 +3,6 @@
 
 #include "OS.h"
 
-template <typename D> 
 struct B {
 };
 

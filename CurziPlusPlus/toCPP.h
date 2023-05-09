@@ -27,14 +27,13 @@ public:
 			for (const auto& inheritance : Class.inheritances) {
 				if (firstInheritance) {
 					firstInheritance = false;
-					h << " : ";
+					h << " : public ";
 				}
 				else
-					h << ", ";
+					h << ", public ";
 				transpileType(inheritance, h, false);
 			}
 			h << " {\n";
-
 
 			for (const auto& alias : Class.aliases) {
 				h << "\tusing ";
@@ -50,22 +49,42 @@ public:
 				h << " " << member.name << ";\n";
 			}
 
+			for (const auto& ctor : Class.constructors) {
+				h << "\t" << Class.name << "(";
+				auto first = true;
+				for (const auto& type_and_name : ctor.parameters) {
+					if (first)
+						first = false;
+					else
+						h << ", ";
+					transpileType(type_and_name.first, h, false); // change to true for shared (removed for now)
+					h << " " << type_and_name.second;
+				}
+				h << ") {\n";
+				for (const auto& statement : ctor.statements)
+					std::visit([&](const auto& stmt) {
+						transpileStatement(stmt, h, 2);
+					}, statement.statement);
+				h << "\t}\n";
+			}
+
 			for (const auto& method : Class.methods) {
 				h << "\t";
 				transpileType(method.returnType, h, false); // change to true for shared (removed for now)
 				h << " " << method.name << "(";
 				auto first = true;
-				for (const auto& t : method.parameterTypes) {
+				for (const auto& type_and_name : method.parameters) {
 					if (first)
 						first = false;
 					else
 						h << ", ";
-					transpileType(t, h, false); // change to true for shared (removed for now)
+					transpileType(type_and_name.first, h, false); // change to true for shared (removed for now)
+					h << " " << type_and_name.second;
 				}
 				h << ") {\n";
 				for (const auto& statement : method.statements)
 					std::visit([&](const auto& stmt) {
-						transpileStatement(stmt, h, 1);
+						transpileStatement(stmt, h, 2);
 					}, statement.statement);
 				h << "\t}\n";
 			}
@@ -74,51 +93,277 @@ public:
 	}
 
 	template <typename stream>
-	void transpileStatement(const std::vector<NodeStructs::Statement>& statements, stream& ss, int indent) {
-		for (const auto& statement : statements)
-			std::visit([&](const auto& stmt) {
-				transpileStatement(stmt, ss, indent);
-			}, statement.statement);
+	void transpileExpression(const NodeStructs::ParenExpression& expr, stream& ss) {
+		std::visit(overload(
+			[&](const std::unique_ptr<NodeStructs::Expression>& expr) {
+				transpileExpression(*expr.get(), ss);
+			},
+			[&](const NodeStructs::Typename& type) {
+				transpileType(type, ss, false);
+			},
+			[&](const Token<NUMBER>& num) {
+				ss << num.value;
+			}
+		), expr.expr);
 	}
 
 	template <typename stream>
-	void transpileStatement(const NodeStructs::ExpressionStatement& statement, stream& ss, int indnt) {
-		indent(ss, indnt);
+	void transpileExpression(const NodeStructs::PostfixExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+		for (const auto& postfix : expr.postfixes) {
+			std::visit(overload(
+				[&](const std::string& property) {
+					ss << "." << property;
+				},
+				[&](const NodeStructs::ParenArguments& call) {
+					ss << "(";
+					bool hasPrevious = false;
+					for (const NodeStructs::Expression& arg : call.args) {
+						if (hasPrevious)
+							ss << ", ";
+						hasPrevious = true;
+						transpileExpression(arg, ss);
+					}
+					ss << ")";
+				},
+				[&](const NodeStructs::BracketArguments& access) {
+					ss << "[";
+					bool hasPrevious = false;
+					for (const NodeStructs::Expression& arg : access.args) {
+						if (hasPrevious)
+							ss << ", ";
+						hasPrevious = true;
+						transpileExpression(arg, ss);
+					}
+					ss << "]";
+				},
+				[&](const auto& token) {
+					ss << token.value;
+				}
+			), postfix);
+		}
 	}
 
+	template <typename stream>
+	void transpileExpression(const NodeStructs::UnaryExpression& expr, stream& ss) {
+		std::visit(overload(
+			[&](const NodeStructs::PostfixExpression& expr) {
+				transpileExpression(expr, ss);
+			},
+			[&](const NodeStructs::UnaryExpression::op_and_unaryexpr& expr) {
+				std::visit(overload(
+					[&](const NodeStructs::Typename& type) {
+						ss << "(";
+						transpileType(type, ss, false);
+						ss << ")";
+					},
+					[&](const auto& token) {
+						ss << token.value;
+					}
+				), expr.first);
+				transpileExpression(*expr.second.get(), ss);
+			}
+		), expr.expr);
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::MultiplicativeExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+		for (const auto& pair : expr.muls) {
+			ss << std::visit(
+				[](const auto& token) {
+					return token.value;
+				},
+				pair.first
+			);
+			transpileExpression(pair.second, ss);
+		}
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::AdditiveExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+		for (const auto& pair : expr.adds) {
+			ss << std::visit(
+				[](const auto& token) {
+					return token.value;
+				},
+				pair.first
+			);
+			transpileExpression(pair.second, ss);
+		}
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::CompareExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+		for (const auto& pair : expr.comparisons) {
+			ss << std::visit(
+				[](const auto& token) {
+					return token.value;
+				},
+				pair.first
+			);
+			transpileExpression(pair.second, ss);
+		}
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::EqualityExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::AndExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::OrExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::ConditionalExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+	}
+
+	template <typename stream>
+	void transpileExpression(const NodeStructs::AssignmentExpression& expr, stream& ss) {
+		transpileExpression(expr.expr, ss);
+		for (const auto& pair : expr.assignments) {
+			ss << std::visit(
+				[](const auto& token) {
+					return token.value;
+				},
+				pair.first
+			);
+			transpileExpression(pair.second, ss);
+		}
+	}
+
+	template <typename stream>
+	void transpileStatement(const NodeStructs::Expression& statement, stream& ss, int indnt) {
+		indent(ss, indnt);
+		transpileExpression(statement, ss);
+		ss << ";\n";
+	}
+	 
 	template <typename stream>
 	void transpileStatement(const NodeStructs::VariableDeclarationStatement& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
+		transpileType(statement.type, ss, false);
+		ss << " " << statement.name << ";";
+		ss << "\n";
 	}
 
 	template <typename stream>
 	void transpileStatement(const NodeStructs::ForStatement& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
+		bool requiresStructuredBinding = statement.iterators.size() > 1;
+		if (requiresStructuredBinding) {
+
+			ss << "for (auto& forstatementvar : ";
+			transpileExpression(statement.collection, ss);
+			ss << ") {\n";
+			indent(ss, indnt + 1);
+
+			// making a structured binding as auto& [v1,v2,v3] = forstatementvar;
+			ss << "auto& [";
+			bool hasPrevious = false;
+			for (const auto& it : statement.iterators) {
+				if (hasPrevious)
+					ss << ", ";
+				hasPrevious = true;
+				std::visit(
+					overload(
+						[&](const auto& it) {
+							const auto& [type, name] = it;
+							// if variables are typed the structured binding name will start with
+							// "__" instead and the typed variable will come after with the right name
+							ss << name;
+						},
+						[&](const std::string& name) {
+							ss << name;
+						}
+					),
+					it
+				);
+			}
+			ss << "] = forstatementvar;\n";
+			for (const auto& it : statement.iterators) {
+				std::visit(
+					overload(
+						[&](const auto& it) {
+							const auto& [type, name] = it;
+							indent(ss, indnt + 1);
+							transpileType(type, ss, false);
+							ss << "& "  << name << " = __" << name;
+						},
+						[&](const std::string& name) { }
+					),
+					it
+				);
+			}
+		}
+		else {
+			ss << "for (";
+			std::visit(
+				overload(
+					[&](const auto& it) {
+						const auto& [type, name] = it;
+						transpileType(type, ss, false);
+						ss << "& " << name;
+					},
+					[&](const std::string& name) {
+						ss << "auto& " << name;
+					}
+				),
+				statement.iterators.at(0)
+			);
+			ss << " : ";
+			transpileExpression(statement.collection, ss);
+			ss << ") {\n";
+		}
+		indent(ss, indnt);
+		ss << "}\n";
 	}
 
 	template <typename stream>
 	void transpileStatement(const NodeStructs::IForStatement& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
+		ss << "\n";
 	}
 
 	template <typename stream>
 	void transpileStatement(const NodeStructs::IfStatement& statement, stream& ss, int indnt) {
-		indent(ss, indnt);
+		/*indent(ss, indnt);
+		ss << "if (";
+		ss << ") {";
+		for (const auto& s : statement.ifStatements)
+			transpileStatement(s, ss, indnt + 1);
+		ss << "}\n";
+		if (statement.elseExpr.has_value()) {
+			indent(ss, indnt);
+		}*/
 	}
 
 	template <typename stream>
 	void transpileStatement(const NodeStructs::WhileStatement& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
+		ss << "\n";
 	}
 
 	template <typename stream>
 	void transpileStatement(const NodeStructs::BreakStatement& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
+		ss << "\n";
 	}
 
 	template <typename stream>
 	void transpileStatement(const NodeStructs::ReturnStatement& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
+		ss << "\n";
 	}
 
 	template <typename stream>

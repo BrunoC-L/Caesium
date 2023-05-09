@@ -1,4 +1,4 @@
-class A<B>:
+class A:
     using C = B
 
 class B:
@@ -10,13 +10,13 @@ class T:
     A<B>::C c
     A<B::C> d
 
-class F<A,B>:
+class F:
 
-class E<A>:
+class E:
     using G = A
     using T = F
 
-class R<V, F> extends F<V,F>, F<E<B>,A<B>>:
+class R extends F<V,F<U, V>>, F<E<B>,A<B>>:
     using C = A<B>
     using K = F<B, C>
     E<K>::T<B, C> member1
@@ -28,4 +28,4 @@ class R<V, F> extends F<V,F>, F<E<B>,A<B>>:
         for i in arr:
 
         Map<int, std::string> m
-        for k, v in m:
+        for k, v in m.entries(normal()[][x,z,y]):

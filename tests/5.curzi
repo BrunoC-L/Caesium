@@ -1,6 +1,6 @@
 import OS
 
-class B<D>:
+class B:
 
 class C:
     B b

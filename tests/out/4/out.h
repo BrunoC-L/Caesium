@@ -3,5 +3,8 @@
 
 
 struct A {
+	A(C c) {
+		
+	}
 };
 

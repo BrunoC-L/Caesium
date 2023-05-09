@@ -81,6 +81,8 @@ enum TOKENS {
 	USING,
 	STATIC,
 	EXTENDS,
+	TYPE,
+	TEMPLATE,
 
 	PUBLIC,
 	PRIVATE,
@@ -442,6 +444,10 @@ private:
 				return { USING, word };
 			if (word == "while")
 				return { WHILE, word };
+			if (word == "type")
+				return { TYPE, word };
+			if (word == "template")
+				return { TEMPLATE, word };
 
 			return { WORD, word };
 		}

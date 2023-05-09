@@ -25,11 +25,16 @@ using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<Expression>, Token<
 using NSTypename = and_t<Token<NS>, Typename>;
 using TemplateTypename = and_t<Token<LT>, CommaStar<Typename>, Token<GT>, Opt<NSTypename>>;
 struct Typename { And<Word, Opt<Or<NSTypename, TemplateTypename>>> value; };
-struct TemplateTypenameDeclaration { And<Word, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Word>>, Token<GT>> value; };
+struct TemplateDeclaration;
+using TemplateTypenameDeclaration = and_t<TemplateDeclaration, Token<TYPE>, Word>;
+struct TemplateDeclaration { And<Token<TEMPLATE>, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Token<TYPE>>>, Token<GT>> value; };
 using ExpressionStatement = and_t<Expression, Newline>;
-using ElseStatement = and_t<IndentToken, Token<ELSE>, ColonIndentCodeBlock>;
 using VariableDeclarationStatement = and_t<Typename, Word, Newline>;
-using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>>;
+//using ElseStatement = and_t<IndentToken, Token<ELSE>, Opt<And<Token<IF>, Expression>>, ColonIndentCodeBlock>;
+//using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>>;
+struct ElseStatement;
+using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>> ;
+struct ElseStatement { And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock >> value; };
 using BreakStatement = and_t<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
 using ClassInheritance = and_t<Token<EXTENDS>, CommaPlus<Typename>>;
 using MemberVariable = and_t<Typename, Word, Newline>;
@@ -72,20 +77,21 @@ struct Statement {
 	And<
 		IndentToken,
 		Or<
-			And<Expression, Newline>,
+			ExpressionStatement,
 			VariableDeclarationStatement,
 			IfStatement,
 			ForStatement,
 			IForStatement,
 			WhileStatement,
-			ReturnStatement,
-			BreakStatement
+			BreakStatement,
+			ReturnStatement
 		>
 	> value;
 };
 using Class = and_t<
+		Opt<TemplateDeclaration>,
 		Token<CLASS>,
-		Or<TemplateTypenameDeclaration, Word>,
+		Word,
 		Opt<ClassInheritance>,
 		Token<COLON>,
 		Newline,
@@ -106,15 +112,13 @@ using ParenExpression = or_t<
 		>,
 		Typename,
 		Token<NUMBER>
+	// todo string token
 	>;
 using PostfixExpression = and_t<
 		ParenExpression,
 		Star<Or<
             And<
-                Or<
-					Token<DOT>,
-					Token<ARROW>
-                >,
+				Token<DOT>,
                 Word
             >,
             ParenArguments,
@@ -127,7 +131,7 @@ struct UnaryExpression {
 	Or <
 		And<
 			Or<	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
-				// so instead of Star<Or> ... ____ we refer to UnaryExpression inside the Or
+				// so instead of `Star<Or> ... ____` we refer to UnaryExpression inside the Or
 				Token<NOT>,
 				Token<PLUS>,
 				Token<DASH>,
@@ -142,7 +146,7 @@ struct UnaryExpression {
 					Token<PARENCLOSE>
 				>
 			>,
-			UnaryExpression // recursive
+			UnaryExpression // recursive here
 		>,
 		PostfixExpression
 	> value;

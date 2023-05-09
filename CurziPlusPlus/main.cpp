@@ -38,7 +38,7 @@ void testParse(int i, int n_indent, std::string program, bool expectedToBuild = 
 			++g2.it;
 		}
 		std::cout << "\n";
-		return;
+		exit(1);
 	}
 }
 
@@ -71,6 +71,7 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E::E<F>");
 	testParse<TemplateTypename>(__LINE__, 0, "<>");
 	testParse<TemplateTypename>(__LINE__, 0, "<E>");
+	testParse<TemplateTypenameDeclaration>(__LINE__, 0, "template <type> type u");
 	testParse<Typename>(__LINE__, 0, "E::E<>");
 	testParse<Typename>(__LINE__, 0, "E<E>");
 	testParse<Typename>(__LINE__, 0, "E<E<E>>");
@@ -136,12 +137,20 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 		const NodeStructs::File& f = getStruct(file);
 		toCPP{}.transpile(h, cpp, f);
 	}
-	else
-		throw std::exception("not built");
+	else {
+		std::cout << fileName << ": not built\n";
+	}
 }
 
 int main(int argc, char** argv) {
-
+	{
+		Alloc<IfStatement> node{ 0 };
+		const auto& e = node;
+	}
+	{
+		Star<Alloc<File>> node{ 0 };
+		const auto& e = node.get<Alloc<File>>();
+	}
 	std::cout << std::boolalpha;
 	testParse();
 	std::cout << "\n\n";
