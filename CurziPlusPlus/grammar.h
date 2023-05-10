@@ -22,16 +22,14 @@ using ColonIndentCodeBlock = and_t<Token<COLON>, Newline, Indent<Star<Statement>
 using Function = and_t<Typename, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ParenArguments = and_t<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>;
 using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<Expression>, Token<BRACKETCLOSE>>;
-using NSTypename = and_t<Token<NS>, Typename>;
-using TemplateTypename = and_t<Token<LT>, CommaStar<Typename>, Token<GT>, Opt<NSTypename>>;
+using NSTypename = and_t<Token<NS>, Alloc<Typename>>;
+using TemplateTypename = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NSTypename>>;
 struct Typename { And<Word, Opt<Or<NSTypename, TemplateTypename>>> value; };
 struct TemplateDeclaration;
-using TemplateTypenameDeclaration = and_t<TemplateDeclaration, Token<TYPE>, Word>;
+using TemplateTypenameDeclaration = and_t<Alloc<TemplateDeclaration>, Token<TYPE>, Word>;
 struct TemplateDeclaration { And<Token<TEMPLATE>, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Token<TYPE>>>, Token<GT>> value; };
 using ExpressionStatement = and_t<Expression, Newline>;
 using VariableDeclarationStatement = and_t<Typename, Word, Newline>;
-//using ElseStatement = and_t<IndentToken, Token<ELSE>, Opt<And<Token<IF>, Expression>>, ColonIndentCodeBlock>;
-//using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<ElseStatement>>;
 struct ElseStatement;
 using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>> ;
 struct ElseStatement { And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock >> value; };
@@ -76,7 +74,7 @@ using ReturnStatement = and_t<
 struct Statement {
 	And<
 		IndentToken,
-		Or<
+		Alloc<Or<
 			ExpressionStatement,
 			VariableDeclarationStatement,
 			IfStatement,
@@ -85,7 +83,7 @@ struct Statement {
 			WhileStatement,
 			BreakStatement,
 			ReturnStatement
-		>
+		>>
 	> value;
 };
 using Class = and_t<
@@ -107,7 +105,7 @@ EXPRESSIONS
 using ParenExpression = or_t<
 		And<
 			Token<PARENOPEN>,
-			Expression,
+			Alloc<Expression>,
 			Token<PARENCLOSE>
 		>,
 		Typename,
@@ -128,7 +126,7 @@ using PostfixExpression = and_t<
 		>>
     >;
 struct UnaryExpression {
-	Or <
+	Or<
 		And<
 			Or<	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
 				// so instead of `Star<Or> ... ____` we refer to UnaryExpression inside the Or
@@ -146,7 +144,7 @@ struct UnaryExpression {
 					Token<PARENCLOSE>
 				>
 			>,
-			UnaryExpression // recursive here
+			Alloc<UnaryExpression> // recursive here
 		>,
 		PostfixExpression
 	> value;

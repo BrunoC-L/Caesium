@@ -33,7 +33,7 @@ NodeStructs::TemplateDeclaration getTemplateDeclaration(Token<TYPE>) {
 
 std::vector<NodeStructs::TemplateDeclaration> getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename) {
 	std::vector<NodeStructs::TemplateDeclaration> res;
-	const auto& tmpl = templateTypename.value.get<TemplateDeclaration>();
+	const TemplateDeclaration& tmpl = templateTypename.value.get<Alloc<TemplateDeclaration>>().get();
 	const auto& l = tmpl.value.get<CommaPlus<Or<TemplateTypenameDeclaration, Token<TYPE>>>>();
 	for (const auto& t : l.get<Or<TemplateTypenameDeclaration, Token<TYPE>>>())
 		std::visit([&res](const auto& t) {
@@ -43,7 +43,7 @@ std::vector<NodeStructs::TemplateDeclaration> getTemplatesFromTemplateTypenameDe
 }
 
 void extend(std::vector<NodeStructs::TypenameExtension>& vec, const NSTypename& nst) {
-	const Typename& t = nst.value.get<Typename>();
+	const Typename& t = nst.value.get<Alloc<Typename>>().get();
 	vec.push_back(NodeStructs::NSTypeExtension{ t.value.get<Word>().value });
 	if (t.value.get<Opt<Or<NSTypename, TemplateTypename>>>().node.has_value())
 		std::visit([&vec](const auto& t) {
@@ -55,12 +55,11 @@ NodeStructs::Typename getStruct(const Typename& t);
 
 void extend(std::vector<NodeStructs::TypenameExtension>& vec, const TemplateTypename& tt) {
 	NodeStructs::TemplateTypeExtension res;
-	for (const Typename& t : tt.value.get<CommaStar<Typename>>().get<Typename>())
+	for (const Typename& t : tt.value.get<CommaStar<Alloc<Typename>>>().get<Typename>())
 		res.templateTypes.push_back(getStruct(t));
 	vec.push_back(std::move(res));
 	if (tt.value.get<Opt<NSTypename>>().node.has_value())
 		extend(vec, tt.value.get<Opt<NSTypename>>().node.value());
-	
 }
 
 /*
@@ -163,10 +162,12 @@ NodeStructs::ParenExpression getExpressionStruct(const ParenExpression& statemen
 	return std::visit(overload(
 			[](const And<
 				Token<PARENOPEN>,
-				Expression,
+				Alloc<Expression>,
 				Token<PARENCLOSE>
 			>& e) {
-				return NodeStructs::ParenExpression{ std::make_unique<NodeStructs::AssignmentExpression>(getExpressionStruct(e.get<Expression>())) };
+				return NodeStructs::ParenExpression{
+					std::make_unique<NodeStructs::AssignmentExpression>(getExpressionStruct(e.get<Alloc<Expression>>().get()))
+				};
 			},
 			[](const Typename& e) {
 				return NodeStructs::ParenExpression{ getStruct(e)};
@@ -227,15 +228,46 @@ NodeStructs::UnaryExpression getExpressionStruct(const UnaryExpression& statemen
 			[](const PostfixExpression& expr) {
 				return NodeStructs::UnaryExpression{ getExpressionStruct(expr) };
 			},
-			[](const auto& op_and_unary) {
-				auto op = op_and_unary.get<0>();
-				auto expr = op_and_unary.get<1>();
+			[](const And<
+				Or<	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
+					// so instead of `Star<Or> ... ____` we refer to UnaryExpression inside the Or
+					Token<NOT>,
+					Token<PLUS>,
+					Token<DASH>,
+					Token<PLUSPLUS>,
+					Token<MINUSMINUS>,
+					Token<TILDE>,
+					Token<ASTERISK>,
+					Token<AMPERSAND>,
+					And< // type cast operator
+						Token<PARENOPEN>,
+						Typename,
+						Token<PARENCLOSE>
+					>
+				>,
+				Alloc<UnaryExpression> // recursive here
+			>& op_and_unary) {
+				const auto& op = op_and_unary.get<Or<
+					Token<NOT>,
+					Token<PLUS>,
+					Token<DASH>,
+					Token<PLUSPLUS>,
+					Token<MINUSMINUS>,
+					Token<TILDE>,
+					Token<ASTERISK>,
+					Token<AMPERSAND>,
+					And< // type cast operator
+						Token<PARENOPEN>,
+						Typename,
+						Token<PARENCLOSE>
+					>
+				>>();
 				return std::visit(overload(
 					[&](const auto& token) {
 						return NodeStructs::UnaryExpression{
 							op_and_unaryexpr {
 								token,
-								std::make_unique<NodeStructs::UnaryExpression>(getExpressionStruct(expr))
+								std::make_unique<NodeStructs::UnaryExpression>(getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()))
 							}
 						};
 					},
@@ -247,7 +279,7 @@ NodeStructs::UnaryExpression getExpressionStruct(const UnaryExpression& statemen
 						return NodeStructs::UnaryExpression{
 							op_and_unaryexpr {
 								getStruct(g.get<Typename>()),
-								std::make_unique<NodeStructs::UnaryExpression>(getExpressionStruct(expr))
+								std::make_unique<NodeStructs::UnaryExpression>(getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()))
 							}
 						};
 					}
@@ -419,7 +451,7 @@ NodeStructs::Statement getStatementStruct(const Statement& statement) {
 		[](const auto& statement) -> NodeStructs::Statement {
 			return { getStatementStruct(statement) };
 		},
-		statement.value.get<Or<
+		statement.value.get<Alloc<Or<
 			ExpressionStatement,
 			VariableDeclarationStatement,
 			IfStatement,
@@ -428,6 +460,5 @@ NodeStructs::Statement getStatementStruct(const Statement& statement) {
 			WhileStatement,
 			BreakStatement,
 			ReturnStatement
-		>
-	>().value.value()) };
+		>>>().get().value.value()) };
 }

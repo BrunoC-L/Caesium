@@ -35,10 +35,8 @@ struct A {
 		a=b=c;
 	}
 	void a() {
-		
 	}
 	void a() {
-		
 	}
 };
 

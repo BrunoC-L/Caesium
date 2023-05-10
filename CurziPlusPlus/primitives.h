@@ -146,21 +146,22 @@ struct Indent : public T {
 
 template <typename T>
 struct Alloc {
-	std::unique_ptr<T> value;
+	std::shared_ptr<T> value = nullptr;
 	int n_indent;
 	Alloc(int n_indent) : n_indent(n_indent) {}
 
 	Alloc(Alloc&&) = default;
+	Alloc(const Alloc&) = default;
 
-	// sadly need to allocate
-	// this happens in Star<Alloc<T>>::get<Alloc<T>>() for example
-	// which returns a vector of Alloc<T> by value
-	Alloc(const Alloc&) : value(std::make_unique<T>(*value.get())), n_indent(n_indent) {}
+	const T& get() const {
+		return *value.get();
+	}
+
 
 	bool build(Grammarizer* g) {
 		T t(n_indent);
 		if (build_optional_primitive(t, g)) {
-			value = std::make_unique<T>(std::move(t));
+			value = std::make_shared<T>(std::move(t));
 			return true;
 		}
 		return false;
@@ -208,6 +209,10 @@ struct KNode {
 				if constexpr (is_specialization<T, And>::value) {
 					int x = 0;
 					res.push_back(node.get<U>());
+				}
+				else if constexpr (is_specialization<T, Alloc>::value) {
+					int x = 0;
+					res.push_back(node.get());
 				}
 				else if constexpr (is_specialization<T, Or>::value) {
 					if (std::holds_alternative<U>(node.value.value()))
@@ -292,40 +297,27 @@ struct And {
 	int n_indent;
 	using tuple_t = std::tuple<Ands...>;
 
-	// using unique_ptr because we can't use std::optional, it requires the size
-	// and some rules are recursive so we would end up generating
-	// types similar to: SomeStruct { SomeStruct value; };
-	std::unique_ptr<tuple_t> value = nullptr;
+	tuple_t value;
 
-	And(int n_indent) : n_indent(n_indent) {}
+	And(int n_indent) : n_indent(n_indent), value({ Ands(n_indent)... }) {}
 
 	And(And&&) = default;
-
-	// sadly need to allocate
-	// this happens in Star<Alloc<T>>::get<Alloc<T>>() for example
-	// which returns a vector of Alloc<T> by value
-	And(const And& other) : n_indent(other.n_indent), value(std::make_unique<tuple_t>(*other.value.get())) {};
+	And(const And& other) = default;
 
 	template <typename T>
 	const T& get() const {
-		return std::get<T>(*value.get());
-	}
-
-	template <int i>
-	decltype(std::get<i>(*value.get())) get() const {
-		return std::get<i>(*value.get());
+		return std::get<T>(value);
 	}
 
 	template <typename T, int i>
 	const T& get() const {
-		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(*value.get());
+		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(value);
 	}
 
 	bool build(Grammarizer* g) {
 		bool failed = false;
 		auto temp = g->it;
-		value = std::make_unique<tuple_t>(tuple_t{ Ands(n_indent)... });
-		for_each(*value.get(), [&](auto& node) {
+		for_each(value, [&](auto& node) {
 			if (failed)
 				return;
 			if (!build_optional_primitive(node, g)) {
