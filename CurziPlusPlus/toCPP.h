@@ -17,7 +17,6 @@ public:
 		h << "\n";
 
 		for (const auto& Class : file.classes) {
-			
 			if (Class.templated.has_value())
 				transpileTypeTemplateDeclaration(Class.templated.value(), h);
 
@@ -62,9 +61,7 @@ public:
 				}
 				h << ") {\n";
 				for (const auto& statement : ctor.statements)
-					std::visit([&](const auto& stmt) {
-						transpileStatement(stmt, h, 2);
-					}, statement.statement);
+					transpileStatement(statement, h, 2);
 				h << "\t}\n";
 			}
 
@@ -243,6 +240,13 @@ public:
 	}
 
 	template <typename stream>
+	void transpileStatement(const NodeStructs::Statement& statement, stream& ss, int indnt) {
+		std::visit([&](const auto& stmt) {
+			transpileStatement(stmt, ss, indnt);
+		}, statement.statement);
+	}
+
+	template <typename stream>
 	void transpileStatement(const NodeStructs::Expression& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
 		transpileExpression(statement, ss);
@@ -260,9 +264,7 @@ public:
 	template <typename stream>
 	void transpileStatement(const NodeStructs::ForStatement& statement, stream& ss, int indnt) {
 		indent(ss, indnt);
-		bool requiresStructuredBinding = statement.iterators.size() > 1;
-		if (requiresStructuredBinding) {
-
+		if (bool requiresStructuredBinding = statement.iterators.size() > 1) {
 			ss << "for (auto& forstatementvar : ";
 			transpileExpression(statement.collection, ss);
 			ss << ") {\n";
@@ -279,7 +281,7 @@ public:
 					overload(
 						[&](const auto& it) {
 							const auto& [type, name] = it;
-							// if variables are typed the structured binding name will start with
+							// if variables are typed, the "auto" structured binding variable name will start with
 							// "__" instead and the typed variable will come after with the right name
 							ss << name;
 						},
@@ -325,6 +327,10 @@ public:
 			transpileExpression(statement.collection, ss);
 			ss << ") {\n";
 		}
+
+		for (const auto& statement : statement.statements)
+			transpileStatement(statement, ss, indnt + 1);
+
 		indent(ss, indnt);
 		ss << "}\n";
 	}

@@ -1,4 +1,4 @@
-class A:
+type A:
 	A(C c):
         this.c = c()
         for i, e in a if b while c:

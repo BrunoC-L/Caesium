@@ -38,7 +38,6 @@ void testParse(int i, int n_indent, std::string program, bool expectedToBuild = 
 			++g2.it;
 		}
 		std::cout << "\n";
-		exit(1);
 	}
 }
 
@@ -49,12 +48,12 @@ void testParse() {
 	testParse<CommaStar<Token<WORD>>>(__LINE__, 0, "y");
 	testParse<CommaStar<And<Token<WORD>>>>(__LINE__, 0, "y");
 	testParse<Opt<Import>>(__LINE__, 0, "\n");
-	testParse<Class>(__LINE__, 0, "class A:\n");
-	testParse<Class>(__LINE__, 0, "class A extends B:\n");
-	testParse<Class>(__LINE__, 0, "class A extends B:\n\tA a\n");
-	testParse<Class>(__LINE__, 0, "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n");
-	testParse<Class>(__LINE__, 1, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");
-	testParse<Class>(__LINE__, 1, "class A extends B:\n\t\tA a\n");
+	testParse<Type>(__LINE__, 0, "type A:\n");
+	testParse<Type>(__LINE__, 0, "type A extends B:\n");
+	testParse<Type>(__LINE__, 0, "type A extends B:\n\tA a\n");
+	testParse<Type>(__LINE__, 0, "type A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n");
+	testParse<Type>(__LINE__, 1, "type A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");
+	testParse<Type>(__LINE__, 1, "type A extends B:\n\t\tA a\n");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n");
 	testParse<Statement>(__LINE__, 0, "if a:\n");
 	testParse<Statement>(__LINE__, 1, "\tif a:\n");
@@ -82,11 +81,11 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E<F<H,I>>::G");
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1():\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G method1():\n");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G member1");
-	testParse<Class>(__LINE__, 0, "class A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
+	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G method1():\n");
+	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G member1");
+	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
@@ -100,8 +99,8 @@ void testParse() {
 	testParse<Import>(__LINE__, 0, "import a");
 	testParse<Token<END>>(__LINE__, 0, "\n");
 	testParse<File>(__LINE__, 0, "import OS");
-	testParse<Class>(__LINE__, 0, "class B:");
-	testParse<File>(__LINE__, 0, "class B:");
+	testParse<Type>(__LINE__, 0, "type B:");
+	testParse<File>(__LINE__, 0, "type B:");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
 	testParse<Indent<Indent<Indent<IfStatement>>>>(__LINE__, 0, "if a:\n\t\t\t\tb\n\t\t\telse:\n\t\t\t\tc\n");
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer\n");
@@ -110,10 +109,10 @@ void testParse() {
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer\nfor i in someContainer:\nvector<int> arr\nfor i in arr :\nMap<int, std::string> m\nfor k, v in m:\n");
 
 	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
-	// basically previous tests are against false negatives (good code should work)
-	// and these tests are against false positives (bad code should fail)
-	testParse<Class>(__LINE__, 1, "class A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
-	testParse<Class>(__LINE__, 0, "class A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
+	// basically previous tests ensure good code should work
+	// and these tests ensure bad code should fail
+	testParse<Type>(__LINE__, 1, "type A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
+	testParse<Type>(__LINE__, 0, "type A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 }
 
 void transpile(const std::filesystem::path& fileName, std::string folder) {
@@ -143,22 +142,12 @@ void transpile(const std::filesystem::path& fileName, std::string folder) {
 }
 
 int main(int argc, char** argv) {
-	{
-		Alloc<IfStatement> node{ 0 };
-		const auto& e = node;
-	}
-	{
-		Star<Alloc<File>> node{ 0 };
-		const auto& e = node.get<Alloc<File>>();
-	}
 	std::cout << std::boolalpha;
 	testParse();
 	std::cout << "\n\n";
 	for (int i = 1; i < argc; ++i)
-		for (const auto& file : std::filesystem::directory_iterator(argv[i])) {
-			const std::filesystem::path& fileName = file.path();
-			if (fileName.extension() == ".curzi")
-				transpile(fileName, std::string(argv[i]) + "\\out\\");
-		}
+		for (const auto& file : std::filesystem::directory_iterator(argv[i]))
+			if (file.path().extension() == ".caesium")
+				transpile(file.path(), std::string(argv[i]) + "\\out\\");
 	return 0;
 }

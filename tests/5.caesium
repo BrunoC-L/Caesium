@@ -1,6 +1,6 @@
 import OS
 
-class B:
+type B:
 
-class C:
+type C:
     B b

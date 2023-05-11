@@ -1,22 +1,22 @@
-class A:
+type A:
     using C = B
 
-class B:
+type B:
     using C = B
 
-class T:
+type T:
     A<B> a
     B::C b
     A<B>::C c
     A<B::C> d
 
-class F:
+type F:
 
-class E:
+type E:
     using G = A
     using T = F
 
-class R extends F<V,F<U, V>>, F<E<B>,A<B>>:
+type R extends F<V,F<U, V>>, F<E<B>,A<B>>:
     using C = A<B>
     using K = F<B, C>
     E<K>::T<B, C> member1
@@ -29,3 +29,14 @@ class R extends F<V,F<U, V>>, F<E<B>,A<B>>:
 
         Map<int, std::string> m
         for k, v in m.entries(normal()[][x,z,y]):
+            ++k
+            k++
+            --k
+            k--
+            k+=1
+            k-=1
+            k * 1
+            k + 1
+            k - 1
+            1 % k
+            (k)[k][k,k.k()[k]]+=k

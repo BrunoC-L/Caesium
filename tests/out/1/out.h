@@ -39,6 +39,17 @@ struct R : public F<V, F<U, V>>, public F<E<B>, A<B>> {
 		Map<int, std::string> m;
 		for (auto& forstatementvar : m.entries(normal()[][x, z, y])) {
 			auto& [k, v] = forstatementvar;
+			++k;
+			k++;
+			--k;
+			k--;
+			k+=1;
+			k-=1;
+			k*1;
+			k+1;
+			k-1;
+			1%k;
+			k[k][k, k.k()[k]]+=k;
 		}
 	}
 };

@@ -1,4 +1,4 @@
-class A:
+type A:
 	B b
 	C c
 	int x

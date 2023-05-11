@@ -55,7 +55,7 @@ bool build_optional_primitive(T& node, Grammarizer* g) {
 	if constexpr (is_primitive_node_type<std::remove_reference_t<T>>::value)
 		return node.build(g);
 	else
-		return build_optional_primitive(node.value, g);
+		return build_optional_primitive(node._value, g);
 }
 
 template <int token>
@@ -215,8 +215,8 @@ struct KNode {
 					res.push_back(node.get());
 				}
 				else if constexpr (is_specialization<T, Or>::value) {
-					if (std::holds_alternative<U>(node.value.value()))
-						res.push_back(std::get<U>(node.value.value()));
+					if (std::holds_alternative<U>(node.value()))
+						res.push_back(std::get<U>(node.value()));
 				}
 				else
 					static_assert(!sizeof(T*), "T is not supported");
@@ -260,6 +260,14 @@ struct Opt {
 
 	Opt(Opt&&) = default;
 	Opt(const Opt&) = default;
+
+	bool has_value() const {
+		return node.has_value();
+	}
+
+	const T& value() const {
+		return node.value();
+	}
 
 	bool build(Grammarizer* g) {
 		T node(n_indent);
@@ -333,11 +341,15 @@ template <typename... Ors>
 struct Or {
 	int n_indent;
 	using variant_t = std::variant<Ors...>;
-	std::optional<variant_t> value;
+	std::optional<variant_t> _value;
 	Or(int n_indent) : n_indent(n_indent) {};
 
 	Or(Or&&) = default;
 	Or(const Or&) = default;
+
+	const variant_t& value() const {
+		return _value.value();
+	}
 
 	bool build(Grammarizer* g) {
 		bool populated = false;
@@ -347,7 +359,7 @@ struct Or {
 			Ors node = Ors(n_indent);
 			bool built = build_optional_primitive(node, g);
 			if (built) {
-				value.emplace(std::move(node));
+				_value.emplace(std::move(node));
 				populated = true;
 			}
 		}(), ...);

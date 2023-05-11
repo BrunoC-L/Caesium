@@ -4,7 +4,7 @@
 #include <forward_list>
 
 enum TOKENS {
-	END,
+	END, // marks the last token of a stream
 
 	SEMICOLON,
 	COLON,
@@ -12,25 +12,28 @@ enum TOKENS {
 	BACKSLASH,
 	DOT,
 	COMMA,
-	EQUAL,
-	LT,
-	GT,
-	DASH,
 	SPACE,
 	TAB,
 	NEWLINE,
+
 	BRACEOPEN,
 	BRACECLOSE,
 	BRACKETOPEN,
 	BRACKETCLOSE,
 	PARENOPEN,
 	PARENCLOSE,
+
 	ASTERISK,
 	SLASH,
 	PERCENT,
 	AMPERSAND,
 	QUESTION,
 	POUND,
+
+	EQUAL,
+	LT,
+	GT,
+	DASH,
 	NOT,
 	CARET,
 	BITOR,
@@ -38,6 +41,8 @@ enum TOKENS {
 	PLUS,
 	TILDE,
 
+	PLUSPLUS,
+	MINUSMINUS,
 	EQUALEQUAL,
 	NEQUAL,
 	PLUSEQUAL,
@@ -49,23 +54,22 @@ enum TOKENS {
 	OREQUAL,
 	XOREQUAL,
 
-	GTE,
-	LTE,
+	AND,
+	OR,
 	ANDAND,
 	OROR,
+	GTE,
+	LTE,
 
-	PLUSPLUS,
-	MINUSMINUS,
-
-	ARROW,
+	//ARROW,
 
 	WORD,
 	NUMBER,
 	STRING,
 
-	CLASS,
+	//CLASS,
 	RETURN,
-	NEW,
+	//NEW,
 	SWITCH,
 	IN,
 	IFOR,
@@ -84,13 +88,11 @@ enum TOKENS {
 	TYPE,
 	TEMPLATE,
 
-	PUBLIC,
+	/*PUBLIC,
 	PRIVATE,
-	PROTECTED,
+	PROTECTED,*/
 
-	AND,
-	OR,
-	NULL_TOKEN,
+	//NULL_TOKEN,
 };
 
 using TOKENVALUE = std::pair<TOKENS, std::string>;
@@ -100,7 +102,7 @@ private:
 	std::string program;
 	unsigned index = 0;
 public:
-	Tokenizer(std::string program) : program(program) {}
+	constexpr Tokenizer(std::string program) : program(program) {}
 
 	std::forward_list<TOKENVALUE> read() {
 		std::forward_list<TOKENVALUE> out;
@@ -317,10 +319,10 @@ private:
 					index += 1;
 					return { MINUSMINUS, "--" };
 				}
-				else if (program[index] == '>') {
+				/*else if (program[index] == '>') {
 					index += 1;
 					return { ARROW, "->" };
-				}
+				}*/
 			}
 			return { DASH, "-" };
 		case '+':
@@ -328,7 +330,10 @@ private:
 			if (index + 1 <= program.size()) {
 				if (program[index] == '=') {
 					index += 1;
-						return { PLUSEQUAL, "+=" };
+					return { PLUSEQUAL, "+=" };
+				} else if (program[index] == '+') {
+					index += 1;
+					return { PLUSPLUS, "++" };
 				}
 			}
 			return { PLUS, "+" };
@@ -402,8 +407,8 @@ private:
 				return { BREAK, word };
 			if (word == "case")
 				return { CASE, word };
-			if (word == "class")
-				return { CLASS, word };
+			/*if (word == "class")
+				return { CLASS, word };*/
 			if (word == "do")
 				return { DO, word };
 			if (word == "else")
@@ -422,18 +427,18 @@ private:
 				return { FROM, word };
 			if (word == "in")
 				return { IN, word };
-			if (word == "new")
-				return { NEW, word };
-			if (word == "null")
-				return { NULL_TOKEN, word };
+			/*if (word == "new")
+				return { NEW, word };*/
+			/*if (word == "null")
+				return { NULL_TOKEN, word };*/
 			if (word == "or")
 				return { OR, word };
-			if (word == "public")
+			/*if (word == "public")
 				return { PUBLIC, word };
 			if (word == "private")
 				return { PRIVATE, word };
 			if (word == "protected")
-				return { PROTECTED, word };
+				return { PROTECTED, word };*/
 			if (word == "return")
 				return { RETURN, word };
 			if (word == "static")

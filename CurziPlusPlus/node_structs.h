@@ -152,6 +152,7 @@ namespace NodeStructs {
 	struct ForStatement {
 		NodeStructs::Expression collection;
 		std::vector<std::variant<VariableDeclarationStatement, std::string>> iterators;
+		std::vector<NodeStructs::Statement> statements;
 	};
 
 	struct IForStatement {

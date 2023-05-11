@@ -7,6 +7,8 @@ struct A {
 		this.c=c();
 		for (auto& forstatementvar : a) {
 			auto& [i, e] = forstatementvar;
+			
+			
 		}
 	}
 };
