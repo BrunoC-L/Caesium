@@ -87,6 +87,7 @@ enum TOKENS {
 	EXTENDS,
 	TYPE,
 	TEMPLATE,
+	AUTO,
 
 	/*PUBLIC,
 	PRIVATE,
@@ -403,6 +404,8 @@ private:
 		if (word.length()) {
 			if (word == "and")
 				return { AND, word };
+			if (word == "auto")
+				return { AUTO, word };
 			if (word == "break")
 				return { BREAK, word };
 			if (word == "case")

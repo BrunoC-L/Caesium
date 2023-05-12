@@ -1,5 +1,11 @@
 #pragma once
 #include <memory>
+#include <utility>
+#include <variant>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <fstream>
 
 
 struct A {
@@ -33,12 +39,12 @@ struct R : public F<V, F<U, V>>, public F<E<B>, A<B>> {
 		Set<int> someContainer;
 		for (auto& i : someContainer) {
 		}
-		int arr;
+		int u;
 		for (auto& i : arr) {
 		}
-		Map<int, std::string> m;
-		for (auto& forstatementvar : m.entries(normal()[][x, z, y])) {
-			auto& [k, v] = forstatementvar;
+		unsigned i = std::numeric_limits<unsigned>::max();
+		for (auto& e : arr) {
+			i += 1;
 			++k;
 			k++;
 			--k;
@@ -49,7 +55,26 @@ struct R : public F<V, F<U, V>>, public F<E<B>, A<B>> {
 			k+1;
 			k-1;
 			1%k;
+		}
+		while (true) {
+					return ([&]() -> std::variant<std::remove_cvref_t<decltype(x)>,std::remove_cvref_t<decltype(y)>> { if (z)return x;else return y;}());
+			break;
+			if (x || z && y)
+				break;
+		}
+		if (k)
+			return ([&]() -> std::variant<std::remove_cvref_t<decltype(y)>,std::remove_cvref_t<decltype(u)>> { if (x)return y;else return u;}());
+		Map<int, std::string> m;
+		for (auto& forstatementvar : m.entries(normal()[][x, z, y])) {
+			auto& [k, v] = forstatementvar;
 			k[k][k, k.k()[k]]+=k;
+			u=([&]() -> std::variant<std::remove_cvref_t<decltype(k)>,std::remove_cvref_t<decltype(0)>> { if (1)return k;else return 0;}());
+			if (b == c) {
+				b+=c;
+			}
+			else{
+				c+=b;
+			}
 		}
 	}
 };

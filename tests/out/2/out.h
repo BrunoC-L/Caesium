@@ -1,5 +1,11 @@
 #pragma once
 #include <memory>
+#include <utility>
+#include <variant>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <fstream>
 
 
 struct A {
@@ -35,8 +41,12 @@ struct A {
 		a=b=c;
 	}
 	void a() {
+		if (a) {
+		}
 	}
 	void a() {
+		if (a) {
+		}
 	}
 };
 

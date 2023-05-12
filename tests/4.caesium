@@ -10,5 +10,5 @@ a a():
             break if d
         for a in b while d:
             return a if c else b
-        a = f if e
-    a() if b = c
+        a = f if e else a
+    a() if b == c else c

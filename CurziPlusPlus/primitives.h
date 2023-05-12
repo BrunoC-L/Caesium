@@ -283,11 +283,6 @@ template <std::size_t... Idx> auto make_index_dispatcher(std::index_sequence<Idx
 template <std::size_t N> auto make_index_dispatcher() { return make_index_dispatcher(std::make_index_sequence<N>{}); }
 template <typename Tuple, typename Func> void for_each(Tuple&& t, Func&& f) { make_index_dispatcher<std::tuple_size<std::decay_t<Tuple>>::value>()([&f, &t](auto idx) { f(std::get<idx>(std::forward<Tuple>(t))); }); }
 
-template <typename TUPLE, typename T, int i, int cursor, typename U>
-const T& get_tuple_smart_cursor(const TUPLE& tuple) {
-	return std::get<cursor>(tuple);
-}
-
 template <typename TUPLE, typename T, int i, int cursor, typename U, typename... Rest>
 const T& get_tuple_smart_cursor(const TUPLE& tuple) {
 	if constexpr (std::is_same_v<T, std::remove_reference_t<std::remove_const_t<U>>>) {

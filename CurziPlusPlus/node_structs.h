@@ -124,8 +124,7 @@ namespace NodeStructs {
 
 	struct ConditionalExpression {
 		OrExpression expr;
-		std::optional<OrExpression> ifExpr;
-		std::optional<OrExpression> elseExpr;
+		std::optional<std::pair<OrExpression, OrExpression>> ifElseExprs;
 	};
 
 	struct AssignmentExpression {
@@ -156,25 +155,30 @@ namespace NodeStructs {
 	};
 
 	struct IForStatement {
-
+		std::string index;
+		NodeStructs::Expression collection;
+		std::vector<std::variant<VariableDeclarationStatement, std::string>> iterators;
+		std::vector<NodeStructs::Statement> statements;
 	};
 
 	struct IfStatement {
 		Expression ifExpr;
 		std::vector<Statement> ifStatements;
-		std::variant<std::unique_ptr<IfStatement>, std::vector<Statement>> elseExprStatements;
+		std::optional<std::variant<std::unique_ptr<IfStatement>, std::vector<Statement>>> elseExprStatements;
 	};
 
 	struct WhileStatement {
-
+		Expression whileExpr;
+		std::vector<NodeStructs::Statement> statements;
 	};
 
 	struct BreakStatement {
-
+		std::optional<Expression> ifExpr;
 	};
 
 	struct ReturnStatement {
-
+		std::vector<Expression> returnExpr;
+		std::optional<Expression> ifExpr;
 	};
 
 	struct Statement {

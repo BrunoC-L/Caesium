@@ -308,7 +308,7 @@ NodeStructs::AdditiveExpression getExpressionStruct(const AdditiveExpression& st
 		res.adds.push_back({
 			operators::variant_t{ op_exp.get<operators>().value() },
 			getExpressionStruct(op_exp.get<MultiplicativeExpression>())
-			});
+		});
 	return res;
 }
 
@@ -319,7 +319,7 @@ NodeStructs::CompareExpression getExpressionStruct(const CompareExpression& stat
 		res.comparisons.push_back({
 			operators::variant_t{ op_exp.get<operators>().value() },
 			getExpressionStruct(op_exp.get<AdditiveExpression>())
-			});
+		});
 	return res;
 }
 
@@ -349,17 +349,14 @@ NodeStructs::ConditionalExpression getExpressionStruct(const ConditionalExpressi
 	auto ifElseExpr = statement.get<Opt<And<
 			Token<IF>,
 			OrExpression,
-			Opt<And<
-				Token<ELSE>,
-				OrExpression
-			>>
+			Token<ELSE>,
+			OrExpression
 		>>>();
-	if (ifElseExpr.has_value()) {
-		res.ifExpr = getExpressionStruct(ifElseExpr.value().get<OrExpression>());
-		auto elseExpr = ifElseExpr.value().get<Opt<And<Token<ELSE>, OrExpression>>>();
-		if (elseExpr.has_value())
-			res.elseExpr = getExpressionStruct(elseExpr.value().get<OrExpression>());
-	}
+	if (ifElseExpr.has_value())
+		res.ifElseExprs = {
+			getExpressionStruct(ifElseExpr.value().get<OrExpression, 0>()),
+			getExpressionStruct(ifElseExpr.value().get<OrExpression, 1>())
+		};
 	return res;
 }
 
@@ -402,24 +399,41 @@ NodeStructs::VariableDeclarationStatement getStatementStruct(const VariableDecla
 	return { getStruct(statement.get<Typename>()), statement.get<Word>().value };
 }
 
+std::vector<NodeStructs::Statement> getStatements(const ColonIndentCodeBlock& code) {
+	std::vector<NodeStructs::Statement> res;
+	for (const auto& statement : code.get<Indent<Star<Statement>>>().get<Statement>())
+		res.push_back(getStatementStruct(statement));
+	return res;
+}
+
 NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 	NodeStructs::IfStatement res{ getExpressionStruct(statement.get<Expression>()) };
 	for (const auto& statement : statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
 		res.ifStatements.push_back(getStatementStruct(statement));
-	//if (statement.get<Opt<ElseStatement>>().has_value()) {
-	//	// std::variant<std::unique_ptr<IfStatement>, std::vector<Statement>>
-	//	const auto& elseStatment = statement.get<Opt<Alloc<ElseStatement>>>().value().get();
-	//	if (elseStatment.get<Opt<And<Token<IF>, Expression>>>().has_value()) {
-	//		//res.elseExprStatements = std::make_unique<NodeStructs::IfStatement>();
-	//	}
-	//	else {
-	//	}
-	//}
+	if (statement.get<Opt<Alloc<ElseStatement>>>().has_value()) {
+		const auto& elseWithCndOrNot = statement
+										.get<Opt<Alloc<ElseStatement>>>()
+										.value()
+										.get()
+										.get<Or<Alloc<IfStatement>, ColonIndentCodeBlock>>()
+										.value();
+		res.elseExprStatements = std::visit(
+			overload(
+				[&](const Alloc<IfStatement>& e) -> decltype(res.elseExprStatements) {
+					return std::make_unique<NodeStructs::IfStatement>(getStatementStruct(e.get()));
+				},
+				[&](const ColonIndentCodeBlock& e) -> decltype(res.elseExprStatements) {
+					return getStatements(e);
+				}
+			),
+			elseWithCndOrNot
+		);
+	}
 	return res;
 }
 
 NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
-	NodeStructs::ForStatement res{ getExpressionStruct(statement.get<Expression>()) };
+	NodeStructs::ForStatement res { getExpressionStruct(statement.get<Expression>()) };
 	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<Word>())
 		res.iterators.push_back({ it.value });
 	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<And<Typename, Word>>())
@@ -430,19 +444,48 @@ NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
 }
 
 NodeStructs::IForStatement getStatementStruct(const IForStatement& statement) {
-	return {};
+	NodeStructs::IForStatement res {
+		statement.get<Word>().value,
+		getExpressionStruct(statement.get<Expression>())
+	};
+	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<Word>())
+		res.iterators.push_back({ it.value });
+	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<And<Typename, Word>>())
+		res.iterators.push_back(NodeStructs::VariableDeclarationStatement{ getStruct(it.get<Typename>()), it.get<Word>().value });
+	for (const auto& statement : statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
+		res.statements.push_back(getStatementStruct(statement));
+	return res;
 }
 
 NodeStructs::WhileStatement getStatementStruct(const WhileStatement& statement) {
-	return {};
+	return {
+		getExpressionStruct(statement.get<Expression>()),
+		getStatements(statement.get<ColonIndentCodeBlock>())
+	};
 }
 
 NodeStructs::BreakStatement getStatementStruct(const BreakStatement& statement) {
-	return {};
+	return {
+		statement.get<Opt<And<Token<IF>, Expression>>>().has_value()
+			? getExpressionStruct(statement.get<Opt<And<Token<IF>, Expression>>>().value().get<Expression>())
+			: std::optional<NodeStructs::Expression>{}
+	};
+}
+
+std::vector<NodeStructs::Expression> getExpressions(const std::vector<Expression>& vec) {
+	std::vector<NodeStructs::Expression> res;
+	for (const auto& expr : vec)
+		res.push_back(getExpressionStruct(expr));
+	return res;
 }
 
 NodeStructs::ReturnStatement getStatementStruct(const ReturnStatement& statement) {
-	return {};
+		return {
+			getExpressions(statement.get<CommaStar<Expression>>().get<Expression>()),
+			statement.get<Opt<And<Token<IF>, Expression>>>().has_value()
+				? getExpressionStruct(statement.get<Opt<And<Token<IF>, Expression>>>().value().get<Expression>())
+				: std::optional<NodeStructs::Expression>{}
+		};
 }
 
 NodeStructs::Statement getStatementStruct(const Statement& statement) {

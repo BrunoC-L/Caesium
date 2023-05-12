@@ -50,15 +50,17 @@ using TemplateTypename = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>,
 makeinherit(Typename, and_t<Word, Opt<Or<NSTypename, TemplateTypename>>>);
 using TemplateTypenameDeclaration = and_t<Alloc<TemplateDeclaration>, Token<TYPE>, Word>;
 makeinherit(TemplateDeclaration, and_t<Token<TEMPLATE>, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Token<TYPE>>>, Token<GT>>);
-using ExpressionStatement = and_t<Expression, Newline>;
-using VariableDeclarationStatement = and_t<Typename, Word, Newline>;
-using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>> ;
-makeinherit(ElseStatement, and_t<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock >>);
-using BreakStatement = and_t<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
+
 using ClassInheritance = and_t<Token<EXTENDS>, CommaPlus<Typename>>;
 using MemberVariable = and_t<Typename, Word, Newline>;
 using Constructor = and_t<Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
+
+using ExpressionStatement = and_t<Expression, Newline>;
+using VariableDeclarationStatement = and_t<Typename, Word, Newline>;
+using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>> ;
+makeinherit(ElseStatement, and_t<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>>);
+using BreakStatement = and_t<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
 using ForStatement = and_t<
 		Token<FOR>,
 		CommaPlus<Or<And<Typename, Word>, Word>>,
@@ -85,11 +87,7 @@ using ReturnStatement = and_t<
 		CommaStar<Expression>,
 		Opt<And<
 			Token<IF>,
-			Expression,
-			Opt<And<
-				Token<ELSE>,
-				Expression
-			>>
+			Expression
 		>>,
 		Newline
 	>;
@@ -182,10 +180,8 @@ using ConditionalExpression = and_t<
 		Opt<And<
 			Token<IF>,
 			OrExpression,
-			Opt<And<
-				Token<ELSE>,
-				OrExpression
-			>>
+			Token<ELSE>,
+			OrExpression
 		>>
 	>;
 

@@ -24,11 +24,10 @@ type R extends F<V,F<U, V>>, F<E<B>,A<B>>:
         Set<int> someContainer
         for i in someContainer:
 
-        int arr
+        int u
         for i in arr:
 
-        Map<int, std::string> m
-        for k, v in m.entries(normal()[][x,z,y]):
+        ifor i, e in arr:
             ++k
             k++
             --k
@@ -39,4 +38,20 @@ type R extends F<V,F<U, V>>, F<E<B>,A<B>>:
             k + 1
             k - 1
             1 % k
+            
+        while true:
+            return x if z else y
+            break
+            break if x or z and y
+        
+        return y if x else u if k
+
+        Map<int, std::string> m
+        for k, v in m.entries(normal()[][x,z,y]):
             (k)[k][k,k.k()[k]]+=k
+            u = k if 1 else 0
+            if b == c:
+                b += c
+            else:
+                c += b
+
