@@ -25,3 +25,6 @@ type A:
         a()()
 	A(B b):
         a() = a()
+
+int main():
+    return 0

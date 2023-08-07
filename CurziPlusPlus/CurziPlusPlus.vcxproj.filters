@@ -41,5 +41,11 @@
     <ClInclude Include="structurizer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="testParse.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="testTranspile.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

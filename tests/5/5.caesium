@@ -4,3 +4,6 @@ type B:
 
 type C:
     B b
+
+int main():
+    return 0

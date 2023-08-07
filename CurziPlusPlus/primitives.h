@@ -58,8 +58,9 @@ bool build_optional_primitive(T& node, Grammarizer* g) {
 		return build_optional_primitive(node._value, g);
 }
 
-template <int token>
+template <int _token>
 struct Token {
+	static constexpr auto token = _token;
 	std::string value;
 	int n_indent;
 	static_assert(token != TAB, "Using Token<TAB> will not work, trailing tabs are ignored, use IndentNode");

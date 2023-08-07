@@ -4,12 +4,11 @@
 // forward declare recursive rules
 struct Typename;
 struct Statement;
-using Expression = struct AssignmentExpression;
 struct TemplateDeclaration;
 struct ElseStatement;
-// each other these rules requires a struct definition and to avoid trouble
-// we inherit from and_t or or_t and require supertype initialization
-// so we use a macro instead since the alternative is longer to type
+// each forward declared rule uses "struct" instead of "using". To avoid trouble with struct definition
+// we inherit from and_t or or_t (which requires supertype ctor "__VA_ARGS__({ x })")
+// so we use a macro since the content of __VA_ARGS__ is a repetition (used twice by the macro) and long to type
 #define makeinherit(rulename, ...) struct rulename : public __VA_ARGS__{rulename(int x) : __VA_ARGS__({ x }) {};};
 
 // to save some space since these are the most used token
@@ -38,6 +37,12 @@ template <typename... Ts> struct or_t {
 	}
 };
 
+template <typename T>
+using Template = and_t<
+	TemplateDeclaration,
+	T
+>;
+using Expression = struct AssignmentExpression;
 using Import = and_t<Token<IMPORT>, Or<Word, String>, Newline>;
 using Alias = and_t<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
 using ArgumentsSignature = CommaStar<And<Typename, Word>>;
@@ -48,8 +53,14 @@ using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<Expression>, Token<
 using NSTypename = and_t<Token<NS>, Alloc<Typename>>;
 using TemplateTypename = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NSTypename>>;
 makeinherit(Typename, and_t<Word, Opt<Or<NSTypename, TemplateTypename>>>);
-using TemplateTypenameDeclaration = and_t<Alloc<TemplateDeclaration>, Token<TYPE>, Word>;
-makeinherit(TemplateDeclaration, and_t<Token<TEMPLATE>, Token<LT>, CommaPlus<Or<TemplateTypenameDeclaration, Token<TYPE>>>, Token<GT>>);
+using TemplateTypenameDeclaration = and_t<Alloc<TemplateDeclaration>, Word>;
+makeinherit(TemplateDeclaration,
+	and_t<
+		Token<TEMPLATE>,
+		Token<LT>,
+		CommaPlus<Or<TemplateTypenameDeclaration, Word>>,
+		Token<GT>
+	>);
 
 using ClassInheritance = and_t<Token<EXTENDS>, CommaPlus<Typename>>;
 using MemberVariable = and_t<Typename, Word, Newline>;
@@ -57,13 +68,16 @@ using Constructor = and_t<Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARE
 using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
 
 using ExpressionStatement = and_t<Expression, Newline>;
-using VariableDeclarationStatement = and_t<Typename, Word, Newline>;
+using BlockDeclaration = and_t<Token<BLOCK>, ColonIndentCodeBlock>;
+using BlockStatement = and_t<Token<BLOCK>, Typename>;
+using VariableDeclaration = and_t<Typename, Word>;
+using VariableDeclarationStatement = and_t<Typename, Word, Token<EQUAL>, Expression, Newline>;
 using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>> ;
 makeinherit(ElseStatement, and_t<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>>);
 using BreakStatement = and_t<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
 using ForStatement = and_t<
 		Token<FOR>,
-		CommaPlus<Or<And<Typename, Word>, Word>>,
+		CommaPlus<Or<VariableDeclaration, Word>>,
 		Token<IN>,
 		Expression,
 		Opt<And<Token<IF>, Expression>>,
@@ -74,7 +88,7 @@ using IForStatement = and_t<
 		Token<IFOR>,
 		Word, // require a variable for the index
 		Token<COMMA>,
-		CommaPlus<Or<And<Typename, Word>, Word>>, // and at least 1 variable iterating
+		CommaPlus<Or<VariableDeclaration, Word>>, // and at least 1 variable iterating
 		Token<IN>,
 		Expression,
 		Opt<And<Token<IF>, Expression>>,
@@ -102,11 +116,11 @@ and_t<
 		IForStatement,
 		WhileStatement,
 		BreakStatement,
-		ReturnStatement
+		ReturnStatement,
+		BlockStatement
 	>>
 >);
 using Type = and_t<
-		Opt<TemplateDeclaration>,
 		Token<TYPE>,
 		Word,
 		Opt<ClassInheritance>,
@@ -117,16 +131,32 @@ using Type = and_t<
             ClassElement
 		>>>
     >;
-using File = and_t<Star<Import>, Star<Or<Type, Function>>, Token<END>>;
+using File = and_t<
+	Star<Import>,
+	Star<
+		Or<
+			Type,
+			Function,
+			Template<Type>,
+			Template<Function>,
+			Template<BlockDeclaration>
+		>
+	>, Token<END>>;
 /*
 EXPRESSIONS
 */
+using BraceExpression = and_t<
+	Token<BRACEOPEN>,
+	CommaStar<Expression>,
+	Token<BRACECLOSE>
+>;
 using ParenExpression = or_t<
 		And<
 			Token<PARENOPEN>,
 			Alloc<Expression>,
 			Token<PARENCLOSE>
 		>,
+		BraceExpression,
 		Typename,
 		Token<NUMBER>
 	// todo string token
@@ -140,6 +170,7 @@ using PostfixExpression = and_t<
             >,
             ParenArguments,
             BracketArguments,
+			BraceExpression,
 			Token<PLUSPLUS>,
 			Token<MINUSMINUS>
 		>>
@@ -172,7 +203,7 @@ or_t<
 using MultiplicativeExpression = and_t<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>>;
 using AdditiveExpression = and_t<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>>;
 using CompareExpression = and_t<AdditiveExpression, Star<And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, AdditiveExpression>>>;
-using EqualityExpression = and_t<CompareExpression, Star<And<Token<EQUALEQUAL>, CompareExpression>>>;
+using EqualityExpression = and_t<CompareExpression, Star<And<Or<Token<EQUALEQUAL>, Token<NEQUAL>>, CompareExpression>>>;
 using AndExpression = and_t<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>;
 using OrExpression = and_t<AndExpression, Star<And<Token<OR>, AndExpression>>>;
 using ConditionalExpression = and_t<

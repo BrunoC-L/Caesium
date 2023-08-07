@@ -2,6 +2,7 @@
 #include <sstream>
 #include <vector>
 #include <forward_list>
+#include <variant>
 
 enum TOKENS {
 	END, // marks the last token of a stream
@@ -37,7 +38,6 @@ enum TOKENS {
 	NOT,
 	CARET,
 	BITOR,
-	BITAND,
 	PLUS,
 	TILDE,
 
@@ -88,6 +88,7 @@ enum TOKENS {
 	TYPE,
 	TEMPLATE,
 	AUTO,
+	BLOCK,
 
 	/*PUBLIC,
 	PRIVATE,
@@ -408,6 +409,8 @@ private:
 				return { AUTO, word };
 			if (word == "break")
 				return { BREAK, word };
+			if (word == "block")
+				return { BLOCK, word };
 			if (word == "case")
 				return { CASE, word };
 			/*if (word == "class")

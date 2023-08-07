@@ -45,8 +45,12 @@ namespace NodeStructs {
 		std::vector<Expression> args;
 	};
 
+	struct BraceExpression {
+		std::vector<Expression> args;
+	};
+
 	struct ParenExpression {
-		std::variant<std::unique_ptr<Expression>, Typename, Token<NUMBER>> expr;
+		std::variant<std::unique_ptr<Expression>, BraceExpression, Typename, Token<NUMBER>> expr;
 	};
 
 	struct PostfixExpression {
@@ -55,6 +59,7 @@ namespace NodeStructs {
 			std::string, // property
 			ParenArguments, // call
 			BracketArguments, // access
+			BraceExpression, // construct
 			Token<PLUSPLUS>,
 			Token<MINUSMINUS>
 		>;
@@ -109,7 +114,11 @@ namespace NodeStructs {
 
 	struct EqualityExpression {
 		CompareExpression expr;
-		std::vector<CompareExpression> equals;
+		using op_types = std::variant<
+			Token<EQUALEQUAL>,
+			Token<NEQUAL>
+		>;
+		std::vector<std::pair<op_types, CompareExpression>> equals;
 	};
 
 	struct AndExpression {
@@ -143,21 +152,27 @@ namespace NodeStructs {
 		std::vector<std::pair<op_types, ConditionalExpression>> assignments;
 	};
 
-	struct VariableDeclarationStatement {
+	struct VariableDeclaration {
 		Typename type;
 		std::string name;
 	};
 
+	struct VariableDeclarationStatement {
+		Typename type;
+		std::string name;
+		Expression expr;
+	};
+
 	struct ForStatement {
 		NodeStructs::Expression collection;
-		std::vector<std::variant<VariableDeclarationStatement, std::string>> iterators;
+		std::vector<std::variant<VariableDeclaration, std::string>> iterators;
 		std::vector<NodeStructs::Statement> statements;
 	};
 
 	struct IForStatement {
 		std::string index;
 		NodeStructs::Expression collection;
-		std::vector<std::variant<VariableDeclarationStatement, std::string>> iterators;
+		std::vector<std::variant<VariableDeclaration, std::string>> iterators;
 		std::vector<NodeStructs::Statement> statements;
 	};
 
@@ -181,6 +196,10 @@ namespace NodeStructs {
 		std::optional<Expression> ifExpr;
 	};
 
+	struct BlockStatement {
+		Typename parametrized_block;
+	};
+
 	struct Statement {
 		std::variant<
 			Expression,
@@ -190,12 +209,12 @@ namespace NodeStructs {
 			IForStatement,
 			WhileStatement,
 			BreakStatement,
-			ReturnStatement
+			ReturnStatement,
+			BlockStatement
 		> statement;
 	};
 
 	struct Constructor {
-		std::optional<TemplateDeclaration> templated;
 		std::vector<std::pair<Typename, std::string>> parameters;
 		std::vector<Statement> statements;
 	};
@@ -209,22 +228,28 @@ namespace NodeStructs {
 		std::string imported;
 	};
 
-	struct TemplateDeclaration {
-		std::string name;
-		std::vector<TemplateDeclaration> parameters;
+	template <typename T>
+	struct Template;
+
+	struct TemplateArguments {
+		std::vector<std::variant<std::string, Template<std::string>>> arguments;
+	};
+
+	template <typename T>
+	struct Template {
+		TemplateArguments arguments;
+		T templated;
 	};
 
 	struct Function {
 		std::string name;
-		std::optional<TemplateDeclaration> templated;
 		NodeStructs::Typename returnType;
 		std::vector<std::pair<Typename, std::string>> parameters;
 		std::vector<Statement> statements;
 	};
 
-	struct Class {
+	struct Type {
 		std::string name;
-		std::optional<TemplateDeclaration> templated;
 		std::vector<Typename> inheritances;
 		std::vector<Alias> aliases;
 		std::vector<Constructor> constructors;
@@ -245,9 +270,17 @@ namespace NodeStructs {
 		}
 	};
 
+	struct Block {
+		std::string name;
+		std::vector<NodeStructs::Statement> statements;
+	};
+
 	struct File {
+		std::string filename;
 		std::vector<Import> imports;
-		std::vector<Class> classes;
+		std::vector<Type> types;
+		//std::vector<NodeStructs::Template<NodeStructs::Type>> type_templates;
 		std::vector<Function> functions;
+		std::vector<Block> blocks;
 	};
 }

@@ -153,8 +153,10 @@
     <ClInclude Include="grammar.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="structurizer.h" />
+    <ClInclude Include="testParse.h" />
     <ClInclude Include="toCPP.h" />
     <ClInclude Include="tokenizer.h" />
+    <ClInclude Include="testTranspile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,7 +3,7 @@
 #include "grammar.h"
 
 NodeStructs::AssignmentExpression getExpressionStruct(const AssignmentExpression& statement);
-std::vector<NodeStructs::TemplateDeclaration> getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename);
+NodeStructs::TemplateArguments getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename);
 NodeStructs::Statement getStatementStruct(const Statement& statement);
 
 NodeStructs::Import getStruct(const Import& f) {
@@ -19,25 +19,24 @@ NodeStructs::Import getStruct(const Import& f) {
 	return res;
 }
 
-NodeStructs::TemplateDeclaration getTemplateDeclaration(const TemplateTypenameDeclaration& templateTypename) {
-	NodeStructs::TemplateDeclaration res;
-	res.name = templateTypename.get<Word>().value;
-	res.parameters = getTemplatesFromTemplateTypenameDeclaration(templateTypename);
+NodeStructs::Template<std::string> getTemplateDeclaration(const TemplateTypenameDeclaration& templateTypename) {
+	NodeStructs::Template<std::string> res;
+	res.templated = templateTypename.get<Word>().value;
+	res.arguments = getTemplatesFromTemplateTypenameDeclaration(templateTypename);
 	return res;
 }
 
-NodeStructs::TemplateDeclaration getTemplateDeclaration(Token<TYPE>) {
-	NodeStructs::TemplateDeclaration res;
-	return res;
+std::string getTemplateDeclaration(const Word& word) {
+	return word.value;
 }
 
-std::vector<NodeStructs::TemplateDeclaration> getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename) {
-	std::vector<NodeStructs::TemplateDeclaration> res;
+NodeStructs::TemplateArguments getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename) {
+	NodeStructs::TemplateArguments res;
 	const TemplateDeclaration& tmpl = templateTypename.get<Alloc<TemplateDeclaration>>().get();
-	const auto& l = tmpl.get<CommaPlus<Or<TemplateTypenameDeclaration, Token<TYPE>>>>();
-	for (const auto& t : l.get<Or<TemplateTypenameDeclaration, Token<TYPE>>>())
+	const auto& l = tmpl.get<CommaPlus<Or<TemplateTypenameDeclaration, Word>>>();
+	for (const auto& t : l.get<Or<TemplateTypenameDeclaration, Word>>())
 		std::visit([&res](const auto& t) {
-			res.push_back(getTemplateDeclaration(t));
+			res.arguments.push_back(getTemplateDeclaration(t));
 		}, t.value());
 	return res;
 }
@@ -112,8 +111,8 @@ NodeStructs::Alias getStruct(const Alias& f) {
 	return res;
 }
 
-NodeStructs::Class getStruct(const Type& cl) {
-	NodeStructs::Class computedClass{ cl.get<Word>().value };
+NodeStructs::Type getStruct(const Type& cl) {
+	NodeStructs::Type computedClass{ cl.get<Word>().value };
 	for (const ClassElement& ce : cl.get<Indent<Star<And<IndentToken, ClassElement>>>>().get<ClassElement>())
 		std::visit([&computedClass](const auto& e) {
 			computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
@@ -127,13 +126,14 @@ NodeStructs::Class getStruct(const Type& cl) {
 	return computedClass;
 }
 
-NodeStructs::File getStruct(const File& f) {
+NodeStructs::File getStruct(const File& f, std::string fileName) {
 	NodeStructs::File res;
+	res.filename = fileName;
 	for (const Import& import : f.get<Star<Import>>().get<Import>())
 		res.imports.push_back(getStruct(import));
-	for (const Type& cl : f.get<Star<Or<Type, Function>>>().get<Type>())
-		res.classes.push_back(getStruct(cl));
-	for (const Function& fun : f.get<Star<Or<Type, Function>>>().get<Function>())
+	for (const Type& cl : f.get<Star<Or<Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>>().get<Type>())
+		res.types.push_back(getStruct(cl));
+	for (const Function& fun : f.get<Star<Or<Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>>().get<Function>())
 		res.functions.push_back(getStruct(fun));
 	return res;
 }
@@ -158,6 +158,10 @@ NodeStructs::BracketArguments getStruct(const BracketArguments& args) {
 Expressions
 */
 
+NodeStructs::BraceExpression getExpressionStruct(const BraceExpression& statement) {
+	return {};
+}
+
 NodeStructs::ParenExpression getExpressionStruct(const ParenExpression& statement) {
 	return std::visit(overload(
 			[](const And<
@@ -166,11 +170,14 @@ NodeStructs::ParenExpression getExpressionStruct(const ParenExpression& statemen
 				Token<PARENCLOSE>
 			>& e) {
 				return NodeStructs::ParenExpression{
-					std::make_unique<NodeStructs::AssignmentExpression>(getExpressionStruct(e.get<Alloc<Expression>>().get()))
+					std::make_unique<NodeStructs::Expression>(getExpressionStruct(e.get<Alloc<Expression>>().get()))
 				};
 			},
 			[](const Typename& e) {
 				return NodeStructs::ParenExpression{ getStruct(e)};
+			},
+			[](const BraceExpression& e) {
+				return NodeStructs::ParenExpression{ getExpressionStruct(e)};
 			},
 			[](const Token<NUMBER>& e) {
 				return NodeStructs::ParenExpression{ e };
@@ -189,6 +196,7 @@ NodeStructs::PostfixExpression getExpressionStruct(const PostfixExpression& stat
 		>,
 		ParenArguments,
 		BracketArguments,
+		BraceExpression,
 		Token<PLUSPLUS>,
 		Token<MINUSMINUS>
 	>;
@@ -205,6 +213,9 @@ NodeStructs::PostfixExpression getExpressionStruct(const PostfixExpression& stat
 					},
 					[](const BracketArguments& args) {
 						return nodestruct_opts{ getStruct(args) };
+					},
+					[](const BraceExpression& args) {
+						return nodestruct_opts{ getExpressionStruct(args) };
 					},
 					[](const Token<PLUSPLUS>& token) {
 						return nodestruct_opts{ token };
@@ -325,8 +336,12 @@ NodeStructs::CompareExpression getExpressionStruct(const CompareExpression& stat
 
 NodeStructs::EqualityExpression getExpressionStruct(const EqualityExpression& statement) {
 	NodeStructs::EqualityExpression res{ getExpressionStruct(statement.get<CompareExpression>()) };
-	for (const auto& n : statement.get<Star<And<Token<EQUALEQUAL>, CompareExpression>>>().get<CompareExpression>())
-		res.equals.push_back(getExpressionStruct(n));
+	using operators = Or<Token<EQUALEQUAL>, Token<NEQUAL>>;
+	for (const auto& op_exp : statement.get<Star<And<operators, CompareExpression>>>().get<And<operators, CompareExpression>>())
+		res.equals.push_back({
+			operators::variant_t{ op_exp.get<operators>().value() },
+			getExpressionStruct(op_exp.get<CompareExpression>())
+		});
 	return res;
 }
 
@@ -396,7 +411,7 @@ NodeStructs::Expression getStatementStruct(const ExpressionStatement& statement)
 }
 
 NodeStructs::VariableDeclarationStatement getStatementStruct(const VariableDeclarationStatement& statement) {
-	return { getStruct(statement.get<Typename>()), statement.get<Word>().value };
+	return { getStruct(statement.get<Typename>()), statement.get<Word>().value, getExpressionStruct(statement.get<Expression>()) };
 }
 
 std::vector<NodeStructs::Statement> getStatements(const ColonIndentCodeBlock& code) {
@@ -404,6 +419,10 @@ std::vector<NodeStructs::Statement> getStatements(const ColonIndentCodeBlock& co
 	for (const auto& statement : code.get<Indent<Star<Statement>>>().get<Statement>())
 		res.push_back(getStatementStruct(statement));
 	return res;
+}
+
+NodeStructs::BlockStatement getStatementStruct(const BlockStatement& statement) {
+	return { getStruct(statement.get<Typename>()) };
 }
 
 NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
@@ -434,10 +453,10 @@ NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 
 NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
 	NodeStructs::ForStatement res { getExpressionStruct(statement.get<Expression>()) };
-	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<Word>())
+	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<Word>())
 		res.iterators.push_back({ it.value });
-	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<And<Typename, Word>>())
-		res.iterators.push_back(NodeStructs::VariableDeclarationStatement{ getStruct(it.get<Typename>()), it.get<Word>().value });
+	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<VariableDeclaration>())
+		res.iterators.push_back(NodeStructs::VariableDeclaration{ getStruct(it.get<Typename>()), it.get<Word>().value });
 	for (const auto& statement : statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
 		res.statements.push_back(getStatementStruct(statement));
 	return res;
@@ -448,10 +467,10 @@ NodeStructs::IForStatement getStatementStruct(const IForStatement& statement) {
 		statement.get<Word>().value,
 		getExpressionStruct(statement.get<Expression>())
 	};
-	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<Word>())
+	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<Word>())
 		res.iterators.push_back({ it.value });
-	for (const auto& it : statement.get<CommaPlus<Or<And<Typename, Word>, Word>>>().get<And<Typename, Word>>())
-		res.iterators.push_back(NodeStructs::VariableDeclarationStatement{ getStruct(it.get<Typename>()), it.get<Word>().value });
+	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<VariableDeclaration>())
+		res.iterators.push_back(NodeStructs::VariableDeclaration{ getStruct(it.get<Typename>()), it.get<Word>().value });
 	for (const auto& statement : statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
 		res.statements.push_back(getStatementStruct(statement));
 	return res;
@@ -501,6 +520,7 @@ NodeStructs::Statement getStatementStruct(const Statement& statement) {
 			IForStatement,
 			WhileStatement,
 			BreakStatement,
-			ReturnStatement
+			ReturnStatement,
+			BlockStatement
 		>>>().get().value()) };
 }
