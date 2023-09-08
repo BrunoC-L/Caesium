@@ -61,15 +61,11 @@ enum TOKENS {
 	GTE,
 	LTE,
 
-	//ARROW,
-
 	WORD,
 	NUMBER,
 	STRING,
 
-	//CLASS,
 	RETURN,
-	//NEW,
 	SWITCH,
 	IN,
 	IFOR,
@@ -84,17 +80,10 @@ enum TOKENS {
 	DO,
 	USING,
 	STATIC,
-	EXTENDS,
 	TYPE,
 	TEMPLATE,
 	AUTO,
 	BLOCK,
-
-	/*PUBLIC,
-	PRIVATE,
-	PROTECTED,*/
-
-	//NULL_TOKEN,
 };
 
 using TOKENVALUE = std::pair<TOKENS, std::string>;
@@ -192,7 +181,7 @@ private:
 		std::string str = "";
 		switch (c) {
 		case '\\':
-			// backslash at the end of a line means ignore newline
+			// backslash at the end of a line means ignore it and the newline
 			if (index + 1 <= program.size() && program[index + 1] == '\n') {
 				index += 1;
 				// so we just return the next token
@@ -321,10 +310,6 @@ private:
 					index += 1;
 					return { MINUSMINUS, "--" };
 				}
-				/*else if (program[index] == '>') {
-					index += 1;
-					return { ARROW, "->" };
-				}*/
 			}
 			return { DASH, "-" };
 		case '+':
@@ -413,14 +398,10 @@ private:
 				return { BLOCK, word };
 			if (word == "case")
 				return { CASE, word };
-			/*if (word == "class")
-				return { CLASS, word };*/
 			if (word == "do")
 				return { DO, word };
 			if (word == "else")
 				return { ELSE, word };
-			if (word == "extends")
-				return { EXTENDS, word };
 			if (word == "for")
 				return { FOR, word };
 			if (word == "if")
@@ -433,18 +414,8 @@ private:
 				return { FROM, word };
 			if (word == "in")
 				return { IN, word };
-			/*if (word == "new")
-				return { NEW, word };*/
-			/*if (word == "null")
-				return { NULL_TOKEN, word };*/
 			if (word == "or")
 				return { OR, word };
-			/*if (word == "public")
-				return { PUBLIC, word };
-			if (word == "private")
-				return { PRIVATE, word };
-			if (word == "protected")
-				return { PROTECTED, word };*/
 			if (word == "return")
 				return { RETURN, word };
 			if (word == "static")

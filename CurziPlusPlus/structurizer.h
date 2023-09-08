@@ -41,38 +41,38 @@ NodeStructs::TemplateArguments getTemplatesFromTemplateTypenameDeclaration(const
 	return res;
 }
 
-void extend(std::vector<NodeStructs::TypenameExtension>& vec, const NSTypename& nst) {
-	const Typename& t = nst.get<Alloc<Typename>>().get();
-	vec.push_back(NodeStructs::NSTypeExtension{ t.get<Word>().value });
-	if (t.get<Opt<Or<NSTypename, TemplateTypename>>>().has_value())
-		std::visit([&vec](const auto& t) {
-			extend(vec, t);
-		}, t.get<Opt<Or<NSTypename, TemplateTypename>>>().value().value());
-}
-
 NodeStructs::Typename getStruct(const Typename& t);
 
-void extend(std::vector<NodeStructs::TypenameExtension>& vec, const TemplateTypename& tt) {
-	NodeStructs::TemplateTypeExtension res;
-	for (const Typename& t : tt.get<CommaStar<Alloc<Typename>>>().get<Typename>())
-		res.templateTypes.push_back(getStruct(t));
-	vec.push_back(std::move(res));
-	if (tt.get<Opt<NSTypename>>().has_value())
-		extend(vec, tt.get<Opt<NSTypename>>().value());
+NodeStructs::Typename extend(NodeStructs::Typename&& t, const NSTypename& nst) {
+	return NodeStructs::NamespacedTypename{
+		std::make_unique<NodeStructs::Typename>(std::move(t)),
+		std::make_unique<NodeStructs::Typename>(getStruct(nst.get<Alloc<Typename>>().get()))
+	};
+}
+NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std::vector<Alloc<Typename>>& templates) {
+	NodeStructs::TemplatedTypename res{
+		std::make_unique<NodeStructs::Typename>(std::move(t)),
+		{}
+	};
+	res.templated_with.reserve(templates.size());
+	for (const auto& tn : templates)
+		res.templated_with.push_back(getStruct(tn.get()));
+	return res;
 }
 
-/*
-expr    -> Typename                                              -> NodeStructs::Typename
-T::T<T> -> typename{T, ns{typename{T, template{[typename{T}]}}}} -> typename{T, [ns{T}, template{T}]}
-T<T>::T -> typename{T, template{[typename{T}], ns{typename{T}}}} -> typename{T, [template{T}, ns{T}]}
-T<T::T> -> typename{T, template{[typename{T, ns{typename{T}}}]}} -> typename{T, [template{T, [ns{T}]}]}
-*/
+NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypename& tt) {
+	if (tt.get<Opt<NSTypename>>().has_value())
+		return extend(extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()), tt.get<Opt<NSTypename>>().value());
+	else
+		return extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>());
+}
+
 NodeStructs::Typename getStruct(const Typename& t) {
 	NodeStructs::Typename res;
-	res.type = t.get<Word>().value;
+	res = NodeStructs::BaseTypename{ t.get<Word>().value };
 	if (t.get<Opt<Or<NSTypename, TemplateTypename>>>().has_value())
 		std::visit([&res](const auto& t) {
-			extend(res.extensions, t);
+			res = extend(std::move(res), t);
 		}, t.get<Opt<Or<NSTypename, TemplateTypename>>>().value().value());
 	return res;
 }
@@ -106,7 +106,7 @@ NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
 
 NodeStructs::Alias getStruct(const Alias& f) {
 	NodeStructs::Alias res;
-	res.aliasFrom = NodeStructs::Typename{ f.get<Word>().value, {} };
+	res.aliasFrom = NodeStructs::BaseTypename{ f.get<Word>().value };
 	res.aliasTo = getStruct(f.get<Typename>());
 	return res;
 }
@@ -117,12 +117,6 @@ NodeStructs::Type getStruct(const Type& cl) {
 		std::visit([&computedClass](const auto& e) {
 			computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
 		}, ce.value());
-	if (cl.get<Opt<ClassInheritance>>().has_value())
-		for (const Typename& t : cl
-								.get<Opt<ClassInheritance>>().value()
-								.get<CommaPlus<Typename>>()
-								.get<Typename>())
-			computedClass.inheritances.push_back(getStruct(t));
 	return computedClass;
 }
 

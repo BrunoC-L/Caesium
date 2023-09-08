@@ -1,2 +1,2 @@
-int main() {
+Int main() {
 };

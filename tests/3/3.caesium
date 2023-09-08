@@ -5,5 +5,5 @@ type A:
             return c if b
             break if c
 
-int main():
+Int main():
     return 0

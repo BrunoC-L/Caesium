@@ -1,8 +1,8 @@
 type A:
 	B b
 	C c
-	int x
-	int y
+	Int x
+	Int y
 	A a(B b, D d):
         a = b = c
 	A(B b):
@@ -26,5 +26,5 @@ type A:
 	A(B b):
         a() = a()
 
-int main():
+Int main():
     return 0

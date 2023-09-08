@@ -10,22 +10,88 @@ template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
 template<class... Ts> overload(Ts...)->overload<Ts...>; // to help IDE
 
 namespace NodeStructs {
-	struct Typename;
+	struct TemplatedTypename;
+	struct NamespacedTypename;
+	struct BaseTypename;
 
-	struct TemplateTypeExtension {
-		std::vector<Typename> templateTypes;
+	using Typename = std::variant<TemplatedTypename, NamespacedTypename, BaseTypename>;
+
+	struct TemplatedTypename {
+		std::unique_ptr<Typename> type;
+		std::vector<Typename> templated_with;
+
+		bool operator==(const TemplatedTypename&) const;
+		bool operator==(const Typename& other) const;
 	};
 
-	struct NSTypeExtension {
-		std::string NSTypename;
+	struct NamespacedTypename {
+		std::unique_ptr<Typename> name_space;
+		std::unique_ptr<Typename> name_in_name_space;
+
+		bool operator==(const NamespacedTypename&) const;
+		bool operator==(const Typename& other) const;
 	};
 
-	using TypenameExtension = std::variant<TemplateTypeExtension, NSTypeExtension>;
-
-	struct Typename {
+	struct BaseTypename {
 		std::string type;
-		std::vector<TypenameExtension> extensions;
+
+		bool operator==(const BaseTypename&) const;
+		bool operator==(const Typename& other) const;
 	};
+
+	bool TemplatedTypename::operator==(const TemplatedTypename& other) const {
+		return *type == *other.type && templated_with == other.templated_with;
+	}
+
+	bool TemplatedTypename::operator==(const Typename& other) const {
+		return std::visit(
+			overload(
+				[&](const TemplatedTypename& t) {
+					return (*this) == t;
+				},
+				[](const auto&) {
+					return false;
+				}
+			),
+			other
+		);
+	}
+
+	bool NamespacedTypename::operator==(const NamespacedTypename& other) const {
+		return *name_space == *other.name_space && *name_in_name_space == *other.name_in_name_space;
+	}
+
+	bool NamespacedTypename::operator==(const Typename& other) const {
+		return std::visit(
+			overload(
+				[&](const NamespacedTypename& t) {
+					return (*this) == t;
+				},
+				[](const auto&) {
+					return false;
+				}
+			),
+			other
+		);
+	}
+
+	bool BaseTypename::operator==(const BaseTypename& other) const {
+		return type == other.type;
+	}
+
+	bool BaseTypename::operator==(const Typename& other) const {
+		return std::visit(
+			overload(
+				[&](const BaseTypename& t) {
+					return (*this) == t;
+				},
+				[](const auto&) {
+					return false;
+				}
+			),
+			other
+		);
+	}
 
 	struct Alias {
 		Typename aliasFrom;
@@ -247,10 +313,19 @@ namespace NodeStructs {
 		std::vector<std::pair<Typename, std::string>> parameters;
 		std::vector<Statement> statements;
 	};
+	
+	struct Type;
+	struct TypeTemplateInstance;
+
+	using TypeOrTypeTemplateInstance = std::variant<const NodeStructs::Type*, const NodeStructs::TypeTemplateInstance>;
+
+	struct TypeTemplateInstance {
+		const NodeStructs::Template<NodeStructs::Type>& type_template;
+		std::vector<TypeOrTypeTemplateInstance> template_arguments;
+	};
 
 	struct Type {
 		std::string name;
-		std::vector<Typename> inheritances;
 		std::vector<Alias> aliases;
 		std::vector<Constructor> constructors;
 		std::vector<Function> methods;

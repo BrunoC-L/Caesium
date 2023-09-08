@@ -51,11 +51,10 @@ void testParse() {
 	testParse<CommaStar<And<Token<WORD>>>>(__LINE__, 0, "y");
 	testParse<Opt<Import>>(__LINE__, 0, "\n");
 	testParse<Type>(__LINE__, 0, "type A:\n");
-	testParse<Type>(__LINE__, 0, "type A extends B:\n");
-	testParse<Type>(__LINE__, 0, "type A extends B:\n\tA a\n");
-	testParse<Type>(__LINE__, 0, "type A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n");
-	testParse<Type>(__LINE__, 1, "type A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");
-	testParse<Type>(__LINE__, 1, "type A extends B:\n\t\tA a\n");
+	testParse<Type>(__LINE__, 0, "type A:\n\tA a\n");
+	testParse<Type>(__LINE__, 0, "type A:\n\tA a\n\tA a\n\tA a\n\tA a\n");
+	testParse<Type>(__LINE__, 1, "type A:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");
+	testParse<Type>(__LINE__, 1, "type A:\n\t\tA a\n");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n");
 	testParse<Statement>(__LINE__, 0, "if a:\n");
 	testParse<Statement>(__LINE__, 1, "\tif a:\n");
@@ -84,11 +83,11 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E<F<H,I>>::G");
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
-	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1():\n");
-	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G method1():\n");
-	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G member1");
-	testParse<Type>(__LINE__, 0, "type A extends F<H, I>:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
+	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1():\n");
+	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G member1");
+	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
 	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
 	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
@@ -114,6 +113,6 @@ void testParse() {
 	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
 	// basically previous tests ensure good code should work
 	// and these tests ensure bad code should fail
-	testParse<Type>(__LINE__, 1, "type A extends B:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
-	testParse<Type>(__LINE__, 0, "type A extends B:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
+	testParse<Type>(__LINE__, 1, "type A:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
+	testParse<Type>(__LINE__, 0, "type A:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 }

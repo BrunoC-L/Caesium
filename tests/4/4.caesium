@@ -13,5 +13,5 @@ a a():
         a = f if e else a
     a() if b == c else c
 
-int main():
+Int main():
     return 0

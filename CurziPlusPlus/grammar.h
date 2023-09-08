@@ -62,7 +62,6 @@ makeinherit(TemplateDeclaration,
 		Token<GT>
 	>);
 
-using ClassInheritance = and_t<Token<EXTENDS>, CommaPlus<Typename>>;
 using MemberVariable = and_t<Typename, Word, Newline>;
 using Constructor = and_t<Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
@@ -123,7 +122,6 @@ and_t<
 using Type = and_t<
 		Token<TYPE>,
 		Word,
-		Opt<ClassInheritance>,
 		Token<COLON>,
 		Newline,
 		Indent<Star<And<

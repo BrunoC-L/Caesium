@@ -32,7 +32,7 @@ Int main():
     Vector<Int> arr = {}
     for i in arr:
 
-    for e in arr:
+    ifor i, e in arr:
         ++k
         k++
         --k
@@ -43,6 +43,11 @@ Int main():
         k + 1
         k - 1
         1 % k
+        
+    while true:
+        return x if z else y
+        break
+        break if x or z and y
     
     return y if x else u if k
 

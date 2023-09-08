@@ -5,5 +5,5 @@ type B:
 type C:
     B b
 
-int main():
+Int main():
     return 0
