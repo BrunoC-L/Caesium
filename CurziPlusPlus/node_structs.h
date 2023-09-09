@@ -101,10 +101,36 @@ namespace NodeStructs {
 	struct Statement;
 
 	struct AssignmentExpression;
-	using Expression = AssignmentExpression;
+	struct ConditionalExpression;
+	struct OrExpression;
+	struct AndExpression;
+	struct EqualityExpression;
+	struct CompareExpression;
+	struct AdditiveExpression;
+	struct MultiplicativeExpression;
+	struct UnaryExpression;
+	struct PostfixExpression;
+	struct ParenExpression;
+	struct BraceExpression;
 
-	struct ParenArguments {
-		std::vector<Expression> args;
+	struct Expression {
+		using vt = std::variant<
+			AssignmentExpression,
+			ConditionalExpression,
+			OrExpression,
+			AndExpression,
+			EqualityExpression,
+			CompareExpression,
+			AdditiveExpression,
+			MultiplicativeExpression,
+			UnaryExpression,
+			PostfixExpression,
+			ParenExpression,
+			BraceExpression,
+			Typename,
+			Token<NUMBER>
+		>;
+		std::unique_ptr<vt> expression;
 	};
 
 	struct BracketArguments {
@@ -116,14 +142,14 @@ namespace NodeStructs {
 	};
 
 	struct ParenExpression {
-		std::variant<std::unique_ptr<Expression>, BraceExpression, Typename, Token<NUMBER>> expr;
+		std::vector<Expression> args;
 	};
 
 	struct PostfixExpression {
-		ParenExpression expr;
+		Expression expr;
 		using op_types = std::variant<
 			std::string, // property
-			ParenArguments, // call
+			ParenExpression, // call
 			BracketArguments, // access
 			BraceExpression, // construct
 			Token<PLUSPLUS>,
@@ -144,66 +170,66 @@ namespace NodeStructs {
 			Token<AMPERSAND>,
 			Typename // type cast operator
 		>;
-		using op_and_unaryexpr = std::pair<op_types, std::unique_ptr<UnaryExpression>>;
-		std::variant<op_and_unaryexpr, PostfixExpression> expr;
+		using op_and_unaryexpr = std::pair<op_types, Expression>;
+		std::variant<op_and_unaryexpr, Expression> expr;
 	};
 
 	struct MultiplicativeExpression {
-		UnaryExpression expr;
+		Expression expr;
 		using op_types = std::variant<
 			Token<ASTERISK>,
 			Token<SLASH>,
 			Token<PERCENT>
 		>;
-		std::vector<std::pair<op_types, UnaryExpression>> muls;
+		std::vector<std::pair<op_types, Expression>> muls;
 	};
 
 	struct AdditiveExpression {
-		MultiplicativeExpression expr;
+		Expression expr;
 		using op_types = std::variant<
 			Token<PLUS>,
 			Token<DASH>
 		>;
-		std::vector<std::pair<op_types, MultiplicativeExpression>> adds;
+		std::vector<std::pair<op_types, Expression>> adds;
 	};
 
 	struct CompareExpression {
-		AdditiveExpression expr;
+		Expression expr;
 		using op_types = std::variant<
 			Token<LT>,
 			Token<LTE>,
 			Token<GT>,
 			Token<GTE>
 		>;
-		std::vector<std::pair<op_types, AdditiveExpression>> comparisons;
+		std::vector<std::pair<op_types, Expression>> comparisons;
 	};
 
 	struct EqualityExpression {
-		CompareExpression expr;
+		Expression expr;
 		using op_types = std::variant<
 			Token<EQUALEQUAL>,
 			Token<NEQUAL>
 		>;
-		std::vector<std::pair<op_types, CompareExpression>> equals;
+		std::vector<std::pair<op_types, Expression>> equals;
 	};
 
 	struct AndExpression {
-		EqualityExpression expr;
-		std::vector<EqualityExpression> ands;
+		Expression expr;
+		std::vector<Expression> ands;
 	};
 
 	struct OrExpression {
-		AndExpression expr;
-		std::vector<AndExpression> ors;
+		Expression expr;
+		std::vector<Expression> ors;
 	};
 
 	struct ConditionalExpression {
-		OrExpression expr;
-		std::optional<std::pair<OrExpression, OrExpression>> ifElseExprs;
+		Expression expr;
+		std::optional<std::pair<Expression, Expression>> ifElseExprs;
 	};
 
 	struct AssignmentExpression {
-		ConditionalExpression expr;
+		Expression expr;
 		using op_types = std::variant<
 			Token<EQUAL>,
 			Token<PLUSEQUAL>,
@@ -215,7 +241,7 @@ namespace NodeStructs {
 			Token<OREQUAL>,
 			Token<XOREQUAL>
 		>;
-		std::vector<std::pair<op_types, ConditionalExpression>> assignments;
+		std::vector<std::pair<op_types, Expression>> assignments;
 	};
 
 	struct VariableDeclaration {

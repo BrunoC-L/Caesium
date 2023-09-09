@@ -2,7 +2,7 @@
 #include "node_structs.h"
 #include "grammar.h"
 
-NodeStructs::AssignmentExpression getExpressionStruct(const AssignmentExpression& statement);
+NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement);
 NodeStructs::TemplateArguments getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename);
 NodeStructs::Statement getStatementStruct(const Statement& statement);
 
@@ -132,8 +132,8 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 	return res;
 }
 
-NodeStructs::ParenArguments getStruct(const ParenArguments& args) {
-	NodeStructs::ParenArguments res{};
+NodeStructs::ParenExpression getStruct(const ParenArguments& args) {
+	NodeStructs::ParenExpression res{};
 	for (const auto& arg : args.get<CommaStar<Expression>>().get<Expression>())
 		res.args.push_back(getExpressionStruct(arg));
 	return res;
@@ -153,36 +153,39 @@ Expressions
 */
 
 NodeStructs::BraceExpression getExpressionStruct(const BraceExpression& statement) {
-	return {};
+	NodeStructs::BraceExpression res;
+	for (const auto& arg : statement.get<CommaStar<Expression>>().get<Expression>())
+		res.args.push_back(getExpressionStruct(arg));
+	return res;
 }
 
-NodeStructs::ParenExpression getExpressionStruct(const ParenExpression& statement) {
+NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 	return std::visit(overload(
 			[](const And<
 				Token<PARENOPEN>,
 				Alloc<Expression>,
 				Token<PARENCLOSE>
 			>& e) {
-				return NodeStructs::ParenExpression{
-					std::make_unique<NodeStructs::Expression>(getExpressionStruct(e.get<Alloc<Expression>>().get()))
-				};
+				auto res = NodeStructs::ParenExpression{};
+				res.args.push_back(getExpressionStruct(e.get<Alloc<Expression>>().get()));
+				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
 			},
 			[](const Typename& e) {
-				return NodeStructs::ParenExpression{ getStruct(e)};
+				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(getStruct(e)) };
 			},
 			[](const BraceExpression& e) {
-				return NodeStructs::ParenExpression{ getExpressionStruct(e)};
+				auto res = getExpressionStruct(e);
+				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>( std::move(res) ) };
 			},
 			[](const Token<NUMBER>& e) {
-				return NodeStructs::ParenExpression{ e };
+				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(e) };
 			}
 		),
 		statement.value()
 	);
 }
 
-NodeStructs::PostfixExpression getExpressionStruct(const PostfixExpression& statement) {
-	auto res = NodeStructs::PostfixExpression{ getExpressionStruct(statement.get<ParenExpression>()), {} };
+NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) {
 	using opts = Or<
 		And<
 			Token<DOT>,
@@ -194,44 +197,50 @@ NodeStructs::PostfixExpression getExpressionStruct(const PostfixExpression& stat
 		Token<PLUSPLUS>,
 		Token<MINUSMINUS>
 	>;
-	using nodestruct_opts = NodeStructs::PostfixExpression::op_types;
-	for (const auto& n : statement.get<Star<opts>>().get<opts>()) {
-		res.postfixes.push_back(
-			std::visit(
-				overload(
-					[](const And<Token<DOT>, Word>& e) {
-						return nodestruct_opts{ e.get<Word>().value };
-					},
-					[](const ParenArguments& args) {
-						return nodestruct_opts{ getStruct(args) };
-					},
-					[](const BracketArguments& args) {
-						return nodestruct_opts{ getStruct(args) };
-					},
-					[](const BraceExpression& args) {
-						return nodestruct_opts{ getExpressionStruct(args) };
-					},
-					[](const Token<PLUSPLUS>& token) {
-						return nodestruct_opts{ token };
-					},
-					[](const Token<MINUSMINUS>& token) {
-						return nodestruct_opts{ token };
-					}
-				),
-				n.value()
-			)
-		);
+	const auto& postfixes = statement.get<Star<opts>>().get<opts>();
+	if (postfixes.size() == 0) {
+		return getExpressionStruct(statement.get<ParenExpression>());
+	} else {
+		auto res = NodeStructs::PostfixExpression{ getExpressionStruct(statement.get<ParenExpression>()), {} };
+		using nodestruct_opts = NodeStructs::PostfixExpression::op_types;
+		for (const auto& n : postfixes) {
+			res.postfixes.push_back(
+				std::visit(
+					overload(
+						[](const And<Token<DOT>, Word>& e) {
+							return nodestruct_opts{ e.get<Word>().value };
+						},
+						[](const ParenArguments& args) {
+							return nodestruct_opts{ getStruct(args) };
+						},
+						[](const BracketArguments& args) {
+							return nodestruct_opts{ getStruct(args) };
+						},
+						[](const BraceExpression& args) {
+							return nodestruct_opts{ getExpressionStruct(args) };
+						},
+						[](const Token<PLUSPLUS>& token) {
+							return nodestruct_opts{ token };
+						},
+						[](const Token<MINUSMINUS>& token) {
+							return nodestruct_opts{ token };
+						}
+					),
+					n.value()
+				)
+			);
+		}
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
 	}
-	return res;
 }
 
-NodeStructs::UnaryExpression getExpressionStruct(const UnaryExpression& statement) {
+NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 	using op_types = NodeStructs::UnaryExpression::op_types;
 	using op_and_unaryexpr = NodeStructs::UnaryExpression::op_and_unaryexpr;
 	return std::visit(
 		overload(
 			[](const PostfixExpression& expr) {
-				return NodeStructs::UnaryExpression{ getExpressionStruct(expr) };
+				return getExpressionStruct(expr);
 			},
 			[](const And<
 				Or<	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
@@ -251,7 +260,7 @@ NodeStructs::UnaryExpression getExpressionStruct(const UnaryExpression& statemen
 					>
 				>,
 				Alloc<UnaryExpression> // recursive here
-			>& op_and_unary) {
+			>& op_and_unary) -> NodeStructs::Expression {
 				const auto& op = op_and_unary.get<Or<
 					Token<NOT>,
 					Token<PLUS>,
@@ -269,24 +278,26 @@ NodeStructs::UnaryExpression getExpressionStruct(const UnaryExpression& statemen
 				>>();
 				return std::visit(overload(
 					[&](const auto& token) {
-						return NodeStructs::UnaryExpression{
+						auto res = NodeStructs::UnaryExpression{
 							op_and_unaryexpr {
 								token,
-								std::make_unique<NodeStructs::UnaryExpression>(getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()))
+								getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get())
 							}
 						};
+						return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
 					},
 					[&](const And< // type cast operator
 						Token<PARENOPEN>,
 						Typename,
 						Token<PARENCLOSE>
 					>& g) {
-						return NodeStructs::UnaryExpression{
+						auto res = NodeStructs::UnaryExpression{
 							op_and_unaryexpr {
 								getStruct(g.get<Typename>()),
-								std::make_unique<NodeStructs::UnaryExpression>(getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()))
+								getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get())
 							}
 						};
+						return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
 					}
 				), op.value());
 			}
@@ -295,82 +306,118 @@ NodeStructs::UnaryExpression getExpressionStruct(const UnaryExpression& statemen
 	);
 }
 
-NodeStructs::MultiplicativeExpression getExpressionStruct(const MultiplicativeExpression& statement) {
-	auto res = NodeStructs::MultiplicativeExpression{ getExpressionStruct(statement.get<UnaryExpression>()), {} };
+NodeStructs::Expression getExpressionStruct(const MultiplicativeExpression& statement) {
 	using operators = Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>;
-	for (const auto& op_exp : statement.get<Star<And<operators, UnaryExpression>>>().get<And<operators, UnaryExpression>>())
-		res.muls.push_back({
-			operators::variant_t{ op_exp.get<operators>().value() },
-			getExpressionStruct(op_exp.get<UnaryExpression>())
-		});
-	return res;
+	const auto& multiplications = statement.get<Star<And<operators, UnaryExpression>>>().get<And<operators, UnaryExpression>>();
+	if (multiplications.size() == 0)
+		return getExpressionStruct(statement.get<UnaryExpression>());
+	else {
+		auto res = NodeStructs::MultiplicativeExpression{ getExpressionStruct(statement.get<UnaryExpression>()) };
+		for (const auto& op_exp : multiplications)
+			res.muls.push_back({
+				operators::variant_t{ op_exp.get<operators>().value() },
+				getExpressionStruct(op_exp.get<UnaryExpression>())
+			});
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
 }
 
-NodeStructs::AdditiveExpression getExpressionStruct(const AdditiveExpression& statement) {
-	auto res = NodeStructs::AdditiveExpression{ getExpressionStruct(statement.get<MultiplicativeExpression>()), {}};
+NodeStructs::Expression getExpressionStruct(const AdditiveExpression& statement) {
 	using operators = Or<Token<PLUS>, Token<DASH>>;
-	for (const auto& op_exp : statement.get<Star<And<operators, MultiplicativeExpression>>>().get<And<operators, MultiplicativeExpression>>())
-		res.adds.push_back({
-			operators::variant_t{ op_exp.get<operators>().value() },
-			getExpressionStruct(op_exp.get<MultiplicativeExpression>())
-		});
-	return res;
+	const auto& additions = statement.get<Star<And<operators, MultiplicativeExpression>>>().get<And<operators, MultiplicativeExpression>>();
+	if (additions.size() == 0)
+		return getExpressionStruct(statement.get<MultiplicativeExpression>());
+	else {
+		auto res = NodeStructs::AdditiveExpression{ getExpressionStruct(statement.get<MultiplicativeExpression>()) };
+		for (const auto& op_exp : additions)
+			res.adds.push_back({
+				operators::variant_t{ op_exp.get<operators>().value() },
+				getExpressionStruct(op_exp.get<MultiplicativeExpression>())
+			});
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
 }
 
-NodeStructs::CompareExpression getExpressionStruct(const CompareExpression& statement) {
-	auto res = NodeStructs::CompareExpression{ getExpressionStruct(statement.get<AdditiveExpression>()), {} };
+NodeStructs::Expression getExpressionStruct(const CompareExpression& statement) {
 	using operators = Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>;
-	for (const auto& op_exp : statement.get<Star<And<operators, AdditiveExpression>>>().get<And<operators, AdditiveExpression>>())
-		res.comparisons.push_back({
-			operators::variant_t{ op_exp.get<operators>().value() },
-			getExpressionStruct(op_exp.get<AdditiveExpression>())
-		});
-	return res;
+	const auto& comparisons = statement.get<Star<And<operators, AdditiveExpression>>>().get<And<operators, AdditiveExpression>>();
+	if (comparisons.size() == 0)
+		return getExpressionStruct(statement.get<AdditiveExpression>());
+	else {
+		auto res = NodeStructs::CompareExpression{ getExpressionStruct(statement.get<AdditiveExpression>()) };
+		for (const auto& op_exp : comparisons)
+			res.comparisons.push_back({
+				operators::variant_t{ op_exp.get<operators>().value() },
+				getExpressionStruct(op_exp.get<AdditiveExpression>())
+			});
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
 }
 
-NodeStructs::EqualityExpression getExpressionStruct(const EqualityExpression& statement) {
-	NodeStructs::EqualityExpression res{ getExpressionStruct(statement.get<CompareExpression>()) };
+NodeStructs::Expression getExpressionStruct(const EqualityExpression& statement) {
 	using operators = Or<Token<EQUALEQUAL>, Token<NEQUAL>>;
-	for (const auto& op_exp : statement.get<Star<And<operators, CompareExpression>>>().get<And<operators, CompareExpression>>())
-		res.equals.push_back({
-			operators::variant_t{ op_exp.get<operators>().value() },
-			getExpressionStruct(op_exp.get<CompareExpression>())
-		});
-	return res;
+	const auto& equals = statement.get<Star<And<operators, CompareExpression>>>().get<And<operators, CompareExpression>>();
+	if (equals.size() == 0)
+		return getExpressionStruct(statement.get<CompareExpression>());
+	else {
+		NodeStructs::EqualityExpression res{ getExpressionStruct(statement.get<CompareExpression>()) };
+		for (const auto& op_exp : equals)
+			res.equals.push_back({
+				operators::variant_t{ op_exp.get<operators>().value() },
+				getExpressionStruct(op_exp.get<CompareExpression>())
+			});
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
 }
 
-NodeStructs::AndExpression getExpressionStruct(const AndExpression& statement) {
-	NodeStructs::AndExpression res{ getExpressionStruct(statement.get<EqualityExpression>()) };
-	for (const auto& n : statement.get<Star<And<Token<AND>, EqualityExpression>>>().get<EqualityExpression>())
-		res.ands.push_back(getExpressionStruct(n));
-	return res;
+NodeStructs::Expression getExpressionStruct(const AndExpression& statement) {
+	const auto& ands = statement.get<Star<And<Token<AND>, EqualityExpression>>>().get<EqualityExpression>();
+	if (ands.size() == 0) {
+		return getExpressionStruct(statement.get<EqualityExpression>());
+	}
+	else {
+		NodeStructs::AndExpression res{ getExpressionStruct(statement.get<EqualityExpression>()) };
+		for (const auto& n : ands)
+			res.ands.push_back(getExpressionStruct(n));
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
 }
 
-NodeStructs::OrExpression getExpressionStruct(const OrExpression& statement) {
-	NodeStructs::OrExpression res{ getExpressionStruct(statement.get<AndExpression>()) };
-	for (const auto& n : statement.get<Star<And<Token<OR>, AndExpression>>>().get<AndExpression>())
-		res.ors.push_back(getExpressionStruct(n));
-	return res;
+NodeStructs::Expression getExpressionStruct(const OrExpression& statement) {
+	const auto& ors = statement.get<Star<And<Token<OR>, AndExpression>>>().get<AndExpression>();
+	if (ors.size() == 0) {
+		return getExpressionStruct(statement.get<AndExpression>());
+	}
+	else {
+		NodeStructs::OrExpression res{ getExpressionStruct(statement.get<AndExpression>()) };
+		for (const auto& n : ors)
+			res.ors.push_back(getExpressionStruct(n));
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
 }
 
-NodeStructs::ConditionalExpression getExpressionStruct(const ConditionalExpression& statement) {
-	NodeStructs::ConditionalExpression res{ getExpressionStruct(statement.get<OrExpression>()) };
-	auto ifElseExpr = statement.get<Opt<And<
+NodeStructs::Expression getExpressionStruct(const ConditionalExpression& statement) {
+	const auto& ifElseExpr = statement.get<Opt<And<
 			Token<IF>,
 			OrExpression,
 			Token<ELSE>,
 			OrExpression
 		>>>();
-	if (ifElseExpr.has_value())
+	if (ifElseExpr.has_value()) {
+		NodeStructs::ConditionalExpression res{ getExpressionStruct(statement.get<OrExpression>()) };
 		res.ifElseExprs = {
 			getExpressionStruct(ifElseExpr.value().get<OrExpression, 0>()),
 			getExpressionStruct(ifElseExpr.value().get<OrExpression, 1>())
 		};
-	return res;
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
+	else {
+		return getExpressionStruct(statement.get<OrExpression>());
+	}
 }
 
-NodeStructs::AssignmentExpression getExpressionStruct(const AssignmentExpression& statement) {
-	auto res = NodeStructs::AssignmentExpression{ getExpressionStruct(statement.get<ConditionalExpression>()), {} };
+NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement) {
+
 	using operators = Or<
 		Token<EQUAL>,
 		Token<PLUSEQUAL>,
@@ -382,12 +429,20 @@ NodeStructs::AssignmentExpression getExpressionStruct(const AssignmentExpression
 		Token<OREQUAL>,
 		Token<XOREQUAL>
 	>;
-	for (const auto& op_exp : statement.get<Star<And<operators, ConditionalExpression>>>().get<And<operators, ConditionalExpression>>())
-		res.assignments.push_back({
-			operators::variant_t{ op_exp.get<operators>().value() },
-			getExpressionStruct(op_exp.get<ConditionalExpression>())
-		});
-	return res;
+
+	const auto& assignments = statement.get<Star<And<operators, ConditionalExpression>>>().get<And<operators, ConditionalExpression>>();
+	if (assignments.size() == 0) {
+		return getExpressionStruct(statement.get<ConditionalExpression>());
+	}
+	else {
+		auto res = NodeStructs::AssignmentExpression{ getExpressionStruct(statement.get<ConditionalExpression>()), {} };
+		for (const auto& op_exp : assignments)
+			res.assignments.push_back({
+				operators::variant_t{ op_exp.get<operators>().value() },
+				getExpressionStruct(op_exp.get<ConditionalExpression>())
+			});
+		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+	}
 }
 
 

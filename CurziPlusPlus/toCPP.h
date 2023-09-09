@@ -677,12 +677,20 @@ public:
 		const Named& named,
 		const NodeStructs::Expression& expr
 	) {
-		std::stringstream ss;
+		return std::visit(
+			overload(
+				[&](const auto& expr) -> std::string {
+					return transpile(variables, named, expr);
+				}
+			),
+			*expr.expression.get()
+		);
+		/*std::stringstream ss;
 		ss << transpile(variables, named, expr.expr);
 		for (const auto& statement : expr.assignments)
 			ss << " " << symbol_variant_as_text(statement.first) <<
 			" " << transpile(variables, named, statement.second);
-		return ss.str();
+		return ss.str();*/
 	}
 
 	std::string transpile_statement(
@@ -691,6 +699,26 @@ public:
 		const NodeStructs::Expression& statement
 	) {
 		return transpile(variables, named, statement) + ";\n";
+	}
+
+	std::string transpile(
+		std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+		const Named& named,
+		const Token<NUMBER>& expr
+	) {
+		return expr.value;
+	}
+
+	std::string transpile(
+		std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+		const Named& named,
+		const NodeStructs::AssignmentExpression& expr
+	) {
+		std::stringstream ss;
+		ss << transpile(variables, named, expr.expr);
+		for (const auto& expr : expr.assignments)
+			ss << symbol_variant_as_text(expr.first) << transpile(variables, named, expr.second);
+		return ss.str();
 	}
 
 	std::string transpile(
@@ -792,7 +820,8 @@ public:
 		const Named& named,
 		const NodeStructs::UnaryExpression& expr
 	) {
-		return std::visit(
+		throw std::runtime_error("");
+		/*return std::visit(
 			overload(
 				[&](const std::pair<NodeStructs::UnaryExpression::op_types, std::unique_ptr<NodeStructs::UnaryExpression>>& op_expr) {
 					return std::visit(
@@ -803,16 +832,16 @@ public:
 							[&](const auto& op) {
 								return _symbol_as_text(op);
 							}
-								),
+						),
 						op_expr.first
-								) + " " + transpile(variables, named, *op_expr.second.get());
+					) + " " + transpile(variables, named, *op_expr.second.get());
 				},
 				[&](const NodeStructs::PostfixExpression& expr) {
 					return transpile(variables, named, expr);
 				}
 			),
 			expr.expr
-		);
+		);*/
 	}
 
 	std::string transpile(
@@ -828,7 +857,7 @@ public:
 					[&](const std::string& property_name) {
 						return "." + property_name;
 					},
-					[&](const NodeStructs::ParenArguments& e) {
+					[&](const NodeStructs::ParenExpression& e) {
 						return "(" + transpile_args(variables, named, e.args) + ")";
 					},
 					[&](const NodeStructs::BracketArguments& e) {
@@ -851,23 +880,15 @@ public:
 		const Named& named,
 		const NodeStructs::ParenExpression& expr
 	) {
-		return std::visit(
-			overload(
-				[&](const std::unique_ptr<NodeStructs::Expression>& expr) {
-					return transpile(variables, named, *expr.get());
-				},
-				[&](const NodeStructs::BraceExpression& expr) {
-					return "{" + transpile_args(variables, named, expr.args) + "}";
-				},
-				[&](const NodeStructs::Typename& type) {
-					return transpile(variables, named, type);
-				},
-				[](const Token<NUMBER>& token) {
-					return token.value;
-				}
-			),
-			expr.expr
-		);
+		return "(" + transpile_args(variables, named, expr.args) + ")";
+	}
+
+	std::string transpile(
+		std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+		const Named& named,
+		const NodeStructs::BraceExpression& expr
+	) {
+		return "{" + transpile_args(variables, named, expr.args) + "}";
 	}
 
 	std::string transpile_args(

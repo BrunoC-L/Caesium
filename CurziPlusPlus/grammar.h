@@ -26,6 +26,7 @@ template <typename... Ts> struct and_t {
 		return _value.value();
 	}
 };
+
 template <typename... Ts> struct or_t {
 	Or<Ts...> _value;
 	template <typename T>
