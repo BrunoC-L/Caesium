@@ -14,12 +14,16 @@ void testParse(int line, int n_indent, std::string program, bool expectedToBuild
 	Grammarizer g(tokens);
 
 	bool nodeBuilt = false;
-	if (expectedToBuild)
-		nodeBuilt = And<Ts...>(n_indent).build(&g);
-	else
+	if (expectedToBuild) {
+		auto n = And<Ts...>(n_indent);
+		nodeBuilt = n.build(&g);
+	}
+	else {
 		// if it is expected to fail, try to parse END to make sure it has to get the entire input
 		// otherwise they might succeed by skipping tokens at the end with Star or Opts
-		nodeBuilt = And<Ts..., Token<END>>(n_indent).build(&g);
+		auto n = And<Ts..., Token<END>>(n_indent);
+		nodeBuilt = n.build(&g);
+	}
 
 	bool programReadEntirely = g.it == g.tokens.end();
 	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
@@ -109,6 +113,8 @@ void testParse() {
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer = {}\nSet<int> someContainer = {}\n");
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer = {}\nfor i in someContainer:\n");
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer = {}\nfor i in someContainer:\nvector<int> arr = {}\nfor i in arr :\nMap<int, std::string> m = {}\nfor k, v in m:\n");
+	testParse<And<AdditiveExpression, Token<LT>, AdditiveExpression, Token<GT>, AdditiveExpression>>(__LINE__, 0, "Set<Int> x");
+	testParse<Expression>(__LINE__, 0, "Set<Int> x");
 
 	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
 	// basically previous tests ensure good code should work

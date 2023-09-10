@@ -18,6 +18,18 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="node_structs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="type_of_expr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="toCPP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="type_of_typename.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="node_structs.h">
@@ -45,6 +57,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="testTranspile.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_expr.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_typename.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

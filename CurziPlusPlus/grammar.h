@@ -109,8 +109,8 @@ makeinherit(Statement,
 and_t<
 	IndentToken,
 	Alloc<Or<
-		ExpressionStatement,
 		VariableDeclarationStatement,
+		ExpressionStatement,
 		IfStatement,
 		ForStatement,
 		IForStatement,
@@ -156,7 +156,7 @@ using ParenExpression = or_t<
 			Token<PARENCLOSE>
 		>,
 		BraceExpression,
-		Typename,
+		Word,
 		Token<NUMBER>
 	// todo string token
 	>;

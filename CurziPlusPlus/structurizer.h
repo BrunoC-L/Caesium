@@ -170,8 +170,8 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 				res.args.push_back(getExpressionStruct(e.get<Alloc<Expression>>().get()));
 				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
 			},
-			[](const Typename& e) {
-				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(getStruct(e)) };
+			[](const Word& e) -> NodeStructs::Expression {
+				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(e.value) };
 			},
 			[](const BraceExpression& e) {
 				auto res = getExpressionStruct(e);
@@ -417,7 +417,6 @@ NodeStructs::Expression getExpressionStruct(const ConditionalExpression& stateme
 }
 
 NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement) {
-
 	using operators = Or<
 		Token<EQUAL>,
 		Token<PLUSEQUAL>,
@@ -562,8 +561,8 @@ NodeStructs::Statement getStatementStruct(const Statement& statement) {
 			return { getStatementStruct(statement) };
 		},
 		statement.get<Alloc<Or<
-			ExpressionStatement,
 			VariableDeclarationStatement,
+			ExpressionStatement,
 			IfStatement,
 			ForStatement,
 			IForStatement,

@@ -35,7 +35,7 @@ void transpile(const std::vector<NodeStructs::File>& project, const std::filesys
 		throw std::exception();
 	if (!cpp.is_open())
 		throw std::exception();
-	cpp << toCPP{}.transpile(project);
+	cpp << transpile(project);
 }
 
 int main(int argc, char** argv) {
