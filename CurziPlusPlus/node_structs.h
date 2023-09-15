@@ -291,11 +291,13 @@ namespace NodeStructs {
 	struct Type;
 	struct TypeTemplateInstance;
 
-	using TypeOrTypeTemplateInstance = std::variant<const NodeStructs::Type*, const NodeStructs::TypeTemplateInstance>;
+	using TypeOrTypeTemplateInstance = std::variant<const NodeStructs::Type*, NodeStructs::TypeTemplateInstance>;
 
 	struct TypeTemplateInstance {
-		const NodeStructs::Template<NodeStructs::Type>& type_template;
+		NodeStructs::Template<const NodeStructs::Type*> type_template;
 		std::vector<TypeOrTypeTemplateInstance> template_arguments;
+		//TypeTemplateInstance(const TypeTemplateInstance&) = default;
+		//TypeTemplateInstance(const NodeStructs::Template<const NodeStructs::Type*>& t, const std::vector<TypeOrTypeTemplateInstance>& v) :type_template(t), template_arguments(v) {};
 	};
 
 	struct Type {
@@ -328,7 +330,7 @@ namespace NodeStructs {
 		std::string filename;
 		std::vector<Import> imports;
 		std::vector<Type> types;
-		//std::vector<NodeStructs::Template<NodeStructs::Type>> type_templates;
+		//std::vector<NodeStructs::Template<const NodeStructs::Type*>> type_templates;
 		std::vector<Function> functions;
 		std::vector<Block> blocks;
 	};

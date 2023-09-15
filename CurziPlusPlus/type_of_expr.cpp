@@ -79,8 +79,33 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	const Named& named,
 	const NodeStructs::PostfixExpression& expr
 ) {
-	auto first_t = type_of_expr(variables, named, expr.expr);
-		
+	if (expr.postfixes.size() == 0) {
+		return type_of_expr(variables, named, expr.expr);
+	}
+	else {
+		auto first_t = type_of_expr(variables, named, expr.expr);
+		for (const NodeStructs::PostfixExpression::op_types& postfix : expr.postfixes) {
+			std::visit(overload(
+				[&](const std::string& property) {
+					first_t = first_t;
+				},
+				[&](const NodeStructs::ParenExpression& call) {
+					first_t = first_t;
+				},
+				[&](const NodeStructs::BracketArguments& access) {
+				},
+				[&](const NodeStructs::BraceExpression& construct) {
+				},
+				[&](const Token<PLUSPLUS>& e) {
+				},
+				[&](const Token<MINUSMINUS>& e) {
+				}
+				),
+				postfix
+			);
+		}
+		return first_t;
+	}
 	throw std::runtime_error("");
 }
 

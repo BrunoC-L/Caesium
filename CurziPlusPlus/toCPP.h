@@ -87,43 +87,46 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 struct Named {
 	template <typename T> using map2ptr = std::map<std::string, const T*>;
 	map2ptr<NodeStructs::Function> functions;
-	map2ptr<NodeStructs::Template<NodeStructs::Function>> function_templates;
+	map2ptr<NodeStructs::Template<const NodeStructs::Function*>> function_templates;
 	map2ptr<NodeStructs::Type> types;
-	map2ptr<NodeStructs::Template<NodeStructs::Type>> type_templates;
+	map2ptr<NodeStructs::Template<const NodeStructs::Type*>> type_templates;
 	map2ptr<NodeStructs::Block> blocks;
-	map2ptr<NodeStructs::Template<NodeStructs::Block>> block_templates;
+	map2ptr<NodeStructs::Template<const NodeStructs::Block*>> block_templates;
 };
 
 struct cpp_std {
-	const NodeStructs::Template<NodeStructs::Type> unordered_set = {
-		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
-		NodeStructs::Type{
-			.name = std::string{"std::unordered_set"},
-			//.aliases = std::vector<NodeStructs::Alias>{},
-			//.constructors = std::vector<NodeStructs::Constructor>{},
-			.methods = std::vector<NodeStructs::Function>{},
-			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
-		}
+	const NodeStructs::Type _uset = NodeStructs::Type{
+		.name = std::string{"std::unordered_set"},
+		//.aliases = std::vector<NodeStructs::Alias>{},
+		//.constructors = std::vector<NodeStructs::Constructor>{},
+		.methods = std::vector<NodeStructs::Function>{},
+		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
-	const NodeStructs::Template<NodeStructs::Type> vector = {
+	const NodeStructs::Template<const NodeStructs::Type*> unordered_set = {
 		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
-		NodeStructs::Type{
-			.name = std::string{"std::vector"},
-			//.aliases = std::vector<NodeStructs::Alias>{},
-			//.constructors = std::vector<NodeStructs::Constructor>{},
-			.methods = std::vector<NodeStructs::Function>{},
-			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
-		}
+		&_uset,
 	};
-	const NodeStructs::Template<NodeStructs::Type> unordered_map = {
+	const NodeStructs::Type _vec = NodeStructs::Type{
+		.name = std::string{"std::vector"},
+		//.aliases = std::vector<NodeStructs::Alias>{},
+		//.constructors = std::vector<NodeStructs::Constructor>{},
+		.methods = std::vector<NodeStructs::Function>{},
+		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
+	};
+	const NodeStructs::Template<const NodeStructs::Type*> vector = {
 		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
-		NodeStructs::Type{
+		&_vec,
+	};
+	const NodeStructs::Type _map = NodeStructs::Type {
 			.name = std::string{"std::unordered_map"},
 			//.aliases = std::vector<NodeStructs::Alias>{},
 			//.constructors = std::vector<NodeStructs::Constructor>{},
 			.methods = std::vector<NodeStructs::Function>{},
 			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
-		}
+	};
+	const NodeStructs::Template<const NodeStructs::Type*> unordered_map = {
+		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
+		&_map,
 	};
 	const NodeStructs::Type _int = {
 		.name = "int",

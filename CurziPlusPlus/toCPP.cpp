@@ -19,13 +19,13 @@ std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 				return res;
 			},
 			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeOrTypeTemplateInstance> {
-				if (type.type_template.templated.name == "std::unordered_set")
+				if (type.type_template.templated->name == "std::unordered_set")
 					if (type.template_arguments.size() == 1)
 						return { type.template_arguments.at(0) };
 					else
 						throw std::runtime_error("");
 				else
-					if (type.type_template.templated.name == "std::vector")
+					if (type.type_template.templated->name == "std::vector")
 						if (type.template_arguments.size() == 1)
 							return { type.template_arguments.at(0) };
 						else

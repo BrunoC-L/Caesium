@@ -2,7 +2,7 @@
 #include "type_of_typename.h"
 #include "type_of_expr.h"
 
-const NodeStructs::Template<NodeStructs::Type>& type_template_of_typename(
+NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
@@ -13,7 +13,7 @@ const NodeStructs::Template<NodeStructs::Type>& type_template_of_typename(
 	throw std::runtime_error(err);
 }
 
-const NodeStructs::Template<NodeStructs::Type>& type_template_of_typename(
+NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
@@ -22,7 +22,7 @@ const NodeStructs::Template<NodeStructs::Type>& type_template_of_typename(
 	throw std::runtime_error(err);
 }
 
-const NodeStructs::Template<NodeStructs::Type>& type_template_of_typename(
+NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
@@ -32,13 +32,13 @@ const NodeStructs::Template<NodeStructs::Type>& type_template_of_typename(
 	throw std::runtime_error(err);
 }
 
-const NodeStructs::Template<NodeStructs::Type>& type_template_of_typename(
+NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Typename& type
 ) {
 	return std::visit(
-		[&](const auto& t) -> const NodeStructs::Template<NodeStructs::Type>& {
+		[&](const auto& t) -> NodeStructs::Template<const NodeStructs::Type*> {
 			auto s = transpile(variables, named, type);
 			return type_template_of_typename(variables, named, t);
 		},

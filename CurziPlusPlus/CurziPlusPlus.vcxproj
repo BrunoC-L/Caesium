@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="methods_of_type.cpp" />
     <ClCompile Include="node_structs.cpp" />
     <ClCompile Include="toCPP.cpp" />
     <ClCompile Include="type_of_expr.cpp" />
@@ -153,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grammarizer.h" />
+    <ClInclude Include="methods_of_type.h" />
     <ClInclude Include="node_structs.h" />
     <ClInclude Include="grammar.h" />
     <ClInclude Include="primitives.h" />
