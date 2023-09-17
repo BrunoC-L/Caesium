@@ -1,6 +1,7 @@
 #include "toCPP.h"
 #include "type_of_typename.h"
 #include "type_of_expr.h"
+#include "methods_of_type.h"
 
 NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
@@ -83,28 +84,39 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 		return type_of_expr(variables, named, expr.expr);
 	}
 	else {
-		auto first_t = type_of_expr(variables, named, expr.expr);
+		auto next_t = type_of_expr(variables, named, expr.expr);
 		for (const NodeStructs::PostfixExpression::op_types& postfix : expr.postfixes) {
-			std::visit(overload(
+			next_t = std::visit(overload(
 				[&](const std::string& property) {
-					first_t = first_t;
+					auto methods = methods_of_type(variables, named, next_t);
+					throw std::runtime_error("");
+					return next_t;
 				},
 				[&](const NodeStructs::ParenExpression& call) {
-					first_t = first_t;
+					throw std::runtime_error("");
+					return next_t;
 				},
 				[&](const NodeStructs::BracketArguments& access) {
+					throw std::runtime_error("");
+					return next_t;
 				},
 				[&](const NodeStructs::BraceExpression& construct) {
+					throw std::runtime_error("");
+					return next_t;
 				},
 				[&](const Token<PLUSPLUS>& e) {
+					throw std::runtime_error("");
+					return next_t;
 				},
 				[&](const Token<MINUSMINUS>& e) {
+					throw std::runtime_error("");
+					return next_t;
 				}
 				),
 				postfix
 			);
 		}
-		return first_t;
+		return next_t;
 	}
 	throw std::runtime_error("");
 }

@@ -1,9 +1,0 @@
-import OS
-
-type B:
-
-type C:
-    B b
-
-Int main():
-    return 0

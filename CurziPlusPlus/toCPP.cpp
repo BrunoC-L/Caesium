@@ -19,15 +19,22 @@ std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 				return res;
 			},
 			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeOrTypeTemplateInstance> {
-				if (type.type_template.templated->name == "std::unordered_set")
+				const auto tn = type.type_template.templated->name;
+				if (tn == "std::unordered_set")
 					if (type.template_arguments.size() == 1)
 						return { type.template_arguments.at(0) };
 					else
 						throw std::runtime_error("");
 				else
-					if (type.type_template.templated->name == "std::vector")
+					if (tn == "std::vector")
 						if (type.template_arguments.size() == 1)
 							return { type.template_arguments.at(0) };
+						else
+							throw std::runtime_error("");
+				else
+					if (tn == "std::unordered_map")
+						if (type.template_arguments.size() == 2)
+							return { type.template_arguments.at(0), type.template_arguments.at(1) };
 						else
 							throw std::runtime_error("");
 				int a = 0;
@@ -49,6 +56,10 @@ void add_for_iterator_variables(
 		std::visit(
 			overload(
 				[&](const NodeStructs::VariableDeclaration& it) {
+					/*if (decomposed_types.at(i) != type_of_typename(variables, named, it.type)) {
+						auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
+						throw std::runtime_error(err);
+					}*/
 					variables[it.name].push_back(type_of_typename(variables, named, it.type));
 				},
 				[&](const std::string& it) {
@@ -59,8 +70,6 @@ void add_for_iterator_variables(
 		);
 	}
 }
-
-
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
@@ -102,16 +111,18 @@ std::string transpile_main(
 	const NodeStructs::Function& fn
 ) {
 	cpp_std stuff_from_cpp{};
-	named.type_templates["Set"] = &stuff_from_cpp.unordered_set;
-	named.type_templates["Vector"] = &stuff_from_cpp.vector;
-	named.type_templates["Map"] = &stuff_from_cpp.unordered_map;
-	named.types["Int"] = &stuff_from_cpp._int;
-	named.types["String"] = &stuff_from_cpp.string;
+	{
+		named.type_templates["Set"] = &stuff_from_cpp.unordered_set;
+		named.type_templates["Vector"] = &stuff_from_cpp.vector;
+		named.type_templates["Map"] = &stuff_from_cpp.unordered_map;
+		named.types["Int"] = &stuff_from_cpp._int;
+		named.types["String"] = &stuff_from_cpp.string;
+	}
 
 	if (fn.parameters.size() > 1)
 		throw std::runtime_error("\"main\" function declaration requires 0 or 1 argument\n");
 	if (fn.parameters.size() == 0)
-		return transpile(variables, named, fn);
+		return std::string(default_includes) + transpile(variables, named, fn);
 	else {
 		const auto& [parameter_type, parameter_name] = fn.parameters.at(0);
 		const auto std_vector_str = []() {
@@ -137,8 +148,9 @@ std::string transpile_main(
 
 		const_cast<NodeStructs::Function&>(fn).name = "_main";
 		std::stringstream ss;
-		ss << transpile(variables, named, fn);
-		ss << "int main(int argc, char** argv) {\n"
+		ss << std::string(default_includes)
+		<< transpile(variables, named, fn)
+		<< "int main(int argc, char** argv) {\n"
 			"std::vector<std::string> args {};\n"
 			"for (int i = 0; i < argc; ++i)\n"
 			"    args.push_back(std::string(argv[i]));"
@@ -286,7 +298,8 @@ std::string transpile_statement(
 	const Named& named,
 	const NodeStructs::VariableDeclarationStatement& statement
 ) {
-	variables[statement.name].push_back(type_of_typename(variables, named, statement.type));
+	auto tn = type_of_typename(variables, named, statement.type);
+	variables[statement.name].push_back(std::move(tn));
 	return "\t" + transpile(variables, named, statement.type) + " " + statement.name + ";\n";
 }
 
@@ -348,7 +361,25 @@ std::string transpile_statement(
 
 	std::stringstream ss;
 	ss << "for (auto&& [";
-
+	bool first = true;
+	for (const auto& iterator : statement.iterators) {
+		if (first)
+			first = false;
+		else
+			ss << ", ";
+		ss << std::visit(overload(
+			[&](const NodeStructs::VariableDeclaration& iterator) {
+				return iterator.name;
+			},
+			[&](const std::string& iterator) {
+				return iterator;
+			}), iterator);
+	}
+	ss << "] : "
+		<< transpile(variables, named, statement.collection)
+		<< ") {"
+		<< transpile(variables, named, statement.statements)
+		<< "};";
 
 	remove_for_iterator_variables(variables, statement);
 	return ss.str();
@@ -581,28 +612,14 @@ std::string transpile(
 	const Named& named,
 	const NodeStructs::UnaryExpression& expr
 ) {
-	throw std::runtime_error("");
-	/*return std::visit(
-		overload(
-			[&](const std::pair<NodeStructs::UnaryExpression::op_types, std::unique_ptr<NodeStructs::UnaryExpression>>& op_expr) {
-				return std::visit(
-					overload(
-						[&](const NodeStructs::Typename& type) {
-							return "(" + transpile(variables, named, type) + ")";
-						},
-						[&](const auto& op) {
-							return _symbol_as_text(op);
-						}
-					),
-					op_expr.first
-				) + " " + transpile(variables, named, *op_expr.second.get());
-			},
-			[&](const NodeStructs::PostfixExpression& expr) {
-				return transpile(variables, named, expr);
-			}
-		),
-		expr.expr
-	);*/
+	return std::visit(overload(
+		[&](const NodeStructs::Typename& typecast) {
+			return "(" + transpile(variables, named, typecast) + ")";
+		},
+		[&](const auto& token_expr) {
+			return symbol_as_text(token_expr);
+		}
+	), expr.unary_operator) + transpile(variables, named, expr.expr);
 }
 
 std::string transpile(
@@ -621,18 +638,18 @@ std::string transpile(
 				[&](const NodeStructs::ParenExpression& e) {
 					return "(" + transpile_args(variables, named, e.args) + ")";
 				},
-					[&](const NodeStructs::BracketArguments& e) {
+				[&](const NodeStructs::BracketArguments& e) {
 					return "[" + transpile_args(variables, named, e.args) + "]";
 				},
-					[&](const NodeStructs::BraceExpression& e) {
+				[&](const NodeStructs::BraceExpression& e) {
 					return "{" + transpile_args(variables, named, e.args) + "}";
 				},
-					[&](const auto& op) {
-					return _symbol_as_text(op);
+				[&](const auto& op) {
+					return symbol_as_text(op);
 				}
-					),
+			),
 			op
-					);
+		);
 	return ss.str();
 }
 

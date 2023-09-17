@@ -1,6 +1,8 @@
 #include "toCPP.h"
 #include "type_of_typename.h"
 #include "type_of_expr.h"
+#include "methods_of_type.h"
+#include <unordered_map>
 
 NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
@@ -39,7 +41,7 @@ NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 ) {
 	return std::visit(
 		[&](const auto& t) -> NodeStructs::Template<const NodeStructs::Type*> {
-			auto s = transpile(variables, named, type);
+			auto s = transpile(variables, named, t);
 			return type_template_of_typename(variables, named, t);
 		},
 		type

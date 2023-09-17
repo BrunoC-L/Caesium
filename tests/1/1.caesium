@@ -32,7 +32,7 @@ Int main():
     Vector<Int> arr = {}
     for i in arr:
 
-    for e in arr:
+    for k in arr:
         ++k
         k++
         --k
@@ -47,10 +47,12 @@ Int main():
     return y if x else u if k
 
     Map<Int, String> m = {}
-    for k, v in m.entries(normal()[][x,z,y]):
-        (k)[k][k,k.k()[k]]+=k
-        u = k if 1 else 0
-        if b == c:
-            b += c
+
+    for k, v in m:
+        Int u = 0
+        if k == 1:
+            u = k + k
         else:
-            c += b
+            u = k - k
+    
+    m.at()

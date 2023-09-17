@@ -7,7 +7,7 @@
 #include "node_structs.h"
 
 template <size_t token>
-std::string symbol_as_text() {
+std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::SEMICOLON) return ";";
 	if constexpr (token == TOKENS::COLON || token == TOKENS::IN) return ":";
 	if constexpr (token == TOKENS::NS) return "::";
@@ -72,14 +72,14 @@ std::string symbol_as_text() {
 }
 
 template <size_t token>
-std::string _symbol_as_text(Token<token>) {
-	return symbol_as_text<token>();
+std::string symbol_as_text(Token<token>) {
+	return _symbol_as_text<token>();
 }
 
 template <size_t... tokens>
 std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) {
 	return std::visit(
-		[&](const auto& tk) { return _symbol_as_text(tk); },
+		[&](const auto& tk) { return symbol_as_text(tk); },
 		token
 	);
 }
@@ -117,17 +117,30 @@ struct cpp_std {
 		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
 		&_vec,
 	};
-	const NodeStructs::Type _map = NodeStructs::Type {
-			.name = std::string{"std::unordered_map"},
-			//.aliases = std::vector<NodeStructs::Alias>{},
-			//.constructors = std::vector<NodeStructs::Constructor>{},
-			.methods = std::vector<NodeStructs::Function>{},
-			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
+	static NodeStructs::Function testf() {
+		NodeStructs::Function test = NodeStructs::Function{
+				"at",
+				NodeStructs::BaseTypename{"V"},
+				std::vector<std::pair<NodeStructs::Typename, std::string>>{/*{NodeStructs::BaseTypename{"V"}, ""}*/},
+				std::vector<NodeStructs::Statement>{},
+		};
+		return test;
 	};
-	const NodeStructs::Template<const NodeStructs::Type*> unordered_map = {
-		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
-		&_map,
-	};
+	static NodeStructs::Template<const NodeStructs::Type*> create_unordered_map_type_template() {
+		static NodeStructs::Type _map = NodeStructs::Type{
+				.name = std::string{"std::unordered_map"},
+				//.aliases = std::vector<NodeStructs::Alias>{},
+				//.constructors = std::vector<NodeStructs::Constructor>{},
+				.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
+				.memberVariables = std::vector<NodeStructs::MemberVariable>{},
+		};
+		_map.methods.push_back(testf());
+		return {
+			std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{"K", "V"},
+				&_map,
+		};
+	}
+	const NodeStructs::Template<const NodeStructs::Type*> unordered_map = create_unordered_map_type_template();
 	const NodeStructs::Type _int = {
 		.name = "int",
 	};
@@ -149,15 +162,31 @@ void add_for_iterator_variables(
 );
 
 
-static constexpr auto default_includes = std::string_view("#pragma once\n"
+static constexpr auto default_includes = std::string_view(
+	"#pragma once\n"
 	"#include <memory>\n"
 	"#include <utility>\n"
 	"#include <variant>\n"
-	"#include <vector>\n"
-	"#include <string>\n"
-	"#include <sstream>\n"
 	"#include <fstream>\n"
-	"\n");
+
+	"using Int = int;\n"
+
+	"#include <vector>\n"
+	"template <typename T> using Vector = std::vector<T>;\n"
+
+	"#include <string>\n"
+	"using String = std::string;\n"
+
+	"#include <unordered_set>\n"
+	"template <typename T> using Set = std::unordered_set<T>;\n"
+
+	"#include <set>\n"
+	"template <typename T> using TreeSet = std::set<T>;\n"
+
+	"#include <unordered_map>\n"
+	"template <typename K, typename V> using Map = std::unordered_map<K, V>;\n"
+	"\n"
+);
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename);
 std::string transpile(const std::vector<NodeStructs::File>& project);

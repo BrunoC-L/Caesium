@@ -71,16 +71,20 @@ NodeStructs::Typename getStruct(const Typename& t) {
 	NodeStructs::Typename res;
 	res = NodeStructs::BaseTypename{ t.get<Word>().value };
 	if (t.get<Opt<Or<NSTypename, TemplateTypename>>>().has_value())
-		std::visit([&res](const auto& t) {
-			res = extend(std::move(res), t);
+		return std::visit([&res](const auto& t) {
+			return extend(std::move(res), t);
 		}, t.get<Opt<Or<NSTypename, TemplateTypename>>>().value().value());
-	return res;
+	else
+		return res;
 }
 
 NodeStructs::Function getStruct(const Function& f) {
-	NodeStructs::Function res;
-	res.name = f.get<Word>().value;
-	res.returnType = getStruct(f.get<Typename>());
+	NodeStructs::Function res{
+		.name = f.get<Word>().value,
+		.returnType = getStruct(f.get<Typename>()),
+		.parameters = {},
+		.statements = {}
+	};
 	for (const auto& statement : f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
 		res.statements.push_back(getStatementStruct(statement));
 	for (const auto& type_and_name : f.get<ArgumentsSignature>().get<And<Typename, Word>>())
@@ -98,17 +102,17 @@ NodeStructs::Constructor getStruct(const Constructor& f) {
 }
 
 NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
-	NodeStructs::MemberVariable res;
-	res.type = getStruct(f.get<Typename>());
-	res.name = f.get<Word>().value;
-	return res;
+	return NodeStructs::MemberVariable{
+		.name = f.get<Word>().value,
+		.type = getStruct(f.get<Typename>()),
+	};
 }
 
 NodeStructs::Alias getStruct(const Alias& f) {
-	NodeStructs::Alias res;
-	res.aliasFrom = NodeStructs::BaseTypename{ f.get<Word>().value };
-	res.aliasTo = getStruct(f.get<Typename>());
-	return res;
+	return NodeStructs::Alias{
+		.aliasFrom = NodeStructs::BaseTypename{ f.get<Word>().value },
+		.aliasTo = getStruct(f.get<Typename>()),
+	};
 }
 
 NodeStructs::Type getStruct(const Type& cl) {
@@ -236,7 +240,7 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 
 NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 	using op_types = NodeStructs::UnaryExpression::op_types;
-	using op_and_unaryexpr = NodeStructs::UnaryExpression::op_and_unaryexpr;
+	using op_and_unaryexpr = NodeStructs::UnaryExpression::op_and_unary_expr;
 	return std::visit(
 		overload(
 			[](const PostfixExpression& expr) {
@@ -279,10 +283,8 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 				return std::visit(overload(
 					[&](const auto& token) {
 						auto res = NodeStructs::UnaryExpression{
-							op_and_unaryexpr {
-								token,
-								getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get())
-							}
+							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
+							token,
 						};
 						return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
 					},
@@ -292,10 +294,8 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 						Token<PARENCLOSE>
 					>& g) {
 						auto res = NodeStructs::UnaryExpression{
-							op_and_unaryexpr {
-								getStruct(g.get<Typename>()),
-								getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get())
-							}
+							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
+							getStruct(g.get<Typename>()),
 						};
 						return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
 					}

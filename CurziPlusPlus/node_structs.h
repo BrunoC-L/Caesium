@@ -22,6 +22,8 @@ namespace NodeStructs {
 		std::unique_ptr<Typename> type;
 		std::vector<Typename> templated_with;
 
+		/*TemplatedTypename(const TemplatedTypename& other);
+		TemplatedTypename(std::unique_ptr<Typename>&& type, std::vector<Typename>&& templated_with);*/
 		bool operator==(const TemplatedTypename&) const;
 		bool operator==(const Typename& other) const;
 	};
@@ -30,6 +32,8 @@ namespace NodeStructs {
 		std::unique_ptr<Typename> name_space;
 		std::unique_ptr<Typename> name_in_name_space;
 
+		/*NamespacedTypename(const NamespacedTypename& other);
+		NamespacedTypename(std::unique_ptr<Typename>&& name_space, std::unique_ptr<Typename>&& name_in_name_space);*/
 		bool operator==(const NamespacedTypename&) const;
 		bool operator==(const Typename& other) const;
 	};
@@ -79,6 +83,9 @@ namespace NodeStructs {
 			Token<NUMBER>
 		>;
 		std::unique_ptr<vt> expression;
+
+		/*Expression(const Expression& other);
+		Expression(std::unique_ptr<vt>&& expression) : expression(std::move(expression)) {};*/
 	};
 
 	struct BracketArguments {
@@ -118,8 +125,10 @@ namespace NodeStructs {
 			Token<AMPERSAND>,
 			Typename // type cast operator
 		>;
-		using op_and_unaryexpr = std::pair<op_types, Expression>;
-		std::variant<op_and_unaryexpr, Expression> expr;
+		using op_and_unary_expr = std::pair<op_types, Expression>;
+		//std::variant<op_and_unary_expr, Expression> expr;
+		Expression expr;
+		op_types unary_operator;
 	};
 
 	struct MultiplicativeExpression {
@@ -296,8 +305,6 @@ namespace NodeStructs {
 	struct TypeTemplateInstance {
 		NodeStructs::Template<const NodeStructs::Type*> type_template;
 		std::vector<TypeOrTypeTemplateInstance> template_arguments;
-		//TypeTemplateInstance(const TypeTemplateInstance&) = default;
-		//TypeTemplateInstance(const NodeStructs::Template<const NodeStructs::Type*>& t, const std::vector<TypeOrTypeTemplateInstance>& v) :type_template(t), template_arguments(v) {};
 	};
 
 	struct Type {
