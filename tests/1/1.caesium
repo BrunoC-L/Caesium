@@ -44,6 +44,10 @@ Int main():
         k - 1
         1 % k
     
+    Bool x = False
+    Bool k = True
+    Int y = -1
+    Int u = 1
     return y if x else u if k
 
     Map<Int, String> m = {}
@@ -55,4 +59,4 @@ Int main():
         else:
             u = k - k
     
-    m.at()
+    m.at(u)

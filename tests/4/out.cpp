@@ -1,9 +1,7 @@
-#pragma once
-#include <memory>
-#include <utility>
-#include <variant>
-#include <fstream>
 using Int = int;
+using Bool = bool;
+#include <variant>
+template <typename... Ts> using Variant = std::variant<Ts...>;
 #include <vector>
 template <typename T> using Vector = std::vector<T>;
 #include <string>

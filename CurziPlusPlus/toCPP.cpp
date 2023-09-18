@@ -2,6 +2,45 @@
 #include "type_of_expr.h"
 #include "type_of_typename.h"
 
+NodeStructs::TypeOrTypeTemplateInstance iterator_type(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::TypeOrTypeTemplateInstance& type
+) {
+	return std::visit(
+		overload(
+			[&](const NodeStructs::Type* type) -> NodeStructs::TypeOrTypeTemplateInstance {
+				throw std::runtime_error("");
+			},
+			[&](const NodeStructs::TypeTemplateInstance& type) -> NodeStructs::TypeOrTypeTemplateInstance {
+				const auto tn = type.type_template.templated->name;
+				if (tn == "Set")
+					if (type.template_arguments.size() == 1)
+						return type.template_arguments.at(0);
+					else
+						throw std::runtime_error("");
+				else
+					if (tn == "Vector")
+						if (type.template_arguments.size() == 1)
+							return type.template_arguments.at(0);
+						else
+							throw std::runtime_error("");
+					else
+						if (tn == "Map")
+							if (type.template_arguments.size() == 2)
+								return NodeStructs::TypeTemplateInstance{
+									.type_template = *named.type_templates.at("Map"),
+									.template_arguments = { type.template_arguments.at(0), type.template_arguments.at(1) },
+								};
+							else
+								throw std::runtime_error("");
+				int a = 0;
+				throw std::runtime_error("");
+			}
+		),
+		type
+	);
+}
 
 std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
@@ -11,28 +50,29 @@ std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 	return std::visit(
 		overload(
 			[&](const NodeStructs::Type* type) {
+				if (type->name == "Int" || type->name == "String" || type->name == "Bool")
+					throw std::runtime_error("Cannot decompose type 'Int'");
 				std::vector<NodeStructs::TypeOrTypeTemplateInstance> res;
 				res.reserve(type->memberVariables.size());
-				throw std::runtime_error("");
 				for (const auto& mv : type->memberVariables)
 					res.push_back(type_of_typename(variables, named, mv.type));
 				return res;
 			},
 			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeOrTypeTemplateInstance> {
 				const auto tn = type.type_template.templated->name;
-				if (tn == "std::unordered_set")
+				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
 						return { type.template_arguments.at(0) };
 					else
 						throw std::runtime_error("");
 				else
-					if (tn == "std::vector")
+					if (tn == "Vector")
 						if (type.template_arguments.size() == 1)
 							return { type.template_arguments.at(0) };
 						else
 							throw std::runtime_error("");
 				else
-					if (tn == "std::unordered_map")
+					if (tn == "Map")
 						if (type.template_arguments.size() == 2)
 							return { type.template_arguments.at(0), type.template_arguments.at(1) };
 						else
@@ -48,26 +88,57 @@ std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 void add_for_iterator_variables(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::ForStatement& statement
+	const NodeStructs::ForStatement& statement,
+	const NodeStructs::TypeOrTypeTemplateInstance& it_type
 ) {
-	auto decomposed_types = decomposed_type(variables, named, type_of_expr(variables, named, statement.collection));
-	for (int i = 0; i < statement.iterators.size(); ++i) {
-		const auto& iterator = statement.iterators.at(i);
-		std::visit(
-			overload(
-				[&](const NodeStructs::VariableDeclaration& it) {
-					/*if (decomposed_types.at(i) != type_of_typename(variables, named, it.type)) {
-						auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
-						throw std::runtime_error(err);
-					}*/
-					variables[it.name].push_back(type_of_typename(variables, named, it.type));
-				},
-				[&](const std::string& it) {
-					variables[it].emplace_back(decomposed_types.at(i));
-				}
-			),
-			iterator
-		);
+	bool can_be_decomposed = [&]() {
+		if (std::holds_alternative<const NodeStructs::Type*>(it_type)) {
+			const auto* t = std::get<const NodeStructs::Type*>(it_type);
+			if (t->name == "Int")
+				return false;
+		}
+		return true;
+	}();
+	if (can_be_decomposed) {
+		auto decomposed_types = decomposed_type(variables, named, it_type);
+		for (int i = 0; i < statement.iterators.size(); ++i) {
+			const auto& iterator = statement.iterators.at(i);
+			std::visit(
+				overload(
+					[&](const NodeStructs::VariableDeclaration& it) {
+						/*if (decomposed_types.at(i) != type_of_typename(variables, named, it.type)) {
+							auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
+							throw std::runtime_error(err);
+						}*/
+						variables[it.name].push_back(type_of_typename(variables, named, it.type));
+					},
+					[&](const std::string& it) {
+						variables[it].emplace_back(decomposed_types.at(i));
+					}
+				),
+				iterator
+			);
+		}
+	}
+	else {
+		if (statement.iterators.size() > 1)
+			throw std::runtime_error("Expected 1 iterator");
+		else
+			std::visit(
+				overload(
+					[&](const NodeStructs::VariableDeclaration& it) {
+						/*if (decomposed_types.at(i) != type_of_typename(variables, named, it.type)) {
+							auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
+							throw std::runtime_error(err);
+						}*/
+						variables[it.name].push_back(type_of_typename(variables, named, it.type));
+					},
+					[&](const std::string& it) {
+						variables[it].emplace_back(it_type);
+					}
+				),
+				statement.iterators.at(0)
+			);
 	}
 }
 
@@ -116,6 +187,7 @@ std::string transpile_main(
 		named.type_templates["Vector"] = &stuff_from_cpp.vector;
 		named.type_templates["Map"] = &stuff_from_cpp.unordered_map;
 		named.types["Int"] = &stuff_from_cpp._int;
+		named.types["Bool"] = &stuff_from_cpp._bool;
 		named.types["String"] = &stuff_from_cpp.string;
 	}
 
@@ -357,25 +429,50 @@ std::string transpile_statement(
 	const Named& named,
 	const NodeStructs::ForStatement& statement
 ) {
-	add_for_iterator_variables(variables, named, statement);
+	auto coll_type = type_of_expr(variables, named, statement.collection);
+	auto it_type = iterator_type(variables, named, coll_type);
+
+	bool can_be_decomposed = [&]() {
+		if (std::holds_alternative<const NodeStructs::Type*>(it_type)) {
+			const auto* t = std::get<const NodeStructs::Type*>(it_type);
+			if (t->name == "Int")
+				return false;
+		}
+		return true;
+	}();
+	add_for_iterator_variables(variables, named, statement, it_type);
 
 	std::stringstream ss;
-	ss << "for (auto&& [";
-	bool first = true;
-	for (const auto& iterator : statement.iterators) {
-		if (first)
-			first = false;
-		else
-			ss << ", ";
-		ss << std::visit(overload(
+	if (can_be_decomposed) {
+		ss << "for (auto&& [";
+		bool first = true;
+		for (const auto& iterator : statement.iterators) {
+			if (first)
+				first = false;
+			else
+				ss << ", ";
+			ss << std::visit(overload(
+				[&](const NodeStructs::VariableDeclaration& iterator) {
+					return iterator.name;
+				},
+				[&](const std::string& iterator) {
+					return iterator;
+				}), iterator);
+		}
+		ss << "]";
+	}
+	else {
+		if (statement.iterators.size() > 1)
+			throw std::runtime_error("Expected 1 iterator");
+		ss << "for (auto&& " << std::visit(overload(
 			[&](const NodeStructs::VariableDeclaration& iterator) {
 				return iterator.name;
 			},
 			[&](const std::string& iterator) {
 				return iterator;
-			}), iterator);
+			}), statement.iterators.at(0));
 	}
-	ss << "] : "
+	ss  << " : "
 		<< transpile(variables, named, statement.collection)
 		<< ") {"
 		<< transpile(variables, named, statement.statements)
@@ -398,9 +495,9 @@ void remove_for_iterator_variables(
 				[&](const std::string& it) {
 					variables[it].pop_back();
 				}
-					),
+			),
 			iterator
-					);
+		);
 }
 
 std::string transpile_statement(

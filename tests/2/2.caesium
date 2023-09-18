@@ -27,4 +27,5 @@ type A:
         a() = a()
 
 Int main():
+    A a = {}
     return 0

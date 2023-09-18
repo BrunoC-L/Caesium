@@ -240,7 +240,6 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 
 NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 	using op_types = NodeStructs::UnaryExpression::op_types;
-	using op_and_unaryexpr = NodeStructs::UnaryExpression::op_and_unary_expr;
 	return std::visit(
 		overload(
 			[](const PostfixExpression& expr) {

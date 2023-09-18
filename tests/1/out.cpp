@@ -1,9 +1,7 @@
-#pragma once
-#include <memory>
-#include <utility>
-#include <variant>
-#include <fstream>
 using Int = int;
+using Bool = bool;
+#include <variant>
+template <typename... Ts> using Variant = std::variant<Ts...>;
 #include <vector>
 template <typename T> using Vector = std::vector<T>;
 #include <string>
@@ -31,11 +29,15 @@ k * 1;
 k + 1;
 k - 1;
 1 % k;
-};if (k) return ([&] () { if (x) return y; else return u; }());
+};	Bool x;
+	Bool k;
+	Int y;
+	Int u;
+if (k) return ([&] () { if (x) return y; else return u; }());
 	Map<Int, String> m;
 for (auto&& [k, v] : m) {	Int u;
 	if (k == 1) {
 u=k + k;
 } else {u=k - k;
-}};m.at();
+}};m.at(u);
 };

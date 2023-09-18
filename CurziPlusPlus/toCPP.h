@@ -96,7 +96,8 @@ struct Named {
 
 struct cpp_std {
 	const NodeStructs::Type _uset = NodeStructs::Type{
-		.name = std::string{"std::unordered_set"},
+		.name = std::string{"Set"},
+		//.name = std::string{"std::unordered_set"},
 		//.aliases = std::vector<NodeStructs::Alias>{},
 		//.constructors = std::vector<NodeStructs::Constructor>{},
 		.methods = std::vector<NodeStructs::Function>{},
@@ -107,7 +108,8 @@ struct cpp_std {
 		&_uset,
 	};
 	const NodeStructs::Type _vec = NodeStructs::Type{
-		.name = std::string{"std::vector"},
+		.name = std::string{"Vector"},
+		//.name = std::string{"std::vector"},
 		//.aliases = std::vector<NodeStructs::Alias>{},
 		//.constructors = std::vector<NodeStructs::Constructor>{},
 		.methods = std::vector<NodeStructs::Function>{},
@@ -128,7 +130,8 @@ struct cpp_std {
 	};
 	static NodeStructs::Template<const NodeStructs::Type*> create_unordered_map_type_template() {
 		static NodeStructs::Type _map = NodeStructs::Type{
-				.name = std::string{"std::unordered_map"},
+				.name = std::string{"Map"},
+				//.name = std::string{"std::unordered_map"},
 				//.aliases = std::vector<NodeStructs::Alias>{},
 				//.constructors = std::vector<NodeStructs::Constructor>{},
 				.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
@@ -142,10 +145,13 @@ struct cpp_std {
 	}
 	const NodeStructs::Template<const NodeStructs::Type*> unordered_map = create_unordered_map_type_template();
 	const NodeStructs::Type _int = {
-		.name = "int",
+		.name = "Int",
+	};
+	const NodeStructs::Type _bool = {
+		.name = "Bool",
 	};
 	const NodeStructs::Type string = {
-		.name = "std::string",
+		.name = "String",
 	};
 };
 
@@ -158,18 +164,22 @@ std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 void add_for_iterator_variables(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::ForStatement& statement
+	const NodeStructs::ForStatement& statement,
+	const NodeStructs::TypeOrTypeTemplateInstance& it_type
 );
 
 
 static constexpr auto default_includes = std::string_view(
-	"#pragma once\n"
-	"#include <memory>\n"
-	"#include <utility>\n"
-	"#include <variant>\n"
-	"#include <fstream>\n"
+	//"#pragma once\n"
+	//"#include <memory>\n"
+	//"#include <utility>\n"
+	//"#include <fstream>\n"
 
 	"using Int = int;\n"
+	"using Bool = bool;\n"
+
+	"#include <variant>\n"
+	"template <typename... Ts> using Variant = std::variant<Ts...>;\n"
 
 	"#include <vector>\n"
 	"template <typename T> using Vector = std::vector<T>;\n"
