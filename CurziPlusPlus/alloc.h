@@ -14,24 +14,41 @@ public:
 		return std::move(*ptr.get());
 	}
 
-	//operator T&() {
-	//	return *ptr.get();
-	//}
+	operator T& () & {
+		return *ptr.get();
+	}
+
+	operator const T& () const & {
+		return *ptr.get();
+	}
+
+	operator const T () && {
+		return std::move(* ptr.get());
+	}
+
+	Allocated()  = delete;
 
 	template <typename U>
 	Allocated(const U& u) : ptr(std::make_unique<T>(u)) {}
+
 	template <typename U>
 	Allocated(U&& u) : ptr(std::make_unique<T>(std::move(u))) {}
-	Allocated() : ptr(std::make_unique<T>()) {};
-	Allocated(const Allocated& other) : Allocated(other.get()) {};
-	Allocated& operator=(const Allocated& other) {
+
+	template <typename U>
+	Allocated(const Allocated<U>& other) : Allocated(other.get()) {};
+	template <typename U>
+	Allocated& operator=(const Allocated<U>& other) {
 		ptr = std::make_unique<T>(*other.ptr);
 	}
-	Allocated(Allocated&& other) : Allocated(other.get()) {};
-	Allocated& operator=(Allocated&& other) {
+
+	template <typename U>
+	Allocated(Allocated<U>&& other) : Allocated(other.get()) {};
+	template <typename U>
+	Allocated& operator=(Allocated<U>&& other) {
 		ptr = std::move(other.ptr);
 		return *this;
 	}
+
 	~Allocated() = default;
 protected:
 	std::unique_ptr<T> ptr;

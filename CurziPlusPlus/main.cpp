@@ -38,7 +38,13 @@ void transpile(const std::vector<NodeStructs::File>& project, const std::filesys
 	cpp << transpile(project);
 }
 
+struct test {
+	bool operator==(const test&) const = default;
+};
+
+
 int main(int argc, char** argv) {
+
 	{
 		std::cout << std::boolalpha;
 		testParse();
