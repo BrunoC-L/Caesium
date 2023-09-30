@@ -45,13 +45,13 @@ NodeStructs::Typename getStruct(const Typename& t);
 
 NodeStructs::Typename extend(NodeStructs::Typename&& t, const NSTypename& nst) {
 	return NodeStructs::NamespacedTypename{
-		std::make_unique<NodeStructs::Typename>(std::move(t)),
-		std::make_unique<NodeStructs::Typename>(getStruct(nst.get<Alloc<Typename>>().get()))
+		std::move(t),
+		getStruct(nst.get<Alloc<Typename>>().get())
 	};
 }
 NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std::vector<Alloc<Typename>>& templates) {
 	NodeStructs::TemplatedTypename res{
-		std::make_unique<NodeStructs::Typename>(std::move(t)),
+		std::move(t),
 		{}
 	};
 	res.templated_with.reserve(templates.size());
@@ -68,8 +68,7 @@ NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypename& 
 }
 
 NodeStructs::Typename getStruct(const Typename& t) {
-	NodeStructs::Typename res;
-	res = NodeStructs::BaseTypename{ t.get<Word>().value };
+	NodeStructs::Typename res = NodeStructs::BaseTypename{ t.get<Word>().value };
 	if (t.get<Opt<Or<NSTypename, TemplateTypename>>>().has_value())
 		return std::visit([&res](const auto& t) {
 			return extend(std::move(res), t);
@@ -110,8 +109,8 @@ NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
 
 NodeStructs::Alias getStruct(const Alias& f) {
 	return NodeStructs::Alias{
-		.aliasFrom = NodeStructs::BaseTypename{ f.get<Word>().value },
-		.aliasTo = getStruct(f.get<Typename>()),
+		.aliasFrom = getStruct(f.get<Typename>()),
+		.aliasTo = NodeStructs::BaseTypename{ f.get<Word>().value },
 	};
 }
 
@@ -172,17 +171,17 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 			>& e) {
 				auto res = NodeStructs::ParenExpression{};
 				res.args.push_back(getExpressionStruct(e.get<Alloc<Expression>>().get()));
-				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+				return NodeStructs::Expression{ std::move(res) };
 			},
 			[](const Word& e) -> NodeStructs::Expression {
-				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(e.value) };
+				return NodeStructs::Expression{ e.value };
 			},
 			[](const BraceExpression& e) {
 				auto res = getExpressionStruct(e);
-				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>( std::move(res) ) };
+				return NodeStructs::Expression{ std::move(res) };
 			},
 			[](const Token<NUMBER>& e) {
-				return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(e) };
+				return NodeStructs::Expression{ e };
 			}
 		),
 		statement.value()
@@ -234,7 +233,7 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 				)
 			);
 		}
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -285,7 +284,7 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
 							token,
 						};
-						return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+						return NodeStructs::Expression{ std::move(res) };
 					},
 					[&](const And< // type cast operator
 						Token<PARENOPEN>,
@@ -296,7 +295,7 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
 							getStruct(g.get<Typename>()),
 						};
-						return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+						return NodeStructs::Expression{ std::move(res) };
 					}
 				), op.value());
 			}
@@ -317,7 +316,7 @@ NodeStructs::Expression getExpressionStruct(const MultiplicativeExpression& stat
 				operators::variant_t{ op_exp.get<operators>().value() },
 				getExpressionStruct(op_exp.get<UnaryExpression>())
 			});
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -333,7 +332,7 @@ NodeStructs::Expression getExpressionStruct(const AdditiveExpression& statement)
 				operators::variant_t{ op_exp.get<operators>().value() },
 				getExpressionStruct(op_exp.get<MultiplicativeExpression>())
 			});
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -349,7 +348,7 @@ NodeStructs::Expression getExpressionStruct(const CompareExpression& statement) 
 				operators::variant_t{ op_exp.get<operators>().value() },
 				getExpressionStruct(op_exp.get<AdditiveExpression>())
 			});
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -365,7 +364,7 @@ NodeStructs::Expression getExpressionStruct(const EqualityExpression& statement)
 				operators::variant_t{ op_exp.get<operators>().value() },
 				getExpressionStruct(op_exp.get<CompareExpression>())
 			});
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -378,7 +377,7 @@ NodeStructs::Expression getExpressionStruct(const AndExpression& statement) {
 		NodeStructs::AndExpression res{ getExpressionStruct(statement.get<EqualityExpression>()) };
 		for (const auto& n : ands)
 			res.ands.push_back(getExpressionStruct(n));
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -391,7 +390,7 @@ NodeStructs::Expression getExpressionStruct(const OrExpression& statement) {
 		NodeStructs::OrExpression res{ getExpressionStruct(statement.get<AndExpression>()) };
 		for (const auto& n : ors)
 			res.ors.push_back(getExpressionStruct(n));
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -408,7 +407,7 @@ NodeStructs::Expression getExpressionStruct(const ConditionalExpression& stateme
 			getExpressionStruct(ifElseExpr.value().get<OrExpression, 0>()),
 			getExpressionStruct(ifElseExpr.value().get<OrExpression, 1>())
 		};
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 	else {
 		return getExpressionStruct(statement.get<OrExpression>());
@@ -439,7 +438,7 @@ NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statemen
 				operators::variant_t{ op_exp.get<operators>().value() },
 				getExpressionStruct(op_exp.get<ConditionalExpression>())
 			});
-		return NodeStructs::Expression{ std::make_unique<NodeStructs::Expression::vt>(std::move(res)) };
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
@@ -486,7 +485,7 @@ NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 		res.elseExprStatements = std::visit(
 			overload(
 				[&](const Alloc<IfStatement>& e) -> decltype(res.elseExprStatements) {
-					return std::make_unique<NodeStructs::IfStatement>(getStatementStruct(e.get()));
+					return getStatementStruct(e.get());
 				},
 				[&](const ColonIndentCodeBlock& e) -> decltype(res.elseExprStatements) {
 					return getStatements(e);

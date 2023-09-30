@@ -103,26 +103,26 @@ struct Token {
 		return true;
 	}
 };
-
-struct UntilToken {
-	TOKENS t;
-	std::string value;
-	UntilToken(TOKENS t) : t(t) {}
-
-	UntilToken(UntilToken&&) = default;
-	UntilToken(const UntilToken&) = default;
-
-	bool build(Grammarizer* g) {
-		while (g->it != g->tokens.end()) {
-			value += g->it->second;
-			bool isT = g->it->first == t;
-			g->it++;
-			if (isT)
-				return true;
-		}
-		return false;
-	}
-};
+//
+//struct UntilToken {
+//	TOKENS t;
+//	std::string value;
+//	UntilToken(TOKENS t) : t(t) {}
+//
+//	UntilToken(UntilToken&&) = default;
+//	UntilToken(const UntilToken&) = default;
+//
+//	bool build(Grammarizer* g) {
+//		while (g->it != g->tokens.end()) {
+//			value += g->it->second;
+//			bool isT = g->it->first == t;
+//			g->it++;
+//			if (isT)
+//				return true;
+//		}
+//		return false;
+//	}
+//};
 
 struct IndentToken {
 	int n_indent;

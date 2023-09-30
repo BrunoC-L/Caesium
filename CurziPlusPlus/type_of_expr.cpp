@@ -142,6 +142,10 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	const Named& named,
 	const std::string& expr
 ) {
+	if (variables.find(expr) == variables.end()) {
+		auto err = "could not find variable named " + transpile(variables, named, expr);
+		throw std::runtime_error(err);
+	}
 	return variables.at(expr).back();
 }
 
@@ -162,6 +166,6 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 		[&](const auto& expr) -> NodeStructs::TypeOrTypeTemplateInstance {
 			return type_of_expr(variables, named, expr);
 		},
-		*expr.expression.get()
+		expr.expression.get()
 	);
 }

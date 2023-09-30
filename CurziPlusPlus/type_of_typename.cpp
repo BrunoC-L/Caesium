@@ -29,7 +29,7 @@ NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
-	const auto& templated = type_template_of_typename(variables, named, *type.type.get());
+	const auto& templated = type_template_of_typename(variables, named, type.type.get());
 	auto err = "Missing type ";
 	throw std::runtime_error(err);
 }
@@ -73,7 +73,7 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
-	const auto& templated = type_template_of_typename(variables, named, *type.type.get());
+	const auto& templated = type_template_of_typename(variables, named, type.type.get());
 	auto templated_with = std::vector<NodeStructs::TypeOrTypeTemplateInstance>{};
 	for (const auto& t : type.templated_with)
 		templated_with.push_back(type_of_typename(variables, named, t));

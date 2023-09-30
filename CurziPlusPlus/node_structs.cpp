@@ -2,7 +2,7 @@
 
 namespace NodeStructs {
 	bool TemplatedTypename::operator==(const TemplatedTypename& other) const {
-		return *type == *other.type && templated_with == other.templated_with;
+		return type.get() == other.type.get() && templated_with == other.templated_with;
 	}
 
 	bool TemplatedTypename::operator==(const Typename& other) const {
@@ -20,7 +20,7 @@ namespace NodeStructs {
 	}
 
 	bool NamespacedTypename::operator==(const NamespacedTypename& other) const {
-		return *name_space == *other.name_space && *name_in_name_space == *other.name_in_name_space;
+		return name_space.get() == other.name_space.get() && name_in_name_space.get() == other.name_in_name_space.get();
 	}
 
 	bool NamespacedTypename::operator==(const Typename& other) const {

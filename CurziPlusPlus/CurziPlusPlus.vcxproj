@@ -153,6 +153,7 @@
     <ClCompile Include="type_of_typename.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alloc.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="methods_of_type.h" />
     <ClInclude Include="node_structs.h" />

@@ -44,8 +44,8 @@ Int main():
         k - 1
         1 % k
     
-    Bool x = False
-    Bool k = True
+    Bool x = false
+    Bool k = true
     Int y = -1
     Int u = 1
     return y if x else u if k
@@ -53,7 +53,6 @@ Int main():
     Map<Int, String> m = {}
 
     for k, v in m:
-        Int u = 0
         if k == 1:
             u = k + k
         else:

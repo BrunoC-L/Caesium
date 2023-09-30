@@ -119,7 +119,7 @@ struct cpp_std {
 		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
 		&_vec,
 	};
-	static NodeStructs::Function testf() {
+	static NodeStructs::Function _map_at() {
 		NodeStructs::Function test = NodeStructs::Function{
 				"at",
 				NodeStructs::BaseTypename{"V"},
@@ -137,13 +137,28 @@ struct cpp_std {
 				.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
 				.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 		};
-		_map.methods.push_back(testf());
+		_map.methods.push_back(_map_at());
 		return {
 			std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{"K", "V"},
-				&_map,
+			&_map,
 		};
 	}
 	const NodeStructs::Template<const NodeStructs::Type*> unordered_map = create_unordered_map_type_template();
+	static NodeStructs::Template<const NodeStructs::Type*> create_pair_type_template() {
+		static NodeStructs::Type _pair = NodeStructs::Type{
+				.name = std::string{"Pair"},
+				//.name = std::string{"std::unordered_map"},
+				//.aliases = std::vector<NodeStructs::Alias>{},
+				//.constructors = std::vector<NodeStructs::Constructor>{},
+				.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
+				.memberVariables = std::vector<NodeStructs::MemberVariable>{},
+		};
+		return {
+			std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{"First", "Second"},
+			&_pair,
+		};
+	}
+	const NodeStructs::Template<const NodeStructs::Type*> pair = create_pair_type_template();
 	const NodeStructs::Type _int = {
 		.name = "Int",
 	};
@@ -155,28 +170,15 @@ struct cpp_std {
 	};
 };
 
-std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
-	const Named& named,
-	const NodeStructs::TypeOrTypeTemplateInstance& type
-);
-
-void add_for_iterator_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
-	const Named& named,
-	const NodeStructs::ForStatement& statement,
-	const NodeStructs::TypeOrTypeTemplateInstance& it_type
-);
-
-
-static constexpr auto default_includes = std::string_view(
+static constexpr std::string_view default_includes = 
 	//"#pragma once\n"
 	//"#include <memory>\n"
-	//"#include <utility>\n"
 	//"#include <fstream>\n"
+	"#include <utility>\n"
 
 	"using Int = int;\n"
 	"using Bool = bool;\n"
+	"template <typename First, typename Second> using Pair = std::pair<First, Second>;\n"
 
 	"#include <variant>\n"
 	"template <typename... Ts> using Variant = std::variant<Ts...>;\n"
@@ -195,8 +197,8 @@ static constexpr auto default_includes = std::string_view(
 
 	"#include <unordered_map>\n"
 	"template <typename K, typename V> using Map = std::unordered_map<K, V>;\n"
-	"\n"
-);
+
+	"\n";
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename);
 std::string transpile(const std::vector<NodeStructs::File>& project);
@@ -211,6 +213,12 @@ std::string transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
+);
+
+std::string transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::Type& type
 );
 
 std::string transpile(
@@ -255,6 +263,24 @@ std::string transpile_statement(
 	const NodeStructs::Statement& statement
 );
 
+std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::TypeOrTypeTemplateInstance& type
+);
+
+void add_for_iterator_variables(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::ForStatement& statement,
+	const NodeStructs::TypeOrTypeTemplateInstance& it_type
+);
+
+void remove_for_iterator_variables(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const NodeStructs::ForStatement& statement
+);
+
 void remove_added_variables(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
@@ -282,11 +308,6 @@ std::string transpile_statement(
 std::string transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::ForStatement& statement
-);
-
-void remove_for_iterator_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const NodeStructs::ForStatement& statement
 );
 

@@ -1,8 +1,10 @@
 type A:
-	A(C c):
-        this.c = c()
+	A():
+        Set<Pair<Int, Int>> a = {}
+        Bool b = false
+        Bool c = true
         for i, e in a if b while c:
-            return c if b
+            return if b
             break if c
 
 Int main():

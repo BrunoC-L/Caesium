@@ -5,6 +5,7 @@
 #include <optional>
 
 #include "primitives.h"
+#include "alloc.h"
 
 #define NODE_CAST(T, E) std::dynamic_pointer_cast<T>(E)
 
@@ -19,7 +20,7 @@ namespace NodeStructs {
 	using Typename = std::variant<TemplatedTypename, NamespacedTypename, BaseTypename>;
 
 	struct TemplatedTypename {
-		std::unique_ptr<Typename> type;
+		Allocated<Typename> type;
 		std::vector<Typename> templated_with;
 
 		bool operator==(const TemplatedTypename&) const;
@@ -27,8 +28,8 @@ namespace NodeStructs {
 	};
 
 	struct NamespacedTypename {
-		std::unique_ptr<Typename> name_space;
-		std::unique_ptr<Typename> name_in_name_space;
+		Allocated<Typename> name_space;
+		Allocated<Typename> name_in_name_space;
 
 		bool operator==(const NamespacedTypename&) const;
 		bool operator==(const Typename& other) const;
@@ -78,7 +79,7 @@ namespace NodeStructs {
 			std::string,
 			Token<NUMBER>
 		>;
-		std::unique_ptr<vt> expression;
+		Allocated<vt> expression;
 	};
 
 	struct BracketArguments {
@@ -219,7 +220,7 @@ namespace NodeStructs {
 	struct IfStatement {
 		Expression ifExpr;
 		std::vector<Statement> ifStatements;
-		std::optional<std::variant<std::unique_ptr<IfStatement>, std::vector<Statement>>> elseExprStatements;
+		std::optional<std::variant<Allocated<IfStatement>, std::vector<Statement>>> elseExprStatements;
 	};
 
 	struct WhileStatement {
