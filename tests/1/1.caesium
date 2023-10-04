@@ -16,13 +16,31 @@ type E:
     using G = A
     using T = F
 
+template <B, A>
 type R:
     using C = A<B>
     using K = F<B, C>
     E<K>::T<B, C> member1
     E<K>::G method1(K k, C u):
 
-Int main():
+template <T>
+type List:
+    using value_type = T
+    Vector<T> elements
+    T pop():
+        T res = elements.back()
+        elements.pop_back()
+        return res
+    void push(T t):
+        elements.push_back(t)
+
+void f():
+    List<Int> l = {}
+    l.push(3)
+    Int a = l.pop()
+
+Int main(Vector<String> args):
+
     Set<Int> someContainer = {}
     for i in someContainer:
 

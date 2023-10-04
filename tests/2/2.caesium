@@ -26,6 +26,6 @@ type A:
 	A(B b):
         a() = a()
 
-Int main():
+Int main(Vector<String> args):
     A a = {}
     return 0

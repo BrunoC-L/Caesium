@@ -19,8 +19,8 @@ std::vector<MethodOfTypeOrOfTypeTemplateInstance> methods_of_type(
 	const NodeStructs::TypeTemplateInstance& t
 ) {
 	std::vector<MethodOfTypeOrOfTypeTemplateInstance> res{};
-	for (const auto& method_template : t.type_template.templated->methods)
-		res.push_back(MethodOfTypeTemplateInstance{ &method_template, &t.type_template.arguments, &t.template_arguments });
+	for (const auto& method_template : t.type_template->templated.methods)
+		res.push_back(MethodOfTypeTemplateInstance{ &method_template, &t.type_template->arguments, &t.template_arguments });
 	
 	return res;
 }

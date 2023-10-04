@@ -23,7 +23,6 @@ std::string transpile(const std::vector<NodeStructs::File>& project) {
 		for (const auto& fn : file.functions)
 			if (fn.name == "main") {
 
-
 				std::map<std::string, Named> named_by_file;
 				std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>> variables;
 
@@ -46,6 +45,8 @@ std::string transpile(const std::vector<NodeStructs::File>& project) {
 				std::stringstream ss;
 				ss << default_includes;
 
+				ss << "struct Main {\n";
+
 				for (const auto& file2 : project) {
 					for (const auto& fn2 : file2.functions)
 						if (fn2.name != "main")
@@ -54,8 +55,16 @@ std::string transpile(const std::vector<NodeStructs::File>& project) {
 						ss << transpile(variables, named_by_file[file.filename], t);
 				}
 
+				ss
+				<< transpile_main(variables, named_by_file[file.filename], fn)
+				<<  "};\n"
+					"int main(int argc, char** argv) {\n"
+					"std::vector<std::string> args {};\n"
+					"for (int i = 0; i < argc; ++i)\n"
+					"    args.push_back(std::string(argv[i]));"
+					"return Main{}.main(std::move(args));\n"
+					"};\n";
 
-				ss << transpile_main(variables, named_by_file[file.filename], fn);
 				return ss.str();
 			}
 	throw std::runtime_error("Missing \"main\" function\n");
@@ -67,41 +76,32 @@ std::string transpile_main(
 	const NodeStructs::Function& fn
 ) {
 
-	if (fn.parameters.size() > 1)
-		throw std::runtime_error("\"main\" function declaration requires 0 or 1 argument\n");
-	if (fn.parameters.size() == 0)
-		return transpile(variables, named, fn);
-	else {
-		const auto& [parameter_type, parameter_name] = fn.parameters.at(0);
-		const auto std_vector_str = []() {
-			auto std_vector = NodeStructs::NamespacedTypename{
-				NodeStructs::BaseTypename{ "std" },
-				NodeStructs::BaseTypename{ "vector" }
-			};
-			auto std_string = NodeStructs::NamespacedTypename{
-				NodeStructs::BaseTypename{ "std" },
-				NodeStructs::BaseTypename{ "string" }
-			};
-			auto res = NodeStructs::TemplatedTypename{
-				NodeStructs::Typename{ std::move(std_vector) },
-				{}
-			};
-			res.templated_with.push_back(NodeStructs::Typename{ std::move(std_string) });
-			return res;
-		}();
-		bool is_vec_str = parameter_type == std_vector_str;
+	if (fn.parameters.size() != 1)
+		throw std::runtime_error("\"main\" function declaration requires 1 argument of type Vector<String>\n");
 
-		if (!is_vec_str)
-			throw std::runtime_error("\"main\" function declaration using 1 argument must be of std::vector<std::string> type\n");
+	const auto& [parameter_type, parameter_name] = fn.parameters.at(0);
+	const auto vector_str = []() {
+		auto res = NodeStructs::TemplatedTypename{
+			NodeStructs::BaseTypename{ "Vector" },
+			{}
+		};
+		res.templated_with.push_back(NodeStructs::BaseTypename{ "String" });
+		return res;
+	}();
+	bool is_vec_str = parameter_type == vector_str;
 
-		const_cast<NodeStructs::Function&>(fn).name = "_main";
-		return transpile(variables, named, fn) + "int main(int argc, char** argv) {\n"
-			"std::vector<std::string> args {};\n"
-			"for (int i = 0; i < argc; ++i)\n"
-			"    args.push_back(std::string(argv[i]));"
-			"return _main(std::move(args));\n"
-			"};\n";
-	}
+	if (!is_vec_str)
+		throw std::runtime_error("\"main\" function declaration using 1 argument must be of std::vector<std::string> type\n");
+
+	return transpile(
+		variables,
+		named,
+		NodeStructs::Function{
+			.name = "main",
+			.returnType = fn.returnType,
+			.parameters = fn.parameters,
+			.statements = fn.statements
+		});
 }
 
 std::string transpile(
@@ -113,7 +113,7 @@ std::string transpile(
 		fn.name + "(" + transpile(variables, named, fn.parameters) +
 		") {\n" +
 		transpile(variables, named, fn.statements) +
-		"};";
+		"};\n";
 }
 
 std::string transpile(
@@ -149,7 +149,7 @@ std::string transpile(
 
 	if (type.constructors.size()) {
 		for (const auto& constructor : type.constructors)
-			ss << transpile(variables, named, constructor, type) << ";\n";
+			ss << transpile(variables, named, constructor, type) << "\n";
 		ss << type.name << "(const " << type.name << "&) = default;\n";
 		ss << type.name << "& operator=(const " << type.name << "&) = default;\n";
 		ss << type.name << "(" << type.name << "&&) = default;\n";
@@ -158,9 +158,9 @@ std::string transpile(
 	}
 
 	for (const auto& fn : type.methods)
-		ss << transpile(variables, named, fn) << ";\n";
+		ss << transpile(variables, named, fn);
 
-	ss << "};";
+	ss << "};\n\n";
 	return ss.str();
 }
 
@@ -354,7 +354,7 @@ NodeStructs::TypeOrTypeTemplateInstance iterator_type(
 				throw std::runtime_error("");
 			},
 			[&](const NodeStructs::TypeTemplateInstance& type) -> NodeStructs::TypeOrTypeTemplateInstance {
-				const auto tn = type.type_template.templated->name;
+				const auto tn = type.type_template->templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
 						return type.template_arguments.at(0);
@@ -370,7 +370,7 @@ NodeStructs::TypeOrTypeTemplateInstance iterator_type(
 						if (tn == "Map")
 							if (type.template_arguments.size() == 2)
 								return NodeStructs::TypeTemplateInstance{
-									.type_template = *named.type_templates.at("Map"),
+									.type_template = named.type_templates.at("Map"),
 									.template_arguments = { type.template_arguments.at(0), type.template_arguments.at(1) },
 								};
 							else
@@ -400,7 +400,7 @@ std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 				return res;
 			},
 			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeOrTypeTemplateInstance> {
-				const auto tn = type.type_template.templated->name;
+				const auto tn = type.type_template->templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
 						return { type.template_arguments.at(0) };

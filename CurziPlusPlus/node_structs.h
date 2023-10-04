@@ -295,7 +295,7 @@ namespace NodeStructs {
 	using TypeOrTypeTemplateInstance = std::variant<const NodeStructs::Type*, NodeStructs::TypeTemplateInstance>;
 
 	struct TypeTemplateInstance {
-		NodeStructs::Template<const NodeStructs::Type*> type_template;
+		const NodeStructs::Template<NodeStructs::Type>* type_template;
 		std::vector<TypeOrTypeTemplateInstance> template_arguments;
 	};
 
@@ -329,7 +329,7 @@ namespace NodeStructs {
 		std::string filename;
 		std::vector<Import> imports;
 		std::vector<Type> types;
-		//std::vector<NodeStructs::Template<const NodeStructs::Type*>> type_templates;
+		std::vector<NodeStructs::Template<NodeStructs::Type>> type_templates;
 		std::vector<Function> functions;
 		std::vector<Block> blocks;
 	};

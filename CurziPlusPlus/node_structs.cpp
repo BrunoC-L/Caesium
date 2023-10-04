@@ -9,7 +9,7 @@ namespace NodeStructs {
 		return std::visit(
 			overload(
 				[&](const TemplatedTypename& t) {
-					return (*this) == t;
+					return operator==(t);
 				},
 				[](const auto&) {
 					return false;
@@ -27,7 +27,7 @@ namespace NodeStructs {
 		return std::visit(
 			overload(
 				[&](const NamespacedTypename& t) {
-					return (*this) == t;
+					return operator==(t);
 				},
 				[](const auto&) {
 					return false;
@@ -45,7 +45,7 @@ namespace NodeStructs {
 		return std::visit(
 			overload(
 				[&](const BaseTypename& t) {
-					return (*this) == t;
+					return operator==(t);
 				},
 				[](const auto&) {
 					return false;

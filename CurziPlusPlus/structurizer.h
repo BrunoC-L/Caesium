@@ -31,14 +31,15 @@ std::string getTemplateDeclaration(const Word& word) {
 }
 
 NodeStructs::TemplateArguments getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename) {
-	NodeStructs::TemplateArguments res;
+	throw std::runtime_error("");
+	/*NodeStructs::TemplateArguments res;
 	const TemplateDeclaration& tmpl = templateTypename.get<Alloc<TemplateDeclaration>>().get();
 	const auto& l = tmpl.get<CommaPlus<Or<TemplateTypenameDeclaration, Word>>>();
 	for (const auto& t : l.get<Or<TemplateTypenameDeclaration, Word>>())
 		std::visit([&res](const auto& t) {
 			res.arguments.push_back(getTemplateDeclaration(t));
 		}, t.value());
-	return res;
+	return res;*/
 }
 
 NodeStructs::Typename getStruct(const Typename& t);
@@ -118,20 +119,34 @@ NodeStructs::Type getStruct(const Type& cl) {
 	NodeStructs::Type computedClass{ cl.get<Word>().value };
 	for (const ClassElement& ce : cl.get<Indent<Star<And<IndentToken, ClassElement>>>>().get<ClassElement>())
 		std::visit([&computedClass](const auto& e) {
-			computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
-		}, ce.value());
+		computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
+			}, ce.value());
 	return computedClass;
 }
+//
+//NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>& cl) {
+//	/*NodeStructs::Type computedClass{ cl.get<Word>().value };
+//	for (const ClassElement& ce : cl.get<Indent<Star<And<IndentToken, ClassElement>>>>().get<ClassElement>())
+//		std::visit([&computedClass](const auto& e) {
+//		computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
+//			}, ce.value());
+//	return computedClass;*/
+//}
 
 NodeStructs::File getStruct(const File& f, std::string fileName) {
 	NodeStructs::File res;
 	res.filename = fileName;
 	for (const Import& import : f.get<Star<Import>>().get<Import>())
 		res.imports.push_back(getStruct(import));
-	for (const Type& cl : f.get<Star<Or<Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>>().get<Type>())
+
+	using T = Star<Or<Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>;
+
+	for (const Type& cl : f.get<T>().get<Type>())
 		res.types.push_back(getStruct(cl));
-	for (const Function& fun : f.get<Star<Or<Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>>().get<Function>())
+	for (const Function& fun : f.get<T>().get<Function>())
 		res.functions.push_back(getStruct(fun));
+	/*for (const Template<Function>& fun : f.get<T>())
+		res.functions.push_back(getStruct(fun));*/
 	return res;
 }
 

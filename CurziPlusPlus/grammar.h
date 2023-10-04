@@ -41,6 +41,7 @@ template <typename... Ts> struct or_t {
 template <typename T>
 using Template = and_t<
 	TemplateDeclaration,
+	Token<NEWLINE>,
 	T
 >;
 using Expression = struct AssignmentExpression;
@@ -59,7 +60,7 @@ makeinherit(TemplateDeclaration,
 	and_t<
 		Token<TEMPLATE>,
 		Token<LT>,
-		CommaPlus<Or<TemplateTypenameDeclaration, Word>>,
+		CommaPlus<Word>,
 		Token<GT>
 	>);
 

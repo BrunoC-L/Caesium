@@ -75,7 +75,6 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E::E<F>");
 	testParse<TemplateTypename>(__LINE__, 0, "<>");
 	testParse<TemplateTypename>(__LINE__, 0, "<E>");
-	testParse<TemplateDeclaration>(__LINE__, 0, "template <x>");
 	testParse<Template<Type>>(__LINE__, 0, "template <x> type u:\n");
 	testParse<Typename>(__LINE__, 0, "E::E<>");
 	testParse<Typename>(__LINE__, 0, "E<E>");
@@ -115,10 +114,14 @@ void testParse() {
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer = {}\nfor i in someContainer:\nvector<int> arr = {}\nfor i in arr :\nMap<int, std::string> m = {}\nfor k, v in m:\n");
 	testParse<And<AdditiveExpression, Token<LT>, AdditiveExpression, Token<GT>, AdditiveExpression>>(__LINE__, 0, "Set<Int> x");
 	testParse<Expression>(__LINE__, 0, "Set<Int> x");
+	testParse<TemplateDeclaration>(__LINE__, 0, "template <x>");
+	testParse<TemplateDeclaration>(__LINE__, 0, "template <y>");
+	testParse<TemplateDeclaration>(__LINE__, 0, "template <B, A>");
+	testParse<Template<Type>>(__LINE__, 0, "template <B, A>\ntype A:\n");
 
 	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
-	// basically previous tests ensure good code should work
-	// and these tests ensure bad code should fail
+	// basically previous tests ensure good code works
+	// and these tests ensure bad code fails
 	testParse<Type>(__LINE__, 1, "type A:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
 	testParse<Type>(__LINE__, 0, "type A:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 }

@@ -15,5 +15,5 @@ A a():
         a = f if e else a
         return A() if b == b
 
-Int main():
+Int main(Vector<String> args):
     return 0

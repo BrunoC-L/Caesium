@@ -4,18 +4,18 @@
 #include "methods_of_type.h"
 #include <unordered_map>
 
-NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
+const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 ) {
 	if (named.type_templates.contains(type.type))
-		return *named.type_templates.at(type.type);
+		return named.type_templates.at(type.type);
 	auto err = "Missing type " + type.type;
 	throw std::runtime_error(err);
 }
 
-NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
+const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
@@ -24,7 +24,7 @@ NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	throw std::runtime_error(err);
 }
 
-NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
+const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
@@ -34,13 +34,13 @@ NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
 	throw std::runtime_error(err);
 }
 
-NodeStructs::Template<const NodeStructs::Type*> type_template_of_typename(
+const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Typename& type
 ) {
 	return std::visit(
-		[&](const auto& t) -> NodeStructs::Template<const NodeStructs::Type*> {
+		[&](const auto& t) {
 			auto s = transpile(variables, named, t);
 			return type_template_of_typename(variables, named, t);
 		},

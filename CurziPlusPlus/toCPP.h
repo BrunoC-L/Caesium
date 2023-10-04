@@ -87,11 +87,11 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 struct Named {
 	template <typename T> using map2ptr = std::map<std::string, const T*>;
 	map2ptr<NodeStructs::Function> functions;
-	map2ptr<NodeStructs::Template<const NodeStructs::Function*>> function_templates;
+	map2ptr<NodeStructs::Template<NodeStructs::Function>> function_templates;
 	map2ptr<NodeStructs::Type> types;
-	map2ptr<NodeStructs::Template<const NodeStructs::Type*>> type_templates;
+	map2ptr<NodeStructs::Template<NodeStructs::Type>> type_templates;
 	map2ptr<NodeStructs::Block> blocks;
-	map2ptr<NodeStructs::Template<const NodeStructs::Block*>> block_templates;
+	map2ptr<NodeStructs::Template<NodeStructs::Block>> block_templates;
 };
 
 struct cpp_std {
@@ -103,9 +103,9 @@ struct cpp_std {
 		.methods = std::vector<NodeStructs::Function>{},
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
-	const NodeStructs::Template<const NodeStructs::Type*> unordered_set = {
+	const NodeStructs::Template<NodeStructs::Type> unordered_set = {
 		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
-		&_uset,
+		_uset,
 	};
 	const NodeStructs::Type _vec = NodeStructs::Type{
 		.name = std::string{"Vector"},
@@ -115,9 +115,9 @@ struct cpp_std {
 		.methods = std::vector<NodeStructs::Function>{},
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
-	const NodeStructs::Template<const NodeStructs::Type*> vector = {
+	const NodeStructs::Template<NodeStructs::Type> vector = {
 		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
-		&_vec,
+		_vec,
 	};
 	static NodeStructs::Function _map_at() {
 		NodeStructs::Function test = NodeStructs::Function{
@@ -128,7 +128,7 @@ struct cpp_std {
 		};
 		return test;
 	};
-	static NodeStructs::Template<const NodeStructs::Type*> create_unordered_map_type_template() {
+	static NodeStructs::Template<NodeStructs::Type> create_unordered_map_type_template() {
 		static NodeStructs::Type _map = NodeStructs::Type{
 				.name = std::string{"Map"},
 				//.name = std::string{"std::unordered_map"},
@@ -140,11 +140,11 @@ struct cpp_std {
 		_map.methods.push_back(_map_at());
 		return {
 			std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{"K", "V"},
-			&_map,
+			_map,
 		};
 	}
-	const NodeStructs::Template<const NodeStructs::Type*> unordered_map = create_unordered_map_type_template();
-	static NodeStructs::Template<const NodeStructs::Type*> create_pair_type_template() {
+	const NodeStructs::Template<NodeStructs::Type> unordered_map = create_unordered_map_type_template();
+	static NodeStructs::Template<NodeStructs::Type> create_pair_type_template() {
 		static NodeStructs::Type _pair = NodeStructs::Type{
 				.name = std::string{"Pair"},
 				//.name = std::string{"std::unordered_map"},
@@ -155,10 +155,10 @@ struct cpp_std {
 		};
 		return {
 			std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{"First", "Second"},
-			&_pair,
+			_pair,
 		};
 	}
-	const NodeStructs::Template<const NodeStructs::Type*> pair = create_pair_type_template();
+	const NodeStructs::Template<NodeStructs::Type> pair = create_pair_type_template();
 	const NodeStructs::Type _int = {
 		.name = "Int",
 	};
