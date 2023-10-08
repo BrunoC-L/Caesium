@@ -74,5 +74,8 @@
     <ClInclude Include="alloc.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="cpp23_ranges_to.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

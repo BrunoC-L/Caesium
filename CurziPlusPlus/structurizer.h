@@ -1,9 +1,10 @@
 #pragma once
 #include "node_structs.h"
 #include "grammar.h"
+#include <ranges>
+#include "cpp23_ranges_to.h"
 
 NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement);
-NodeStructs::TemplateArguments getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename);
 NodeStructs::Statement getStatementStruct(const Statement& statement);
 
 NodeStructs::Import getStruct(const Import& f) {
@@ -17,29 +18,6 @@ NodeStructs::Import getStruct(const Import& f) {
 				return string.value;
 		}), f.get<Or<Word, String>>().value());
 	return res;
-}
-
-NodeStructs::Template<std::string> getTemplateDeclaration(const TemplateTypenameDeclaration& templateTypename) {
-	NodeStructs::Template<std::string> res;
-	res.templated = templateTypename.get<Word>().value;
-	res.arguments = getTemplatesFromTemplateTypenameDeclaration(templateTypename);
-	return res;
-}
-
-std::string getTemplateDeclaration(const Word& word) {
-	return word.value;
-}
-
-NodeStructs::TemplateArguments getTemplatesFromTemplateTypenameDeclaration(const TemplateTypenameDeclaration& templateTypename) {
-	throw std::runtime_error("");
-	/*NodeStructs::TemplateArguments res;
-	const TemplateDeclaration& tmpl = templateTypename.get<Alloc<TemplateDeclaration>>().get();
-	const auto& l = tmpl.get<CommaPlus<Or<TemplateTypenameDeclaration, Word>>>();
-	for (const auto& t : l.get<Or<TemplateTypenameDeclaration, Word>>())
-		std::visit([&res](const auto& t) {
-			res.arguments.push_back(getTemplateDeclaration(t));
-		}, t.value());
-	return res;*/
 }
 
 NodeStructs::Typename getStruct(const Typename& t);
@@ -92,6 +70,18 @@ NodeStructs::Function getStruct(const Function& f) {
 	return res;
 }
 
+NodeStructs::TemplateArguments getStruct(const TemplateDeclaration& t) {
+	return {
+		t.get<CommaPlus<Word>>().get<Word>()
+		| std::views::transform([](const Word& w) { return w.value; })
+		| std::ranges::to<std::vector>()
+	};
+}
+
+NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>& f) {
+	throw std::runtime_error("");
+}
+
 NodeStructs::Constructor getStruct(const Constructor& f) {
 	NodeStructs::Constructor res;
 	for (const auto& statement : f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
@@ -123,15 +113,13 @@ NodeStructs::Type getStruct(const Type& cl) {
 			}, ce.value());
 	return computedClass;
 }
-//
-//NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>& cl) {
-//	/*NodeStructs::Type computedClass{ cl.get<Word>().value };
-//	for (const ClassElement& ce : cl.get<Indent<Star<And<IndentToken, ClassElement>>>>().get<ClassElement>())
-//		std::visit([&computedClass](const auto& e) {
-//		computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
-//			}, ce.value());
-//	return computedClass;*/
-//}
+
+NodeStructs::Template<NodeStructs::Type> getStruct(const Template<Type>& cl) {
+	return {
+		getStruct(cl.get<TemplateDeclaration>()),
+		getStruct(cl.get<Type>())
+	};
+}
 
 NodeStructs::File getStruct(const File& f, std::string fileName) {
 	NodeStructs::File res;
@@ -141,12 +129,15 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 
 	using T = Star<Or<Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>;
 
-	for (const Type& cl : f.get<T>().get<Type>())
-		res.types.push_back(getStruct(cl));
+	for (const Type& t : f.get<T>().get<Type>())
+		res.types.push_back(getStruct(t));
+	for (const Template<Type>& t : f.get<T>().get<Template<Type>>())
+		res.type_templates.push_back(getStruct(t));
+
 	for (const Function& fun : f.get<T>().get<Function>())
 		res.functions.push_back(getStruct(fun));
-	/*for (const Template<Function>& fun : f.get<T>())
-		res.functions.push_back(getStruct(fun));*/
+	for (const Template<Function>& fun : f.get<T>().get<Template<Function>>())
+		res.function_templates.push_back(getStruct(fun));
 	return res;
 }
 

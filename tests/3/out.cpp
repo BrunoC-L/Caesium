@@ -18,7 +18,7 @@ template <typename K, typename V> using Map = std::unordered_map<K, V>;
 struct Main {
 struct A {
 A() {
-Set_Pair_Int, Int__ a = {};
+Set<Pair<Int, Int>> a = {};
 Bool b = false;
 Bool c = true;
 for (auto&& [i, e] : a) {
@@ -33,7 +33,7 @@ A& operator=(A&&) = default;
 ~A() = default;
 };
 
-Int main(Vector_String_ args) {
+Int main(Vector<String> args) {
 return 0;
 };
 };

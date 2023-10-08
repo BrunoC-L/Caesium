@@ -6,6 +6,7 @@ struct Typename;
 struct Statement;
 struct TemplateDeclaration;
 struct ElseStatement;
+struct AssignmentExpression;
 // each forward declared rule uses "struct" instead of "using". To avoid trouble with struct definition
 // we inherit from and_t or or_t (which requires supertype ctor "__VA_ARGS__({ x })")
 // so we use a macro since the content of __VA_ARGS__ is a repetition (used twice by the macro) and long to type
@@ -44,7 +45,8 @@ using Template = and_t<
 	Token<NEWLINE>,
 	T
 >;
-using Expression = struct AssignmentExpression;
+
+using Expression = AssignmentExpression;
 using Import = and_t<Token<IMPORT>, Or<Word, String>, Newline>;
 using Alias = and_t<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
 using ArgumentsSignature = CommaStar<And<Typename, Word>>;
@@ -68,80 +70,7 @@ using MemberVariable = and_t<Typename, Word, Newline>;
 using Constructor = and_t<Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
 
-using ExpressionStatement = and_t<Expression, Newline>;
-using BlockDeclaration = and_t<Token<BLOCK>, ColonIndentCodeBlock>;
-using BlockStatement = and_t<Token<BLOCK>, Typename>;
-using VariableDeclaration = and_t<Typename, Word>;
-using VariableDeclarationStatement = and_t<Typename, Word, Token<EQUAL>, Expression, Newline>;
-using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>> ;
-makeinherit(ElseStatement, and_t<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>>);
-using BreakStatement = and_t<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
-using ForStatement = and_t<
-		Token<FOR>,
-		CommaPlus<Or<VariableDeclaration, Word>>,
-		Token<IN>,
-		Expression,
-		Opt<And<Token<IF>, Expression>>,
-		Opt<And<Token<WHILE>, Expression>>,
-		ColonIndentCodeBlock
-	>;
-using IForStatement = and_t<
-		Token<IFOR>,
-		Word, // require a variable for the index
-		Token<COMMA>,
-		CommaPlus<Or<VariableDeclaration, Word>>, // and at least 1 variable iterating
-		Token<IN>,
-		Expression,
-		Opt<And<Token<IF>, Expression>>,
-		Opt<And<Token<WHILE>, Expression>>,
-		ColonIndentCodeBlock
-	>;
-using WhileStatement = and_t<Token<WHILE>, Expression, ColonIndentCodeBlock>;
-using ReturnStatement = and_t<
-		Token<RETURN>,
-		CommaStar<Expression>,
-		Opt<And<
-			Token<IF>,
-			Expression
-		>>,
-		Newline
-	>;
-makeinherit(Statement,
-and_t<
-	IndentToken,
-	Alloc<Or<
-		VariableDeclarationStatement,
-		ExpressionStatement,
-		IfStatement,
-		ForStatement,
-		IForStatement,
-		WhileStatement,
-		BreakStatement,
-		ReturnStatement,
-		BlockStatement
-	>>
->);
-using Type = and_t<
-		Token<TYPE>,
-		Word,
-		Token<COLON>,
-		Newline,
-		Indent<Star<And<
-            IndentToken,
-            ClassElement
-		>>>
-    >;
-using File = and_t<
-	Star<Import>,
-	Star<
-		Or<
-			Type,
-			Function,
-			Template<Type>,
-			Template<Function>,
-			Template<BlockDeclaration>
-		>
-	>, Token<END>>;
+
 /*
 EXPRESSIONS
 */
@@ -234,3 +163,79 @@ and_t<
 		ConditionalExpression
 	>>
 >);
+
+using ExpressionStatement = and_t<Expression, Newline>;
+using BlockDeclaration = and_t<Token<BLOCK>, ColonIndentCodeBlock>;
+using BlockStatement = and_t<Token<BLOCK>, Typename>;
+using VariableDeclaration = and_t<Typename, Word>;
+using VariableDeclarationStatement = and_t<Typename, Word, Token<EQUAL>, Expression, Newline>;
+using IfStatement = and_t<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>> ;
+makeinherit(ElseStatement, and_t<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>>);
+
+using BreakStatement = and_t<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
+using ForStatement = and_t<
+		Token<FOR>,
+		CommaPlus<Or<VariableDeclaration, Word>>,
+		Token<IN>,
+		Expression,
+		Opt<And<Token<IF>, Expression>>,
+		Opt<And<Token<WHILE>, Expression>>,
+		ColonIndentCodeBlock
+	>;
+using IForStatement = and_t<
+		Token<IFOR>,
+		Word, // require a variable for the index
+		Token<COMMA>,
+		CommaPlus<Or<VariableDeclaration, Word>>, // and at least 1 variable iterating
+		Token<IN>,
+		Expression,
+		Opt<And<Token<IF>, Expression>>,
+		Opt<And<Token<WHILE>, Expression>>,
+		ColonIndentCodeBlock
+	>;
+using WhileStatement = and_t<Token<WHILE>, Expression, ColonIndentCodeBlock>;
+using ReturnStatement = and_t<
+		Token<RETURN>,
+		CommaStar<Expression>,
+		Opt<And<
+			Token<IF>,
+			Expression
+		>>,
+		Newline
+	>;
+makeinherit(Statement,
+and_t<
+	IndentToken,
+	Alloc<Or<
+		VariableDeclarationStatement,
+		ExpressionStatement,
+		IfStatement,
+		ForStatement,
+		IForStatement,
+		WhileStatement,
+		BreakStatement,
+		ReturnStatement,
+		BlockStatement
+	>>
+>);
+using Type = and_t<
+		Token<TYPE>,
+		Word,
+		Token<COLON>,
+		Newline,
+		Indent<Star<And<
+            IndentToken,
+            ClassElement
+		>>>
+    >;
+using File = and_t<
+	Star<Import>,
+	Star<
+		Or<
+			Type,
+			Function,
+			Template<Type>,
+			Template<Function>,
+			Template<BlockDeclaration>
+		>
+	>, Token<END>>;

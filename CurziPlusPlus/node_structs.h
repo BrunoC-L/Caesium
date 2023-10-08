@@ -273,7 +273,7 @@ namespace NodeStructs {
 	struct Template;
 
 	struct TemplateArguments {
-		std::vector<std::variant<std::string, Template<std::string>>> arguments;
+		std::vector<std::string> arguments;
 	};
 
 	template <typename T>
@@ -331,6 +331,7 @@ namespace NodeStructs {
 		std::vector<Type> types;
 		std::vector<NodeStructs::Template<NodeStructs::Type>> type_templates;
 		std::vector<Function> functions;
+		std::vector<NodeStructs::Template<NodeStructs::Function>> function_templates;
 		std::vector<Block> blocks;
 	};
 }

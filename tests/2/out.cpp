@@ -61,7 +61,7 @@ if ((a)) {
 }};
 };
 
-Int main(Vector_String_ args) {
+Int main(Vector<String> args) {
 A a = {};
 return 0;
 };

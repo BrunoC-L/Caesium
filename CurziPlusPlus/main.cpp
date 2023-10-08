@@ -2,10 +2,11 @@
 #include <fstream>
 #include <algorithm>
 #include <filesystem>
+
 #include "grammar.h"
-#include "toCpp.h"
 #include "structurizer.h"
 #include "testParse.h"
+#include "toCpp.h"
 #include "testTranspile.h"
 
 NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
@@ -54,7 +55,8 @@ int main(int argc, char** argv) {
 				for (const auto& file : std::filesystem::directory_iterator(folder))
 					if (file.path().extension() == ".caesium")
 						project.push_back(caesium2AST(file.path()));
-				transpile(project, folder);
+				if (!project.empty())
+					transpile(project, folder);
 			}
 	return 0;
 }

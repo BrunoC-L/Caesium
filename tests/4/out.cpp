@@ -19,7 +19,7 @@ struct Main {
 A a() {
 if (false) return A{};
 while (true) {
-Set_A_ b = {};
+Set<A> b = {};
 Bool c = false;
 Bool d = True;
 for (auto&& [a] : b) {
@@ -42,7 +42,7 @@ A& operator=(A&&) = default;
 ~A() = default;
 };
 
-Int main(Vector_String_ args) {
+Int main(Vector<String> args) {
 return 0;
 };
 };

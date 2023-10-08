@@ -104,7 +104,7 @@ struct cpp_std {
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
 	const NodeStructs::Template<NodeStructs::Type> unordered_set = {
-		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
+		std::vector{std::string{"T"}},
 		_uset,
 	};
 	const NodeStructs::Type _vec = NodeStructs::Type{
@@ -116,58 +116,58 @@ struct cpp_std {
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
 	const NodeStructs::Template<NodeStructs::Type> vector = {
-		std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{std::string{"T"}},
+		std::vector{std::string{"T"}},
 		_vec,
 	};
-	static NodeStructs::Function _map_at() {
-		NodeStructs::Function test = NodeStructs::Function{
+	static NodeStructs::Template<NodeStructs::Type> create_unordered_map_type_template() {
+		const std::vector<NodeStructs::Function> methods = {
+			NodeStructs::Function{
 				"at",
 				NodeStructs::BaseTypename{"V"},
 				std::vector<std::pair<NodeStructs::Typename, std::string>>{/*{NodeStructs::BaseTypename{"V"}, ""}*/},
 				std::vector<NodeStructs::Statement>{},
+			}
 		};
-		return test;
-	};
-	static NodeStructs::Template<NodeStructs::Type> create_unordered_map_type_template() {
-		static NodeStructs::Type _map = NodeStructs::Type{
+		return {
+			std::vector{std::string{"K"}, std::string{"V"}},
+			NodeStructs::Type{
 				.name = std::string{"Map"},
-				//.name = std::string{"std::unordered_map"},
-				//.aliases = std::vector<NodeStructs::Alias>{},
-				//.constructors = std::vector<NodeStructs::Constructor>{},
-				.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
-				.memberVariables = std::vector<NodeStructs::MemberVariable>{},
-		};
-		_map.methods.push_back(_map_at());
-		return {
-			std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{"K", "V"},
-			_map,
+				.methods = std::move(methods),
+			},
 		};
 	}
-	const NodeStructs::Template<NodeStructs::Type> unordered_map = create_unordered_map_type_template();
-	static NodeStructs::Template<NodeStructs::Type> create_pair_type_template() {
-		static NodeStructs::Type _pair = NodeStructs::Type{
-				.name = std::string{"Pair"},
-				//.name = std::string{"std::unordered_map"},
-				//.aliases = std::vector<NodeStructs::Alias>{},
-				//.constructors = std::vector<NodeStructs::Constructor>{},
-				.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
-				.memberVariables = std::vector<NodeStructs::MemberVariable>{},
+	//const NodeStructs::Template<NodeStructs::Type> unordered_map = create_unordered_map_type_template();
+	const NodeStructs::Template<NodeStructs::Type> unordered_map = []() {
+		std::vector<NodeStructs::Function> methods = {
+			NodeStructs::Function{
+				"at",
+				NodeStructs::BaseTypename{"V"},
+				std::vector<std::pair<NodeStructs::Typename, std::string>>{},
+				std::vector<NodeStructs::Statement>{},
+			}
 		};
-		return {
-			std::vector<std::variant<std::string, NodeStructs::Template<std::string>>>{"First", "Second"},
-			_pair,
+		return NodeStructs::Template<NodeStructs::Type>{
+			std::vector<std::string>{"K", "V"},
+			NodeStructs::Type{
+				.name = std::string{"Map"},
+				.methods = std::move(methods),
+			},
 		};
-	}
-	const NodeStructs::Template<NodeStructs::Type> pair = create_pair_type_template();
-	const NodeStructs::Type _int = {
-		.name = "Int",
+	}();
+	const NodeStructs::Template<NodeStructs::Type> pair = {
+		std::vector<std::string>{"First", "Second"},
+		NodeStructs::Type{
+			.name = std::string{"Pair"},
+			//.name = std::string{"std::unordered_map"},
+			//.aliases = std::vector<NodeStructs::Alias>{},
+			//.constructors = std::vector<NodeStructs::Constructor>{},
+			.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
+			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
+		},
 	};
-	const NodeStructs::Type _bool = {
-		.name = "Bool",
-	};
-	const NodeStructs::Type string = {
-		.name = "String",
-	};
+	const NodeStructs::Type _int = {"Int"};
+	const NodeStructs::Type _bool = {"Bool"};
+	const NodeStructs::Type string = {"String"};
 };
 
 static constexpr std::string_view default_includes = 

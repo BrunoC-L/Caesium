@@ -7,8 +7,14 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 		if (file.filename == filename) {
 			for (const auto& e : file.types)
 				named.types[e.name] = &e;
+			for (const auto& e : file.type_templates)
+				named.type_templates[e.templated.name] = &e;
+
 			for (const auto& e : file.functions)
 				named.functions[e.name] = &e;
+			for (const auto& e : file.function_templates)
+				named.function_templates[e.templated.name] = &e;
+
 			for (const auto& e : file.blocks)
 				named.blocks[e.name] = &e;
 			for (const auto& i : file.imports)
