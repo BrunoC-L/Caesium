@@ -1,79 +1,17 @@
-type A:
-    using C = B
+type Texture:
+    String name
 
-type B:
-    using C = B
+type Fur:
+    Texture t
 
-type T:
-    A<B> a
-    B::C b
-    A<B>::C c
-    A<B::C> d
+type Cat:
+    Fur fur
 
-type F:
+String pet_the_cat(Cat ref cat):
 
-type E:
-    using G = A
-    using T = F
+Int main(Vector<String> ref args):
+    Cat cat = {}
+    Set<Int> s = {}
 
-template <B, A>
-type R:
-    using C = A<B>
-    using K = F<B, C>
-    E<K>::T<B, C> member1
-    E<K>::G method1(K k, C u):
-
-template <T>
-type List:
-    using value_type = T
-    Vector<T> elements
-    T pop():
-        T res = elements.back()
-        elements.pop_back()
-        return res
-    void push(T t):
-        elements.push_back(t)
-
-void f():
-    List<Int> l = {}
-    l.push(3)
-    Int a = l.pop()
-
-Int main(Vector<String> args):
-
-    Set<Int> someContainer = {}
-    for i in someContainer:
-
-    Int u = {}
-    u = u * u
-    u == u
-    Vector<Int> arr = {}
-    for i in arr:
-
-    for k in arr:
-        ++k
-        k++
-        --k
-        k--
-        k+=1
-        k-=1
-        k * 1
-        k + 1
-        k - 1
-        1 % k
+    cat.fur.t.name(s)
     
-    Bool x = false
-    Bool k = true
-    Int y = -1
-    Int u = 1
-    return y if x else u if k
-
-    Map<Int, String> m = {}
-
-    for k, v in m:
-        if k == 1:
-            u = k + k
-        else:
-            u = k - k
-    
-    m.at(u)

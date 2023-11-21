@@ -7,6 +7,7 @@ struct Statement;
 struct TemplateDeclaration;
 struct ElseStatement;
 struct AssignmentExpression;
+struct FunctionArgument;
 // each forward declared rule uses "struct" instead of "using". To avoid trouble with struct definition
 // we inherit from and_t or or_t (which requires supertype ctor "__VA_ARGS__({ x })")
 // so we use a macro since the content of __VA_ARGS__ is a repetition (used twice by the macro) and long to type
@@ -47,13 +48,15 @@ using Template = and_t<
 >;
 
 using Expression = AssignmentExpression;
-using Import = and_t<Token<IMPORT>, Or<Word, String>, Newline>;
+using Import = and_t<Star<Token<NEWLINE>>, Token<IMPORT>, Or<Word, String>, Newline>;
 using Alias = and_t<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
-using ArgumentsSignature = CommaStar<And<Typename, Word>>;
+using ValueCategory = Or<Token<KEY>, Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
+using FunctionParameter = And<Typename, ValueCategory, Word>;
+using FunctionParameters = CommaStar<FunctionParameter>;
 using ColonIndentCodeBlock = and_t<Token<COLON>, Newline, Indent<Star<Statement>>>;
-using Function = and_t<Typename, Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
-using ParenArguments = and_t<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>;
-using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<Expression>, Token<BRACKETCLOSE>>;
+using Function = and_t<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+using ParenArguments = and_t<Token<PARENOPEN>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
+using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
 using NSTypename = and_t<Token<NS>, Alloc<Typename>>;
 using TemplateTypename = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NSTypename>>;
 makeinherit(Typename, and_t<Word, Opt<Or<NSTypename, TemplateTypename>>>);
@@ -67,7 +70,7 @@ makeinherit(TemplateDeclaration,
 	>);
 
 using MemberVariable = and_t<Typename, Word, Newline>;
-using Constructor = and_t<Word, Token<PARENOPEN>, ArgumentsSignature, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+using Constructor = and_t<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
 
 
@@ -164,6 +167,8 @@ and_t<
 	>>
 >);
 
+makeinherit(FunctionArgument, and_t<Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>, Expression>);
+
 using ExpressionStatement = and_t<Expression, Newline>;
 using BlockDeclaration = and_t<Token<BLOCK>, ColonIndentCodeBlock>;
 using BlockStatement = and_t<Token<BLOCK>, Typename>;
@@ -231,7 +236,7 @@ using Type = and_t<
 using File = and_t<
 	Star<Import>,
 	Star<
-		Or<
+		Or< Token<NEWLINE>,
 			Type,
 			Function,
 			Template<Type>,

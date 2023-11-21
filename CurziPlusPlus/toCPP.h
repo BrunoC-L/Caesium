@@ -3,8 +3,15 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <expected>
 
 #include "node_structs.h"
+
+struct user_error {
+	std::string content;
+};
+
+using transpile_t = std::expected<std::string, user_error>;
 
 template <size_t token>
 std::string _symbol_as_text() {
@@ -97,52 +104,32 @@ struct Named {
 struct cpp_std {
 	const NodeStructs::Type _uset = NodeStructs::Type{
 		.name = std::string{"Set"},
-		//.name = std::string{"std::unordered_set"},
-		//.aliases = std::vector<NodeStructs::Alias>{},
-		//.constructors = std::vector<NodeStructs::Constructor>{},
 		.methods = std::vector<NodeStructs::Function>{},
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
+
 	const NodeStructs::Template<NodeStructs::Type> unordered_set = {
 		std::vector{std::string{"T"}},
 		_uset,
 	};
+
 	const NodeStructs::Type _vec = NodeStructs::Type{
 		.name = std::string{"Vector"},
-		//.name = std::string{"std::vector"},
-		//.aliases = std::vector<NodeStructs::Alias>{},
-		//.constructors = std::vector<NodeStructs::Constructor>{},
 		.methods = std::vector<NodeStructs::Function>{},
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
+
 	const NodeStructs::Template<NodeStructs::Type> vector = {
 		std::vector{std::string{"T"}},
 		_vec,
 	};
-	static NodeStructs::Template<NodeStructs::Type> create_unordered_map_type_template() {
-		const std::vector<NodeStructs::Function> methods = {
-			NodeStructs::Function{
-				"at",
-				NodeStructs::BaseTypename{"V"},
-				std::vector<std::pair<NodeStructs::Typename, std::string>>{/*{NodeStructs::BaseTypename{"V"}, ""}*/},
-				std::vector<NodeStructs::Statement>{},
-			}
-		};
-		return {
-			std::vector{std::string{"K"}, std::string{"V"}},
-			NodeStructs::Type{
-				.name = std::string{"Map"},
-				.methods = std::move(methods),
-			},
-		};
-	}
-	//const NodeStructs::Template<NodeStructs::Type> unordered_map = create_unordered_map_type_template();
+
 	const NodeStructs::Template<NodeStructs::Type> unordered_map = []() {
 		std::vector<NodeStructs::Function> methods = {
 			NodeStructs::Function{
 				"at",
 				NodeStructs::BaseTypename{"V"},
-				std::vector<std::pair<NodeStructs::Typename, std::string>>{},
+				std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{},
 				std::vector<NodeStructs::Statement>{},
 			}
 		};
@@ -154,26 +141,34 @@ struct cpp_std {
 			},
 		};
 	}();
+
 	const NodeStructs::Template<NodeStructs::Type> pair = {
 		std::vector<std::string>{"First", "Second"},
 		NodeStructs::Type{
 			.name = std::string{"Pair"},
-			//.name = std::string{"std::unordered_map"},
-			//.aliases = std::vector<NodeStructs::Alias>{},
-			//.constructors = std::vector<NodeStructs::Constructor>{},
-			.methods = std::vector<NodeStructs::Function>{/* testf()*/ },
+			.methods = std::vector<NodeStructs::Function>{},
 			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 		},
 	};
 	const NodeStructs::Type _int = {"Int"};
 	const NodeStructs::Type _bool = {"Bool"};
-	const NodeStructs::Type string = {"String"};
+	const NodeStructs::Type string = { "String" };
+
+	const NodeStructs::Function _println{
+			.name = std::string{"println"},
+			.returnType = NodeStructs::BaseTypename{"void"},
+			.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{
+				{ NodeStructs::BaseTypename{"T"}, NodeStructs::ValueCategory{ NodeStructs::Reference{} }, "t" }
+			},
+	};
+
+	const NodeStructs::Template<NodeStructs::Function> println = {
+		std::vector<std::string>{"T"},
+		_println
+	};
 };
 
-static constexpr std::string_view default_includes = 
-	//"#pragma once\n"
-	//"#include <memory>\n"
-	//"#include <fstream>\n"
+static constexpr auto default_includes = 
 	"#include <utility>\n"
 
 	"using Int = int;\n"
@@ -201,63 +196,116 @@ static constexpr std::string_view default_includes =
 	"\n";
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename);
-std::string transpile(const std::vector<NodeStructs::File>& project);
+std::expected<std::pair<std::string, std::string>, user_error> transpile(const std::vector<NodeStructs::File>& project);
 
-std::string transpile_main(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
-	Named& named,
-	const NodeStructs::Function& fn
-);
-
-std::string transpile(
+transpile_t transpile_main_definition(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
 );
 
-std::string transpile(
+transpile_t transpile_declaration(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::Function& fn
+);
+
+transpile_t transpile_definition(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::Function& fn
+);
+
+transpile_t transpile_declaration(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Type& type
 );
 
-std::string transpile(
+transpile_t transpile_definition(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const std::vector<std::pair<NodeStructs::Typename, std::string>>& parameters
+	const NodeStructs::Type& type
 );
 
-std::string transpile(
+template<typename T>
+transpile_t transpile_declaration(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::Template<T>& tmpl
+);
+
+template<typename T>
+transpile_t transpile_definition(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::Template<T>& tmpl
+);
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>& parameters
+);
+
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Typename& type
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 );
 
-std::string transpile(
+
+
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::TypeOrTypeTemplateInstance& type
+);
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::Type* type
+);
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::TypeTemplateInstance& type
+);
+
+
+
+
+
+
+
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const std::vector<NodeStructs::Statement>& statements
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Statement& statement
@@ -287,49 +335,49 @@ void remove_added_variables(
 	const NodeStructs::Statement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::VariableDeclarationStatement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::BlockStatement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::IfStatement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::ForStatement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::IForStatement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::WhileStatement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::BreakStatement& statement
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::ReturnStatement& statement
@@ -340,104 +388,131 @@ std::string transpile_statement(
 
 // expressions
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Expression& expr
 );
 
-std::string transpile_statement(
+transpile_t transpile_statement(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::Expression& statement
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const Token<NUMBER>& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const std::string& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::AssignmentExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::ConditionalExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::OrExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::AndExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::EqualityExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::CompareExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::AdditiveExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::MultiplicativeExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::UnaryExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::PostfixExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::ParenExpression& expr
 );
 
-std::string transpile(
+transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const NodeStructs::BraceExpression& expr
 );
 
-std::string transpile_args(
+transpile_t transpile_arg(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
+	const NodeStructs::FunctionArgument& arg
+);
+
+transpile_t transpile_args(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const std::vector<NodeStructs::FunctionArgument>& args
+);
+
+std::optional<NodeStructs::TypeOrTypeTemplateInstance> type_of_call_with(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::TypeOrTypeTemplateInstance& t,
 	const std::vector<NodeStructs::Expression>& args
+);
+
+std::optional<NodeStructs::TypeOrTypeTemplateInstance> type_of_postfix_member(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::TypeOrTypeTemplateInstance& t,
+	const std::string& property_name
+);
+
+std::optional<NodeStructs::TypeOrTypeTemplateInstance> type_of_postfix_member(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const NodeStructs::Type& t,
+	const std::string& property_name
 );

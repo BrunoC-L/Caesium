@@ -12,7 +12,7 @@ NodeStructs::Import getStruct(const Import& f) {
 	res.imported = std::visit(
 		overload(
 			[](const Word& word) {
-				return "\"" + word.value + ".h\"";
+				return word.value + ".caesium";
 			},
 			[](const String& string) {
 				return string.value;
@@ -56,6 +56,28 @@ NodeStructs::Typename getStruct(const Typename& t) {
 		return res;
 }
 
+NodeStructs::ValueCategory getStruct(const ValueCategory& vc) {
+	return NodeStructs::ValueCategory{
+		std::visit(
+			overload(
+				[](const Token<KEY>&) -> NodeStructs::ValueCategory {
+					return NodeStructs::Key{};
+				},
+				[](const Token<VAL>&) -> NodeStructs::ValueCategory {
+					return NodeStructs::Value{};
+				},
+				[](const Token<REF>&) -> NodeStructs::ValueCategory {
+					return NodeStructs::Reference{};
+				},
+				[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ValueCategory {
+					return NodeStructs::MutableReference{};
+				}
+			),
+			vc.value()
+		)
+	};
+}
+
 NodeStructs::Function getStruct(const Function& f) {
 	NodeStructs::Function res{
 		.name = f.get<Word>().value,
@@ -65,8 +87,8 @@ NodeStructs::Function getStruct(const Function& f) {
 	};
 	for (const auto& statement : f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
 		res.statements.push_back(getStatementStruct(statement));
-	for (const auto& type_and_name : f.get<ArgumentsSignature>().get<And<Typename, Word>>())
-		res.parameters.push_back({ getStruct(type_and_name.get<Typename>()), type_and_name.get<Word>().value });
+	for (const auto& type_and_name : f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>())
+		res.parameters.push_back({ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ValueCategory>()), type_and_name.get<Word>().value });
 	return res;
 }
 
@@ -86,8 +108,8 @@ NodeStructs::Constructor getStruct(const Constructor& f) {
 	NodeStructs::Constructor res;
 	for (const auto& statement : f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
 		res.statements.push_back(getStatementStruct(statement));
-	for (const auto& type_and_name : f.get<ArgumentsSignature>().get<And<Typename, Word>>())
-		res.parameters.push_back({ getStruct(type_and_name.get<Typename>()), type_and_name.get<Word>().value });
+	for (const auto& arg : f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>())
+		res.parameters.push_back({ getStruct(arg.get<Typename>()), getStruct(arg.get<ValueCategory>()), arg.get<Word>().value });
 	return res;
 }
 
@@ -127,7 +149,7 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 	for (const Import& import : f.get<Star<Import>>().get<Import>())
 		res.imports.push_back(getStruct(import));
 
-	using T = Star<Or<Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>;
+	using T = Star<Or<Token<NEWLINE>, Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>;
 
 	for (const Type& t : f.get<T>().get<Type>())
 		res.types.push_back(getStruct(t));
@@ -141,17 +163,28 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 	return res;
 }
 
-NodeStructs::ParenExpression getStruct(const ParenArguments& args) {
-	NodeStructs::ParenExpression res{};
-	for (const auto& arg : args.get<CommaStar<Expression>>().get<Expression>())
-		res.args.push_back(getExpressionStruct(arg));
+NodeStructs::ArgumentPassingType getStruct(const Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t) {
+	throw std::runtime_error("");
+}
+
+NodeStructs::FunctionArgument getStruct(const FunctionArgument& arg) {
+	return NodeStructs::FunctionArgument{
+		getStruct(arg.get<Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>>()),
+		getExpressionStruct(arg.get<Expression>())
+	};
+}
+
+NodeStructs::ParenArguments getStruct(const ParenArguments& args) {
+	NodeStructs::ParenArguments res{};
+	for (const auto& arg : args.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
+		res.args.push_back(getStruct(arg));
 	return res;
 }
 
 NodeStructs::BracketArguments getStruct(const BracketArguments& args) {
 	NodeStructs::BracketArguments res{};
-	for (const auto& arg : args.get<CommaStar<Expression>>().get<Expression>())
-		res.args.push_back(getExpressionStruct(arg));
+	for (const auto& arg : args.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
+		res.args.push_back(getStruct(arg));
 	return res;
 }
 

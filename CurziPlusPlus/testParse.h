@@ -49,7 +49,6 @@ void testParse() {
 	std::cout << "PARSE TESTS\n";
 
 	testParse<CommaStar<And<Token<WORD>>>>(__LINE__, 0, "y");
-	testParse<Import>(__LINE__, 0, "import string\n");
 	testParse<And<IndentToken, Token<WORD>>>(__LINE__, 3, "\t\t\ta");
 	testParse<CommaStar<Token<WORD>>>(__LINE__, 0, "y");
 	testParse<CommaStar<And<Token<WORD>>>>(__LINE__, 0, "y");
@@ -75,7 +74,6 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E::E<F>");
 	testParse<TemplateTypename>(__LINE__, 0, "<>");
 	testParse<TemplateTypename>(__LINE__, 0, "<E>");
-	testParse<Template<Type>>(__LINE__, 0, "template <x> type u:\n");
 	testParse<Typename>(__LINE__, 0, "E::E<>");
 	testParse<Typename>(__LINE__, 0, "E<E>");
 	testParse<Typename>(__LINE__, 0, "E<E<E>>");
@@ -84,17 +82,19 @@ void testParse() {
 	testParse<Typename>(__LINE__, 0, "E<E<E<E<E<E>>>>>");
 	testParse<Typename>(__LINE__, 0, "E<E<E<E < E<   E,>>,  > >,E < E < E<  E< E ,> >,>>>");
 	testParse<Typename>(__LINE__, 0, "E<F<H,I>>::G");
-	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
-	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
-	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n");
+	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K ref k, U val u, R<U,E<H>,I>::V val kuv):\n\n\n\t\n\t\n\n\t\tfor i in arr:\n");
+	testParse<FunctionParameter>(__LINE__, 0, "T ref t");
+	testParse<FunctionParameter>(__LINE__, 0, "T ref! t");
+	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n");
 	testParse<Function>(__LINE__, 0, "E<F<H,I>>::G method1():\n");
 	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1():\n");
 	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G member1");
-	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
-	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
-	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
-	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n\t\tfor i in arr:\n");
-	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K k, U u, R<U,E<H>,I>::V kuv):\n");
+	testParse<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n\t\tfor i in arr:\n");
+	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n");
+	testParse<Function>(__LINE__, 1, "E<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n\t\tfor i in arr:\n");
+	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n\t\tfor i in arr:\n");
+	testParse<ClassElement>(__LINE__, 1, "E<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n");
 	testParse<Statement>(__LINE__, 1, "\tfor i in arr:\n");
 	testParse<Function>(__LINE__, 0, "void a():\n");
 	testParse<Star<Statement>>(__LINE__, 1, "\tif a:\n");
@@ -115,9 +115,12 @@ void testParse() {
 	testParse<And<AdditiveExpression, Token<LT>, AdditiveExpression, Token<GT>, AdditiveExpression>>(__LINE__, 0, "Set<Int> x");
 	testParse<Expression>(__LINE__, 0, "Set<Int> x");
 	testParse<TemplateDeclaration>(__LINE__, 0, "template <x>");
-	testParse<TemplateDeclaration>(__LINE__, 0, "template <y>");
 	testParse<TemplateDeclaration>(__LINE__, 0, "template <B, A>");
+	testParse<Template<Type>>(__LINE__, 0, "template <x>\ntype u:\n");
 	testParse<Template<Type>>(__LINE__, 0, "template <B, A>\ntype A:\n");
+	testParse<File>(__LINE__, 0, "\nint main():\n");
+	testParse<File>(__LINE__, 0, "Int main(Vector<String> ref args):\n\tCat cat = {}\n");
+	testParse<File>(__LINE__, 0, "Int main(Vector<String> ref args):\n\tCat cat = {}\n");
 
 	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
 	// basically previous tests ensure good code works

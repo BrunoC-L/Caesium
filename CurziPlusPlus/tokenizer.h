@@ -31,6 +31,12 @@ enum TOKENS {
 	QUESTION,
 	POUND,
 
+	COPY,
+	MOVE,
+	REF,
+	VAL,
+	KEY,
+
 	EQUAL,
 	LT,
 	GT,
@@ -208,6 +214,7 @@ private:
 					// close string
 					if (program[index] == c) {
 						index += 1;
+						// the transpiled string uses " always, not ' or `
 						return { STRING, "\"" + str + "\"" };
 					}
 					// in case there are " in the string and the string uses ' or `, we need to replace them accordingly since
@@ -238,7 +245,7 @@ private:
 			index += 1;
 			return { BRACKETCLOSE, "]" };
 		case ' ':
-			if (index + 3 <= program.size() &&
+			if (index + 3 < program.size() &&
 				program[index + 1] == ' ' &&
 				program[index + 2] == ' ' &&
 				program[index + 3] == ' ') {
@@ -261,7 +268,7 @@ private:
 			return { SEMICOLON, ";" };
 		case ':':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == ':') {
+			if (index < program.size() && program[index] == ':') {
 				index += 1;
 				return { NS, "::" };
 			}
@@ -271,21 +278,21 @@ private:
 			return { COMMA, "," };
 		case '=':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
+			if (index < program.size() && program[index] == '=') {
 				index += 1;
 				return { EQUALEQUAL, "==" };
 			}
 			return { EQUAL, "=" };
 		case '!':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
+			if (index < program.size() && program[index] == '=') {
 				index += 1;
 				return { NEQUAL, "!=" };
 			}
 			return { NOT, "!" };
 		case '<':
 			index += 1;
-			if (index + 1 <= program.size()) {
+			if (index < program.size()) {
 				if (program[index] == '=') {
 					index += 1;
 						return { LTE, "<=" };
@@ -294,14 +301,14 @@ private:
 			return { LT, "<" };
 		case '>':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
+			if (index < program.size() && program[index] == '=') {
 				index += 1;
 				return { GTE, ">=" };
 			}
 			return { GT, ">" };
 		case '-':
 			index += 1;
-			if (index + 1 <= program.size()) {
+			if (index < program.size()) {
 				if (program[index] == '=') {
 					index += 1;
 					return { MINUSEQUAL, "-=" };
@@ -314,7 +321,7 @@ private:
 			return { DASH, "-" };
 		case '+':
 			index += 1;
-			if (index + 1 <= program.size()) {
+			if (index < program.size()) {
 				if (program[index] == '=') {
 					index += 1;
 					return { PLUSEQUAL, "+=" };
@@ -326,28 +333,53 @@ private:
 			return { PLUS, "+" };
 		case '*':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
+			if (index < program.size() && program[index] == '=') {
 				index += 1;
 				return { TIMESEQUAL, "*=" };
 			}
 			return { ASTERISK, "*" };
 		case '/':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
+			// skip // comments
+			if (index < program.size() && program[index] == '/') {
+				index += 1;
+				while (index < program.size()) {
+					if (program[index] == '\n') {
+						index += 1;
+						break;
+					}
+					else
+						index += 1;
+				}
+				return readToken();
+			}
+			// skip /* */ comments
+			if (index < program.size() && program[index] == '*') {
+				index += 1;
+				while (index + 1 < program.size())
+					if (program[index] == '*' && program[index + 1] == '/') {
+						index += 2;
+						break;
+					}
+					else
+						index += 1;
+				return readToken();
+			}
+			if (index < program.size() && program[index] == '=') {
 				index += 1;
 				return { DIVEQUAL, "/=" };
 			}
 			return { SLASH, "/" };
 		case '%':
 			index += 1;
-			if (index + 1 <= program.size() && program[index] == '=') {
+			if (index < program.size() && program[index] == '=') {
 				index += 1;
 				return { MODEQUAL, "%=" };
 			}
 			return { PERCENT, "%" };
 		case '&':
 			index += 1;
-			if (index + 1 <= program.size()) {
+			if (index < program.size()) {
 				if (program[index] == '&') {
 					index += 1;
 					return { ANDAND, "&&" };
@@ -430,6 +462,16 @@ private:
 				return { TYPE, word };
 			if (word == "template")
 				return { TEMPLATE, word };
+			if (word == "copy")
+				return { COPY, word };
+			if (word == "move")
+				return { MOVE, word };
+			if (word == "ref")
+				return { REF, word };
+			if (word == "val")
+				return { VAL, word };
+			if (word == "key")
+				return { KEY, word };
 
 			return { WORD, word };
 		}

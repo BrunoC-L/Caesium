@@ -1,0 +1,73 @@
+template <X>
+type A:
+    using C = X
+
+type B:
+    using C = A<B>
+
+type T:
+    A<B> a
+    B::C b
+    A<B>::C c
+    A<B::C> d
+
+type F:
+
+type E:
+    using G = B::C
+    using T = F
+
+template <T>
+type List:
+    using value_type = T
+    Vector<T> elements
+    T pop():
+        T res = elements.back()
+        elements.pop_back()
+        return res
+    void push(T t):
+        elements.push_back(t)
+
+void f():
+    List<Int> l = {}
+    l.push(3)
+    Int a = l.pop()
+
+Int main(Vector<String> args):
+
+   Set<Int> someContainer = {}
+   for i in someContainer:
+
+   Int u = {}
+   u = u * u
+   u == u
+   Vector<Int> arr = {}
+   for i in arr:
+
+   for k in arr:
+       ++k
+       k++
+       --k
+       k--
+       k+=1
+       k-=1
+       k * 1
+       k + 1
+       k - 1
+       1 % k
+   
+   Bool x = false
+   Bool k = true
+   Int y = -1
+   u = 1
+   return y if x else u if k
+
+   Map<Int, String> m = {}
+
+   for k, v in m:
+       if k == 1:
+           u = k + k
+       else:
+           u = k - k
+   
+   m.at(u)

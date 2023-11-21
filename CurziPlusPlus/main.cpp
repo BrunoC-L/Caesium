@@ -20,7 +20,7 @@ NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	Grammarizer g(tokens);
 	if (build_optional_primitive(file, &g)) {
 		std::cout << fileName << ": built\n";
-		return getStruct(file, fileName.stem().generic_string());
+		return getStruct(file, fileName.stem().generic_string() + ".caesium");
 	}
 	else {
 		std::cout << fileName << ": not built\n";
@@ -29,14 +29,21 @@ NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 }
 
 void transpile(const std::vector<NodeStructs::File>& project, const std::filesystem::path& folder) {
-	const std::string outFileNameNoExt = folder.generic_string() +"/out";
-	std::ofstream h(outFileNameNoExt + ".h", std::ios::trunc);
-	std::ofstream cpp(outFileNameNoExt + ".cpp", std::ios::trunc);
+	std::ofstream h(folder.generic_string() + "/header.h", std::ios::trunc);
+	std::ofstream cpp(folder.generic_string() + "/main.cpp", std::ios::trunc);
 	if (!h.is_open())
 		throw std::exception();
 	if (!cpp.is_open())
 		throw std::exception();
-	cpp << transpile(project);
+	auto k = transpile(project);
+	if (k.has_value()) {
+		auto [_h, _cpp] = k.value();
+		h << std::move(_h);
+		cpp << std::move(_cpp);
+	}
+	else {
+		std::cout << k.error().content;
+	}
 }
 
 int main(int argc, char** argv) {

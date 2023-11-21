@@ -80,14 +80,14 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	const Named& named,
 	const NodeStructs::PostfixExpression& expr
 ) {
-	if (expr.postfixes.size() == 0) {
+	/*if (expr.postfixes.size() == 0) {
 		return type_of_expr(variables, named, expr.expr);
 	}
 	else {
 		auto next_t = type_of_expr(variables, named, expr.expr);
 		for (const NodeStructs::PostfixExpression::op_types& postfix : expr.postfixes) {
 			next_t = std::visit(overload(
-				[&](const std::string& property) {
+				[&](const std::string& property_name) {
 					auto methods = methods_of_type(variables, named, next_t);
 					throw std::runtime_error("");
 					return next_t;
@@ -104,6 +104,14 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 					throw std::runtime_error("");
 					return next_t;
 				},
+				[&](const NodeStructs::ParenArguments& call) {
+					throw std::runtime_error("");
+					return next_t;
+				},
+				[&](const NodeStructs::BraceArguments& construct) {
+					throw std::runtime_error("");
+					return next_t;
+				},
 				[&](const Token<PLUSPLUS>& e) {
 					throw std::runtime_error("");
 					return next_t;
@@ -117,7 +125,7 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 			);
 		}
 		return next_t;
-	}
+	}*/
 	throw std::runtime_error("");
 }
 
@@ -143,7 +151,7 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	const std::string& expr
 ) {
 	if (variables.find(expr) == variables.end()) {
-		auto err = "could not find variable named " + transpile(variables, named, expr);
+		auto err = "could not find variable named " + transpile(variables, named, expr).value();
 		throw std::runtime_error(err);
 	}
 	return variables.at(expr).back();

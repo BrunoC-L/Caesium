@@ -82,8 +82,33 @@ namespace NodeStructs {
 		Allocated<vt> expression;
 	};
 
+	struct Reference {};
+	struct MutableReference {};
+	struct Copy {};
+	struct Move {};
+	struct Value {};
+	struct Key {};
+	/*
+	ref->ref
+	ref!->ref!
+	copy->value
+	move->val
+	?->key
+	*/
+	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy,  Move      >;
+	using ValueCategory       = std::variant<Reference, MutableReference,    Value,       Key>;
+	using FunctionArgument = std::tuple<ArgumentPassingType, Expression>;
+
 	struct BracketArguments {
-		std::vector<Expression> args;
+		std::vector<FunctionArgument> args;
+	};
+
+	struct BraceArguments {
+		std::vector<FunctionArgument> args;
+	};
+
+	struct ParenArguments {
+		std::vector<FunctionArgument> args;
 	};
 
 	struct BraceExpression {
@@ -98,8 +123,10 @@ namespace NodeStructs {
 		Expression expr;
 		using op_types = std::variant<
 			std::string, // property
+			ParenArguments, // call
 			ParenExpression, // call
 			BracketArguments, // access
+			BraceArguments, // construct
 			BraceExpression, // construct
 			Token<PLUSPLUS>,
 			Token<MINUSMINUS>
@@ -256,7 +283,7 @@ namespace NodeStructs {
 	};
 
 	struct Constructor {
-		std::vector<std::pair<Typename, std::string>> parameters;
+		std::vector<std::tuple<Typename, ValueCategory, std::string>> parameters;
 		std::vector<Statement> statements;
 	};
 
@@ -285,19 +312,40 @@ namespace NodeStructs {
 	struct Function {
 		std::string name;
 		NodeStructs::Typename returnType;
-		std::vector<std::pair<Typename, std::string>> parameters;
+		std::vector<std::tuple<Typename, ValueCategory, std::string>> parameters;
 		std::vector<Statement> statements;
 	};
 	
 	struct Type;
 	struct TypeTemplateInstance;
+	//struct BuiltIn;
 
-	using TypeOrTypeTemplateInstance = std::variant<const NodeStructs::Type*, NodeStructs::TypeTemplateInstance>;
+	using TypeOrTypeTemplateInstance = std::variant<const NodeStructs::Type*, NodeStructs::TypeTemplateInstance/*, BuiltIn*/>;
 
 	struct TypeTemplateInstance {
 		const NodeStructs::Template<NodeStructs::Type>* type_template;
 		std::vector<TypeOrTypeTemplateInstance> template_arguments;
 	};
+
+	/*struct BuiltInType {
+
+	};
+
+	struct BuiltInFunction {
+
+	};
+
+	struct BuiltInTypeTemplate {
+
+	};
+
+	struct BuiltInFunctionTemplate {
+
+	};
+
+	struct BuiltIn {
+		std::variant<BuiltInType, BuiltInFunction, BuiltInTypeTemplate, BuiltInFunctionTemplate> value;
+	};*/
 
 	struct Type {
 		std::string name;
