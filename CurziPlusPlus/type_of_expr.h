@@ -65,13 +65,13 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::ParenExpression& expr
+	const NodeStructs::ParenArguments& expr
 );
 
 NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::BraceExpression& expr
+	const NodeStructs::BraceArguments& expr
 );
 
 NodeStructs::TypeOrTypeTemplateInstance type_of_expr(

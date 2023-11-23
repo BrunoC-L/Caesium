@@ -824,6 +824,14 @@ transpile_t transpile(
 transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
+	const Token<STRING>& expr
+) {
+	return expr.value;
+}
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
 	const std::string& expr
 ) {
 	return expr;
@@ -959,66 +967,67 @@ transpile_t transpile(
 	ss << transpile(variables, named, expr.expr).value();
 	auto ct = type_of_expr(variables, named, expr.expr);
 	for (const auto& op : expr.postfixes) {
-		auto k = std::visit(
-			overload(
-				[&](const std::string& property_name) -> transpile_t {
-					auto t = type_of_postfix_member(variables, named, ct, property_name);
-					if (t.has_value()) {
-						ct = t.value();
-						return "." + property_name;
-					}
-					else {
-						std::cout << "Error: object of type `" << transpile(variables, named, ct).value() << "` has no member `" + property_name + "`\n";
-						throw std::runtime_error("");
-					}
-				},
-				[&](const NodeStructs::ParenExpression& e) -> transpile_t {
-					throw std::runtime_error("");
-					/*auto t = type_of_call_with(variables, named, ct, e.args);
-					if (t.has_value()) {
-						ct = t.value();
-						return "(" + transpile_args(variables, named, e.args).value() + ")";
-					}
-					else {
-						std::stringstream ss;
-						ss << "Error: `" << transpile(variables, named, ct).value() << "` is not callable with `(";
-						bool has_previous = false;
-						for (const auto& arg : e.args) {
-							if (has_previous)
-								ss << ", ";
-							else
-								has_previous = true;
-							ss << transpile(variables, named, type_of_expr(variables, named, arg)).value();
-						}
-						ss << ")`\n";
+		throw std::runtime_error("");
+		//auto k = std::visit(
+		//	overload(
+		//		[&](const std::string& property_name) -> transpile_t {
+		//			auto t = type_of_postfix_member(variables, named, ct, property_name);
+		//			if (t.has_value()) {
+		//				ct = t.value();
+		//				return "." + property_name;
+		//			}
+		//			else {
+		//				std::cout << "Error: object of type `" << transpile(variables, named, ct).value() << "` has no member `" + property_name + "`\n";
+		//				throw std::runtime_error("");
+		//			}
+		//		},
+		//		[&](const NodeStructs::ParenArguments& e) -> transpile_t {
+		//			throw std::runtime_error("");
+		//			/*auto t = type_of_call_with(variables, named, ct, e.args);
+		//			if (t.has_value()) {
+		//				ct = t.value();
+		//				return "(" + transpile_args(variables, named, e.args).value() + ")";
+		//			}
+		//			else {
+		//				std::stringstream ss;
+		//				ss << "Error: `" << transpile(variables, named, ct).value() << "` is not callable with `(";
+		//				bool has_previous = false;
+		//				for (const auto& arg : e.args) {
+		//					if (has_previous)
+		//						ss << ", ";
+		//					else
+		//						has_previous = true;
+		//					ss << transpile(variables, named, type_of_expr(variables, named, arg)).value();
+		//				}
+		//				ss << ")`\n";
 
-						std::string e = ss.str();
-						return std::unexpected{ user_error{ e } };
-					}*/
-				},
-				[&](const NodeStructs::BracketArguments& e) -> transpile_t {
-					return "[" + transpile_args(variables, named, e.args).value() + "]";
-				},
-				[&](const NodeStructs::BraceExpression& e) -> transpile_t {
-					throw std::runtime_error("");
-					//return "{" + transpile_args(variables, named, e.args).value() + "}";
-				},
-				[&](const NodeStructs::BraceArguments& e) -> transpile_t {
-					throw std::runtime_error("");
-				},
-				[&](const NodeStructs::ParenArguments& e) -> transpile_t {
-					throw std::runtime_error("");
-				},
-				[&](const auto& op) -> transpile_t {
-					return symbol_as_text(op);
-				}
-			),
-			op
-		);
-		if (k.has_value())
-			ss << k.value();
-		else
-			return std::unexpected{ k.error() };
+		//				std::string e = ss.str();
+		//				return std::unexpected{ user_error{ e } };
+		//			}*/
+		//		},
+		//		[&](const NodeStructs::BracketArguments& e) -> transpile_t {
+		//			return "[" + transpile_args(variables, named, e.args).value() + "]";
+		//		},
+		//		[&](const NodeStructs::BraceArguments& e) -> transpile_t {
+		//			throw std::runtime_error("");
+		//			//return "{" + transpile_args(variables, named, e.args).value() + "}";
+		//		},
+		//		[&](const NodeStructs::BraceArguments& e) -> transpile_t {
+		//			throw std::runtime_error("");
+		//		},
+		//		[&](const NodeStructs::ParenArguments& e) -> transpile_t {
+		//			throw std::runtime_error("");
+		//		},
+		//		[&](const auto& op) -> transpile_t {
+		//			return symbol_as_text(op);
+		//		}
+		//	),
+		//	op
+		//);
+		//if (k.has_value())
+		//	ss << k.value();
+		//else
+		//	return std::unexpected{ k.error() };
 	}
 	return ss.str();
 }
@@ -1026,7 +1035,7 @@ transpile_t transpile(
 transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::ParenExpression& expr
+	const NodeStructs::ParenArguments& expr
 ) {
 	throw std::runtime_error("");
 	//return "(" + transpile_args(variables, named, expr.args).value() + ")";
@@ -1035,7 +1044,7 @@ transpile_t transpile(
 transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::BraceExpression& expr
+	const NodeStructs::BraceArguments& expr
 ) {
 	throw std::runtime_error("");
 	//return "{" + transpile_args(variables, named, expr.args).value() + "}";

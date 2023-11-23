@@ -132,7 +132,7 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::ParenExpression& expr
+	const NodeStructs::ParenArguments& expr
 ) {
 	throw std::runtime_error("");
 }
@@ -140,7 +140,7 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::BraceExpression& expr
+	const NodeStructs::BraceArguments& expr
 ) {
 	throw std::runtime_error("");
 }
@@ -161,6 +161,14 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
 	const Token<NUMBER>& expr
+) {
+	throw std::runtime_error("");
+}
+
+NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	const Named& named,
+	const Token<STRING>& expr
 ) {
 	throw std::runtime_error("");
 }

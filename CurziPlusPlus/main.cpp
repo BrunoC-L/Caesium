@@ -24,6 +24,7 @@ NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	}
 	else {
 		std::cout << fileName << ": not built\n";
+		testParse<File>(__LINE__, 0, program);
 		throw std::exception();
 	}
 }

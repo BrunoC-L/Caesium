@@ -56,6 +56,7 @@ using FunctionParameters = CommaStar<FunctionParameter>;
 using ColonIndentCodeBlock = and_t<Token<COLON>, Newline, Indent<Star<Statement>>>;
 using Function = and_t<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ParenArguments = and_t<Token<PARENOPEN>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
+using BraceArguments = and_t<Token<BRACEOPEN>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
 using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
 using NSTypename = and_t<Token<NS>, Alloc<Typename>>;
 using TemplateTypename = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NSTypename>>;
@@ -77,21 +78,13 @@ using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
 /*
 EXPRESSIONS
 */
-using BraceExpression = and_t<
-	Token<BRACEOPEN>,
-	CommaStar<Expression>,
-	Token<BRACECLOSE>
->;
 using ParenExpression = or_t<
-		And<
-			Token<PARENOPEN>,
-			Alloc<Expression>,
-			Token<PARENCLOSE>
-		>,
-		BraceExpression,
+		ParenArguments,
+		BracketArguments,
+		BraceArguments,
 		Word,
-		Token<NUMBER>
-	// todo string token
+		Token<NUMBER>,
+		Token<STRING>
 	>;
 using PostfixExpression = and_t<
 		ParenExpression,
@@ -102,7 +95,7 @@ using PostfixExpression = and_t<
             >,
             ParenArguments,
             BracketArguments,
-			BraceExpression,
+            BraceArguments,
 			Token<PLUSPLUS>,
 			Token<MINUSMINUS>
 		>>
@@ -167,7 +160,7 @@ and_t<
 	>>
 >);
 
-makeinherit(FunctionArgument, and_t<Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>, Expression>);
+makeinherit(FunctionArgument, and_t<Opt<Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>>, Expression>);
 
 using ExpressionStatement = and_t<Expression, Newline>;
 using BlockDeclaration = and_t<Token<BLOCK>, ColonIndentCodeBlock>;

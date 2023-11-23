@@ -13,5 +13,4 @@ Int main(Vector<String> ref args):
     Cat cat = {}
     Set<Int> s = {}
 
-    cat.fur.t.name(s)
-    
+    cat.fur.t.name(ref s)

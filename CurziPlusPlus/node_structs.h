@@ -59,8 +59,8 @@ namespace NodeStructs {
 	struct MultiplicativeExpression;
 	struct UnaryExpression;
 	struct PostfixExpression;
-	struct ParenExpression;
-	struct BraceExpression;
+	struct ParenArguments;
+	struct BraceArguments;
 
 	struct Expression {
 		using vt = std::variant<
@@ -74,10 +74,11 @@ namespace NodeStructs {
 			MultiplicativeExpression,
 			UnaryExpression,
 			PostfixExpression,
-			ParenExpression,
-			BraceExpression,
+			ParenArguments,
+			BraceArguments,
 			std::string,
-			Token<NUMBER>
+			Token<NUMBER>,
+			Token<STRING>
 		>;
 		Allocated<vt> expression;
 	};
@@ -97,7 +98,7 @@ namespace NodeStructs {
 	*/
 	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy,  Move      >;
 	using ValueCategory       = std::variant<Reference, MutableReference,    Value,       Key>;
-	using FunctionArgument = std::tuple<ArgumentPassingType, Expression>;
+	using FunctionArgument = std::tuple<std::optional<ArgumentPassingType>, Expression>;
 
 	struct BracketArguments {
 		std::vector<FunctionArgument> args;
@@ -111,23 +112,13 @@ namespace NodeStructs {
 		std::vector<FunctionArgument> args;
 	};
 
-	struct BraceExpression {
-		std::vector<Expression> args;
-	};
-
-	struct ParenExpression {
-		std::vector<Expression> args;
-	};
-
 	struct PostfixExpression {
 		Expression expr;
 		using op_types = std::variant<
 			std::string, // property
 			ParenArguments, // call
-			ParenExpression, // call
 			BracketArguments, // access
 			BraceArguments, // construct
-			BraceExpression, // construct
 			Token<PLUSPLUS>,
 			Token<MINUSMINUS>
 		>;

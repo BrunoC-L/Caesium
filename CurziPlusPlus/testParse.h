@@ -108,6 +108,7 @@ void testParse() {
 	testParse<File>(__LINE__, 0, "type B:");
 	testParse<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
 	testParse<Indent<Indent<Indent<IfStatement>>>>(__LINE__, 0, "if a:\n\t\t\t\tb\n\t\t\telse:\n\t\t\t\tc\n");
+	testParse<Expression>(__LINE__, 0, "{}");
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer = {}\n");
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer = {}\nSet<int> someContainer = {}\n");
 	testParse<Star<Statement>>(__LINE__, 0, "Set<int> someContainer = {}\nfor i in someContainer:\n");

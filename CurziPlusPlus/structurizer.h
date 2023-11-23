@@ -164,13 +164,34 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 }
 
 NodeStructs::ArgumentPassingType getStruct(const Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t) {
-	throw std::runtime_error("");
+	return std::visit(overload(
+		[](const Token<COPY>&) -> NodeStructs::ArgumentPassingType {
+			return NodeStructs::Copy{};
+		},
+		[](const Token<MOVE>&) -> NodeStructs::ArgumentPassingType {
+			return NodeStructs::Move{};
+		},
+		[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ArgumentPassingType {
+			return NodeStructs::MutableReference{};
+		},
+		[](const Token<REF>&) -> NodeStructs::ArgumentPassingType {
+			return NodeStructs::Reference{};
+		}),
+		t.value()
+	);
 }
 
 NodeStructs::FunctionArgument getStruct(const FunctionArgument& arg) {
-	return NodeStructs::FunctionArgument{
-		getStruct(arg.get<Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>>()),
-		getExpressionStruct(arg.get<Expression>())
+	using call_t = Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
+	if (arg.get<Opt<call_t>>().has_value())
+		return NodeStructs::FunctionArgument{
+			getStruct(arg.get<Opt<call_t>>().value()),
+			getExpressionStruct(arg.get<Expression>())
+		};
+	else
+		return NodeStructs::FunctionArgument{
+			{},
+			getExpressionStruct(arg.get<Expression>())
 	};
 }
 
@@ -194,32 +215,39 @@ NodeStructs::BracketArguments getStruct(const BracketArguments& args) {
 Expressions
 */
 
-NodeStructs::BraceExpression getExpressionStruct(const BraceExpression& statement) {
-	NodeStructs::BraceExpression res;
-	for (const auto& arg : statement.get<CommaStar<Expression>>().get<Expression>())
+NodeStructs::Expression getExpressionStruct(const BraceArguments& statement) {
+	throw std::runtime_error("");
+	NodeStructs::BraceArguments res;
+	/*for (const auto& arg : statement.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
 		res.args.push_back(getExpressionStruct(arg));
-	return res;
+	return res;*/
 }
 
 NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 	return std::visit(overload(
-			[](const And<
-				Token<PARENOPEN>,
-				Alloc<Expression>,
-				Token<PARENCLOSE>
-			>& e) {
-				auto res = NodeStructs::ParenExpression{};
-				res.args.push_back(getExpressionStruct(e.get<Alloc<Expression>>().get()));
-				return NodeStructs::Expression{ std::move(res) };
+			[](const ParenArguments& e) -> NodeStructs::Expression {
+			throw std::runtime_error("");
+				/*auto res = NodeStructs::ParenArguments{};
+				res.args.push_back(getExpressionStruct(e.get<Alloc<FunctionArgument>>().get()));
+				return NodeStructs::FunctionArgument{ std::move(res) };*/
+			},
+			[](const BracketArguments& e) -> NodeStructs::Expression {
+				throw std::runtime_error("");
+				//auto res = getExpressionStruct(e);
+				//return NodeStructs::Expression{ std::move(res) };
+			},
+			[](const BraceArguments& e) -> NodeStructs::Expression {
+				throw std::runtime_error("");
+				//auto res = getExpressionStruct(e);
+				//return NodeStructs::Expression{ std::move(res) };
 			},
 			[](const Word& e) -> NodeStructs::Expression {
 				return NodeStructs::Expression{ e.value };
 			},
-			[](const BraceExpression& e) {
-				auto res = getExpressionStruct(e);
-				return NodeStructs::Expression{ std::move(res) };
-			},
 			[](const Token<NUMBER>& e) {
+				return NodeStructs::Expression{ e };
+			},
+			[](const Token<STRING>& e) {
 				return NodeStructs::Expression{ e };
 			}
 		),
@@ -235,15 +263,17 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 		>,
 		ParenArguments,
 		BracketArguments,
-		BraceExpression,
+		BraceArguments,
 		Token<PLUSPLUS>,
 		Token<MINUSMINUS>
 	>;
+
 	const auto& postfixes = statement.get<Star<opts>>().get<opts>();
 	if (postfixes.size() == 0) {
 		return getExpressionStruct(statement.get<ParenExpression>());
 	} else {
-		auto res = NodeStructs::PostfixExpression{ getExpressionStruct(statement.get<ParenExpression>()), {} };
+		throw std::runtime_error("");
+		/*auto res = NodeStructs::PostfixExpression{ getExpressionStruct(statement.get<ParenExpression>()), {} };
 		using nodestruct_opts = NodeStructs::PostfixExpression::op_types;
 		for (const auto& n : postfixes) {
 			res.postfixes.push_back(
@@ -258,9 +288,6 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 						[](const BracketArguments& args) {
 							return nodestruct_opts{ getStruct(args) };
 						},
-						[](const BraceExpression& args) {
-							return nodestruct_opts{ getExpressionStruct(args) };
-						},
 						[](const Token<PLUSPLUS>& token) {
 							return nodestruct_opts{ token };
 						},
@@ -272,7 +299,7 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 				)
 			);
 		}
-		return NodeStructs::Expression{ std::move(res) };
+		return NodeStructs::Expression{ std::move(res) };*/
 	}
 }
 

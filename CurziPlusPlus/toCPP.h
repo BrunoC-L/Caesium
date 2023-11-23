@@ -475,13 +475,13 @@ transpile_t transpile(
 transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::ParenExpression& expr
+	const NodeStructs::ParenArguments& expr
 );
 
 transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
 	const Named& named,
-	const NodeStructs::BraceExpression& expr
+	const NodeStructs::BraceArguments& expr
 );
 
 transpile_t transpile_arg(
