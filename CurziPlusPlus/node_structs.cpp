@@ -7,11 +7,14 @@ namespace NodeStructs {
 
 	bool TemplatedTypename::operator==(const Typename& other) const {
 		return std::visit(
-			overload(
+			overload(overload_default_error,
 				[&](const TemplatedTypename& t) {
 					return operator==(t);
 				},
-				[](const auto&) {
+				[](const NamespacedTypename&) {
+					return false;
+				},
+				[](const BaseTypename&) {
 					return false;
 				}
 			),
@@ -25,11 +28,14 @@ namespace NodeStructs {
 
 	bool NamespacedTypename::operator==(const Typename& other) const {
 		return std::visit(
-			overload(
+			overload(overload_default_error,
+				[](const TemplatedTypename&) {
+					return false;
+				},
 				[&](const NamespacedTypename& t) {
 					return operator==(t);
 				},
-				[](const auto&) {
+				[](const BaseTypename&) {
 					return false;
 				}
 			),
@@ -43,12 +49,15 @@ namespace NodeStructs {
 
 	bool BaseTypename::operator==(const Typename& other) const {
 		return std::visit(
-			overload(
+			overload(overload_default_error,
+				[](const TemplatedTypename&) {
+					return false;
+				},
+				[](const NamespacedTypename&) {
+					return false;
+				},
 				[&](const BaseTypename& t) {
 					return operator==(t);
-				},
-				[](const auto&) {
-					return false;
 				}
 			),
 			other

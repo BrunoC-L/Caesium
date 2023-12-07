@@ -30,14 +30,14 @@ public:
 	Allocated() = delete;
 
 	// construct from T or U &
-	Allocated(const T& t) : ptr(new T(t)) {}
+	Allocated(const T& t) : ptr(std::make_unique<T>(t)) {}
 	template <typename U>
-	Allocated(const U& u) : ptr(new T(u)) {}
+	Allocated(const U& u) : ptr(std::make_unique<T>(u)) {}
 
 	// contrust from T or U &&
-	Allocated(T&& t) : ptr(new T(std::move(t))) {}
+	Allocated(T&& t) : ptr(std::make_unique<T>(std::move(t))) {}
 	template <typename U>
-	Allocated(U&& u) : ptr(new T(std::move(u))) {}
+	Allocated(U&& u) : ptr(std::make_unique<T>(std::move(u))) {}
 
 	// copy constructor
 	Allocated(const Allocated& other) : Allocated(other.get()) {};

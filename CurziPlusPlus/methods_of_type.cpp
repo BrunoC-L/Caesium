@@ -5,7 +5,7 @@
 
 
 std::vector<MethodOfTypeOrOfTypeTemplateInstance> methods_of_type(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Type& t
 ) {
@@ -14,21 +14,30 @@ std::vector<MethodOfTypeOrOfTypeTemplateInstance> methods_of_type(
 }
 
 std::vector<MethodOfTypeOrOfTypeTemplateInstance> methods_of_type(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::TypeTemplateInstance& t
 ) {
-	std::vector<MethodOfTypeOrOfTypeTemplateInstance> res{};
-	for (const auto& method_template : t.type_template->templated.methods)
-		res.push_back(MethodOfTypeTemplateInstance{ &method_template, &t.type_template->arguments, &t.template_arguments });
-	
-	return res;
+	return t.type_template->templated.methods
+		| std::views::transform([&](const auto& method_template) {
+			return MethodOfTypeOrOfTypeTemplateInstance{ MethodOfTypeTemplateInstance{ &method_template, &t.type_template->arguments, &t.template_arguments } };
+		})
+		| std::ranges::to<std::vector>();
 }
 
 std::vector<MethodOfTypeOrOfTypeTemplateInstance> methods_of_type(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::TypeOrTypeTemplateInstance& t
+	const NodeStructs::Aggregate& t
+) {
+	throw std::runtime_error("");
+	return {};
+}
+
+std::vector<MethodOfTypeOrOfTypeTemplateInstance> methods_of_type(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeVariant& t
 ) {
 	return std::visit([&](const auto& t) { return methods_of_type(variables, named, t); }, t);
 }

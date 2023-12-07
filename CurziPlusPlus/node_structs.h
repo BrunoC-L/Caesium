@@ -7,10 +7,20 @@
 #include "primitives.h"
 #include "alloc.h"
 
-#define NODE_CAST(T, E) std::dynamic_pointer_cast<T>(E)
-
 template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
 template<class... Ts> overload(Ts...)->overload<Ts...>; // to help IDE
+
+#define overload_default_error [&](const auto& e) {\
+static_assert(\
+	!sizeof(std::remove_cvref_t<decltype(e)>*),\
+	"Overload set is missing support for a type held in the variant."\
+	);\
+/* requires P2741R3 user-generated static_assert messages
+static_assert(
+	false,
+	std::format("Overload set is missing support for a type held in the variant. see {}.", std::source_location::current())
+);*/\
+}
 
 namespace NodeStructs {
 	struct TemplatedTypename;
@@ -309,34 +319,23 @@ namespace NodeStructs {
 	
 	struct Type;
 	struct TypeTemplateInstance;
-	//struct BuiltIn;
+	struct Aggregate;
+	struct TypeType; // String is a type, the type of String is a TypeType
 
-	using TypeOrTypeTemplateInstance = std::variant<const NodeStructs::Type*, NodeStructs::TypeTemplateInstance/*, BuiltIn*/>;
+	using TypeVariant = std::variant<const Type*, TypeTemplateInstance, Aggregate, TypeType>;
 
 	struct TypeTemplateInstance {
 		const NodeStructs::Template<NodeStructs::Type>* type_template;
-		std::vector<TypeOrTypeTemplateInstance> template_arguments;
+		std::vector<TypeVariant> template_arguments;
 	};
 
-	/*struct BuiltInType {
-
+	struct Aggregate {
+		std::vector<TypeVariant> arguments;
 	};
 
-	struct BuiltInFunction {
-
+	struct TypeType {
+		Allocated<TypeVariant> represented_type;
 	};
-
-	struct BuiltInTypeTemplate {
-
-	};
-
-	struct BuiltInFunctionTemplate {
-
-	};
-
-	struct BuiltIn {
-		std::variant<BuiltInType, BuiltInFunction, BuiltInTypeTemplate, BuiltInFunctionTemplate> value;
-	};*/
 
 	struct Type {
 		std::string name;

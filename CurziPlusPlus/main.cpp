@@ -42,9 +42,12 @@ void transpile(const std::vector<NodeStructs::File>& project, const std::filesys
 		h << std::move(_h);
 		cpp << std::move(_cpp);
 	}
-	else {
+	else
 		std::cout << k.error().content;
-	}
+}
+
+auto as_vec(std::filesystem::directory_iterator&& it) {
+	return std::vector(std::ranges::begin(it), std::ranges::end(it));
 }
 
 int main(int argc, char** argv) {
@@ -58,13 +61,12 @@ int main(int argc, char** argv) {
 
 	for (int i = 1; i < argc; ++i)
 		for (const auto& folder : std::filesystem::directory_iterator(argv[i]))
-			if (folder.is_directory() && !folder.path().stem().generic_string().starts_with(".")) {
-				std::vector<NodeStructs::File> project;
-				for (const auto& file : std::filesystem::directory_iterator(folder))
-					if (file.path().extension() == ".caesium")
-						project.push_back(caesium2AST(file.path()));
-				if (!project.empty())
-					transpile(project, folder);
-			}
+			if (folder.is_directory() && !folder.path().stem().generic_string().starts_with("."))
+				transpile(
+					as_vec(std::filesystem::directory_iterator(folder))
+						| std::views::filter([](const auto& file) { return file.path().extension() == ".caesium"; })
+						| std::views::transform([](const auto& file) { return caesium2AST(file.path()); })
+						| std::ranges::to<std::vector>(),
+					folder);
 	return 0;
 }

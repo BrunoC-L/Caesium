@@ -2,81 +2,82 @@
 #include "type_of_typename.h"
 #include "type_of_expr.h"
 #include "methods_of_type.h"
+#include <ranges>
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::AssignmentExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::ConditionalExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::OrExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::AndExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::EqualityExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::CompareExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::AdditiveExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::MultiplicativeExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::UnaryExpression& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::PostfixExpression& expr
 ) {
@@ -129,57 +130,70 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::ParenArguments& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BraceArguments& expr
 ) {
-	throw std::runtime_error("");
+	return NodeStructs::Aggregate{
+		expr.args
+		| std::views::transform(
+			[&](const NodeStructs::FunctionArgument& e) { return type_of_expr(variables, named, std::get<NodeStructs::Expression>(e)); }
+		)
+		| std::ranges::to<std::vector>()
+	};
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const std::string& expr
 ) {
-	if (variables.find(expr) == variables.end()) {
-		auto err = "could not find variable named " + transpile(variables, named, expr).value();
-		throw std::runtime_error(err);
+	{
+		auto it = variables.find(expr);
+		if (it != variables.end())
+			return it->second.back();
 	}
-	return variables.at(expr).back();
+	{
+		auto it = named.types.find(expr);
+		if (it != named.types.end())
+			return NodeStructs::TypeType{ it->second };
+	}
+	auto err = "could not find variable named " + transpile(variables, named, expr).value();
+	throw std::runtime_error(err);
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const Token<NUMBER>& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const Token<STRING>& expr
 ) {
 	throw std::runtime_error("");
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_expr(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Expression& expr
 ) {
 	return std::visit(
-		[&](const auto& expr) -> NodeStructs::TypeOrTypeTemplateInstance {
+		[&](const auto& expr) -> NodeStructs::TypeVariant {
 			return type_of_expr(variables, named, expr);
 		},
 		expr.expression.get()

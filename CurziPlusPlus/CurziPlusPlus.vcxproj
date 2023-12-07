@@ -154,7 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alloc.h" />
-    <ClInclude Include="cpp23_ranges_to.h" />
+    <ClInclude Include="ranges_fold_left_pipe.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="methods_of_type.h" />
     <ClInclude Include="node_structs.h" />

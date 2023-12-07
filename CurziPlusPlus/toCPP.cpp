@@ -3,7 +3,10 @@
 #include "type_of_typename.h"
 #include <ranges>
 #include <algorithm>
-#include "cpp23_ranges_to.h"
+#include "ranges_fold_left_pipe.h"
+#include <source_location>
+#include <format>
+#include <stacktrace>
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
@@ -46,7 +49,7 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 			if (fn.name == "main") {
 
 				std::map<std::string, Named> named_by_file;
-				std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>> variables;
+				std::map<std::string, std::vector<NodeStructs::TypeVariant>> variables;
 
 				cpp_std stuff_from_cpp{};
 
@@ -125,7 +128,7 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 }
 
 transpile_t transpile_main_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
 ) {
@@ -159,7 +162,7 @@ transpile_t transpile_main_definition(
 }
 
 transpile_t transpile_declaration(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
 ) {
@@ -168,7 +171,7 @@ transpile_t transpile_declaration(
 }
 
 transpile_t transpile_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
 ) {
@@ -185,7 +188,7 @@ transpile_t transpile_definition(
 }
 
 transpile_t transpile_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Constructor& fn,
 	const NodeStructs::Type& type
@@ -197,7 +200,7 @@ transpile_t transpile_definition(
 }
 
 transpile_t transpile_declaration(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Type& type
 ) {
@@ -205,7 +208,7 @@ transpile_t transpile_declaration(
 }
 
 transpile_t transpile_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Type& type
 ) {
@@ -242,7 +245,7 @@ transpile_t transpile_definition(
 
 template<typename T>
 transpile_t transpile_declaration(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Template<T>& tmpl
 ) {
@@ -260,7 +263,7 @@ transpile_t transpile_declaration(
 
 template<typename T>
 transpile_t transpile_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Template<T>& tmpl
 ) {
@@ -277,7 +280,7 @@ transpile_t transpile_definition(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>& parameters
 ) {
@@ -294,7 +297,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Typename& type
 ) {
@@ -307,7 +310,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 ) {
@@ -315,7 +318,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
 ) {
@@ -323,7 +326,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
@@ -346,15 +349,7 @@ transpile_t transpile(
 
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
-	const Named& named,
-	const NodeStructs::TypeOrTypeTemplateInstance& type
-) {
-	return std::visit([&](const auto& t) { return transpile(variables, named, t);  }, type);
-}
-
-transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Type* type
 ) {
@@ -362,7 +357,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::TypeTemplateInstance& type
 ) {
@@ -374,10 +369,43 @@ transpile_t transpile(
 			ss << ", ";
 		else
 			has_previous = true;
-		ss << transpile(variables, named, e).value();
+		ss << transpile_v(variables, named, e).value();
 	}
 	ss << ">";
 	return ss.str();
+}
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::Aggregate& type
+) {
+	throw std::runtime_error("");
+}
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeType& type
+) {
+	/*std::string e = "Internal compiler error" + std::to_string(std::stacktrace::current());
+	std::cout << e << "\n";
+	throw std::runtime_error(e);*/
+	return transpile_v(variables, named, type.represented_type).transform([](std::string rep) { return "Type " + rep; });
+}
+
+
+transpile_t transpile_v(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeVariant& type
+) {
+	return std::visit(
+		[&](const auto& t) {
+			return transpile(variables, named, t);
+		},
+		type
+	);
 }
 
 
@@ -386,7 +414,7 @@ transpile_t transpile(
 
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const std::vector<NodeStructs::Statement>& statements
 ) {
@@ -404,7 +432,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Statement& statement
 ) {
@@ -419,7 +447,7 @@ transpile_t transpile_statement(
 }
 
 void remove_added_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Statement& statement
 ) {
@@ -449,7 +477,7 @@ void remove_added_variables(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::VariableDeclarationStatement& statement
 ) {
@@ -458,7 +486,7 @@ transpile_t transpile_statement(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BlockStatement& statement
 ) {
@@ -477,7 +505,7 @@ transpile_t transpile_statement(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::IfStatement& statement
 ) {
@@ -488,14 +516,14 @@ transpile_t transpile_statement(
 		transpile(variables, named, statement.ifStatements).value() +
 		"} else " +
 		std::visit(
-			overload(
+			overload(overload_default_error,
 				[&](const Allocated<NodeStructs::IfStatement>& elseif) {
 					return transpile_statement(variables, named, elseif.get()).value();
 				},
 				[&](const std::vector<NodeStructs::Statement>& justelse) {
 					return "{" + transpile(variables, named, justelse).value() + "}";
 				}
-					),
+			),
 			statement.elseExprStatements.value()
 		);
 	else
@@ -506,17 +534,17 @@ transpile_t transpile_statement(
 		"}";
 }
 
-NodeStructs::TypeOrTypeTemplateInstance iterator_type(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant iterator_type(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::TypeOrTypeTemplateInstance& type
+	const NodeStructs::TypeVariant& type
 ) {
 	return std::visit(
-		overload(
-			[&](const NodeStructs::Type* type) -> NodeStructs::TypeOrTypeTemplateInstance {
+		overload(overload_default_error,
+			[&](const NodeStructs::Type* type) -> NodeStructs::TypeVariant {
 				throw std::runtime_error("");
 			},
-			[&](const NodeStructs::TypeTemplateInstance& type) -> NodeStructs::TypeOrTypeTemplateInstance {
+			[&](const NodeStructs::TypeTemplateInstance& type) -> NodeStructs::TypeVariant {
 				const auto tn = type.type_template->templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -538,33 +566,37 @@ NodeStructs::TypeOrTypeTemplateInstance iterator_type(
 								};
 							else
 								throw std::runtime_error("");
+				// non containers are not iterable
 				throw std::runtime_error("");
-			}/*,
-			[&](const NodeStructs::BuiltIn& builtin) -> NodeStructs::TypeOrTypeTemplateInstance {
+			},
+			[&](const NodeStructs::Aggregate&) -> NodeStructs::TypeVariant {
 				throw std::runtime_error("");
-			}*/
+			},
+			[&](const NodeStructs::TypeType&) -> NodeStructs::TypeVariant {
+				throw std::runtime_error("");
+			}
 		),
 		type
 	);
 }
 
-std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+std::vector<NodeStructs::TypeVariant> decomposed_type(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::TypeOrTypeTemplateInstance& type
+	const NodeStructs::TypeVariant& type
 ) {
 	return std::visit(
-		overload(
+		overload(overload_default_error,
 			[&](const NodeStructs::Type* type) {
 				if (type->name == "Int" || type->name == "String" || type->name == "Bool")
 					throw std::runtime_error("Cannot decompose type 'Int'");
-				std::vector<NodeStructs::TypeOrTypeTemplateInstance> res;
+				std::vector<NodeStructs::TypeVariant> res;
 				res.reserve(type->memberVariables.size());
 				for (const auto& mv : type->memberVariables)
 					res.push_back(type_of_typename(variables, named, mv.type));
 				return res;
 			},
-			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeOrTypeTemplateInstance> {
+			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeVariant> {
 				const auto tn = type.type_template->templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -591,20 +623,23 @@ std::vector<NodeStructs::TypeOrTypeTemplateInstance> decomposed_type(
 							throw std::runtime_error("");
 				int a = 0;
 				throw std::runtime_error("");
-			}/*,
-			[&](const NodeStructs::BuiltIn& builtin) -> std::vector<NodeStructs::TypeOrTypeTemplateInstance> {
+			},
+			[&](const NodeStructs::Aggregate&) -> std::vector<NodeStructs::TypeVariant> {
 				throw std::runtime_error("");
-			}*/
+			},
+			[&](const NodeStructs::TypeType&) -> std::vector<NodeStructs::TypeVariant> {
+				throw std::runtime_error("");
+			}
 		),
 		type
 	);
 }
 
 void add_for_iterator_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::ForStatement& statement,
-	const NodeStructs::TypeOrTypeTemplateInstance& it_type
+	const NodeStructs::TypeVariant& it_type
 ) {
 	if (statement.iterators.size() == 0)
 		throw std::runtime_error("");
@@ -624,7 +659,7 @@ void add_for_iterator_variables(
 		for (int i = 0; i < statement.iterators.size(); ++i) {
 			const auto& iterator = statement.iterators.at(i);
 			std::visit(
-				overload(
+				overload(overload_default_error,
 					[&](const NodeStructs::VariableDeclaration& it) {
 						/*if (decomposed_types.at(i) != type_of_typename(variables, named, it.type)) {
 							auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
@@ -645,7 +680,7 @@ void add_for_iterator_variables(
 			throw std::runtime_error("Expected 1 iterator");
 		else
 			std::visit(
-				overload(
+				overload(overload_default_error,
 					[&](const NodeStructs::VariableDeclaration& it) {
 						/*if (decomposed_types.at(i) != type_of_typename(variables, named, it.type)) {
 							auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
@@ -663,7 +698,7 @@ void add_for_iterator_variables(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::ForStatement& statement
 ) {
@@ -689,26 +724,28 @@ transpile_t transpile_statement(
 				first = false;
 			else
 				ss << ", ";
-			ss << std::visit(overload(
+			ss << std::visit(overload(overload_default_error,
 				[&](const NodeStructs::VariableDeclaration& iterator) {
 					return iterator.name;
 				},
 				[&](const std::string& iterator) {
 					return iterator;
-				}), iterator);
+				}
+			), iterator);
 		}
 		ss << "]";
 	}
 	else {
 		if (statement.iterators.size() > 1)
 			throw std::runtime_error("Expected 1 iterator");
-		ss << "for (auto&& " << std::visit(overload(
+		ss << "for (auto&& " << std::visit(overload(overload_default_error,
 			[&](const NodeStructs::VariableDeclaration& iterator) {
 				return iterator.name;
 			},
 			[&](const std::string& iterator) {
 				return iterator;
-			}), statement.iterators.at(0));
+			}
+		), statement.iterators.at(0));
 	}
 	ss  << " : "
 		<< transpile(variables, named, statement.collection).value()
@@ -721,12 +758,12 @@ transpile_t transpile_statement(
 }
 
 void remove_for_iterator_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const NodeStructs::ForStatement& statement
 ) {
 	for (const auto& iterator : statement.iterators)
 		std::visit(
-			overload(
+			overload(overload_default_error,
 				[&](const NodeStructs::VariableDeclaration& it) {
 					variables[it.name].pop_back();
 				},
@@ -739,7 +776,7 @@ void remove_for_iterator_variables(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::IForStatement& statement
 ) {
@@ -748,7 +785,7 @@ transpile_t transpile_statement(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::WhileStatement& statement
 ) {
@@ -756,7 +793,7 @@ transpile_t transpile_statement(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BreakStatement& statement
 ) {
@@ -767,7 +804,7 @@ transpile_t transpile_statement(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::ReturnStatement& statement
 ) {
@@ -793,7 +830,7 @@ transpile_t transpile_statement(
 // expressions
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Expression& expr
 ) {
@@ -806,7 +843,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Expression& statement
 ) {
@@ -814,7 +851,7 @@ transpile_t transpile_statement(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const Token<NUMBER>& expr
 ) {
@@ -822,7 +859,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const Token<STRING>& expr
 ) {
@@ -830,7 +867,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const std::string& expr
 ) {
@@ -838,7 +875,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::AssignmentExpression& expr
 ) {
@@ -850,7 +887,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::ConditionalExpression& expr
 ) {
@@ -871,7 +908,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::OrExpression& expr
 ) {
@@ -883,7 +920,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::AndExpression& expr
 ) {
@@ -895,7 +932,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::EqualityExpression& expr
 ) {
@@ -907,7 +944,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::CompareExpression& expr
 ) {
@@ -919,7 +956,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::AdditiveExpression& expr
 ) {
@@ -931,7 +968,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::MultiplicativeExpression& expr
 ) {
@@ -944,7 +981,7 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::UnaryExpression& expr
 ) {
@@ -958,82 +995,87 @@ transpile_t transpile(
 	), expr.unary_operator) + transpile(variables, named, expr.expr).value();
 }
 
-transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+user_error produce_call_error(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::PostfixExpression& expr
+	const NodeStructs::TypeVariant t,
+	const NodeStructs::ParenArguments& paren_args
 ) {
 	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	auto ct = type_of_expr(variables, named, expr.expr);
-	for (const auto& op : expr.postfixes) {
-		throw std::runtime_error("");
-		//auto k = std::visit(
-		//	overload(
-		//		[&](const std::string& property_name) -> transpile_t {
-		//			auto t = type_of_postfix_member(variables, named, ct, property_name);
-		//			if (t.has_value()) {
-		//				ct = t.value();
-		//				return "." + property_name;
-		//			}
-		//			else {
-		//				std::cout << "Error: object of type `" << transpile(variables, named, ct).value() << "` has no member `" + property_name + "`\n";
-		//				throw std::runtime_error("");
-		//			}
-		//		},
-		//		[&](const NodeStructs::ParenArguments& e) -> transpile_t {
-		//			throw std::runtime_error("");
-		//			/*auto t = type_of_call_with(variables, named, ct, e.args);
-		//			if (t.has_value()) {
-		//				ct = t.value();
-		//				return "(" + transpile_args(variables, named, e.args).value() + ")";
-		//			}
-		//			else {
-		//				std::stringstream ss;
-		//				ss << "Error: `" << transpile(variables, named, ct).value() << "` is not callable with `(";
-		//				bool has_previous = false;
-		//				for (const auto& arg : e.args) {
-		//					if (has_previous)
-		//						ss << ", ";
-		//					else
-		//						has_previous = true;
-		//					ss << transpile(variables, named, type_of_expr(variables, named, arg)).value();
-		//				}
-		//				ss << ")`\n";
-
-		//				std::string e = ss.str();
-		//				return std::unexpected{ user_error{ e } };
-		//			}*/
-		//		},
-		//		[&](const NodeStructs::BracketArguments& e) -> transpile_t {
-		//			return "[" + transpile_args(variables, named, e.args).value() + "]";
-		//		},
-		//		[&](const NodeStructs::BraceArguments& e) -> transpile_t {
-		//			throw std::runtime_error("");
-		//			//return "{" + transpile_args(variables, named, e.args).value() + "}";
-		//		},
-		//		[&](const NodeStructs::BraceArguments& e) -> transpile_t {
-		//			throw std::runtime_error("");
-		//		},
-		//		[&](const NodeStructs::ParenArguments& e) -> transpile_t {
-		//			throw std::runtime_error("");
-		//		},
-		//		[&](const auto& op) -> transpile_t {
-		//			return symbol_as_text(op);
-		//		}
-		//	),
-		//	op
-		//);
-		//if (k.has_value())
-		//	ss << k.value();
-		//else
-		//	return std::unexpected{ k.error() };
+	ss << "Error: `" << transpile_v(variables, named, t).value() << "` is not callable with `(";
+	bool has_previous = false;
+	for (const auto& arg : paren_args.args) {
+		if (has_previous)
+			ss << ", ";
+		else
+			has_previous = true;
+		ss << transpile_v(variables, named, type_of_expr(variables, named, std::get<1>(arg))).value();
 	}
-	return ss.str();
+	ss << ")`\n";
+	return { ss.str() };
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::PostfixExpression& expr
+) {
+	type_and_representation it{
+		type_of_expr(variables, named, expr.expr),
+		transpile(variables, named, expr.expr).value()
+	};
+
+	for (const auto& op : expr.postfixes) {
+		transpile_type_repr next = std::visit(
+			overload(overload_default_error,
+				[&](const std::string& property_name) -> transpile_type_repr {
+					return type_of_postfix_member_v(variables, named, it.type, property_name).transform([&](auto t) {
+						return type_and_representation{
+							t,
+							it.representation + "." + property_name
+						}; 
+					});
+				},
+				[&](const NodeStructs::ParenArguments& e) -> transpile_type_repr {
+					auto ct_callable = is_callable_or_error_v(variables, named, it.type);
+					auto t = type_of_member_function_like_call_with_args_v(variables, named, it.type, e.args);
+					if (t.has_value())
+						return type_and_representation{
+							t.value(),
+							it.representation + "(" + transpile_args(variables, named, e.args).value() + ")"
+						};
+					else
+						return std::unexpected{ produce_call_error(variables, named, it.type, e)};
+				},
+				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
+					throw std::runtime_error("");
+					//return "[" + transpile_args(variables, named, e.args).value() + "]";
+				},
+				[&](const NodeStructs::BraceArguments& e) -> transpile_type_repr {
+					throw std::runtime_error("");
+					//return "{" + transpile_args(variables, named, e.args).value() + "}";
+				},
+				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
+					throw std::runtime_error("");
+					//return symbol_as_text(op);
+				},
+				[&](const Token<MINUSMINUS>& op) -> transpile_type_repr {
+					throw std::runtime_error("");
+					//return symbol_as_text(op);
+				}
+			),
+			op
+		);
+		if (next.has_value())
+			it = next.value();
+		else
+			return std::unexpected{ next.error() };
+	}
+	return it.representation;
+}
+
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::ParenArguments& expr
 ) {
@@ -1042,16 +1084,15 @@ transpile_t transpile(
 }
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BraceArguments& expr
 ) {
-	throw std::runtime_error("");
-	//return "{" + transpile_args(variables, named, expr.args).value() + "}";
+	return "{" + transpile_args(variables, named, expr.args).value() + "}";
 }
 
 transpile_t transpile_arg(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::FunctionArgument& arg
 ) {
@@ -1059,7 +1100,7 @@ transpile_t transpile_arg(
 }
 
 transpile_t transpile_args(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const std::vector<NodeStructs::FunctionArgument>& args
 ) {
@@ -1075,36 +1116,104 @@ transpile_t transpile_args(
 	return ss.str();
 }
 
-std::optional<NodeStructs::TypeOrTypeTemplateInstance> type_of_call_with(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+std::expected<NodeStructs::TypeVariant, user_error> type_of_member_function_like_call_with_args(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::TypeOrTypeTemplateInstance& t,
+	const NodeStructs::Type* t,
 	const std::vector<NodeStructs::FunctionArgument>& args
 ) {
-	return std::nullopt;
+	throw;
 }
 
-std::optional<NodeStructs::TypeOrTypeTemplateInstance> type_of_postfix_member(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+std::expected<NodeStructs::TypeVariant, user_error> type_of_member_function_like_call_with_args(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::TypeOrTypeTemplateInstance& t,
-	const std::string& property_name
+	const NodeStructs::TypeTemplateInstance& t,
+	const std::vector<NodeStructs::FunctionArgument>& args
+) {
+	throw;
+}
+
+std::expected<NodeStructs::TypeVariant, user_error> type_of_member_function_like_call_with_args(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::Aggregate& t,
+	const std::vector<NodeStructs::FunctionArgument>& args
+) {
+	throw;
+}
+
+std::expected<NodeStructs::TypeVariant, user_error> type_of_member_function_like_call_with_args(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeType& t,
+	const std::vector<NodeStructs::FunctionArgument>& args
+) {
+	throw;
+}
+
+std::expected<NodeStructs::TypeVariant, user_error> type_of_member_function_like_call_with_args_v(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeVariant& type_variant,
+	const std::vector<NodeStructs::FunctionArgument>& args
 ) {
 	return std::visit(
-		overload(
-			[&](const NodeStructs::Type* t) {
-				return type_of_postfix_member(variables, named, *t, property_name);
-			},
-			[&](const NodeStructs::TypeTemplateInstance&) {
-				return std::optional<NodeStructs::TypeOrTypeTemplateInstance>{};
-			}
-		),
-		t
+		[&](const auto& t) {
+			return type_of_member_function_like_call_with_args(variables, named, t, args);
+		},
+		type_variant
+	);
+	// return std::unexpected{ produce_call_error(variables, named, it.type, e) };
+}
+
+std::variant<std::true_type, user_error> is_callable_or_error(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::Type* t
+) {
+	return user_error{};
+}
+
+std::variant<std::true_type, user_error> is_callable_or_error(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeTemplateInstance& t
+) {
+	return user_error{};
+}
+
+std::variant<std::true_type, user_error> is_callable_or_error(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::Aggregate& t
+) {
+	return user_error{};
+}
+
+std::variant<std::true_type, user_error> is_callable_or_error(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeType& t
+) {
+	return user_error{};
+}
+
+std::variant<std::true_type, user_error> is_callable_or_error_v(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeVariant& type_variant
+) {
+	return std::visit(
+		[&](const auto& t) {
+			return is_callable_or_error(variables, named, t);
+		},
+		type_variant
 	);
 }
 
-std::optional<NodeStructs::TypeOrTypeTemplateInstance> type_of_postfix_member(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+std::expected<NodeStructs::TypeVariant, user_error> type_of_postfix_member(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Type& t,
 	const std::string& property_name
@@ -1112,7 +1221,35 @@ std::optional<NodeStructs::TypeOrTypeTemplateInstance> type_of_postfix_member(
 	const auto& v = t.memberVariables;
 	auto pos = std::find_if(v.begin(), v.end(), [&](const NodeStructs::MemberVariable& m) { return m.name == property_name; });
 	if (pos == v.end())
-		return std::nullopt;
+		return std::unexpected{ user_error{ "Error: object of type `" + transpile(variables, named, &t).value() + "` has no member `" + property_name + "`\n" } };
 	else
 		return type_of_typename(variables, named, pos->type);
+}
+
+std::expected<NodeStructs::TypeVariant, user_error> type_of_postfix_member_v(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::TypeVariant& t,
+	const std::string& property_name
+) {
+	return std::visit(
+		overload(overload_default_error,
+			[&](const NodeStructs::Type* t) {
+				return type_of_postfix_member(variables, named, *t, property_name);
+			},
+			[&](const NodeStructs::TypeTemplateInstance&) {
+				throw std::runtime_error("");
+				return std::expected<NodeStructs::TypeVariant, user_error>{};
+			},
+			[&](const NodeStructs::Aggregate&) {
+				throw std::runtime_error("");
+				return std::expected<NodeStructs::TypeVariant, user_error>{};
+			},
+			[&](const NodeStructs::TypeType&) {
+				throw std::runtime_error("");
+				return std::expected<NodeStructs::TypeVariant, user_error>{};
+			}
+		),
+		t
+	);
 }

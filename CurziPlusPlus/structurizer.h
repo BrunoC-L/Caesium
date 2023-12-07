@@ -2,22 +2,21 @@
 #include "node_structs.h"
 #include "grammar.h"
 #include <ranges>
-#include "cpp23_ranges_to.h"
 
 NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement);
 NodeStructs::Statement getStatementStruct(const Statement& statement);
 
 NodeStructs::Import getStruct(const Import& f) {
-	NodeStructs::Import res;
-	res.imported = std::visit(
-		overload(
+	return { std::visit(
+		overload(overload_default_error,
 			[](const Word& word) {
 				return word.value + ".caesium";
 			},
 			[](const String& string) {
 				return string.value;
-		}), f.get<Or<Word, String>>().value());
-	return res;
+		}),
+		f.get<Or<Word, String>>().value()
+	) };
 }
 
 NodeStructs::Typename getStruct(const Typename& t);
@@ -28,15 +27,12 @@ NodeStructs::Typename extend(NodeStructs::Typename&& t, const NSTypename& nst) {
 		getStruct(nst.get<Alloc<Typename>>().get())
 	};
 }
+
 NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std::vector<Alloc<Typename>>& templates) {
-	NodeStructs::TemplatedTypename res{
+	return {
 		std::move(t),
-		{}
+		templates | std::views::transform([](const auto& tn) { return getStruct(tn.get()); }) | std::ranges::to<std::vector>()
 	};
-	res.templated_with.reserve(templates.size());
-	for (const auto& tn : templates)
-		res.templated_with.push_back(getStruct(tn.get()));
-	return res;
 }
 
 NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypename& tt) {
@@ -57,39 +53,38 @@ NodeStructs::Typename getStruct(const Typename& t) {
 }
 
 NodeStructs::ValueCategory getStruct(const ValueCategory& vc) {
-	return NodeStructs::ValueCategory{
-		std::visit(
-			overload(
-				[](const Token<KEY>&) -> NodeStructs::ValueCategory {
-					return NodeStructs::Key{};
-				},
-				[](const Token<VAL>&) -> NodeStructs::ValueCategory {
-					return NodeStructs::Value{};
-				},
-				[](const Token<REF>&) -> NodeStructs::ValueCategory {
-					return NodeStructs::Reference{};
-				},
-				[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ValueCategory {
-					return NodeStructs::MutableReference{};
-				}
-			),
-			vc.value()
-		)
-	};
+	return std::visit(
+		overload(overload_default_error,
+			[](const Token<KEY>&) -> NodeStructs::ValueCategory {
+				return NodeStructs::Key{};
+			},
+			[](const Token<VAL>&) -> NodeStructs::ValueCategory {
+				return NodeStructs::Value{};
+			},
+			[](const Token<REF>&) -> NodeStructs::ValueCategory {
+				return NodeStructs::Reference{};
+			},
+			[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ValueCategory {
+				return NodeStructs::MutableReference{};
+			}
+		),
+		vc.value()
+	);
 }
 
 NodeStructs::Function getStruct(const Function& f) {
-	NodeStructs::Function res{
+	return NodeStructs::Function{
 		.name = f.get<Word>().value,
 		.returnType = getStruct(f.get<Typename>()),
-		.parameters = {},
-		.statements = {}
+		.parameters = f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>()
+			| std::views::transform([](const auto& type_and_name) {
+				return std::tuple{ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ValueCategory>()), type_and_name.get<Word>().value };
+			})
+			| std::ranges::to<std::vector>(),
+		.statements = f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
+			| std::views::transform([](const auto& e) { return getStatementStruct(e); })
+			| std::ranges::to<std::vector>()
 	};
-	for (const auto& statement : f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
-		res.statements.push_back(getStatementStruct(statement));
-	for (const auto& type_and_name : f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>())
-		res.parameters.push_back({ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ValueCategory>()), type_and_name.get<Word>().value });
-	return res;
 }
 
 NodeStructs::TemplateArguments getStruct(const TemplateDeclaration& t) {
@@ -105,12 +100,14 @@ NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>&
 }
 
 NodeStructs::Constructor getStruct(const Constructor& f) {
-	NodeStructs::Constructor res;
-	for (const auto& statement : f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
-		res.statements.push_back(getStatementStruct(statement));
-	for (const auto& arg : f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>())
-		res.parameters.push_back({ getStruct(arg.get<Typename>()), getStruct(arg.get<ValueCategory>()), arg.get<Word>().value });
-	return res;
+	return {
+		f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>()
+			| std::views::transform([](const auto& arg) { return std::tuple{ getStruct(arg.get<Typename>()), getStruct(arg.get<ValueCategory>()), arg.get<Word>().value }; })
+			| std::ranges::to<std::vector>(),
+		f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
+			| std::views::transform([](const auto& statement) { return getStatementStruct(statement); })
+			| std::ranges::to<std::vector>()
+	};
 }
 
 NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
@@ -131,8 +128,8 @@ NodeStructs::Type getStruct(const Type& cl) {
 	NodeStructs::Type computedClass{ cl.get<Word>().value };
 	for (const ClassElement& ce : cl.get<Indent<Star<And<IndentToken, ClassElement>>>>().get<ClassElement>())
 		std::visit([&computedClass](const auto& e) {
-		computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
-			}, ce.value());
+			computedClass.get<decltype(getStruct(e))>().push_back(getStruct(e));
+		}, ce.value());
 	return computedClass;
 }
 
@@ -144,10 +141,12 @@ NodeStructs::Template<NodeStructs::Type> getStruct(const Template<Type>& cl) {
 }
 
 NodeStructs::File getStruct(const File& f, std::string fileName) {
-	NodeStructs::File res;
-	res.filename = fileName;
-	for (const Import& import : f.get<Star<Import>>().get<Import>())
-		res.imports.push_back(getStruct(import));
+	NodeStructs::File res{
+		.filename = fileName,
+		.imports = f.get<Star<Import>>().get<Import>()
+			| std::views::transform([](const auto& import) { return getStruct(import); })
+			| std::ranges::to<std::vector>()
+	};
 
 	using T = Star<Or<Token<NEWLINE>, Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>;
 
@@ -164,7 +163,7 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 }
 
 NodeStructs::ArgumentPassingType getStruct(const Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t) {
-	return std::visit(overload(
+	return std::visit(overload(overload_default_error,
 		[](const Token<COPY>&) -> NodeStructs::ArgumentPassingType {
 			return NodeStructs::Copy{};
 		},
@@ -209,6 +208,13 @@ NodeStructs::BracketArguments getStruct(const BracketArguments& args) {
 	return res;
 }
 
+NodeStructs::BraceArguments getStruct(const BraceArguments& args) {
+	NodeStructs::BraceArguments res{};
+	for (const auto& arg : args.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
+		res.args.push_back(getStruct(arg));
+	return res;
+}
+
 
 
 /*
@@ -224,24 +230,29 @@ NodeStructs::Expression getExpressionStruct(const BraceArguments& statement) {
 }
 
 NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
-	return std::visit(overload(
+	return std::visit(overload(overload_default_error,
 			[](const ParenArguments& e) -> NodeStructs::Expression {
-			throw std::runtime_error("");
+				const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
+				throw std::runtime_error("");
 				/*auto res = NodeStructs::ParenArguments{};
 				res.args.push_back(getExpressionStruct(e.get<Alloc<FunctionArgument>>().get()));
 				return NodeStructs::FunctionArgument{ std::move(res) };*/
 			},
 			[](const BracketArguments& e) -> NodeStructs::Expression {
+				const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
 				throw std::runtime_error("");
 				//auto res = getExpressionStruct(e);
 				//return NodeStructs::Expression{ std::move(res) };
 			},
 			[](const BraceArguments& e) -> NodeStructs::Expression {
-				throw std::runtime_error("");
+				const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
+				return { NodeStructs::PostfixExpression{ NodeStructs::BraceArguments{
+					args | std::views::transform([](const auto& arg) { return getStruct(arg); }) | std::ranges::to<std::vector>()
+				} } };
 				//auto res = getExpressionStruct(e);
 				//return NodeStructs::Expression{ std::move(res) };
 			},
-			[](const Word& e) -> NodeStructs::Expression {
+			[](const Word& e) {
 				return NodeStructs::Expression{ e.value };
 			},
 			[](const Token<NUMBER>& e) {
@@ -272,13 +283,12 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 	if (postfixes.size() == 0) {
 		return getExpressionStruct(statement.get<ParenExpression>());
 	} else {
-		throw std::runtime_error("");
-		/*auto res = NodeStructs::PostfixExpression{ getExpressionStruct(statement.get<ParenExpression>()), {} };
+		NodeStructs::PostfixExpression res { getExpressionStruct(statement.get<ParenExpression>()), {} };
 		using nodestruct_opts = NodeStructs::PostfixExpression::op_types;
 		for (const auto& n : postfixes) {
 			res.postfixes.push_back(
 				std::visit(
-					overload(
+					overload(overload_default_error,
 						[](const And<Token<DOT>, Word>& e) {
 							return nodestruct_opts{ e.get<Word>().value };
 						},
@@ -286,6 +296,9 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 							return nodestruct_opts{ getStruct(args) };
 						},
 						[](const BracketArguments& args) {
+							return nodestruct_opts{ getStruct(args) };
+						},
+						[](const BraceArguments& args) {
 							return nodestruct_opts{ getStruct(args) };
 						},
 						[](const Token<PLUSPLUS>& token) {
@@ -299,14 +312,14 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 				)
 			);
 		}
-		return NodeStructs::Expression{ std::move(res) };*/
+		return NodeStructs::Expression{ std::move(res) };
 	}
 }
 
 NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 	using op_types = NodeStructs::UnaryExpression::op_types;
 	return std::visit(
-		overload(
+		overload(overload_default_error,
 			[](const PostfixExpression& expr) {
 				return getExpressionStruct(expr);
 			},
@@ -549,7 +562,7 @@ NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 										.get<Or<Alloc<IfStatement>, ColonIndentCodeBlock>>()
 										.value();
 		res.elseExprStatements = std::visit(
-			overload(
+			overload(overload_default_error,
 				[&](const Alloc<IfStatement>& e) -> decltype(res.elseExprStatements) {
 					return getStatementStruct(e.get());
 				},

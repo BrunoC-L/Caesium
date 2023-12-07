@@ -3,6 +3,7 @@
 #include <functional>
 #include <optional>
 #include <variant>
+#include <ranges>
 
 template <typename...> struct And;
 template <typename...> struct Or;
@@ -198,32 +199,25 @@ struct KNode {
 	// to get `b*` from `(abc)*` for example
 	template <typename U>
 	std::vector<U> get() const {
-		if constexpr (std::is_same_v<U, T>) {
-			std::vector<U> res;
-			for (const auto& node : nodes)
-				res.push_back(U{ node });
-			return res;
-		}
-		else {
-			std::vector<U> res;
-			for (const auto& node : nodes) {
-				if constexpr (is_specialization<T, And>::value) {
-					int x = 0;
-					res.push_back(node.get<U>());
-				}
-				else if constexpr (is_specialization<T, Alloc>::value) {
-					int x = 0;
-					res.push_back(node.get());
-				}
-				else if constexpr (is_specialization<T, Or>::value) {
-					if (std::holds_alternative<U>(node.value()))
-						res.push_back(std::get<U>(node.value()));
-				}
-				else
-					static_assert(!sizeof(T*), "T is not supported");
-			}
-			return res;
-		}
+		if constexpr (std::is_same_v<U, T>)
+			return nodes
+			| std::views::transform([](const auto& node) { return U{ node }; })
+			| std::ranges::to<std::vector>();
+		else if constexpr (is_specialization<T, And>::value)
+			return nodes
+			| std::views::transform([](const auto& node) { return node.get<U>(); })
+			| std::ranges::to<std::vector>();
+		else if constexpr (is_specialization<T, Alloc>::value)
+			return nodes
+			| std::views::transform([](const auto& node) { return node.get(); })
+			| std::ranges::to<std::vector>();
+		else if constexpr (is_specialization<T, Or>::value)
+			return nodes
+				| std::views::filter([](const auto& node) { return std::holds_alternative<U>(node.value()); })
+				| std::views::transform([](const auto& node) { return std::get<U>(node.value()); })
+				| std::ranges::to<std::vector>();
+		else
+			static_assert(!sizeof(T*), "T is not supported");
 	}
 };
 

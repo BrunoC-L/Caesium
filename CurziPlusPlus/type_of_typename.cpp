@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 ) {
@@ -16,7 +16,7 @@ const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 }
 
 const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
 ) {
@@ -25,7 +25,7 @@ const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 }
 
 const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
@@ -35,7 +35,7 @@ const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 }
 
 const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Typename& type
 ) {
@@ -48,8 +48,8 @@ const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 	);
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_typename(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 ) {
@@ -59,8 +59,8 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
 	throw std::runtime_error(err);
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_typename(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
 ) {
@@ -68,13 +68,13 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
 	throw std::runtime_error(err);
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_typename(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
 	const auto& templated = type_template_of_typename(variables, named, type.type.get());
-	auto templated_with = std::vector<NodeStructs::TypeOrTypeTemplateInstance>{};
+	auto templated_with = std::vector<NodeStructs::TypeVariant>{};
 	for (const auto& t : type.templated_with)
 		templated_with.push_back(type_of_typename(variables, named, t));
 	return NodeStructs::TypeTemplateInstance{
@@ -83,8 +83,8 @@ NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
 	};
 }
 
-NodeStructs::TypeOrTypeTemplateInstance type_of_typename(
-	std::map<std::string, std::vector<NodeStructs::TypeOrTypeTemplateInstance>>& variables,
+NodeStructs::TypeVariant type_of_typename(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Typename& type
 ) {
