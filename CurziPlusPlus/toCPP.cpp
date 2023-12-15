@@ -124,7 +124,7 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 
 				return std::pair{ h.str(), cpp.str() };
 			}
-	throw std::runtime_error("Missing \"main\" function\n");
+	return std::unexpected{ user_error{ "Missing \"main\" function" } };
 }
 
 transpile_t transpile_main_definition(
@@ -134,21 +134,17 @@ transpile_t transpile_main_definition(
 ) {
 
 	if (fn.parameters.size() != 1)
-		throw std::runtime_error("\"main\" function declaration requires 1 argument of type Vector<String>\n");
+		return std::unexpected{ user_error{ "\"main\" function declaration requires 1 argument of type Vector<String>" } };
 
 	const auto& [parameter_type, cat, _] = fn.parameters.at(0);
-	const auto vector_str = []() {
-		auto res = NodeStructs::TemplatedTypename{
-			NodeStructs::BaseTypename{ "Vector" },
-			{}
-		};
-		res.templated_with.push_back(NodeStructs::BaseTypename{ "String" });
-		return res;
-	}();
+	const auto vector_str = NodeStructs::TemplatedTypename{
+		NodeStructs::BaseTypename{ "Vector" },
+		{ NodeStructs::BaseTypename{ "String" } }
+	};
 	bool is_vec_str = parameter_type == vector_str;
 
 	if (!is_vec_str)
-		throw std::runtime_error("\"main\" function declaration using 1 argument must be of std::vector<std::string> type\n");
+		return std::unexpected{ user_error{ "\"main\" function declaration using 1 argument must be of std::vector<std::string> type" } };
 
 	return transpile_definition(
 		variables,
@@ -252,7 +248,7 @@ transpile_t transpile_declaration(
 	if (tmpl.arguments.arguments.size()) {
 		auto opt_s =
 			tmpl.arguments.arguments
-			| std::views::transform([](const std::string& str) { return "typename " + str; })
+			| LIFT_TRANSFORM_X(str, "typename " + str)
 			| std::ranges::fold_left_([](const auto& a, const auto& b) { return a + ", " + b; });
 		return "template <" + std::move(opt_s.value()) + ">\n" + transpile_declaration(variables, named, tmpl.templated);
 	}
@@ -270,7 +266,7 @@ transpile_t transpile_definition(
 	if (tmpl.arguments.arguments.size()) {
 		auto opt_s =
 			tmpl.arguments.arguments
-			| std::views::transform([](const std::string& str) { return "typename " + str; })
+			| LIFT_TRANSFORM_X(str, "typename " + str)
 			| std::ranges::fold_left_([](const auto& a, const auto& b) { return a + ", " + b; });
 		return "template <" + std::move(opt_s.value()) + ">\n" + transpile_definition(variables, named, tmpl.templated);
 	}
@@ -380,7 +376,7 @@ transpile_t transpile(
 	const Named& named,
 	const NodeStructs::Aggregate& type
 ) {
-	throw std::runtime_error("");
+	throw;
 }
 
 transpile_t transpile(
@@ -468,8 +464,8 @@ void remove_added_variables(
 					throw std::runtime_error("bad block name" + s);
 				}
 			},
-			[&](const auto&) {
-				throw std::runtime_error("");
+			[&](const auto& e) {
+				// do nothing
 			}
 		),
 		statement.statement
@@ -517,7 +513,7 @@ transpile_t transpile_statement(
 		"} else " +
 		std::visit(
 			overload(overload_default_error,
-				[&](const Allocated<NodeStructs::IfStatement>& elseif) {
+				[&](const Box<NodeStructs::IfStatement>& elseif) {
 					return transpile_statement(variables, named, elseif.get()).value();
 				},
 				[&](const std::vector<NodeStructs::Statement>& justelse) {
@@ -570,10 +566,10 @@ NodeStructs::TypeVariant iterator_type(
 				throw std::runtime_error("");
 			},
 			[&](const NodeStructs::Aggregate&) -> NodeStructs::TypeVariant {
-				throw std::runtime_error("");
+				throw;
 			},
 			[&](const NodeStructs::TypeType&) -> NodeStructs::TypeVariant {
-				throw std::runtime_error("");
+				throw;
 			}
 		),
 		type
@@ -590,11 +586,9 @@ std::vector<NodeStructs::TypeVariant> decomposed_type(
 			[&](const NodeStructs::Type* type) {
 				if (type->name == "Int" || type->name == "String" || type->name == "Bool")
 					throw std::runtime_error("Cannot decompose type 'Int'");
-				std::vector<NodeStructs::TypeVariant> res;
-				res.reserve(type->memberVariables.size());
-				for (const auto& mv : type->memberVariables)
-					res.push_back(type_of_typename(variables, named, mv.type));
-				return res;
+				return type->memberVariables
+					| std::views::transform([&](const auto& e) { return type_of_typename(variables, named, e.type); })
+					| to_vec();
 			},
 			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeVariant> {
 				const auto tn = type.type_template->templated.name;
@@ -621,14 +615,13 @@ std::vector<NodeStructs::TypeVariant> decomposed_type(
 							return { type.template_arguments.at(0), type.template_arguments.at(1) };
 						else
 							throw std::runtime_error("");
-				int a = 0;
 				throw std::runtime_error("");
 			},
 			[&](const NodeStructs::Aggregate&) -> std::vector<NodeStructs::TypeVariant> {
-				throw std::runtime_error("");
+				throw;
 			},
 			[&](const NodeStructs::TypeType&) -> std::vector<NodeStructs::TypeVariant> {
-				throw std::runtime_error("");
+				throw;
 			}
 		),
 		type
@@ -689,7 +682,7 @@ void add_for_iterator_variables(
 						variables[it.name].push_back(type_of_typename(variables, named, it.type));
 					},
 					[&](const std::string& it) {
-						variables[it].emplace_back(it_type);
+						variables[it].push_back(it_type);
 					}
 				),
 				statement.iterators.at(0)
@@ -814,7 +807,7 @@ transpile_t transpile_statement(
 		else if (statement.returnExpr.size() == 1)
 			return transpile(variables, named, statement.returnExpr.at(0)).value();
 		else {
-			throw std::runtime_error("");
+			throw;
 			//return "{" + transpile_args(variables, named, statement.returnExpr).value() + "}";
 		}
 	}();
@@ -871,7 +864,10 @@ transpile_t transpile(
 	const Named& named,
 	const std::string& expr
 ) {
-	return expr;
+	if (variables.contains(expr))
+		return expr;
+	else
+		return std::unexpected{ user_error{ "Undeclared variable `" + expr + "`" } };
 }
 
 transpile_t transpile(
@@ -882,7 +878,7 @@ transpile_t transpile(
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
 	for (const auto& expr : expr.assignments)
-		ss << symbol_variant_as_text(expr.first) << transpile(variables, named, expr.second).value();
+		ss << " " << symbol_variant_as_text(expr.first) << " " << transpile(variables, named, expr.second).value();
 	return ss.str();
 }
 
@@ -1048,19 +1044,19 @@ transpile_t transpile(
 						return std::unexpected{ produce_call_error(variables, named, it.type, e)};
 				},
 				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
-					throw std::runtime_error("");
+					throw;
 					//return "[" + transpile_args(variables, named, e.args).value() + "]";
 				},
 				[&](const NodeStructs::BraceArguments& e) -> transpile_type_repr {
-					throw std::runtime_error("");
+					throw;
 					//return "{" + transpile_args(variables, named, e.args).value() + "}";
 				},
 				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
-					throw std::runtime_error("");
+					throw;
 					//return symbol_as_text(op);
 				},
 				[&](const Token<MINUSMINUS>& op) -> transpile_type_repr {
-					throw std::runtime_error("");
+					throw;
 					//return symbol_as_text(op);
 				}
 			),
@@ -1079,7 +1075,7 @@ transpile_t transpile(
 	const Named& named,
 	const NodeStructs::ParenArguments& expr
 ) {
-	throw std::runtime_error("");
+	throw;
 	//return "(" + transpile_args(variables, named, expr.args).value() + ")";
 }
 
@@ -1172,7 +1168,7 @@ std::variant<std::true_type, user_error> is_callable_or_error(
 	const Named& named,
 	const NodeStructs::Type* t
 ) {
-	return user_error{};
+	throw;
 }
 
 std::variant<std::true_type, user_error> is_callable_or_error(
@@ -1180,7 +1176,7 @@ std::variant<std::true_type, user_error> is_callable_or_error(
 	const Named& named,
 	const NodeStructs::TypeTemplateInstance& t
 ) {
-	return user_error{};
+	throw;
 }
 
 std::variant<std::true_type, user_error> is_callable_or_error(
@@ -1188,7 +1184,7 @@ std::variant<std::true_type, user_error> is_callable_or_error(
 	const Named& named,
 	const NodeStructs::Aggregate& t
 ) {
-	return user_error{};
+	throw;
 }
 
 std::variant<std::true_type, user_error> is_callable_or_error(
@@ -1196,7 +1192,7 @@ std::variant<std::true_type, user_error> is_callable_or_error(
 	const Named& named,
 	const NodeStructs::TypeType& t
 ) {
-	return user_error{};
+	throw;
 }
 
 std::variant<std::true_type, user_error> is_callable_or_error_v(
@@ -1238,15 +1234,15 @@ std::expected<NodeStructs::TypeVariant, user_error> type_of_postfix_member_v(
 				return type_of_postfix_member(variables, named, *t, property_name);
 			},
 			[&](const NodeStructs::TypeTemplateInstance&) {
-				throw std::runtime_error("");
+				throw;
 				return std::expected<NodeStructs::TypeVariant, user_error>{};
 			},
 			[&](const NodeStructs::Aggregate&) {
-				throw std::runtime_error("");
+				throw;
 				return std::expected<NodeStructs::TypeVariant, user_error>{};
 			},
 			[&](const NodeStructs::TypeType&) {
-				throw std::runtime_error("");
+				throw;
 				return std::expected<NodeStructs::TypeVariant, user_error>{};
 			}
 		),

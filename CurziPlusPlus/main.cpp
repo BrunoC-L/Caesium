@@ -25,7 +25,7 @@ NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	else {
 		std::cout << fileName << ": not built\n";
 		testParse<File>(__LINE__, 0, program);
-		throw std::exception();
+		throw;
 	}
 }
 
@@ -54,19 +54,27 @@ int main(int argc, char** argv) {
 
 	{
 		std::cout << std::boolalpha;
-		testParse();
-		//testTranspile();
-		std::cout << "\n\n";
+
+		if (!testParse())
+			return 1;
+		std::cout << colored_text("All parse tests passed\n", output_stream_colors::green) << "\n\n";
+
+		if (!testTranspile())
+			return 1;
+		std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green) << "\n\n";
 	}
+
+	return 0;
 
 	for (int i = 1; i < argc; ++i)
 		for (const auto& folder : std::filesystem::directory_iterator(argv[i]))
 			if (folder.is_directory() && !folder.path().stem().generic_string().starts_with("."))
 				transpile(
 					as_vec(std::filesystem::directory_iterator(folder))
-						| std::views::filter([](const auto& file) { return file.path().extension() == ".caesium"; })
-						| std::views::transform([](const auto& file) { return caesium2AST(file.path()); })
-						| std::ranges::to<std::vector>(),
+						| LIFT_FILTER_TRAIL(.path().extension() == ".caesium")
+						| LIFT_TRANSFORM_TRAIL(.path())
+						| LIFT_TRANSFORM(caesium2AST)
+						| to_vec(),
 					folder);
 	return 0;
 }

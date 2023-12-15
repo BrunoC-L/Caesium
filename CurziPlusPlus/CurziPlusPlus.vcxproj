@@ -145,6 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="fn_util.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="methods_of_type.cpp" />
     <ClCompile Include="node_structs.cpp" />
@@ -154,6 +155,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alloc.h" />
+    <ClInclude Include="colored_text.h" />
+    <ClInclude Include="fn_util.hpp" />
     <ClInclude Include="ranges_fold_left_pipe.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="methods_of_type.h" />

@@ -73,13 +73,11 @@ NodeStructs::TypeVariant type_of_typename(
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
-	const auto& templated = type_template_of_typename(variables, named, type.type.get());
-	auto templated_with = std::vector<NodeStructs::TypeVariant>{};
-	for (const auto& t : type.templated_with)
-		templated_with.push_back(type_of_typename(variables, named, t));
 	return NodeStructs::TypeTemplateInstance{
-		templated,
-		templated_with
+		type_template_of_typename(variables, named, type.type.get()),
+		type.templated_with
+			| std::views::transform([&](const auto& e) { return type_of_typename(variables, named, e); })
+			| to_vec()
 	};
 }
 

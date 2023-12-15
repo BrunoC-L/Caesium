@@ -30,7 +30,7 @@ namespace NodeStructs {
 	using Typename = std::variant<TemplatedTypename, NamespacedTypename, BaseTypename>;
 
 	struct TemplatedTypename {
-		Allocated<Typename> type;
+		Box<Typename> type;
 		std::vector<Typename> templated_with;
 
 		bool operator==(const TemplatedTypename&) const;
@@ -38,8 +38,8 @@ namespace NodeStructs {
 	};
 
 	struct NamespacedTypename {
-		Allocated<Typename> name_space;
-		Allocated<Typename> name_in_name_space;
+		Box<Typename> name_space;
+		Box<Typename> name_in_name_space;
 
 		bool operator==(const NamespacedTypename&) const;
 		bool operator==(const Typename& other) const;
@@ -90,7 +90,7 @@ namespace NodeStructs {
 			Token<NUMBER>,
 			Token<STRING>
 		>;
-		Allocated<vt> expression;
+		Box<vt> expression;
 	};
 
 	struct Reference {};
@@ -248,7 +248,7 @@ namespace NodeStructs {
 	struct IfStatement {
 		Expression ifExpr;
 		std::vector<Statement> ifStatements;
-		std::optional<std::variant<Allocated<IfStatement>, std::vector<Statement>>> elseExprStatements;
+		std::optional<std::variant<Box<IfStatement>, std::vector<Statement>>> elseExprStatements;
 	};
 
 	struct WhileStatement {
@@ -334,7 +334,7 @@ namespace NodeStructs {
 	};
 
 	struct TypeType {
-		Allocated<TypeVariant> represented_type;
+		Box<TypeVariant> represented_type;
 	};
 
 	struct Type {

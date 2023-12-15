@@ -1,14 +1,21 @@
-/*#pragma once
+#pragma once
 #include <iostream>
 #include "toCpp.h"
 #include "structurizer.h"
+#include "colored_text.h"
 
-void testTranspile(int line, std::string caesiumProgram, std::string cppProgram) {
+size_t first_diff(std::string_view s1, std::string_view s2) {
+	auto first_diff_ = 0;
+	for (first_diff_ = 0; first_diff_ < s1.size(); ++first_diff_) {
+		if (first_diff_ >= s2.size())
+			break;
+		if (s1.at(first_diff_) != s2.at(first_diff_))
+			break;
+	}
+	return first_diff_;
+}
 
-	constexpr auto green = "\033[1;32m";
-	constexpr auto red = "\033[1;31m";
-	constexpr auto reset = "\033[0m";
-
+std::optional<std::expected<std::pair<std::string, std::string>, user_error>> create_file(int line, std::string_view caesiumProgram) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(caesiumProgram).read());
 	Grammarizer g(tokens);
 	auto file = File(0);
@@ -17,13 +24,12 @@ void testTranspile(int line, std::string caesiumProgram, std::string cppProgram)
 		bool programReadEntirely = g.it == g.tokens.end();
 		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
 			programReadEntirely = ++g.it == g.tokens.end();
-		auto nodeBuiltColor = nodeBuilt ? green : red;
-		auto programReadEntirelyColor = programReadEntirely ? green : red;
-		std::cout << "LINE " << line << (line < 100 ? " : " : ": ")
-			<< "built: " << nodeBuiltColor << nodeBuilt << reset
-			<< ", entirely: " << programReadEntirelyColor << programReadEntirely << reset << "\n";
-		bool res = nodeBuilt && programReadEntirely;
-		if (!res) {
+
+		if (!(nodeBuilt && programReadEntirely)) {
+			std::cout << "LINE " << line << (line < 100 ? " : " : ": ")
+				<< "built: " << colored_text_from_bool(nodeBuilt)
+				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
+
 			std::cout << caesiumProgram << "\n\n";
 			Grammarizer g2(tokens);
 			while (g2.it != g.it) {
@@ -31,36 +37,185 @@ void testTranspile(int line, std::string caesiumProgram, std::string cppProgram)
 				++g2.it;
 			}
 			std::cout << "\n";
-			return;
+			return std::nullopt;
 		}
 	}
-	{
-		const NodeStructs::File& f = getStruct(file);
-		std::stringstream h;
-		std::stringstream cpp;
-		toCPP{}.transpile(h, cpp, f);
-		auto cppProduced = h.str();
-		std::string_view withoutIncludes{ cppProduced.begin() + toCPP::default_includes.length(), cppProduced.begin() + cppProduced.size() };
-		withoutIncludes.remove_prefix(std::min(withoutIncludes.find_first_not_of('\n'), withoutIncludes.size()));
-		withoutIncludes.remove_suffix(withoutIncludes.size() - std::max(withoutIncludes.find_last_not_of('\n'), size_t{ 0 }));
-		std::string_view withoutIncludesExpected = cppProgram;
-		withoutIncludesExpected.remove_prefix(std::min(withoutIncludesExpected.find_first_not_of('\n'), withoutIncludesExpected.size()));
-		withoutIncludesExpected.remove_suffix(withoutIncludesExpected.size() - std::max(withoutIncludesExpected.find_last_not_of('\n'), size_t{ 0 }));
-		bool transpiled = withoutIncludes == withoutIncludesExpected;
-		auto transpiledColor = transpiled ? green : red;
-		std::cout << "LINE " << line << (line < 100 ? " : " : ": ")
-			<< "transpiled: " << transpiledColor << transpiled << reset;
-		if (!transpiled) {
-			std::cout << "\ninput:" << caesiumProgram << "\n\n";
-			std::cout << "\ncreated:" << withoutIncludes << "\n\n";
-			std::cout << "\nexpected:" << withoutIncludesExpected << "\n\n";
+	NodeStructs::File f = getStruct(file, "no_name_test_file");
+	return transpile(std::vector{ std::move(f) });
+}
+
+bool test_transpile_no_error(int line, std::string_view caesiumProgram, std::string_view expected_header, std::string_view expected_cpp) {
+	auto opt = create_file(line, caesiumProgram);
+	if (!opt.has_value())
+		return false;
+	auto x = opt.value();
+
+	if (x.has_value()) {
+		auto [header_, cpp] = std::move(x).value();
+
+		static constexpr size_t L = std::string_view{ default_includes }.length();
+		int u = L;
+		std::string_view header{ header_.begin() + L, header_.begin() + header_.size() };
+
+		auto first_diff_header = first_diff(header, expected_header);
+		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;
+
+		auto first_diff_cpp = first_diff(cpp, expected_cpp);
+		bool cpp_ok = cpp.size() == expected_cpp.size() && cpp.size() == first_diff_cpp;
+
+
+		bool ok = header_ok && cpp_ok;
+		if (!ok) {
+			std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(ok) << "\n";
+			std::cout << colored_text("input:\n", output_stream_colors::blue) << caesiumProgram << "\n\n";
 		}
+		if (!header_ok) {
+			std::cout << colored_text("\nexpected header:\n", output_stream_colors::blue) << expected_header << "\n\n";
+			std::cout << colored_text("produced header:\n", output_stream_colors::blue) << header << "\n\n";
+		}
+		if (!cpp_ok) {
+			std::cout << colored_text("expected cpp:\n", output_stream_colors::blue) << expected_cpp << "\n\n";
+			std::cout << colored_text("produced cpp:\n", output_stream_colors::blue) << cpp << "\n\n";
+		}
+		return ok;
+	}
+	else {
+		auto err = std::move(x).error().content;
+		std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(false) << "\n";
+		std::cout << colored_text("input\n:", output_stream_colors::blue) << caesiumProgram << "\n\n";
+		std::cout << colored_text("expected header:\n", output_stream_colors::blue) << expected_header << "\n\n";
+		std::cout << colored_text("expected cpp\n:", output_stream_colors::blue) << expected_cpp << "\n\n";
+		std::cout << colored_text("produced error:\n", output_stream_colors::blue) << colored_text_with_bool(err, false) << "\n\n";
+		return false;
 	}
 }
-void testTranspile() {
+
+bool test_transpile_error(int line, std::string_view caesiumProgram, std::string_view expected_error) {
+	auto opt = create_file(line, caesiumProgram);
+	if (!opt.has_value())
+		return false;
+	auto x = opt.value();
+
+	if (x.has_value()) {
+		throw;
+		/*auto [header_, cpp] = std::move(x).value();
+
+		static constexpr size_t L = std::string_view{ default_includes }.length();
+		int u = L;
+		std::string_view header{ header_.begin() + L, header_.begin() + header_.size() };
+
+		auto first_diff_header = first_diff(header, expected_header);
+		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;
+
+		auto first_diff_cpp = first_diff(cpp, expected_cpp);
+		bool cpp_ok = cpp.size() == expected_cpp.size() && cpp.size() == first_diff_cpp;
+
+
+		bool ok = header_ok && cpp_ok;
+		if (!ok) {
+			std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(ok) << "\n";
+			std::cout << colored_text("input:\n", output_stream_colors::blue) << caesiumProgram << "\n\n";
+		}
+		if (!header_ok) {
+			std::cout << colored_text("\nexpected header:\n", output_stream_colors::blue) << expected_header << "\n\n";
+			std::cout << colored_text("produced header:\n", output_stream_colors::blue) << header << "\n\n";
+		}
+		if (!cpp_ok) {
+			std::cout << colored_text("expected cpp:\n", output_stream_colors::blue) << expected_cpp << "\n\n";
+			std::cout << colored_text("produced cpp:\n", output_stream_colors::blue) << cpp << "\n\n";
+		}
+		return ok;*/
+	}
+	else {
+		auto error = std::move(x).error().content;
+
+		auto first_diff_error = first_diff(error, expected_error);
+		bool error_ok = error.size() == expected_error.size() && error.size() == first_diff_error;
+		if (!error_ok) {
+			std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(false) << "\n";
+			std::cout << colored_text("input\n:", output_stream_colors::blue) << caesiumProgram << "\n\n";
+			std::cout << colored_text("expected error:\n", output_stream_colors::blue) << expected_error << "\n\n";
+			std::cout << colored_text("produced error:\n", output_stream_colors::blue) << colored_text_with_bool(error, false) << "\n\n";
+		}
+		return error_ok;
+	}
+}
+
+std::string include_header = "#include \"header.h\"\n";
+
+auto add_to_main = [](std::string s) {
+	return "struct Main {\n"
+		"Int main(Vector<String> s) {\n"
+		+ s +
+		"};\n"
+		"};\n"
+		"\n"
+		"int main(int argc, char** argv) {\n"
+		"	std::vector<std::string> args {};\n"
+		"	for (int i = 0; i < argc; ++i)\n"
+		"		args.push_back(std::string(argv[i]));\n"
+		"	return Main{}.main(std::move(args));\n"
+		"};\n";
+};
+
+struct test_transpile_no_error_t {
+	int line;
+	std::string_view caesium;
+	std::string_view header;
+	std::string_view cpp;
+
+	auto operator()() {
+		return test_transpile_no_error(line, caesium, header, cpp);
+	}
+};
+
+struct test_transpile_error_t {
+	int line;
+	std::string_view caesium;
+	std::string_view error;
+
+	auto operator()() {
+		return test_transpile_error(line, caesium, error);
+	}
+};
+
+bool testTranspile() {
 	std::cout << "TRANSPILE TESTS\n";
-	testTranspile(__LINE__,
-		"type A:\n",
-		"struct A {\n};\n"
-	);
-}*/
+	bool ok = true;
+	ok &= test_transpile_no_error_t{
+		.line = __LINE__,
+		.caesium = "Int main(Vector<String> ref s):\n",
+		.header = "",
+		.cpp = include_header + add_to_main("")
+	}();
+	ok &= test_transpile_error_t{
+		.line = __LINE__,
+		.caesium = "Int main(Vector<String> ref s):\n\ta\n",
+		.error = "Undeclared variable `a`"
+	}();
+	ok &= test_transpile_no_error_t{
+		.line = __LINE__,
+		.caesium = "Int main(Vector<String> ref s):\n\tInt a = {}\n",
+		.header = "",
+		.cpp = include_header + add_to_main("Int a = {};\n")
+	}();
+	ok &= test_transpile_no_error_t{
+		.line = __LINE__,
+		.caesium = "type A:\n"
+		"Int main(Vector<String> ref s):\n"
+		"	A a = {}\n",
+		.header = "struct A;\n",
+		.cpp = include_header + "struct A {\n};\n\n" + add_to_main("A a = {};\n")
+	}();
+	ok &= test_transpile_no_error_t{
+		.line = __LINE__,
+		.caesium = "type A:\n"
+		"Int main(Vector<String> ref s):\n"
+		"	A a1 = {}\n"
+		"	A a2 = a1\n"
+		"	a1 = a2\n",
+		.header = "struct A;\n",
+		.cpp = include_header + "struct A {\n};\n\n" + add_to_main("A a1 = {};\nA a2 = a1;\na1 = a2;\n")
+	}();
+	return ok;
+}

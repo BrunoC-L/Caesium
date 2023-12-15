@@ -99,7 +99,7 @@ private:
 	std::string program;
 	unsigned index = 0;
 public:
-	constexpr Tokenizer(std::string program) : program(program) {}
+	constexpr Tokenizer(std::string_view program) : program(program) {}
 
 	std::forward_list<TOKENVALUE> read() {
 		std::forward_list<TOKENVALUE> out;

@@ -2,7 +2,7 @@
 #include <memory>
 
 template <typename T>
-struct Allocated {
+struct Box {
 public:
 	const T& get() const& {
 		return *ptr;
@@ -27,59 +27,59 @@ public:
 	}
 
 	// ptr never empty
-	Allocated() = delete;
+	Box() = delete;
 
 	// construct from T or U &
-	Allocated(const T& t) : ptr(std::make_unique<T>(t)) {}
+	Box(const T& t) : ptr(std::make_unique<T>(t)) {}
 	template <typename U>
-	Allocated(const U& u) : ptr(std::make_unique<T>(u)) {}
+	Box(const U& u) : ptr(std::make_unique<T>(u)) {}
 
 	// contrust from T or U &&
-	Allocated(T&& t) : ptr(std::make_unique<T>(std::move(t))) {}
+	Box(T&& t) : ptr(std::make_unique<T>(std::move(t))) {}
 	template <typename U>
-	Allocated(U&& u) : ptr(std::make_unique<T>(std::move(u))) {}
+	Box(U&& u) : ptr(std::make_unique<T>(std::move(u))) {}
 
 	// copy constructor
-	Allocated(const Allocated& other) : Allocated(other.get()) {};
+	Box(const Box& other) : Box(other.get()) {};
 	
 	// template copy constructor
 	template <typename U>
-	Allocated(const Allocated<U>& other) : Allocated(other.get()) {};
+	Box(const Box<U>& other) : Box(other.get()) {};
 
 	// move constructor
-	Allocated(Allocated&& other) : Allocated(std::move(other).get()) {};
+	Box(Box&& other) : Box(std::move(other).get()) {};
 
 	// template move constructor
 	template <typename U>
-	Allocated(Allocated<U>&& other) : Allocated(std::move(other).get()) {};
+	Box(Box<U>&& other) : Box(std::move(other).get()) {};
 
 	// operator= same type&
-	Allocated& operator=(const Allocated& other) {
+	Box& operator=(const Box& other) {
 		ptr = std::make_unique<T>(other.get());
 		return *this;
 	}
 
 	// operator= template&
 	template <typename U>
-	Allocated& operator=(const Allocated<U>& other) {
+	Box& operator=(const Box<U>& other) {
 		ptr = std::make_unique<T>(other.get());
 		return *this;
 	}
 
 	// operator= same type&&
-	Allocated& operator=(Allocated&& other) {
+	Box& operator=(Box&& other) {
 		ptr = std::make_unique<T>(std::move(other).get());
 		return *this;
 	}
 
 	// operator= template&&
 	template <typename U>
-	Allocated& operator=(Allocated<U>&& other) {
+	Box& operator=(Box<U>&& other) {
 		ptr = std::make_unique<T>(std::move(other).get());
 		return *this;
 	}
 
-	~Allocated() = default;
+	~Box() = default;
 protected:
 	std::unique_ptr<T> ptr;
 };
