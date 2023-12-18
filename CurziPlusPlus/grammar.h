@@ -58,9 +58,12 @@ using Function = and_t<Typename, Word, Token<PARENOPEN>, FunctionParameters, Tok
 using ParenArguments = and_t<Token<PARENOPEN>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 using BraceArguments = and_t<Token<BRACEOPEN>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
 using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
-using NSTypename = and_t<Token<NS>, Alloc<Typename>>;
-using TemplateTypename = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NSTypename>>;
-makeinherit(Typename, and_t<Word, Opt<Or<NSTypename, TemplateTypename>>>);
+
+using NamespaceTypenameExtension = and_t<Token<NS>, Alloc<Typename>>;
+using TemplateTypenameExtension = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NamespaceTypenameExtension>>;
+using UnionTypenameExtension = CommaPlus<And<Token<BITOR>, Alloc<Typename>>>;
+makeinherit(Typename, and_t<Word, Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>);
+
 using TemplateTypenameDeclaration = and_t<Alloc<TemplateDeclaration>, Word>;
 makeinherit(TemplateDeclaration,
 	and_t<

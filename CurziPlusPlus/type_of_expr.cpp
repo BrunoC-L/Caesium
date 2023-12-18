@@ -143,13 +143,13 @@ NodeStructs::TypeVariant type_of_expr(
 	const Named& named,
 	const NodeStructs::BraceArguments& expr
 ) {
-	return NodeStructs::Aggregate{
+	return NodeStructs::TypeVariant{ NodeStructs::TypeAggregate{
 		expr.args
 		| std::views::transform(
 			[&](const NodeStructs::FunctionArgument& e) { return type_of_expr(variables, named, std::get<NodeStructs::Expression>(e)); }
 		)
 		| to_vec()
-	};
+	} };
 }
 
 NodeStructs::TypeVariant type_of_expr(
@@ -165,7 +165,7 @@ NodeStructs::TypeVariant type_of_expr(
 	{
 		auto it = named.types.find(expr);
 		if (it != named.types.end())
-			return NodeStructs::TypeType{ it->second };
+			return NodeStructs::TypeVariant{ NodeStructs::TypeType{ it->second } };
 	}
 	auto err = "could not find variable named " + transpile(variables, named, expr).value();
 	throw std::runtime_error(err);

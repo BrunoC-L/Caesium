@@ -155,8 +155,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alloc.h" />
-    <ClInclude Include="colored_text.h" />
+    <ClInclude Include="colored_text.hpp" />
     <ClInclude Include="fn_util.hpp" />
+    <ClInclude Include="is_specialization.hpp" />
+    <ClInclude Include="meta_int.hpp" />
     <ClInclude Include="ranges_fold_left_pipe.h" />
     <ClInclude Include="grammarizer.h" />
     <ClInclude Include="methods_of_type.h" />
@@ -170,6 +172,7 @@
     <ClInclude Include="testTranspile.h" />
     <ClInclude Include="type_of_expr.h" />
     <ClInclude Include="type_of_typename.h" />
+    <ClInclude Include="visit_with.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -8,7 +8,7 @@
 #include "alloc.h"
 
 template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-template<class... Ts> overload(Ts...)->overload<Ts...>; // to help IDE
+template<class... Ts> overload(Ts...) -> overload<Ts...>; // to help IDE
 
 #define overload_default_error [&](const auto& e) {\
 static_assert(\
@@ -23,38 +23,65 @@ static_assert(
 }
 
 namespace NodeStructs {
+
 	struct TemplatedTypename;
 	struct NamespacedTypename;
 	struct BaseTypename;
-
-	using Typename = std::variant<TemplatedTypename, NamespacedTypename, BaseTypename>;
+	struct UnionTypename;
+	struct Typename;
 
 	struct TemplatedTypename {
 		Box<Typename> type;
 		std::vector<Typename> templated_with;
 
-		bool operator==(const TemplatedTypename&) const;
-		bool operator==(const Typename& other) const;
+		using Type = TemplatedTypename;
+		std::strong_ordering operator<=>(const Type&) const;
 	};
 
 	struct NamespacedTypename {
 		Box<Typename> name_space;
 		Box<Typename> name_in_name_space;
 
-		bool operator==(const NamespacedTypename&) const;
-		bool operator==(const Typename& other) const;
+		using Type = NamespacedTypename;
+		std::strong_ordering operator<=>(const Type&) const;
 	};
 
 	struct BaseTypename {
 		std::string type;
 
-		bool operator==(const BaseTypename&) const;
-		bool operator==(const Typename& other) const;
+		using Type = BaseTypename;
+		std::strong_ordering operator<=>(const Type& other) const {
+			return type <=> other.type;
+		}
+	};
+
+	struct UnionTypename {
+		std::vector<Typename> ors;
+
+		std::strong_ordering operator<=>(const UnionTypename& other) const;
+	};
+
+	struct Typename {
+		std::variant<TemplatedTypename, NamespacedTypename, BaseTypename, UnionTypename> value;
+		std::strong_ordering operator<=>(const Typename& other) const {
+			auto index_cmp = value.index() <=> other.value.index();
+			return index_cmp != 0 ?
+				index_cmp :
+				std::visit(
+					[&](const auto& a) -> std::strong_ordering {
+						return std::strong_ordering(a <=> std::get<std::remove_cvref_t<decltype(a)>>(other.value));
+					},
+					value
+				);
+		}
 	};
 
 	struct Alias {
 		Typename aliasFrom;
 		Typename aliasTo;
+		std::strong_ordering operator<=>(const Alias&) const {
+			throw;
+		}
 	};
 
 	struct Statement;
@@ -91,14 +118,41 @@ namespace NodeStructs {
 			Token<STRING>
 		>;
 		Box<vt> expression;
+		std::strong_ordering operator<=>(const Expression&) const {
+			throw;
+		}
 	};
 
-	struct Reference {};
-	struct MutableReference {};
-	struct Copy {};
-	struct Move {};
-	struct Value {};
-	struct Key {};
+	struct Reference {
+		std::strong_ordering operator<=>(const Reference&) const {
+			throw;
+		}
+	};
+	struct MutableReference {
+		std::strong_ordering operator<=>(const MutableReference&) const {
+			throw;
+		}
+	};
+	struct Copy {
+		std::strong_ordering operator<=>(const Copy&) const {
+			throw;
+		}
+	};
+	struct Move {
+		std::strong_ordering operator<=>(const Move&) const {
+			throw;
+		}
+	};
+	struct Value {
+		std::strong_ordering operator<=>(const Value&) const {
+			throw;
+		}
+	};
+	struct Key {
+		std::strong_ordering operator<=>(const Key&) const {
+			throw;
+		}
+	};
 	/*
 	ref->ref
 	ref!->ref!
@@ -106,20 +160,29 @@ namespace NodeStructs {
 	move->val
 	?->key
 	*/
-	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy,  Move      >;
-	using ValueCategory       = std::variant<Reference, MutableReference,    Value,       Key>;
+	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy, Move>;
+	using ValueCategory = std::variant<Reference, MutableReference, Value, Key>;
 	using FunctionArgument = std::tuple<std::optional<ArgumentPassingType>, Expression>;
 
 	struct BracketArguments {
 		std::vector<FunctionArgument> args;
+		std::strong_ordering operator<=>(const BracketArguments&) const {
+			throw;
+		}
 	};
 
 	struct BraceArguments {
 		std::vector<FunctionArgument> args;
+		std::strong_ordering operator<=>(const BraceArguments&) const {
+			throw;
+		}
 	};
 
 	struct ParenArguments {
 		std::vector<FunctionArgument> args;
+		std::strong_ordering operator<=>(const ParenArguments&) const {
+			throw;
+		}
 	};
 
 	struct PostfixExpression {
@@ -133,6 +196,9 @@ namespace NodeStructs {
 			Token<MINUSMINUS>
 		>;
 		std::vector<op_types> postfixes;
+		std::strong_ordering operator<=>(const PostfixExpression&) const {
+			throw;
+		}
 	};
 
 	struct UnaryExpression {
@@ -149,6 +215,9 @@ namespace NodeStructs {
 		>;
 		Expression expr;
 		op_types unary_operator;
+		std::strong_ordering operator<=>(const UnaryExpression&) const {
+			throw;
+		}
 	};
 
 	struct MultiplicativeExpression {
@@ -159,6 +228,9 @@ namespace NodeStructs {
 			Token<PERCENT>
 		>;
 		std::vector<std::pair<op_types, Expression>> muls;
+		std::strong_ordering operator<=>(const MultiplicativeExpression&) const {
+			throw;
+		}
 	};
 
 	struct AdditiveExpression {
@@ -168,6 +240,9 @@ namespace NodeStructs {
 			Token<DASH>
 		>;
 		std::vector<std::pair<op_types, Expression>> adds;
+		std::strong_ordering operator<=>(const AdditiveExpression&) const {
+			throw;
+		}
 	};
 
 	struct CompareExpression {
@@ -179,6 +254,9 @@ namespace NodeStructs {
 			Token<GTE>
 		>;
 		std::vector<std::pair<op_types, Expression>> comparisons;
+		std::strong_ordering operator<=>(const CompareExpression&) const {
+			throw;
+		}
 	};
 
 	struct EqualityExpression {
@@ -188,21 +266,33 @@ namespace NodeStructs {
 			Token<NEQUAL>
 		>;
 		std::vector<std::pair<op_types, Expression>> equals;
+		std::strong_ordering operator<=>(const EqualityExpression&) const {
+			throw;
+		}
 	};
 
 	struct AndExpression {
 		Expression expr;
 		std::vector<Expression> ands;
+		std::strong_ordering operator<=>(const AndExpression&) const {
+			throw;
+		}
 	};
 
 	struct OrExpression {
 		Expression expr;
 		std::vector<Expression> ors;
+		std::strong_ordering operator<=>(const OrExpression&) const {
+			throw;
+		}
 	};
 
 	struct ConditionalExpression {
 		Expression expr;
 		std::optional<std::pair<Expression, Expression>> ifElseExprs;
+		std::strong_ordering operator<=>(const ConditionalExpression&) const {
+			throw;
+		}
 	};
 
 	struct AssignmentExpression {
@@ -219,54 +309,84 @@ namespace NodeStructs {
 			Token<XOREQUAL>
 		>;
 		std::vector<std::pair<op_types, Expression>> assignments;
+		std::strong_ordering operator<=>(const AssignmentExpression&) const {
+			throw;
+		}
 	};
 
 	struct VariableDeclaration {
 		Typename type;
 		std::string name;
+		std::strong_ordering operator<=>(const VariableDeclaration&) const {
+			throw;
+		}
 	};
 
 	struct VariableDeclarationStatement {
 		Typename type;
 		std::string name;
 		Expression expr;
+		std::strong_ordering operator<=>(const VariableDeclarationStatement&) const {
+			throw;
+		}
 	};
 
 	struct ForStatement {
-		NodeStructs::Expression collection;
+		Expression collection;
 		std::vector<std::variant<VariableDeclaration, std::string>> iterators;
-		std::vector<NodeStructs::Statement> statements;
+		std::vector<Statement> statements;
+		std::strong_ordering operator<=>(const ForStatement&) const {
+			throw;
+		}
 	};
 
 	struct IForStatement {
 		std::string index;
-		NodeStructs::Expression collection;
+		Expression collection;
 		std::vector<std::variant<VariableDeclaration, std::string>> iterators;
-		std::vector<NodeStructs::Statement> statements;
+		std::vector<Statement> statements;
+		std::strong_ordering operator<=>(const IForStatement&) const {
+			throw;
+		}
 	};
 
 	struct IfStatement {
 		Expression ifExpr;
 		std::vector<Statement> ifStatements;
 		std::optional<std::variant<Box<IfStatement>, std::vector<Statement>>> elseExprStatements;
+		std::strong_ordering operator<=>(const IfStatement&) const {
+			throw;
+		}
 	};
 
 	struct WhileStatement {
 		Expression whileExpr;
-		std::vector<NodeStructs::Statement> statements;
+		std::vector<Statement> statements;
+		std::strong_ordering operator<=>(const WhileStatement&) const {
+			throw;
+		}
 	};
 
 	struct BreakStatement {
 		std::optional<Expression> ifExpr;
+		std::strong_ordering operator<=>(const BreakStatement&) const {
+			throw;
+		}
 	};
 
 	struct ReturnStatement {
 		std::vector<Expression> returnExpr;
 		std::optional<Expression> ifExpr;
+		std::strong_ordering operator<=>(const ReturnStatement&) const {
+			throw;
+		}
 	};
 
 	struct BlockStatement {
 		Typename parametrized_block;
+		std::strong_ordering operator<=>(const BlockStatement&) const {
+			throw;
+		}
 	};
 
 	struct Statement {
@@ -281,20 +401,32 @@ namespace NodeStructs {
 			ReturnStatement,
 			BlockStatement
 		> statement;
+		std::strong_ordering operator<=>(const Statement&) const {
+			throw;
+		}
 	};
 
 	struct Constructor {
 		std::vector<std::tuple<Typename, ValueCategory, std::string>> parameters;
 		std::vector<Statement> statements;
+		std::strong_ordering operator<=>(const Constructor&) const {
+			throw;
+		}
 	};
 
 	struct MemberVariable {
 		std::string name;
 		Typename type;
+		std::strong_ordering operator<=>(const MemberVariable&) const {
+			throw;
+		}
 	};
 
 	struct Import {
 		std::string imported;
+		std::strong_ordering operator<=>(const Import&) const {
+			throw;
+		}
 	};
 
 	template <typename T>
@@ -302,39 +434,88 @@ namespace NodeStructs {
 
 	struct TemplateArguments {
 		std::vector<std::string> arguments;
+		std::strong_ordering operator<=>(const TemplateArguments&) const {
+			throw;
+		}
 	};
 
 	template <typename T>
 	struct Template {
 		TemplateArguments arguments;
 		T templated;
+
+		std::strong_ordering operator<=>(const Template&) const {
+			throw;
+		}
 	};
 
 	struct Function {
 		std::string name;
-		NodeStructs::Typename returnType;
+		Typename returnType;
 		std::vector<std::tuple<Typename, ValueCategory, std::string>> parameters;
 		std::vector<Statement> statements;
+		std::strong_ordering operator<=>(const Function&) const {
+			throw;
+		}
 	};
-	
+
 	struct Type;
 	struct TypeTemplateInstance;
-	struct Aggregate;
+	struct TypeAggregate;
 	struct TypeType; // String is a type, the type of String is a TypeType
-
-	using TypeVariant = std::variant<const Type*, TypeTemplateInstance, Aggregate, TypeType>;
+	struct TypeUnion;
+	struct TypeVariant;
 
 	struct TypeTemplateInstance {
-		const NodeStructs::Template<NodeStructs::Type>* type_template;
+		const Template<Type>* type_template;
 		std::vector<TypeVariant> template_arguments;
+
+		using Type = TypeTemplateInstance;
+		std::strong_ordering operator<=>(const Type&) const {
+			throw;
+		}
 	};
 
-	struct Aggregate {
+	struct TypeAggregate {
 		std::vector<TypeVariant> arguments;
+
+		using Type = TypeAggregate;
+		std::strong_ordering operator<=>(const Type&) const {
+			throw;
+		}
 	};
 
 	struct TypeType {
 		Box<TypeVariant> represented_type;
+
+		using Type = TypeType;
+		std::strong_ordering operator<=>(const Type&) const {
+			throw;
+		}
+	};
+
+	struct TypeUnion {
+		std::vector<TypeVariant> arguments;
+
+		using Type = TypeUnion;
+		std::strong_ordering operator<=>(const Type&) const {
+			throw;
+		}
+	};
+
+	struct TypeVariant {
+		std::variant<const Type*, TypeTemplateInstance, TypeAggregate, TypeType, TypeUnion> value;
+		std::strong_ordering operator<=>(const TypeVariant& other) const {
+			auto index_cmp = value.index() <=> other.value.index();
+			return index_cmp != 0 ?
+				index_cmp :
+				std::visit(
+					[&](const auto& a) {
+						return a <=> std::get<std::remove_cvref_t<decltype(a)>>(other.value);
+					},
+					value
+				);
+		}
 	};
 
 	struct Type {
@@ -356,20 +537,30 @@ namespace NodeStructs {
 			else
 				static_assert(!sizeof(T*), "T is not supported");
 		}
+
+		std::strong_ordering operator<=>(const Type&) const {
+			throw;
+		}
 	};
 
 	struct Block {
 		std::string name;
-		std::vector<NodeStructs::Statement> statements;
+		std::vector<Statement> statements;
+		std::strong_ordering operator<=>(const Block&) const {
+			throw;
+		}
 	};
 
 	struct File {
 		std::string filename;
 		std::vector<Import> imports;
 		std::vector<Type> types;
-		std::vector<NodeStructs::Template<NodeStructs::Type>> type_templates;
+		std::vector<Template<Type>> type_templates;
 		std::vector<Function> functions;
-		std::vector<NodeStructs::Template<NodeStructs::Function>> function_templates;
+		std::vector<Template<Function>> function_templates;
 		std::vector<Block> blocks;
+		std::strong_ordering operator<=>(const File&) const {
+			throw;
+		}
 	};
 }

@@ -37,15 +37,24 @@ const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
+	const NodeStructs::UnionTypename& type
+) {
+	throw;
+}
+
+const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
 	const NodeStructs::Typename& type
 ) {
-	return std::visit(
+	throw;
+	/*return std::visit(
 		[&](const auto& t) {
 			auto s = transpile(variables, named, t);
 			return type_template_of_typename(variables, named, t);
 		},
 		type
-	);
+	);*/
 }
 
 NodeStructs::TypeVariant type_of_typename(
@@ -54,7 +63,7 @@ NodeStructs::TypeVariant type_of_typename(
 	const NodeStructs::BaseTypename& type
 ) {
 	if (named.types.contains(type.type))
-		return named.types.at(type.type);
+		return NodeStructs::TypeVariant{ named.types.at(type.type) };
 	auto err = "Missing type " + type.type;
 	throw std::runtime_error(err);
 }
@@ -73,24 +82,35 @@ NodeStructs::TypeVariant type_of_typename(
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
-	return NodeStructs::TypeTemplateInstance{
+	return NodeStructs::TypeVariant{ NodeStructs::TypeTemplateInstance{
 		type_template_of_typename(variables, named, type.type.get()),
 		type.templated_with
-			| std::views::transform([&](const auto& e) { return type_of_typename(variables, named, e); })
+			| std::views::transform([&](const auto& e) { return type_of_typename_v(variables, named, e); })
 			| to_vec()
-	};
+	} };
 }
 
 NodeStructs::TypeVariant type_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
+	const NodeStructs::UnionTypename& type
+) {
+	return NodeStructs::TypeVariant{ NodeStructs::TypeUnion{
+		type.ors
+			| std::views::transform([&](const auto& e) { return type_of_typename_v(variables, named, e); })
+			| to_vec()
+	} };
+}
+
+NodeStructs::TypeVariant type_of_typename_v(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
 	const NodeStructs::Typename& type
 ) {
-	auto s = transpile(variables, named, type);
 	return std::visit(
 		[&](const auto& t) {
 			return type_of_typename(variables, named, t);
 		},
-		type
+		type.value
 	);
 }

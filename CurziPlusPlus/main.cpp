@@ -9,7 +9,7 @@
 #include "toCpp.h"
 #include "testTranspile.h"
 
-NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
+static NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	std::ifstream caesium(fileName);
 	if (!caesium.is_open())
 		throw std::exception();
@@ -29,7 +29,7 @@ NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	}
 }
 
-void transpile(const std::vector<NodeStructs::File>& project, const std::filesystem::path& folder) {
+static void transpile(const std::vector<NodeStructs::File>& project, const std::filesystem::path& folder) {
 	std::ofstream h(folder.generic_string() + "/header.h", std::ios::trunc);
 	std::ofstream cpp(folder.generic_string() + "/main.cpp", std::ios::trunc);
 	if (!h.is_open())
@@ -38,31 +38,45 @@ void transpile(const std::vector<NodeStructs::File>& project, const std::filesys
 		throw std::exception();
 	auto k = transpile(project);
 	if (k.has_value()) {
-		auto [_h, _cpp] = k.value();
-		h << std::move(_h);
-		cpp << std::move(_cpp);
+		auto&& [_h, _cpp] = k.value();
+		h << _h;
+		cpp << _cpp;
 	}
 	else
 		std::cout << k.error().content;
 }
 
-auto as_vec(std::filesystem::directory_iterator&& it) {
+static auto as_vec(std::filesystem::directory_iterator&& it) {
 	return std::vector(std::ranges::begin(it), std::ranges::end(it));
 }
 
 int main(int argc, char** argv) {
-
 	{
-		std::cout << std::boolalpha;
-
-		if (!testParse())
-			return 1;
-		std::cout << colored_text("All parse tests passed\n", output_stream_colors::green) << "\n\n";
-
-		if (!testTranspile())
-			return 1;
-		std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green) << "\n\n";
+		std::vector<NodeStructs::Typename> vec;
+		vec.push_back(NodeStructs::Typename{ NodeStructs::BaseTypename{ "B" } });
+		vec.push_back(NodeStructs::Typename{ NodeStructs::BaseTypename{ "A" } });
+		auto test1 = NodeStructs::BaseTypename{ "A" } <=> NodeStructs::BaseTypename{ "B" };
+		auto test2  = NodeStructs::BaseTypename{ "B" } <=> NodeStructs::BaseTypename{ "A" };
+		std::sort(vec.begin(), vec.end());
 	}
+	{
+		std::vector<NodeStructs::BaseTypename> vec;
+		vec.push_back({ "B" });
+		vec.push_back({ "A" });
+		std::sort(vec.begin(), vec.end());
+	}
+
+
+
+	std::cout << std::boolalpha;
+
+	if (!testParse())
+		return 1;
+	std::cout << colored_text("All parse tests passed\n", output_stream_colors::green) << "\n\n";
+
+	if (!testTranspile())
+		return 1;
+	std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green) << "\n\n";
 
 	return 0;
 

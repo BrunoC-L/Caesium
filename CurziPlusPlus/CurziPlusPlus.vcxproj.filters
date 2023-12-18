@@ -86,7 +86,16 @@
     <ClInclude Include="testTranspile.h">
       <Filter>Test Files</Filter>
     </ClInclude>
-    <ClInclude Include="colored_text.h">
+    <ClInclude Include="colored_text.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="visit_with.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="is_specialization.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="meta_int.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

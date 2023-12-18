@@ -79,6 +79,10 @@ public:
 		return *this;
 	}
 
+	std::strong_ordering operator<=>(const Box& other) const {
+		return (*ptr) <=> (*other.ptr);
+	};
+
 	~Box() = default;
 protected:
 	std::unique_ptr<T> ptr;

@@ -21,11 +21,12 @@ NodeStructs::Import getStruct(const Import& f) {
 
 NodeStructs::Typename getStruct(const Typename& t);
 
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const NSTypename& nst) {
-	return NodeStructs::NamespacedTypename{
+NodeStructs::Typename extend(NodeStructs::Typename&& t, const NamespaceTypenameExtension& nst) {
+	throw;
+	/*return NodeStructs::NamespacedTypename{
 		std::move(t),
 		getStruct(nst.get<Alloc<Typename>>().get())
-	};
+	};*/
 }
 
 NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std::vector<Alloc<Typename>>& templates) {
@@ -38,21 +39,35 @@ NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std:
 	};
 }
 
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypename& tt) {
-	if (tt.get<Opt<NSTypename>>().has_value())
-		return extend(extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()), tt.get<Opt<NSTypename>>().value());
+NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypenameExtension& tt) {
+	if (tt.get<Opt<NamespaceTypenameExtension>>().has_value())
+		return extend(NodeStructs::Typename{ extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()) }, tt.get<Opt<NamespaceTypenameExtension>>().value());
 	else
-		return extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>());
+		return NodeStructs::Typename{ extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()) };
+}
+
+NodeStructs::Typename extend(NodeStructs::Typename&& t, const UnionTypenameExtension& ors) {
+	std::vector<NodeStructs::Typename> v;
+	v.reserve(ors.nodes.size() + 1);
+	v.push_back(std::move(t));
+	auto ts = ors.get_view<Alloc<Typename>>() | LIFT_TRANSFORM_TRAIL(.get()) | LIFT_TRANSFORM(getStruct);
+	v.insert(v.end(), std::make_move_iterator(begin(ts)), std::make_move_iterator(end(ts)));
+
+	return NodeStructs::Typename{ NodeStructs::UnionTypename{
+		std::move(v)
+	} };
 }
 
 NodeStructs::Typename getStruct(const Typename& t) {
-	NodeStructs::Typename res = NodeStructs::BaseTypename{ t.get<Word>().value };
-	if (t.get<Opt<Or<NSTypename, TemplateTypename>>>().has_value())
-		return std::visit([&res](const auto& t) {
-			return extend(std::move(res), t);
-		}, t.get<Opt<Or<NSTypename, TemplateTypename>>>().value().value());
+	if (!t.get<Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>().has_value())
+		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.get<Word>().value } };
 	else
-		return res;
+		return std::visit(
+			[&](const auto& u) {
+				return extend(NodeStructs::Typename{ NodeStructs::BaseTypename{ t.get<Word>().value } }, u);
+			},
+			t.get<Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>().value().value()
+		);
 }
 
 NodeStructs::ValueCategory getStruct(const ValueCategory& vc) {
@@ -101,14 +116,15 @@ NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>&
 }
 
 NodeStructs::Constructor getStruct(const Constructor& f) {
-	return {
+	throw;
+	/*return {
 		f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>()
 			| LIFT_TRANSFORM_X(arg, std::tuple{ getStruct(arg.get<Typename>()), getStruct(arg.get<ValueCategory>()), arg.get<Word>().value })
 			| to_vec(),
 		f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
 			| LIFT_TRANSFORM(getStatementStruct)
 			| to_vec()
-	};
+	};*/
 }
 
 NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
@@ -382,23 +398,25 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 					>
 				>>();
 				return std::visit(overload(
-					[&](const auto& token) {
-						auto res = NodeStructs::UnaryExpression{
+					[&](const auto& token) -> NodeStructs::Expression {
+						throw;
+						/*auto res = NodeStructs::UnaryExpression{
 							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
 							token,
 						};
-						return NodeStructs::Expression{ std::move(res) };
+						return NodeStructs::Expression{ std::move(res) };*/
 					},
 					[&](const And< // type cast operator
 						Token<PARENOPEN>,
 						Typename,
 						Token<PARENCLOSE>
-					>& g) {
-						auto res = NodeStructs::UnaryExpression{
+					>& g) -> NodeStructs::Expression {
+						throw;
+						/*auto res = NodeStructs::UnaryExpression{
 							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
 							getStruct(g.get<Typename>()),
 						};
-						return NodeStructs::Expression{ std::move(res) };
+						return NodeStructs::Expression{ std::move(res) };*/
 					}
 				), op.value());
 			}
@@ -602,7 +620,8 @@ NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 }
 
 NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
-	return {
+	throw;
+	/*return {
 		.collection = getExpressionStruct(statement.get<Expression>()),
 		.iterators = statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<Or<VariableDeclaration, Word>>()
 			| std::views::transform([](const Or<VariableDeclaration, Word>& or_node) {
@@ -619,7 +638,7 @@ NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
 		.statements = statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
 			| LIFT_TRANSFORM(getStatementStruct)
 			| to_vec()
-	};
+	};*/
 }
 
 NodeStructs::IForStatement getStatementStruct(const IForStatement& statement) {

@@ -2,7 +2,6 @@
 #include <sstream>
 #include <vector>
 #include <forward_list>
-#include <variant>
 
 enum TOKENS {
 	END, // marks the last token of a stream
@@ -30,12 +29,6 @@ enum TOKENS {
 	AMPERSAND,
 	QUESTION,
 	POUND,
-
-	COPY,
-	MOVE,
-	REF,
-	VAL,
-	KEY,
 
 	EQUAL,
 	LT,
@@ -71,35 +64,44 @@ enum TOKENS {
 	NUMBER,
 	STRING,
 
-	RETURN,
-	SWITCH,
-	IN,
-	IFOR,
 	IMPORT,
 	FROM,
-	FOR,
-	WHILE,
-	IF,
-	ELSE,
-	BREAK,
-	CASE,
-	DO,
 	USING,
 	STATIC,
+
+	RETURN,
+	FOR,
+	IFOR,
+	IN,
+	IF,
+	ELSE,
+	WHILE,
+	DO,
+	SWITCH,
+	CASE,
+	BREAK,
+
 	TYPE,
 	TEMPLATE,
-	AUTO,
 	BLOCK,
+
+	COPY,
+	MOVE,
+	REF,
+	VAL,
+	KEY,
+
+	AUTO,
+	VARIANT,
+	VIRTUAL,
+	BOX,
 };
 
 using TOKENVALUE = std::pair<TOKENS, std::string>;
 
-class Tokenizer {
-private:
+struct Tokenizer {
 	std::string program;
 	unsigned index = 0;
-public:
-	constexpr Tokenizer(std::string_view program) : program(program) {}
 
 	std::forward_list<TOKENVALUE> read() {
 		std::forward_list<TOKENVALUE> out;

@@ -163,11 +163,11 @@ struct cpp_std {
 	const NodeStructs::Type string = { "String" };
 
 	const NodeStructs::Function _println{
-			.name = std::string{"println"},
-			.returnType = NodeStructs::BaseTypename{"void"},
-			.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{
-				{ NodeStructs::BaseTypename{"T"}, NodeStructs::ValueCategory{ NodeStructs::Reference{} }, "t" }
-			},
+		.name = std::string{"println"},
+		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{"void"} },
+		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{
+			//{ NodeStructs::Typename{ NodeStructs::BaseTypename{"T"} }, NodeStructs::ValueCategory{ NodeStructs::Reference{} }, "t" }
+		},
 	};
 
 	const NodeStructs::Template<NodeStructs::Function> println = {
@@ -280,6 +280,12 @@ transpile_t transpile(
 	const NodeStructs::TemplatedTypename& type
 );
 
+transpile_t transpile(
+	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	const Named& named,
+	const NodeStructs::UnionTypename& type
+);
+
 
 
 
@@ -304,7 +310,7 @@ transpile_t transpile(
 transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::Aggregate& type
+	const NodeStructs::TypeAggregate& type
 );
 
 transpile_t transpile(

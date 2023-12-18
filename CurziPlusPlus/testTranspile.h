@@ -2,7 +2,7 @@
 #include <iostream>
 #include "toCpp.h"
 #include "structurizer.h"
-#include "colored_text.h"
+#include "colored_text.hpp"
 
 size_t first_diff(std::string_view s1, std::string_view s2) {
 	auto first_diff_ = 0;
@@ -16,7 +16,7 @@ size_t first_diff(std::string_view s1, std::string_view s2) {
 }
 
 std::optional<std::expected<std::pair<std::string, std::string>, user_error>> create_file(int line, std::string_view caesiumProgram) {
-	std::forward_list<TOKENVALUE> tokens(Tokenizer(caesiumProgram).read());
+	std::forward_list<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
 	Grammarizer g(tokens);
 	auto file = File(0);
 	{
@@ -82,9 +82,9 @@ bool test_transpile_no_error(int line, std::string_view caesiumProgram, std::str
 	else {
 		auto err = std::move(x).error().content;
 		std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(false) << "\n";
-		std::cout << colored_text("input\n:", output_stream_colors::blue) << caesiumProgram << "\n\n";
+		std::cout << colored_text("input:\n", output_stream_colors::blue) << caesiumProgram << "\n\n";
 		std::cout << colored_text("expected header:\n", output_stream_colors::blue) << expected_header << "\n\n";
-		std::cout << colored_text("expected cpp\n:", output_stream_colors::blue) << expected_cpp << "\n\n";
+		std::cout << colored_text("expected cpp:\n", output_stream_colors::blue) << expected_cpp << "\n\n";
 		std::cout << colored_text("produced error:\n", output_stream_colors::blue) << colored_text_with_bool(err, false) << "\n\n";
 		return false;
 	}
@@ -133,7 +133,7 @@ bool test_transpile_error(int line, std::string_view caesiumProgram, std::string
 		bool error_ok = error.size() == expected_error.size() && error.size() == first_diff_error;
 		if (!error_ok) {
 			std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(false) << "\n";
-			std::cout << colored_text("input\n:", output_stream_colors::blue) << caesiumProgram << "\n\n";
+			std::cout << colored_text("input:\n", output_stream_colors::blue) << caesiumProgram << "\n\n";
 			std::cout << colored_text("expected error:\n", output_stream_colors::blue) << expected_error << "\n\n";
 			std::cout << colored_text("produced error:\n", output_stream_colors::blue) << colored_text_with_bool(error, false) << "\n\n";
 		}
@@ -143,7 +143,7 @@ bool test_transpile_error(int line, std::string_view caesiumProgram, std::string
 
 std::string include_header = "#include \"header.h\"\n";
 
-auto add_to_main = [](std::string s) {
+auto add_to_main_cpp = [](std::string s) {
 	return "struct Main {\n"
 		"Int main(Vector<String> s) {\n"
 		+ s +
@@ -164,7 +164,7 @@ struct test_transpile_no_error_t {
 	std::string_view header;
 	std::string_view cpp;
 
-	auto operator()() {
+	operator bool() {
 		return test_transpile_no_error(line, caesium, header, cpp);
 	}
 };
@@ -174,7 +174,7 @@ struct test_transpile_error_t {
 	std::string_view caesium;
 	std::string_view error;
 
-	auto operator()() {
+	operator bool() {
 		return test_transpile_error(line, caesium, error);
 	}
 };
@@ -186,27 +186,27 @@ bool testTranspile() {
 		.line = __LINE__,
 		.caesium = "Int main(Vector<String> ref s):\n",
 		.header = "",
-		.cpp = include_header + add_to_main("")
-	}();
+		.cpp = include_header + add_to_main_cpp("")
+	};
 	ok &= test_transpile_error_t{
 		.line = __LINE__,
 		.caesium = "Int main(Vector<String> ref s):\n\ta\n",
 		.error = "Undeclared variable `a`"
-	}();
+	};
 	ok &= test_transpile_no_error_t{
 		.line = __LINE__,
 		.caesium = "Int main(Vector<String> ref s):\n\tInt a = {}\n",
 		.header = "",
-		.cpp = include_header + add_to_main("Int a = {};\n")
-	}();
+		.cpp = include_header + add_to_main_cpp("Int a = {};\n")
+	};
 	ok &= test_transpile_no_error_t{
 		.line = __LINE__,
 		.caesium = "type A:\n"
 		"Int main(Vector<String> ref s):\n"
 		"	A a = {}\n",
 		.header = "struct A;\n",
-		.cpp = include_header + "struct A {\n};\n\n" + add_to_main("A a = {};\n")
-	}();
+		.cpp = include_header + "struct A {\n};\n\n" + add_to_main_cpp("A a = {};\n")
+	};
 	ok &= test_transpile_no_error_t{
 		.line = __LINE__,
 		.caesium = "type A:\n"
@@ -215,7 +215,46 @@ bool testTranspile() {
 		"	A a2 = a1\n"
 		"	a1 = a2\n",
 		.header = "struct A;\n",
-		.cpp = include_header + "struct A {\n};\n\n" + add_to_main("A a1 = {};\nA a2 = a1;\na1 = a2;\n")
-	}();
+		.cpp = include_header + "struct A {\n};\n\n" + add_to_main_cpp("A a1 = {};\nA a2 = a1;\na1 = a2;\n")
+	};
+	ok &= test_transpile_no_error_t{
+		.line = __LINE__,
+		.caesium =
+		"type A:\n"
+		"type B:\n"
+		"Int main(Vector<String> ref s):\n"
+		"	A | B var = {}\n"
+		,.header =
+		"struct A;\n"
+		"struct B;\n"
+		,.cpp =
+		include_header +
+		"struct A {\n};\n\n" +
+		"struct B {\n};\n\n" +
+		add_to_main_cpp(
+			"std::variant<A, B> var = {};\n"
+		)
+	};
+	ok &= test_transpile_no_error_t{
+		.line = __LINE__,
+		.caesium =
+		"type A:\n"
+		"type B:\n"
+		"Int main(Vector<String> ref s):\n"
+		"	A | B v1 = {}\n"
+		"	B | A v2 = v1\n"
+		,.header =
+		"struct A;\n"
+		"struct B;\n"
+		,.cpp =
+		include_header +
+		"struct A {\n};\n\n" +
+		"struct B {\n};\n\n" +
+		add_to_main_cpp(
+			"std::variant<A, B> v1 = {};\n"
+			"std::variant<A, B> v2 = v1;\n"
+		)
+	};
+
 	return ok;
 }

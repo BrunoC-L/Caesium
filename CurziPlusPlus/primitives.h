@@ -5,6 +5,7 @@
 #include <variant>
 #include <ranges>
 #include "fn_util.hpp"
+#include "is_specialization.hpp"
 
 template <typename...> struct And;
 template <typename...> struct Or;
@@ -16,18 +17,6 @@ struct IndentToken;
 template <int> struct Token;
 
 template <typename T> struct is_primitive_node_type;
-
-template <typename T, template <typename...> typename Template>
-struct is_specialization : std::false_type {};
-
-template <template <typename...> typename Template, typename... Args>
-struct is_specialization<Template<Args...>, Template> : std::true_type {};
-
-template <typename T, template <int...> typename Template>
-struct is_specialization_int : std::false_type {};
-
-template <template <int> typename Template, int Arg>
-struct is_specialization_int<Template<Arg>, Template> : std::true_type {};
 
 template <typename T>
 struct is_specialization_indent : std::false_type {};
