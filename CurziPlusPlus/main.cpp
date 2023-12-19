@@ -51,23 +51,6 @@ static auto as_vec(std::filesystem::directory_iterator&& it) {
 }
 
 int main(int argc, char** argv) {
-	{
-		std::vector<NodeStructs::Typename> vec;
-		vec.push_back(NodeStructs::Typename{ NodeStructs::BaseTypename{ "B" } });
-		vec.push_back(NodeStructs::Typename{ NodeStructs::BaseTypename{ "A" } });
-		auto test1 = NodeStructs::BaseTypename{ "A" } <=> NodeStructs::BaseTypename{ "B" };
-		auto test2  = NodeStructs::BaseTypename{ "B" } <=> NodeStructs::BaseTypename{ "A" };
-		std::sort(vec.begin(), vec.end());
-	}
-	{
-		std::vector<NodeStructs::BaseTypename> vec;
-		vec.push_back({ "B" });
-		vec.push_back({ "A" });
-		std::sort(vec.begin(), vec.end());
-	}
-
-
-
 	std::cout << std::boolalpha;
 
 	if (!testParse())

@@ -46,16 +46,26 @@ NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypenameEx
 		return NodeStructs::Typename{ extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()) };
 }
 
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const UnionTypenameExtension& ors) {
-	std::vector<NodeStructs::Typename> v;
-	v.reserve(ors.nodes.size() + 1);
-	v.push_back(std::move(t));
-	auto ts = ors.get_view<Alloc<Typename>>() | LIFT_TRANSFORM_TRAIL(.get()) | LIFT_TRANSFORM(getStruct);
-	v.insert(v.end(), std::make_move_iterator(begin(ts)), std::make_move_iterator(end(ts)));
-
-	return NodeStructs::Typename{ NodeStructs::UnionTypename{
-		std::move(v)
-	} };
+NodeStructs::Typename extend(NodeStructs::Typename&& t, const UnionTypenameExtension& ut) {
+	std::vector<NodeStructs::Typename> v{ std::move(t) };
+	auto other_or_others = getStruct(ut.get<Alloc<Typename>>().get()).value;
+	return std::visit(
+		overload(
+			[&](auto&& arg) -> NodeStructs::Typename  {
+				v.push_back(NodeStructs::Typename{ std::move(arg) });
+				return NodeStructs::Typename{ NodeStructs::UnionTypename{
+					std::move(v)
+				} };
+			},
+			[&](NodeStructs::UnionTypename&& arg) -> NodeStructs::Typename {
+				v.insert(v.end(), std::make_move_iterator(begin(arg.ors)), std::make_move_iterator(end(arg.ors)));
+				return NodeStructs::Typename{ NodeStructs::UnionTypename{
+					std::move(v)
+				} };
+			}
+		),
+		std::move(other_or_others)
+	);
 }
 
 NodeStructs::Typename getStruct(const Typename& t) {

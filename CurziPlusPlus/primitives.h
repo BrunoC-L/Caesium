@@ -6,6 +6,7 @@
 #include <ranges>
 #include "fn_util.hpp"
 #include "is_specialization.hpp"
+#include "box.h"
 
 template <typename...> struct And;
 template <typename...> struct Or;
@@ -67,7 +68,8 @@ struct Token {
 					g->it++;
 				else if (g->it->first == END)
 					return true;
-				else break;
+				else
+					break;
 			}
 			return false;
 		}
@@ -92,6 +94,15 @@ struct Token {
 		while (g->it != g->tokens.end() && (g->it->first == TAB || g->it->first == SPACE)) // ignoring trailing tabs & spaces
 			g->it++;
 		return true;
+	}
+
+	std::weak_ordering operator<=>(const Token& other) const {
+
+		// might want to trim tokens for comparison but i cant figure if thats a problem right now, lets throw in case and fix later if it is
+		if (std::find(value.begin(), value.end(), ' ') != value.end())
+			throw;
+
+		return value <=> other.value;
 	}
 };
 //
@@ -138,7 +149,7 @@ struct Indent : public T {
 
 template <typename T>
 struct Alloc {
-	std::shared_ptr<T> value = nullptr;
+	std::optional<Box<T>> value = std::nullopt;
 	int n_indent;
 	Alloc(int n_indent) : n_indent(n_indent) {}
 
@@ -146,14 +157,14 @@ struct Alloc {
 	Alloc(const Alloc&) = default;
 
 	const T& get() const {
-		return *value.get();
+		return value.value().get();
 	}
 
 
 	bool build(Grammarizer* g) {
 		T t(n_indent);
 		if (build_optional_primitive(t, g)) {
-			value = std::make_shared<T>(std::move(t));
+			value = std::move(t);
 			return true;
 		}
 		return false;

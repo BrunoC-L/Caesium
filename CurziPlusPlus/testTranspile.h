@@ -98,33 +98,6 @@ bool test_transpile_error(int line, std::string_view caesiumProgram, std::string
 
 	if (x.has_value()) {
 		throw;
-		/*auto [header_, cpp] = std::move(x).value();
-
-		static constexpr size_t L = std::string_view{ default_includes }.length();
-		int u = L;
-		std::string_view header{ header_.begin() + L, header_.begin() + header_.size() };
-
-		auto first_diff_header = first_diff(header, expected_header);
-		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;
-
-		auto first_diff_cpp = first_diff(cpp, expected_cpp);
-		bool cpp_ok = cpp.size() == expected_cpp.size() && cpp.size() == first_diff_cpp;
-
-
-		bool ok = header_ok && cpp_ok;
-		if (!ok) {
-			std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(ok) << "\n";
-			std::cout << colored_text("input:\n", output_stream_colors::blue) << caesiumProgram << "\n\n";
-		}
-		if (!header_ok) {
-			std::cout << colored_text("\nexpected header:\n", output_stream_colors::blue) << expected_header << "\n\n";
-			std::cout << colored_text("produced header:\n", output_stream_colors::blue) << header << "\n\n";
-		}
-		if (!cpp_ok) {
-			std::cout << colored_text("expected cpp:\n", output_stream_colors::blue) << expected_cpp << "\n\n";
-			std::cout << colored_text("produced cpp:\n", output_stream_colors::blue) << cpp << "\n\n";
-		}
-		return ok;*/
 	}
 	else {
 		auto error = std::move(x).error().content;
@@ -253,6 +226,29 @@ bool testTranspile() {
 		add_to_main_cpp(
 			"std::variant<A, B> v1 = {};\n"
 			"std::variant<A, B> v2 = v1;\n"
+		)
+	};
+	ok &= test_transpile_no_error_t{
+		.line = __LINE__,
+		.caesium =
+		"type A:\n"
+		"type B:\n"
+		"type C:\n"
+		"Int main(Vector<String> ref s):\n"
+		"	A | B v1 = {}\n"
+		"	B | A | C v2 = v1\n"
+		,.header =
+		"struct A;\n"
+		"struct B;\n"
+		"struct C;\n"
+		,.cpp =
+		include_header +
+		"struct A {\n};\n\n" +
+		"struct B {\n};\n\n" +
+		"struct C {\n};\n\n" +
+		add_to_main_cpp(
+			"std::variant<A, B> v1 = {};\n"
+			"std::variant<A, B, C> v2 = v1;\n"
 		)
 	};
 

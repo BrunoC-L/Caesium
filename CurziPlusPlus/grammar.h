@@ -61,7 +61,7 @@ using BracketArguments = and_t<Token<BRACKETOPEN>, CommaStar<FunctionArgument>, 
 
 using NamespaceTypenameExtension = and_t<Token<NS>, Alloc<Typename>>;
 using TemplateTypenameExtension = and_t<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NamespaceTypenameExtension>>;
-using UnionTypenameExtension = CommaPlus<And<Token<BITOR>, Alloc<Typename>>>;
+using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
 makeinherit(Typename, and_t<Word, Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>);
 
 using TemplateTypenameDeclaration = and_t<Alloc<TemplateDeclaration>, Word>;

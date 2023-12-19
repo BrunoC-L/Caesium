@@ -54,32 +54,32 @@ public:
 	Box(Box<U>&& other) : Box(std::move(other).get()) {};
 
 	// operator= same type&
-	Box& operator=(const Box& other) {
+	Box& operator=(const Box& other) noexcept {
 		ptr = std::make_unique<T>(other.get());
 		return *this;
 	}
 
 	// operator= template&
 	template <typename U>
-	Box& operator=(const Box<U>& other) {
+	Box& operator=(const Box<U>& other) noexcept {
 		ptr = std::make_unique<T>(other.get());
 		return *this;
 	}
 
 	// operator= same type&&
-	Box& operator=(Box&& other) {
+	Box& operator=(Box&& other) noexcept {
 		ptr = std::make_unique<T>(std::move(other).get());
 		return *this;
 	}
 
 	// operator= template&&
 	template <typename U>
-	Box& operator=(Box<U>&& other) {
+	Box& operator=(Box<U>&& other) noexcept {
 		ptr = std::make_unique<T>(std::move(other).get());
 		return *this;
 	}
 
-	std::strong_ordering operator<=>(const Box& other) const {
+	auto operator<=>(const Box& other) const {
 		return (*ptr) <=> (*other.ptr);
 	};
 
