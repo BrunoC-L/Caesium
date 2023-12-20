@@ -221,15 +221,8 @@ transpile_t transpile_definition(
 	for (const auto& member : type.memberVariables)
 		ss << transpile(variables, named, member.type).value() << " " << member.name << ";\n";
 
-	if (type.constructors.size()) {
-		for (const auto& constructor : type.constructors)
-			ss << transpile_definition(variables, named, constructor, type).value() << "\n";
-		ss << type.name << "(const " << type.name << "&) = default;\n";
-		ss << type.name << "& operator=(const " << type.name << "&) = default;\n";
-		ss << type.name << "(" << type.name << "&&) = default;\n";
-		ss << type.name << "& operator=(" << type.name << "&&) = default;\n";
-		ss << "~" << type.name << "() = default;\n";
-	}
+	for (const auto& constructor : type.constructors)
+		ss << transpile_definition(variables, named, constructor, type).value() << "\n";
 
 	for (const auto& fn : type.methods)
 		ss << transpile_definition(variables, named, fn).value();

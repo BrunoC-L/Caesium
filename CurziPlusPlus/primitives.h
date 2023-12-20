@@ -133,9 +133,6 @@ struct Alloc {
 	int n_indent;
 	Alloc(int n_indent) : n_indent(n_indent) {}
 
-	Alloc(Alloc&&) = default;
-	Alloc(const Alloc&) = default;
-
 	const T& get() const {
 		return value.value().get();
 	}

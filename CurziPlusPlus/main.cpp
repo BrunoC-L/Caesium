@@ -62,8 +62,6 @@ int main(int argc, char** argv) {
 		return 1;
 	std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green) << "\n\n";
 
-	return 0;
-
 	for (int i = 1; i < argc; ++i)
 		for (const auto& folder : std::filesystem::directory_iterator(argv[i]))
 			if (folder.is_directory() && !folder.path().stem().generic_string().starts_with("."))
