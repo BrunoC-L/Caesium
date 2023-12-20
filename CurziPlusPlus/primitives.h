@@ -105,26 +105,6 @@ struct Token {
 		return value <=> other.value;
 	}
 };
-//
-//struct UntilToken {
-//	TOKENS t;
-//	std::string value;
-//	UntilToken(TOKENS t) : t(t) {}
-//
-//	UntilToken(UntilToken&&) = default;
-//	UntilToken(const UntilToken&) = default;
-//
-//	bool build(Grammarizer* g) {
-//		while (g->it != g->tokens.end()) {
-//			value += g->it->second;
-//			bool isT = g->it->first == t;
-//			g->it++;
-//			if (isT)
-//				return true;
-//		}
-//		return false;
-//	}
-//};
 
 struct IndentToken {
 	int n_indent;
@@ -160,7 +140,6 @@ struct Alloc {
 		return value.value().get();
 	}
 
-
 	bool build(Grammarizer* g) {
 		T t(n_indent);
 		if (build_optional_primitive(t, g)) {
@@ -176,9 +155,6 @@ struct KNode {
 	std::vector<T> nodes;
 	int n_indent;
 	KNode(int n_indent) : n_indent(n_indent) {}
-
-	KNode(KNode&&) = default;
-	KNode(const KNode&) = default;
 
 	bool build(Grammarizer* g) {
 		while (true) {
@@ -261,9 +237,6 @@ struct Opt {
 	int n_indent;
 	Opt(int n_indent) : n_indent(n_indent) {}
 
-	Opt(Opt&&) = default;
-	Opt(const Opt&) = default;
-
 	bool has_value() const {
 		return node.has_value();
 	}
@@ -307,9 +280,6 @@ struct And {
 
 	And(int n_indent) : n_indent(n_indent), value({ Ands(n_indent)... }) {}
 
-	And(And&&) = default;
-	And(const And& other) = default;
-
 	template <typename T>
 	const T& get() const {
 		return std::get<T>(value);
@@ -341,9 +311,6 @@ struct Or {
 	using variant_t = std::variant<Ors...>;
 	std::optional<variant_t> _value;
 	Or(int n_indent) : n_indent(n_indent) {};
-
-	Or(Or&&) = default;
-	Or(const Or&) = default;
 
 	const variant_t& value() const {
 		return _value.value();

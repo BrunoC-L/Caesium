@@ -1,3 +1,5 @@
+#pragma once
+
 template <typename T, template <typename...> typename Template>
 struct is_specialization : std::false_type {};
 

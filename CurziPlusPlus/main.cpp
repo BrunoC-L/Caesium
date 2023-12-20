@@ -51,6 +51,7 @@ static auto as_vec(std::filesystem::directory_iterator&& it) {
 }
 
 int main(int argc, char** argv) {
+
 	std::cout << std::boolalpha;
 
 	if (!testParse())

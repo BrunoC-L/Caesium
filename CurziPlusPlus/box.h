@@ -1,15 +1,19 @@
 #pragma once
 #include <memory>
+#include "is_specialization.hpp"
 
 template <typename T>
 struct Box {
+	static_assert(!is_specialization<T, Box>::value, "Box<Box<T>> may not behave as expected, place your box type inside an other type to box it.");
 public:
 	const T& get() const& {
 		return *ptr;
 	}
+
 	T& get() & {
 		return *ptr;
 	}
+
 	T&& get() && {
 		return std::move(*ptr);
 	}
@@ -29,12 +33,12 @@ public:
 	// ptr never empty
 	Box() = delete;
 
-	// construct from T or U &
+	// construct from T& or U&
 	Box(const T& t) : ptr(std::make_unique<T>(t)) {}
 	template <typename U>
 	Box(const U& u) : ptr(std::make_unique<T>(u)) {}
 
-	// contrust from T or U &&
+	// construct from T&& or U&&
 	Box(T&& t) : ptr(std::make_unique<T>(std::move(t))) {}
 	template <typename U>
 	Box(U&& u) : ptr(std::make_unique<T>(std::move(u))) {}
@@ -68,7 +72,7 @@ public:
 
 	// operator= same type&&
 	Box& operator=(Box&& other) noexcept {
-		ptr = std::make_unique<T>(std::move(other).get());
+		ptr = std::move(other.ptr);
 		return *this;
 	}
 
@@ -79,35 +83,11 @@ public:
 		return *this;
 	}
 
-	auto operator<=>(const Box& other) const {
+	std::weak_ordering operator<=>(const Box& other) const noexcept {
 		return (*ptr) <=> (*other.ptr);
 	};
 
 	~Box() = default;
 protected:
 	std::unique_ptr<T> ptr;
-};
-
-template <typename T>
-struct Unique {
-public:
-	const T& get() const& {
-		return *t;
-	}
-	T& get() & {
-		return *t;
-	}
-	T get() && {
-		return std::move(t);
-	}
-
-	template <typename U>
-	Unique(const U& u) : t(u) {}
-	template <typename U>
-	Unique(U&& u) : t(std::move(u)) {}
-	Unique(const Unique& other) = delete;
-	Unique(Unique&& other) : Unique(other.get()) {};
-	~Unique() = default;
-protected:
-	T t;
 };
