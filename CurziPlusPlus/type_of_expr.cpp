@@ -1,7 +1,6 @@
 #include "toCPP.h"
 #include "type_of_typename.h"
 #include "type_of_expr.h"
-#include "methods_of_type.h"
 #include <ranges>
 
 NodeStructs::TypeVariant type_of_expr(
@@ -165,7 +164,7 @@ NodeStructs::TypeVariant type_of_expr(
 	{
 		auto it = named.types.find(expr);
 		if (it != named.types.end())
-			return NodeStructs::TypeVariant{ NodeStructs::TypeType{ it->second } };
+			return NodeStructs::TypeVariant{ NodeStructs::TypeType{ *it->second } };
 	}
 	auto err = "could not find variable named " + transpile(variables, named, expr).value();
 	throw std::runtime_error(err);

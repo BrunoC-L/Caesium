@@ -2,31 +2,31 @@
 
 struct Named;
 
-const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
+std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 );
 
-const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
+std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
 );
 
-const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
+std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 );
 
-const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
+std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_template_of_typename(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::UnionTypename& type
 );
 
-const NodeStructs::Template<NodeStructs::Type>* type_template_of_typename(
+std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_template_of_typename_v(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const NodeStructs::Typename& type

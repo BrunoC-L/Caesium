@@ -7,51 +7,6 @@
 #include "primitives.h"
 #include "box.h"
 
-template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-template<class... Ts> overload(Ts...) -> overload<Ts...>; // to help IDE
-
-#define overload_default_error [&](const auto& e) {\
-static_assert(\
-	!sizeof(std::remove_cvref_t<decltype(e)>*),\
-	"Overload set is missing support for a type held in the variant."\
-	);\
-/* requires P2741R3 user-generated static_assert messages
-static_assert(
-	false,
-	std::format("Overload set is missing support for a type held in the variant. see {}.", std::source_location::current())
-);*/\
-}
-
-template <typename T>
-std::weak_ordering cmp(const T& a, const T& b) {
-	if constexpr (is_specialization<T, std::vector>::value) {
-		if (auto size_cmp = cmp(a.size(), b.size()); size_cmp != 0)
-			return size_cmp;
-
-		for (size_t i = 0; i < a.size(); ++i)
-			if (auto v = cmp(a.at(i), b.at(i)); v != 0)
-				return v;
-
-		return std::weak_ordering::equivalent;
-	}
-	else if constexpr (is_specialization<T, std::optional>::value) {
-		return a.has_value() && b.has_value() ? cmp(a.value(), b.value()) : cmp(a.has_value(), b.has_value());
-	}
-	else if constexpr (is_specialization<T, std::variant>::value) {
-		auto index_cmp = cmp(a.index(), b.index());
-		if (index_cmp != 0)
-			return index_cmp;
-		return std::visit(
-			[&](const auto& _a) {
-				return cmp(_a, std::get<std::remove_cvref_t<decltype(_a)>>(b));
-			},
-			a
-		);
-	}
-	else
-		return a <=> b;
-}
-
 namespace NodeStructs {
 	struct TemplatedTypename;
 	struct NamespacedTypename;
@@ -63,25 +18,20 @@ namespace NodeStructs {
 		Box<Typename> type;
 		std::vector<Typename> templated_with;
 
-		using Type = TemplatedTypename;
-		std::weak_ordering operator<=>(const Type&) const = default;
+		std::weak_ordering operator<=>(const TemplatedTypename&) const = default;
 	};
 
 	struct NamespacedTypename {
 		Box<Typename> name_space;
 		Box<Typename> name_in_name_space;
 
-		using Type = NamespacedTypename;
-		std::weak_ordering operator<=>(const Type&) const = default;
+		std::weak_ordering operator<=>(const NamespacedTypename&) const = default;
 	};
 
 	struct BaseTypename {
 		std::string type;
 
-		using Type = BaseTypename;
-		std::weak_ordering operator<=>(const Type& other) const {
-			return type <=> other.type;
-		}
+		std::weak_ordering operator<=>(const BaseTypename& other) const = default;
 	};
 
 	struct UnionTypename {
@@ -92,9 +42,7 @@ namespace NodeStructs {
 
 	struct Typename {
 		std::variant<TemplatedTypename, NamespacedTypename, BaseTypename, UnionTypename> value;
-		std::weak_ordering operator<=>(const Typename& other) const {
-			return cmp(value, other.value);
-		}
+		std::weak_ordering operator<=>(const Typename& other) const; // = default; causes internal compiler error 
 	};
 
 	struct Alias {
@@ -159,13 +107,13 @@ namespace NodeStructs {
 		std::weak_ordering operator<=>(const Key&) const = default;
 	};
 	/*
-	ref->ref
-	ref!->ref!
-	copy->value
-	move->val
-	?->key
+	ref -> ref
+	ref! -> ref!
+	copy or move -> value
+	move->value
+	key->key
 	*/
-	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy, Move>;
+	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy, Move, Key>;
 	using ValueCategory = std::variant<Reference, MutableReference, Value, Key>;
 	using FunctionArgument = std::tuple<std::optional<ArgumentPassingType>, Expression>;
 
@@ -414,39 +362,33 @@ namespace NodeStructs {
 	struct TypeVariant;
 
 	struct TypeTemplateInstance {
-		const Template<Type>* type_template;
+		std::reference_wrapper<const Template<Type>> type_template;
 		std::vector<TypeVariant> template_arguments;
 
-		using Type = TypeTemplateInstance;
-		std::weak_ordering operator<=>(const Type&) const = default;
+		std::weak_ordering operator<=>(const TypeTemplateInstance&) const;
 	};
 
 	struct TypeAggregate {
 		std::vector<TypeVariant> arguments;
 
-		using Type = TypeAggregate;
-		std::weak_ordering operator<=>(const Type&) const = default;
+		std::weak_ordering operator<=>(const TypeAggregate&) const = default;
 	};
 
 	struct TypeType {
 		Box<TypeVariant> represented_type;
 
-		using Type = TypeType;
-		std::weak_ordering operator<=>(const Type&) const = default;
+		std::weak_ordering operator<=>(const TypeType&) const = default;
 	};
 
 	struct TypeUnion {
 		std::vector<TypeVariant> arguments;
 
-		using Type = TypeUnion;
-		std::weak_ordering operator<=>(const Type&) const = default;
+		std::weak_ordering operator<=>(const TypeUnion&) const = default;
 	};
 
 	struct TypeVariant {
-		std::variant<const Type*, TypeTemplateInstance, TypeAggregate, TypeType, TypeUnion> value;
-		std::weak_ordering operator<=>(const TypeVariant& other) const {
-			return cmp(value, other.value);
-		}
+		std::variant<std::reference_wrapper<const Type>, TypeTemplateInstance, TypeAggregate, TypeType, TypeUnion> value;
+		std::weak_ordering operator<=>(const TypeVariant& other) const;
 	};
 
 	struct Type {

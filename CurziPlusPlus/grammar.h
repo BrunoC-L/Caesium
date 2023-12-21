@@ -77,10 +77,6 @@ using MemberVariable = and_t<Typename, Word, Newline>;
 using Constructor = and_t<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ClassElement = or_t<Alias, Function, MemberVariable, Constructor>;
 
-
-/*
-EXPRESSIONS
-*/
 using ParenExpression = or_t<
 		ParenArguments,
 		BracketArguments,

@@ -6,12 +6,8 @@
 
 size_t first_diff(std::string_view s1, std::string_view s2) {
 	auto first_diff_ = 0;
-	for (first_diff_ = 0; first_diff_ < s1.size(); ++first_diff_) {
-		if (first_diff_ >= s2.size())
-			break;
-		if (s1.at(first_diff_) != s2.at(first_diff_))
-			break;
-	}
+	while (first_diff_ < s1.size() && first_diff_ < s2.size() && s1.at(first_diff_) == s2.at(first_diff_))
+		++first_diff_;
 	return first_diff_;
 }
 

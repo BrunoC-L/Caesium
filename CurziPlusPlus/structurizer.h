@@ -1,7 +1,8 @@
 #pragma once
+#include <ranges>
 #include "node_structs.h"
 #include "grammar.h"
-#include <ranges>
+#include "overload.hpp"
 
 NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement);
 NodeStructs::Statement getStatementStruct(const Statement& statement);
@@ -263,15 +264,10 @@ NodeStructs::BraceArguments getStruct(const BraceArguments& args) {
 	};
 }
 
-
-/*
-Expressions
-*/
-
 NodeStructs::Expression getExpressionStruct(const BraceArguments& statement) {
 	throw;
-	NodeStructs::BraceArguments res;
-	/*for (const auto& arg : statement.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
+	/*NodeStructs::BraceArguments res;
+	for (const auto& arg : statement.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
 		res.args.push_back(getExpressionStruct(arg));
 	return res;*/
 }
@@ -575,12 +571,6 @@ NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statemen
 				| to_vec()
 		} };
 }
-
-
-
-/*
-Statements
-*/
 
 NodeStructs::Expression getExpressionStruct(const ExpressionStatement& statement) {
 	return getExpressionStruct(statement.get<Expression>());

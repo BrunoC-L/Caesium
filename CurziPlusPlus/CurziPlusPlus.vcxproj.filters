@@ -33,9 +33,6 @@
     <ClCompile Include="type_of_typename.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="methods_of_type.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="fn_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -68,9 +65,6 @@
     <ClInclude Include="type_of_typename.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="methods_of_type.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="box.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -96,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="meta_int.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="overload.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

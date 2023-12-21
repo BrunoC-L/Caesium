@@ -147,7 +147,6 @@
   <ItemGroup>
     <ClCompile Include="fn_util.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="methods_of_type.cpp" />
     <ClCompile Include="node_structs.cpp" />
     <ClCompile Include="toCPP.cpp" />
     <ClCompile Include="type_of_expr.cpp" />
@@ -159,9 +158,9 @@
     <ClInclude Include="fn_util.hpp" />
     <ClInclude Include="is_specialization.hpp" />
     <ClInclude Include="meta_int.hpp" />
+    <ClInclude Include="overload.hpp" />
     <ClInclude Include="ranges_fold_left_pipe.h" />
     <ClInclude Include="grammarizer.h" />
-    <ClInclude Include="methods_of_type.h" />
     <ClInclude Include="node_structs.h" />
     <ClInclude Include="grammar.h" />
     <ClInclude Include="primitives.h" />

@@ -10,6 +10,9 @@
 
 struct user_error {
 	std::string content;
+	std::unexpected<user_error> unexpected() && {
+		return std::unexpected<user_error>{ std::move(*this) };
+	}
 };
 
 using transpile_t = std::expected<std::string, user_error>;
@@ -298,7 +301,7 @@ transpile_t transpile_v(
 transpile_t transpile(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
-	const NodeStructs::Type* type
+	const NodeStructs::Type& type
 );
 
 transpile_t transpile(
@@ -520,12 +523,6 @@ transpile_t transpile_args(
 	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
 	const Named& named,
 	const std::vector<NodeStructs::FunctionArgument>& args
-);
-
-std::variant<std::true_type, user_error> is_callable_or_error_v(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
-	const Named& named,
-	const NodeStructs::TypeVariant& t
 );
 
 std::expected<NodeStructs::TypeVariant, user_error> type_of_member_function_like_call_with_args_v(
