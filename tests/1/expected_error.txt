@@ -1,1 +1,0 @@
-Use of type like a function is prohibited, use the Construction Operator "{}" instead to construct objects instead. Type was `String`
