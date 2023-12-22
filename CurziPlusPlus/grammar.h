@@ -60,10 +60,8 @@ using PostfixExpression = And<
 	>>
 >;
 
-struct UnaryExpression : public Or<
-	And<
-	Or<	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
-	// so instead of `Star<Or> ... ____` we refer to UnaryExpression inside the Or
+
+using unary_operators = Or<
 	Token<NOT>,
 	Token<PLUS>,
 	Token<DASH>,
@@ -71,17 +69,20 @@ struct UnaryExpression : public Or<
 	Token<MINUSMINUS>,
 	Token<TILDE>,
 	Token<ASTERISK>,
-	Token<AMPERSAND>,
+	Token<AMPERSAND>/*,
 	And< // type cast operator
-	Token<PARENOPEN>,
-	Typename,
-	Token<PARENCLOSE>
-	>
-	>,
-	Alloc<UnaryExpression> // recursive here
-	>,
+		Token<PARENOPEN>,
+		Typename,
+		Token<PARENCLOSE>
+	>*/
+>;
+struct UnaryExpression : public Or<
+	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
+	// so instead of `Star<Or> ... ____` we refer to UnaryExpression inside the Or
+	And<unary_operators, Alloc<UnaryExpression>>,
 	PostfixExpression
-> {};
+> {
+};
 
 using MultiplicativeExpression = And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>>;
 using AdditiveExpression = And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>>;

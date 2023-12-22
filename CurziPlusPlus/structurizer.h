@@ -22,7 +22,7 @@ NodeStructs::Import getStruct(const Import& f) {
 
 NodeStructs::Typename getStruct(const Typename& t);
 
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const NamespaceTypenameExtension& nst) {
+NodeStructs::Typename extend(NodeStructs::Typename&&, const NamespaceTypenameExtension&) {
 	throw;
 	/*return NodeStructs::NamespacedTypename{
 		std::move(t),
@@ -122,11 +122,11 @@ NodeStructs::TemplateArguments getStruct(const TemplateDeclaration& t) {
 	};
 }
 
-NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>& f) {
+NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>&) {
 	throw;
 }
 
-NodeStructs::Constructor getStruct(const Constructor& f) {
+NodeStructs::Constructor getStruct(const Constructor&) {
 	throw;
 	/*return {
 		f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>()
@@ -264,7 +264,7 @@ NodeStructs::BraceArguments getStruct(const BraceArguments& args) {
 	};
 }
 
-NodeStructs::Expression getExpressionStruct(const BraceArguments& statement) {
+NodeStructs::Expression getExpressionStruct(const BraceArguments&) {
 	throw;
 	/*NodeStructs::BraceArguments res;
 	for (const auto& arg : statement.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
@@ -274,15 +274,15 @@ NodeStructs::Expression getExpressionStruct(const BraceArguments& statement) {
 
 NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 	return std::visit(overload(overload_default_error,
-			[](const ParenArguments& e) -> NodeStructs::Expression {
-				const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
+			[](const ParenArguments& /*e*/) -> NodeStructs::Expression {
+				//const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
 				throw;
 				/*auto res = NodeStructs::ParenArguments{};
 				res.args.push_back(getExpressionStruct(e.get<Alloc<FunctionArgument>>().get()));
 				return NodeStructs::FunctionArgument{ std::move(res) };*/
 			},
-			[](const BracketArguments& e) -> NodeStructs::Expression {
-				const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
+			[](const BracketArguments& /*e*/) -> NodeStructs::Expression {
+				//const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
 				throw;
 				//auto res = getExpressionStruct(e);
 				//return NodeStructs::Expression{ std::move(res) };
@@ -369,24 +369,7 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 			[](const PostfixExpression& expr) {
 				return getExpressionStruct(expr);
 			},
-			[](const And<
-				Or<	// has to be recursive because of the type cast operator taking the same shape as a ParenExpression
-					// so instead of `Star<Or> ... ____` we refer to UnaryExpression inside the Or
-					Token<NOT>,
-					Token<PLUS>,
-					Token<DASH>,
-					Token<PLUSPLUS>,
-					Token<MINUSMINUS>,
-					Token<TILDE>,
-					Token<ASTERISK>,
-					Token<AMPERSAND>,
-					And< // type cast operator
-						Token<PARENOPEN>,
-						Typename,
-						Token<PARENCLOSE>
-					>
-				>,
-				Alloc<UnaryExpression> // recursive here
+			[](const And<unary_operators, Alloc<UnaryExpression>
 			>& op_and_unary) -> NodeStructs::Expression {
 				const auto& op = op_and_unary.get<Or<
 					Token<NOT>,
@@ -396,31 +379,14 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 					Token<MINUSMINUS>,
 					Token<TILDE>,
 					Token<ASTERISK>,
-					Token<AMPERSAND>,
-					And< // type cast operator
-						Token<PARENOPEN>,
-						Typename,
-						Token<PARENCLOSE>
-					>
+					Token<AMPERSAND>
 				>>();
 				return std::visit(overload(
-					[&](const auto& token) -> NodeStructs::Expression {
+					[&](const auto&) -> NodeStructs::Expression {
 						throw;
 						/*auto res = NodeStructs::UnaryExpression{
 							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
 							token,
-						};
-						return NodeStructs::Expression{ std::move(res) };*/
-					},
-					[&](const And< // type cast operator
-						Token<PARENOPEN>,
-						Typename,
-						Token<PARENCLOSE>
-					>& g) -> NodeStructs::Expression {
-						throw;
-						/*auto res = NodeStructs::UnaryExpression{
-							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
-							getStruct(g.get<Typename>()),
 						};
 						return NodeStructs::Expression{ std::move(res) };*/
 					}
@@ -619,7 +585,7 @@ NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 	};
 }
 
-NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
+NodeStructs::ForStatement getStatementStruct(const ForStatement&) {
 	throw;
 	/*return {
 		.collection = getExpressionStruct(statement.get<Expression>()),
@@ -641,7 +607,7 @@ NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
 	};*/
 }
 
-NodeStructs::IForStatement getStatementStruct(const IForStatement& statement) {
+NodeStructs::IForStatement getStatementStruct(const IForStatement&) {
 	throw;
 	/*NodeStructs::IForStatement res {
 		statement.get<Word>().value,

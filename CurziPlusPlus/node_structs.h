@@ -156,8 +156,8 @@ namespace NodeStructs {
 			Token<MINUSMINUS>,
 			Token<TILDE>,
 			Token<ASTERISK>,
-			Token<AMPERSAND>,
-			Typename // type cast operator
+			Token<AMPERSAND>
+			//, Typename // type cast operator
 		>;
 		Expression expr;
 		op_types unary_operator;

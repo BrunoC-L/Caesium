@@ -7,7 +7,7 @@
 template <typename... Ts>
 bool testParse(int line, int n_indent, std::string program, bool expectedToBuild = true) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
-	Grammarizer g((std::move(tokens)));
+	Grammarizer g(std::move(tokens));
 
 	bool nodeBuilt = expectedToBuild ?
 		And<Ts...>(n_indent).build(&g) :

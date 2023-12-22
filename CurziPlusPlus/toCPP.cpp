@@ -33,17 +33,6 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 	throw std::runtime_error(err);
 }
 
-void transpile_recursive(
-	const std::vector<NodeStructs::File>& project,
-	const std::map<std::string, Named>& named_by_file,
-	const NodeStructs::File& file,
-	std::stringstream& h,
-	std::stringstream& cpp
-) {
-	/*for (const auto& i : file.imports)
-		transpile_recursive(project, named_by_file, i, h, cpp);*/
-}
-
 
 std::expected<std::pair<std::string, std::string>, user_error> transpile(const std::vector<NodeStructs::File>& project) {
 	for (const auto& file : project)
@@ -76,8 +65,6 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 				std::stringstream h, cpp;
 
 				h << default_includes;
-
-				transpile_recursive(project, named_by_file, file, h, cpp);
 
 				for (const auto& file2 : project) {
 					for (const auto& t : file2.types) {
@@ -487,7 +474,7 @@ void remove_added_variables(
 					throw std::runtime_error("bad block name" + s);
 				}
 			},
-			[&](const auto& e) {
+			[&](const auto&) {
 				// do nothing
 			}
 		),
