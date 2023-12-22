@@ -1,5 +1,6 @@
 #pragma once
 
+#pragma warning(suppress: 4626)
 template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
 template<class... Ts> overload(Ts...) -> overload<Ts...>; // to help IDE
 

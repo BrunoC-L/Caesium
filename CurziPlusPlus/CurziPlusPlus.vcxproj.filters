@@ -32,55 +32,49 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="node_structs.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="toCPP.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="grammar.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="primitives.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="grammarizer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tokenizer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="structurizer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="type_of_expr.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="type_of_typename.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="box.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ranges_fold_left_pipe.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="fn_util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="colored_text.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="visit_with.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="is_specialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="meta_int.hpp">
+    <ClInclude Include="overload.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="overload.hpp">
+    <ClInclude Include="box.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="grammar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="grammarizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="node_structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ranges_fold_left_pipe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="structurizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="toCPP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tokenizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_expr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_typename.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -86,7 +86,6 @@ std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::TYPE) return "struct";
 	if constexpr (token == TOKENS::TEMPLATE) return "template";
 	if constexpr (token == TOKENS::AUTO) return "auto";
-	throw std::runtime_error("invalid token");
 }
 
 template <size_t token>
@@ -113,68 +112,68 @@ struct Named {
 };
 
 struct cpp_std {
-	const NodeStructs::Type _uset = NodeStructs::Type{
-		.name = std::string{"Set"},
+	NodeStructs::Type _uset = NodeStructs::Type{
+		.name = std::string{ "Set" },
 		.methods = std::vector<NodeStructs::Function>{},
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
 
-	const NodeStructs::Template<NodeStructs::Type> unordered_set = {
-		std::vector{std::string{"T"}},
+	NodeStructs::Template<NodeStructs::Type> unordered_set = {
+		std::vector{ std::string{ "T" } },
 		_uset,
 	};
 
-	const NodeStructs::Type _vec = NodeStructs::Type{
-		.name = std::string{"Vector"},
+	NodeStructs::Type _vec = NodeStructs::Type{
+		.name = std::string{ "Vector" },
 		.methods = std::vector<NodeStructs::Function>{},
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 	};
 
-	const NodeStructs::Template<NodeStructs::Type> vector = {
+	NodeStructs::Template<NodeStructs::Type> vector = {
 		std::vector{std::string{"T"}},
 		_vec,
 	};
 
-	const NodeStructs::Template<NodeStructs::Type> unordered_map = []() {
+	NodeStructs::Template<NodeStructs::Type> unordered_map = []() {
 		std::vector<NodeStructs::Function> methods = {
 			NodeStructs::Function{
 				"at",
-				NodeStructs::BaseTypename{"V"},
+				NodeStructs::BaseTypename{ "V" },
 				std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{},
 				std::vector<NodeStructs::Statement>{},
 			}
 		};
 		return NodeStructs::Template<NodeStructs::Type>{
-			std::vector<std::string>{"K", "V"},
+			std::vector<std::string>{ "K", "V" },
 			NodeStructs::Type{
-				.name = std::string{"Map"},
+				.name = std::string{ "Map" },
 				.methods = std::move(methods),
 			},
 		};
 	}();
 
-	const NodeStructs::Template<NodeStructs::Type> pair = {
-		std::vector<std::string>{"First", "Second"},
+	NodeStructs::Template<NodeStructs::Type> pair = {
+		std::vector<std::string>{ "First", "Second" },
 		NodeStructs::Type{
-			.name = std::string{"Pair"},
+			.name = std::string{ "Pair" },
 			.methods = std::vector<NodeStructs::Function>{},
 			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 		},
 	};
-	const NodeStructs::Type _int = {"Int"};
-	const NodeStructs::Type _bool = {"Bool"};
-	const NodeStructs::Type string = { "String" };
+	NodeStructs::Type _int = { "Int" };
+	NodeStructs::Type _bool = { "Bool" };
+	NodeStructs::Type string = { "String" };
 
-	const NodeStructs::Function _println{
-		.name = std::string{"println"},
-		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{"void"} },
+	NodeStructs::Function _println{
+		.name = std::string{ "println" },
+		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "void" } },
 		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{
 			//{ NodeStructs::Typename{ NodeStructs::BaseTypename{"T"} }, NodeStructs::ValueCategory{ NodeStructs::Reference{} }, "t" }
 		},
 	};
 
-	const NodeStructs::Template<NodeStructs::Function> println = {
-		std::vector<std::string>{"T"},
+	NodeStructs::Template<NodeStructs::Function> println = {
+		std::vector<std::string>{ "T" },
 		_println
 	};
 };

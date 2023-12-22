@@ -1,9 +1,10 @@
 #pragma once
-#include "grammarizer.h"
 #include <functional>
 #include <optional>
 #include <variant>
 #include <ranges>
+
+#include "grammarizer.h"
 #include "fn_util.hpp"
 #include "is_specialization.hpp"
 #include "box.h"
@@ -42,22 +43,16 @@ struct is_primitive_node_type : std::disjunction<
 	std::is_same<T, IndentToken>,
 	is_primitive_indent<T>> {};
 
-template <typename T>
-bool build_optional_primitive(T& node, Grammarizer* g) {
-	if constexpr (is_primitive_node_type<std::remove_reference_t<T>>::value)
-		return node.build(g);
-	else
-		return build_optional_primitive(node._value, g);
-}
-
 template <int _token>
 struct Token {
 	static constexpr auto token = _token;
-	std::string value;
-	int n_indent;
 	static_assert(token != TAB, "Using Token<TAB> will not work, trailing tabs are ignored, use IndentNode");
 	static_assert(token != SPACE, "Using Token<SPACE> will not work, trailing spaces are ignored");
+
+	std::string value;
+	int n_indent;
 	Token(int n_indent) : n_indent(n_indent) {}
+
 	bool build(Grammarizer* g) {
 		bool isT = g->it->first == token;
 		if (isT)
@@ -73,27 +68,31 @@ struct Token {
 			}
 			return false;
 		}
-		else if (!isT)
-			return false;
-
-		g->it++;
-		if constexpr (token == NEWLINE) {
-			auto savepoint = g->it;
-			while (g->it != g->tokens.end() && (g->it->first == TAB || g->it->first == SPACE || g->it->first == NEWLINE)) {
-				if (g->it->first == NEWLINE) {
-					g->it++;
-					savepoint = g->it;
-				}
-				else {
-					g->it++;
-				}
-			}
-			g->it = savepoint;
-			return true;
-		}
-		while (g->it != g->tokens.end() && (g->it->first == TAB || g->it->first == SPACE)) // ignoring trailing tabs & spaces
+		else {
+			if (!isT)
+				return false;
 			g->it++;
-		return true;
+			if constexpr (token == NEWLINE) {
+				auto savepoint = g->it;
+				while (g->it != g->tokens.end() && (g->it->first == TAB || g->it->first == SPACE || g->it->first == NEWLINE)) {
+					if (g->it->first == NEWLINE) {
+						g->it++;
+						savepoint = g->it;
+					}
+					else {
+						g->it++;
+					}
+				}
+				g->it = savepoint;
+				return true;
+			}
+			else {
+				while (g->it != g->tokens.end() && (g->it->first == TAB || g->it->first == SPACE)) // ignoring trailing tabs & spaces
+					g->it++;
+				return true;
+			}
+		}
+
 	}
 
 	std::weak_ordering operator<=>(const Token& other) const {
@@ -139,7 +138,7 @@ struct Alloc {
 
 	bool build(Grammarizer* g) {
 		T t(n_indent);
-		if (build_optional_primitive(t, g)) {
+		if (t.build(g)) {
 			value = std::move(t);
 			return true;
 		}
@@ -156,13 +155,11 @@ struct KNode {
 	bool build(Grammarizer* g) {
 		while (true) {
 			auto node = T(n_indent);
-			bool parsed = build_optional_primitive(node, g);
+			bool parsed = node.build(g);
 			if (parsed) {
 				nodes.push_back(std::move(node));
-				if constexpr (requiresComma::value) {
-					auto comma = Token<COMMA>(0);
-					parsed = build_optional_primitive(comma, g);
-				}
+				if constexpr (requiresComma::value)
+					parsed = Token<COMMA>(0).build(g);
 			}
 			if (!parsed)
 				break;
@@ -204,7 +201,7 @@ struct KNode {
 
 struct StarCnd {
 	template <typename T>
-	static bool cnd(const std::vector<T>& nodes) {
+	static bool cnd(const std::vector<T>&) {
 		return true;
 	}
 };
@@ -212,7 +209,7 @@ struct StarCnd {
 struct PlusCnd {
 	template <typename T>
 	static bool cnd(const std::vector<T>& nodes) {
-		return nodes.size();
+		return nodes.size() > 0;
 	}
 };
 
@@ -243,10 +240,10 @@ struct Opt {
 	}
 
 	bool build(Grammarizer* g) {
-		T node(n_indent);
-		bool parsed = build_optional_primitive(node, g);
+		T _node(n_indent);
+		bool parsed = _node.build(g);
 		if (parsed)
-			this->node.emplace(std::move(node));
+			node.emplace(std::move(_node));
 		return true;
 	}
 };
@@ -293,7 +290,7 @@ struct And {
 		for_each(value, [&](auto& node) {
 			if (failed)
 				return;
-			if (!build_optional_primitive(node, g)) {
+			if (!node.build(g)) {
 				g->it = temp;
 				failed = true;
 			}
@@ -319,7 +316,7 @@ struct Or {
 			if (populated)
 				return;
 			Ors node = Ors(n_indent);
-			bool built = build_optional_primitive(node, g);
+			bool built = node.build(g);
 			if (built) {
 				_value.emplace(std::move(node));
 				populated = true;

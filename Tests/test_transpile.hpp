@@ -5,7 +5,7 @@
 #include "colored_text.hpp"
 
 size_t first_diff(std::string_view s1, std::string_view s2) {
-	auto first_diff_ = 0;
+	auto first_diff_ = size_t{ 0 };
 	while (first_diff_ < s1.size() && first_diff_ < s2.size() && s1.at(first_diff_) == s2.at(first_diff_))
 		++first_diff_;
 	return first_diff_;
@@ -13,10 +13,10 @@ size_t first_diff(std::string_view s1, std::string_view s2) {
 
 std::optional<std::expected<std::pair<std::string, std::string>, user_error>> create_file(int line, std::string_view caesiumProgram) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
-	Grammarizer g(tokens);
+	Grammarizer g(std::move(tokens));
 	auto file = File(0);
 	{
-		bool nodeBuilt = file._value.build(&g);
+		bool nodeBuilt = file.build(&g);
 		bool programReadEntirely = g.it == g.tokens.end();
 		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
 			programReadEntirely = ++g.it == g.tokens.end();
@@ -27,10 +27,11 @@ std::optional<std::expected<std::pair<std::string, std::string>, user_error>> cr
 				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 			std::cout << caesiumProgram << "\n\n";
-			Grammarizer g2(tokens);
-			while (g2.it != g.it) {
-				std::cout << g2.it->second << " ";
-				++g2.it;
+			auto save = g.it;
+			g.it = g.tokens.begin();
+			while (g.it != save) {
+				std::cout << g.it->second << " ";
+				++g.it;
 			}
 			std::cout << "\n";
 			return std::nullopt;
@@ -50,7 +51,7 @@ bool test_transpile_no_error(int line, std::string_view caesiumProgram, std::str
 		auto [header_, cpp] = std::move(x).value();
 
 		static constexpr size_t L = std::string_view{ default_includes }.length();
-		int u = L;
+		#pragma warning(suppress: 4365)
 		std::string_view header{ header_.begin() + L, header_.begin() + header_.size() };
 
 		auto first_diff_header = first_diff(header, expected_header);
@@ -149,7 +150,6 @@ struct test_transpile_error_t {
 };
 
 bool testTranspile() {
-	std::cout << "TRANSPILE TESTS\n";
 	bool ok = true;
 	ok &= test_transpile_no_error_t{
 		.line = __LINE__,

@@ -116,7 +116,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -157,7 +157,6 @@
     <ClInclude Include="colored_text.hpp" />
     <ClInclude Include="fn_util.hpp" />
     <ClInclude Include="is_specialization.hpp" />
-    <ClInclude Include="meta_int.hpp" />
     <ClInclude Include="overload.hpp" />
     <ClInclude Include="ranges_fold_left_pipe.h" />
     <ClInclude Include="grammarizer.h" />
@@ -169,7 +168,6 @@
     <ClInclude Include="tokenizer.h" />
     <ClInclude Include="type_of_expr.h" />
     <ClInclude Include="type_of_typename.h" />
-    <ClInclude Include="visit_with.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

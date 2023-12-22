@@ -3,6 +3,7 @@
 #include <string>
 #include <variant>
 #include <optional>
+#include <compare>
 
 #include "primitives.h"
 #include "box.h"

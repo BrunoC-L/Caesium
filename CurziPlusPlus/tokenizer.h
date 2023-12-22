@@ -105,7 +105,6 @@ struct Tokenizer {
 
 	std::forward_list<TOKENVALUE> read() {
 		std::forward_list<TOKENVALUE> out;
-		int index = 0;
 		TOKENVALUE t;
 		do {
 			t = readToken();
@@ -228,6 +227,7 @@ private:
 						str += program[index];
 				}
 			}
+			std::unreachable();
 		case '{':
 			index += 1;
 			return { BRACEOPEN, "{" };

@@ -21,7 +21,6 @@ std::optional<std::string> open_read(const std::filesystem::path& file) {
 }
 
 bool test_transpile_file_error(
-	const std::filesystem::path& folder,
 	const std::filesystem::path& caesium_file,
 	const std::filesystem::path& error_file
 ) {
@@ -37,7 +36,6 @@ bool test_transpile_file_error(
 }
 
 bool test_transpile_file_no_error(
-	const std::filesystem::path& folder,
 	const std::filesystem::path& caesium_file,
 	const std::filesystem::path& header,
 	const std::filesystem::path& cpp
@@ -50,21 +48,21 @@ bool test_transpile_file_no_error(
 	if (!header_opt.has_value())
 		throw;
 
-	auto cpp_opt = open_read(header);
+	auto cpp_opt = open_read(cpp);
 	if (!cpp_opt.has_value())
 		throw;
 
 	return test_transpile_no_error(-1, caesium_opt.value(), header_opt.value(), cpp_opt.value());
 }
 
-bool test_transpile_file_no_error(
+bool test_transpile_file_no_error_step(
 	const std::filesystem::path& folder,
 	const std::filesystem::path& caesium_file,
 	const std::filesystem::path& header
 ) {
 	for (const auto& file : std::filesystem::directory_iterator{ folder })
 		if (file.path().filename() == "expected.cpp")
-			return test_transpile_file_no_error(folder, caesium_file, header, file.path());
+			return test_transpile_file_no_error(caesium_file, header, file.path());
 
 	std::cout << "Test folder missing `expected.cpp`: " << folder << "\n";
 	return false;
@@ -76,9 +74,9 @@ bool test_transpile_file(
 ) {
 	for (const auto& file : std::filesystem::directory_iterator{ folder })
 		if (file.path().filename() == "expected_error.txt")
-			return test_transpile_file_error(folder, caesium_file, file.path());
+			return test_transpile_file_error(caesium_file, file.path());
 		else if (file.path().filename() == "expected.hpp")
-			return test_transpile_file_no_error(folder, caesium_file, file.path());
+			return test_transpile_file_no_error_step(folder, caesium_file, file.path());
 
 	std::cout << "Test folder missing `expected_error.txt` or `expected.hpp`: " << folder << "\n";
 	return false;

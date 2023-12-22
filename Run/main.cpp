@@ -15,8 +15,8 @@ static NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	std::getline(caesium, program, '\0');
 	File file(0);
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
-	Grammarizer g(tokens);
-	if (build_optional_primitive(file, &g)) {
+	Grammarizer g(std::move(tokens));
+	if (file.build(&g)) {
 		std::cout << fileName << ": built\n";
 		return getStruct(file, fileName.stem().generic_string() + ".caesium");
 	}

@@ -22,11 +22,11 @@ int main(int argc, char** argv) {
 
 	if (!testParse())
 		return 1;
-	std::cout << colored_text("All parse tests passed\n", output_stream_colors::green) << "\n\n";
+	std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
 
 	if (!testTranspile())
 		return 1;
-	std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green) << "\n\n";
+	std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
 
 	bool compilation_success = true;
 
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 				compilation_success &= test_transpile_file(folder);
 	if (!compilation_success)
 		return 1;
-	std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green) << "\n\n";
+	std::cout << colored_text("All file transpile tests passed\n", output_stream_colors::green);
 
 	return 0;
 }

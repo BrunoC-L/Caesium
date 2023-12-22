@@ -55,9 +55,9 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 
 				cpp_std stuff_from_cpp{};
 
-				for (const auto& file : project) {
+				for (const auto& file2 : project) {
 					Named named_of_file;
-					insert_all_named_recursive_with_imports(project, named_of_file, file.filename);
+					insert_all_named_recursive_with_imports(project, named_of_file, file2.filename);
 					{
 						named_of_file.type_templates["Set"] = &stuff_from_cpp.unordered_set;
 						named_of_file.type_templates["Vector"] = &stuff_from_cpp.vector;
@@ -70,7 +70,7 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 
 						named_of_file.function_templates["println"] = &stuff_from_cpp.println;
 					}
-					named_by_file[file.filename] = named_of_file;
+					named_by_file[file2.filename] = named_of_file;
 				}
 
 				std::stringstream h, cpp;
@@ -480,8 +480,8 @@ void remove_added_variables(
 
 				if (named.blocks.contains(s)) {
 					const NodeStructs::Block& block = *named.blocks.at(s);
-					for (const auto& statement : block.statements)
-						remove_added_variables(variables, named, statement);
+					for (const auto& statement_in_block : block.statements)
+						remove_added_variables(variables, named, statement_in_block);
 				}
 				else {
 					throw std::runtime_error("bad block name" + s);
@@ -513,14 +513,13 @@ transpile_t transpile_statement(
 	if (named.blocks.contains(s)) {
 		const NodeStructs::Block& block = *named.blocks.at(s);
 		std::stringstream ss;
-		for (const auto& statement : block.statements)
-			ss << transpile_statement(variables, named, statement).value();
+		for (const auto& statement_in_block : block.statements)
+			ss << transpile_statement(variables, named, statement_in_block).value();
 		return ss.str();
 	}
 	else {
 		throw std::runtime_error("bad block name" + s);
 	}
-	return "";
 }
 
 transpile_t transpile_statement(
@@ -587,8 +586,6 @@ NodeStructs::TypeVariant iterator_type(
 								throw;
 						else
 							throw;
-				// non containers are not iterable
-				throw;
 			},
 			[&](const NodeStructs::TypeAggregate&) -> NodeStructs::TypeVariant {
 				throw;
@@ -805,8 +802,7 @@ transpile_t transpile_statement(
 	const Named& named,
 	const NodeStructs::IForStatement& statement
 ) {
-	throw std::runtime_error("not implemented");
-	return "";
+	throw;
 }
 
 transpile_t transpile_statement(
@@ -909,8 +905,8 @@ transpile_t transpile(
 ) {
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& expr : expr.assignments)
-		ss << " " << symbol_variant_as_text(expr.first) << " " << transpile(variables, named, expr.second).value();
+	for (const auto& e : expr.assignments)
+		ss << " " << symbol_variant_as_text(e.first) << " " << transpile(variables, named, e.second).value();
 	return ss.str();
 }
 
@@ -942,8 +938,8 @@ transpile_t transpile(
 ) {
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& expr : expr.ors)
-		ss << " || " << transpile(variables, named, expr).value();
+	for (const auto& e : expr.ors)
+		ss << " || " << transpile(variables, named, e).value();
 	return ss.str();
 }
 
@@ -954,8 +950,8 @@ transpile_t transpile(
 ) {
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& expr : expr.ands)
-		ss << " && " << transpile(variables, named, expr).value();
+	for (const auto& e : expr.ands)
+		ss << " && " << transpile(variables, named, e).value();
 	return ss.str();
 }
 
@@ -966,8 +962,8 @@ transpile_t transpile(
 ) {
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, expr] : expr.equals)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, expr).value();
+	for (const auto& [op, e] : expr.equals)
+		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
 	return ss.str();
 }
 
@@ -978,8 +974,8 @@ transpile_t transpile(
 ) {
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, expr] : expr.comparisons)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, expr).value();
+	for (const auto& [op, e] : expr.comparisons)
+		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
 	return ss.str();
 }
 
@@ -990,8 +986,8 @@ transpile_t transpile(
 ) {
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, expr] : expr.adds)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, expr).value();
+	for (const auto& [op, e] : expr.adds)
+		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
 	return ss.str();
 }
 
@@ -1002,8 +998,8 @@ transpile_t transpile(
 ) {
 	std::stringstream ss;
 	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, expr] : expr.muls)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, expr).value();
+	for (const auto& [op, e] : expr.muls)
+		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
 	std::string x = ss.str();
 	return ss.str();
 }

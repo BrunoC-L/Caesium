@@ -7,7 +7,7 @@
 template <typename... Ts>
 bool testParse(int line, int n_indent, std::string program, bool expectedToBuild = true) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
-	Grammarizer g(tokens);
+	Grammarizer g((std::move(tokens)));
 
 	bool nodeBuilt = expectedToBuild ?
 		And<Ts...>(n_indent).build(&g) :
@@ -25,10 +25,11 @@ bool testParse(int line, int n_indent, std::string program, bool expectedToBuild
 			<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 		std::cout << program << "\n\n";
-		Grammarizer g2(tokens);
-		while (g2.it != g.it) {
-			std::cout << g2.it->second << " ";
-			++g2.it;
+		auto save = g.it;
+		g.it = g.tokens.begin();
+		while (g.it != save) {
+			std::cout << g.it->second << " ";
+			++g.it;
 		}
 		std::cout << "\n";
 		return false;
@@ -37,7 +38,6 @@ bool testParse(int line, int n_indent, std::string program, bool expectedToBuild
 }
 
 bool testParse() {
-	std::cout << "PARSE TESTS\n";
 	bool ok = true;
 
 	ok &= testParse<Token<END>>(__LINE__, 0, "\n");
@@ -118,9 +118,7 @@ bool testParse() {
 	ok &= testParse<ForStatement>(__LINE__, 0, "for a in b:\n\tb\n");
 	ok &= testParse<ForStatement>(__LINE__, 0, "for a in b:\n");
 
-	std::cout << "=====================\nREVERSING LOGIC OF TESTS\nRED TRUE FOR `BUILT` IS OK IF `ENTIRELY` IS GREEN FALSE\n=====================\n";
-	// basically previous tests ensure good code works
-	// and these tests ensure bad code fails
+	// previous tests ensure good code works and these tests ensure bad code fails
 	ok &= testParse<Type>(__LINE__, 1, "type A:\n\tA a\n\tA a\n\tA a\n\tA a\n", false);
 	ok &= testParse<Type>(__LINE__, 0, "type A:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n", false);
 	return ok;
