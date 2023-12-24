@@ -9,6 +9,8 @@
 #include "type_of_typename.h"
 #include "ranges_fold_left_pipe.h"
 #include "overload.hpp"
+#include "type_of_function_call_with_args_visitor.hpp"
+#include "transpile_type_visitor.hpp"
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
@@ -346,83 +348,6 @@ transpile_t transpile(
 	return ss.str();
 }
 
-
-
-
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Type& type
-) {
-	return type.name;
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeTemplateInstance& type
-) {
-	std::stringstream ss;
-	ss << type.type_template.get().templated.name << "<";
-	bool has_previous = false;
-	for (const auto& e : type.template_arguments) {
-		if (has_previous)
-			ss << ", ";
-		else
-			has_previous = true;
-		ss << transpile_v(variables, named, e).value();
-	}
-	ss << ">";
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeAggregate& type
-) {
-	throw;
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeType& type
-) {
-	/*std::string e = "Internal compiler error" + std::to_string(std::stacktrace::current());
-	std::cout << e << "\n";
-	throw std::runtime_error(e);*/
-	return transpile_v(variables, named, type.represented_type).transform([](std::string rep) { return "Type " + rep; });
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeUnion& type
-) {
-	throw;
-}
-
-
-transpile_t transpile_v(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeVariant& type
-) {
-	return std::visit(
-		[&](const auto& t) {
-			return transpile(variables, named, t);
-		},
-		type.value
-	);
-}
-
-
-
-
-
-
 transpile_t transpile(
 	variables_t& variables,
 	const Named& named,
@@ -543,17 +468,17 @@ transpile_t transpile_statement(
 		"}";
 }
 
-NodeStructs::TypeVariant iterator_type(
+NodeStructs::TypeCategory iterator_type(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::TypeVariant& type
+	const NodeStructs::TypeCategory& type
 ) {
 	return std::visit(
 		overload(overload_default_error,
-			[&](const std::reference_wrapper<const NodeStructs::Type>& type) -> NodeStructs::TypeVariant {
+			[&](const std::reference_wrapper<const NodeStructs::Type>& type) -> NodeStructs::TypeCategory {
 				throw;
 			},
-			[&](const NodeStructs::TypeTemplateInstance& type) -> NodeStructs::TypeVariant {
+			[&](const NodeStructs::TypeTemplateInstance& type) -> NodeStructs::TypeCategory {
 				const auto tn = type.type_template.get().templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -569,7 +494,7 @@ NodeStructs::TypeVariant iterator_type(
 					else
 						if (tn == "Map")
 							if (type.template_arguments.size() == 2)
-								return NodeStructs::TypeVariant{ NodeStructs::TypeTemplateInstance{
+								return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstance{
 									.type_template = *named.type_templates.at("Map"),
 									.template_arguments = { type.template_arguments.at(0), type.template_arguments.at(1) },
 								} };
@@ -578,13 +503,22 @@ NodeStructs::TypeVariant iterator_type(
 						else
 							throw;
 			},
-			[&](const NodeStructs::TypeAggregate&) -> NodeStructs::TypeVariant {
+			[&](const NodeStructs::TypeAggregate&) -> NodeStructs::TypeCategory {
 				throw;
 			},
-			[&](const NodeStructs::TypeType&) -> NodeStructs::TypeVariant {
+			[&](const NodeStructs::TypeType&) -> NodeStructs::TypeCategory {
 				throw;
 			},
-			[&](const NodeStructs::TypeUnion&) -> NodeStructs::TypeVariant {
+			[&](const NodeStructs::TypeTemplateType&) -> NodeStructs::TypeCategory {
+				throw;
+			},
+			[&](const NodeStructs::FunctionType&) -> NodeStructs::TypeCategory {
+				throw;
+			},
+			[&](const NodeStructs::FunctionTemplateType&) -> NodeStructs::TypeCategory {
+				throw;
+			},
+			[&](const NodeStructs::UnionType&) -> NodeStructs::TypeCategory {
 				throw;
 			}
 		),
@@ -592,10 +526,10 @@ NodeStructs::TypeVariant iterator_type(
 	);
 }
 
-std::vector<NodeStructs::TypeVariant> decomposed_type(
+std::vector<NodeStructs::TypeCategory> decomposed_type(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::TypeVariant& type
+	const NodeStructs::TypeCategory& type
 ) {
 	return std::visit(
 		overload(overload_default_error,
@@ -607,7 +541,7 @@ std::vector<NodeStructs::TypeVariant> decomposed_type(
 					| std::views::transform([&](const auto& e) { return type_of_typename_v(variables, named, e.type); })
 					| to_vec();
 			},
-			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeVariant> {
+			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeCategory> {
 				const auto tn = type.type_template.get().templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -634,13 +568,22 @@ std::vector<NodeStructs::TypeVariant> decomposed_type(
 									throw;
 				throw;
 			},
-			[&](const NodeStructs::TypeAggregate&) -> std::vector<NodeStructs::TypeVariant> {
+			[&](const NodeStructs::TypeAggregate&) -> std::vector<NodeStructs::TypeCategory> {
 				throw;
 			},
-			[&](const NodeStructs::TypeType&) -> std::vector<NodeStructs::TypeVariant> {
+			[&](const NodeStructs::TypeType&) -> std::vector<NodeStructs::TypeCategory> {
 				throw;
 			},
-			[&](const NodeStructs::TypeUnion&) -> std::vector<NodeStructs::TypeVariant> {
+			[&](const NodeStructs::TypeTemplateType&) -> std::vector<NodeStructs::TypeCategory> {
+				throw;
+			},
+			[&](const NodeStructs::FunctionType&) -> std::vector<NodeStructs::TypeCategory> {
+				throw;
+			},
+			[&](const NodeStructs::FunctionTemplateType&) -> std::vector<NodeStructs::TypeCategory> {
+				throw;
+			},
+			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::TypeCategory> {
 				throw;
 			}
 		),
@@ -652,7 +595,7 @@ void add_for_iterator_variables(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ForStatement& statement,
-	const NodeStructs::TypeVariant& it_type
+	const NodeStructs::TypeCategory& it_type
 ) {
 	if (statement.iterators.size() == 0)
 		throw std::runtime_error("");
@@ -893,8 +836,11 @@ transpile_t transpile(
 ) {
 	if (variables.contains(expr))
 		return expr;
-	else
-		return std::unexpected{ user_error{ "Undeclared variable `" + expr + "`" } };
+	if (named.functions.contains(expr))
+		return expr;
+	if (named.function_templates.contains(expr))
+		return expr;
+	return std::unexpected{ user_error{ "Undeclared variable `" + expr + "`" } };
 }
 
 transpile_t transpile(
@@ -1042,8 +988,8 @@ transpile_t transpile(
 					);
 				},
 				[&](const NodeStructs::ParenArguments& e) -> transpile_type_repr {
-					return type_of_member_function_like_call_with_args_v(variables, named, it.type, e.args).transform(
-						[&](std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>&& t) {
+					return type_of_member_function_like_call_with_args_visitor{ {}, variables, named, e.args }(it.type).transform(
+						[&](std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>&& t) {
 							return type_and_representation{
 								std::move(t.second),
 								it.representation + "(" + transpile_args(variables, named, e.args).value() + ")"
@@ -1120,69 +1066,7 @@ transpile_t transpile_args(
 	return ss.str();
 }
 
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Type& t,
-	const std::vector<NodeStructs::FunctionArgument>& args
-) {
-	return user_error{
-		"Use of type like a function is prohibited, use the Construction Operator \"{}\" instead to construct objects instead. Type was `" + t.name + "`"
-	}.unexpected();
-}
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeTemplateInstance& t,
-	const std::vector<NodeStructs::FunctionArgument>& args
-) {
-	throw;
-}
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeAggregate& t,
-	const std::vector<NodeStructs::FunctionArgument>& args
-) {
-	throw;
-}
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeType& t,
-	const std::vector<NodeStructs::FunctionArgument>& args
-) {
-	throw;
-}
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeUnion& t,
-	const std::vector<NodeStructs::FunctionArgument>& args
-) {
-	throw;
-}
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args_v(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeVariant& type_variant,
-	const std::vector<NodeStructs::FunctionArgument>& args
-) {
-	return std::visit(
-		[&](const auto& t) {
-			return type_of_member_function_like_call_with_args(variables, named, t, args);
-		},
-		type_variant.value
-	);
-	// return std::unexpected{ produce_call_error(variables, named, it.type, e) };
-}
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_postfix_member(
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error> type_of_postfix_member(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Type& t,
@@ -1190,19 +1074,24 @@ std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, u
 ) {
 	const auto& v = t.memberVariables;
 	auto pos = std::find_if(v.begin(), v.end(), [&](const NodeStructs::MemberVariable& m) { return m.name == property_name; });
-	if (pos == v.end())
-		return std::unexpected{ user_error{ "Error: object of type `" + transpile(variables, named, t).value() + "` has no member `" + property_name + "`\n" } };
+	if (pos == v.end()) {
+		auto u = transpile_type_visitor{ {}, variables, named }(t);
+		if (u.has_value())
+			return std::unexpected{ user_error{ "Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"} };
+		else
+			return std::unexpected{ std::move(u).error() };
+	}
 	else
 		return std::pair{ NodeStructs::Value{}, type_of_typename_v(variables, named, pos->type) };
 }
 
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_postfix_member_v(
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error> type_of_postfix_member_v(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::TypeVariant& t,
+	const NodeStructs::TypeCategory& t,
 	const std::string& property_name
 ) {
-	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error>;
+	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
 	return std::visit(
 		overload(overload_default_error,
 			[&](const std::reference_wrapper<const NodeStructs::Type>& t) -> R {
@@ -1217,7 +1106,16 @@ std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, u
 			[&](const NodeStructs::TypeType&) -> R {
 				throw;
 			},
-			[&](const NodeStructs::TypeUnion&) -> R {
+			[&](const NodeStructs::TypeTemplateType&) -> R {
+				throw;
+			},
+			[&](const NodeStructs::FunctionType&) -> R {
+				throw;
+			},
+			[&](const NodeStructs::FunctionTemplateType&) -> R {
+				throw;
+			},
+			[&](const NodeStructs::UnionType&) -> R {
 				throw;
 			}
 		),

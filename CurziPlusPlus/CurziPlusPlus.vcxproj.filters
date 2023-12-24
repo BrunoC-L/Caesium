@@ -80,5 +80,14 @@
     <ClInclude Include="re-template.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="type_variant_visitor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_function_call_with_args_visitor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="transpile_type_visitor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

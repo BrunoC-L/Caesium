@@ -14,10 +14,10 @@ struct user_error {
 		return std::unexpected<user_error>{ std::move(*this) };
 	}
 };
-using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>>>;
+using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>>>;
 using transpile_t = std::expected<std::string, user_error>;
 struct type_and_representation {
-	NodeStructs::TypeVariant type;
+	NodeStructs::TypeCategory type;
 	std::string representation;
 };
 using transpile_type_repr = std::expected<type_and_representation, user_error>;
@@ -286,45 +286,6 @@ transpile_t transpile(
 	const NodeStructs::UnionTypename& type
 );
 
-
-
-
-transpile_t transpile_v(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeVariant& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Type& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeTemplateInstance& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeAggregate& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeType& type
-);
-
-
-
-
-
-
-
 transpile_t transpile(
 	variables_t& variables,
 	const Named& named,
@@ -337,17 +298,17 @@ transpile_t transpile_statement(
 	const NodeStructs::Statement& statement
 );
 
-std::vector<NodeStructs::TypeVariant> decomposed_type(
+std::vector<NodeStructs::TypeCategory> decomposed_type(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::TypeVariant& type
+	const NodeStructs::TypeCategory& type
 );
 
 void add_for_iterator_variables(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ForStatement& statement,
-	const NodeStructs::TypeVariant& it_type
+	const NodeStructs::TypeCategory& it_type
 );
 
 void remove_for_iterator_variables(
@@ -522,16 +483,16 @@ transpile_t transpile_args(
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args_v(
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error> type_of_member_function_like_call_with_args_v(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::TypeVariant& t,
+	const NodeStructs::TypeCategory& t,
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_postfix_member_v(
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error> type_of_postfix_member_v(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::TypeVariant& t,
+	const NodeStructs::TypeCategory& t,
 	const std::string& property_name
 );

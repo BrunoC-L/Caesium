@@ -9,6 +9,23 @@
 #include "box.h"
 
 struct NodeStructs {
+
+	template <typename T>
+	struct Template;
+
+	struct TemplateArguments {
+		std::vector<std::string> arguments;
+		std::weak_ordering operator<=>(const TemplateArguments&) const = default;
+	};
+
+	template <typename T>
+	struct Template {
+		TemplateArguments arguments;
+		T templated;
+
+		std::weak_ordering operator<=>(const Template&) const = default;
+	};
+
 	struct TemplatedTypename;
 	struct NamespacedTypename;
 	struct BaseTypename;
@@ -330,22 +347,6 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const Import&) const = default;
 	};
 
-	template <typename T>
-	struct Template;
-
-	struct TemplateArguments {
-		std::vector<std::string> arguments;
-		std::weak_ordering operator<=>(const TemplateArguments&) const = default;
-	};
-
-	template <typename T>
-	struct Template {
-		TemplateArguments arguments;
-		T templated;
-
-		std::weak_ordering operator<=>(const Template&) const = default;
-	};
-
 	struct Function {
 		std::string name;
 		Typename returnType;
@@ -358,37 +359,49 @@ struct NodeStructs {
 	struct TypeTemplateInstance;
 	struct TypeAggregate;
 	struct TypeType; // String is a type, the type of String is a TypeType
-	struct TypeUnion;
-	struct TypeVariant;
+	struct UnionType;
+	struct TypeCategory;
 
 	struct TypeTemplateInstance {
 		std::reference_wrapper<const Template<Type>> type_template;
-		std::vector<TypeVariant> template_arguments;
+		std::vector<TypeCategory> template_arguments;
 
 		std::weak_ordering operator<=>(const TypeTemplateInstance&) const;
 	};
 
 	struct TypeAggregate {
-		std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>> arguments;
-
+		std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>> arguments;
 		std::weak_ordering operator<=>(const TypeAggregate&) const = default;
 	};
 
 	struct TypeType {
-		Box<TypeVariant> represented_type;
-
-		std::weak_ordering operator<=>(const TypeType&) const = default;
+		std::reference_wrapper<const NodeStructs::Type> type;
+		std::weak_ordering operator<=>(const TypeType&) const;
 	};
 
-	struct TypeUnion {
-		std::vector<TypeVariant> arguments;
-
-		std::weak_ordering operator<=>(const TypeUnion&) const = default;
+	struct FunctionType {
+		std::reference_wrapper<const NodeStructs::Function> function;
+		std::weak_ordering operator<=>(const FunctionType&) const;
 	};
 
-	struct TypeVariant {
-		std::variant<std::reference_wrapper<const Type>, TypeTemplateInstance, TypeAggregate, TypeType, TypeUnion> value;
-		std::weak_ordering operator<=>(const TypeVariant& other) const;
+	struct TypeTemplateType {
+		std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_template;
+		std::weak_ordering operator<=>(const TypeTemplateType&) const;
+	};
+
+	struct FunctionTemplateType {
+		std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>> function_template;
+		std::weak_ordering operator<=>(const FunctionTemplateType&) const;
+	};
+
+	struct UnionType {
+		std::vector<TypeCategory> arguments;
+		std::weak_ordering operator<=>(const UnionType&) const = default;
+	};
+
+	struct TypeCategory {
+		std::variant<std::reference_wrapper<const Type>, TypeTemplateInstance, TypeAggregate, TypeType, TypeTemplateType, FunctionType, FunctionTemplateType, UnionType> value;
+		std::weak_ordering operator<=>(const TypeCategory& other) const;
 	};
 
 	struct Type {

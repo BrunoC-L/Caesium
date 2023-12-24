@@ -55,18 +55,18 @@ std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_temp
 	);
 }
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 ) {
 	if (named.types.contains(type.type))
-		return NodeStructs::TypeVariant{ *named.types.at(type.type) };
+		return NodeStructs::TypeCategory{ *named.types.at(type.type) };
 	auto err = "Missing type " + type.type;
 	throw std::runtime_error(err);
 }
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
@@ -75,12 +75,12 @@ NodeStructs::TypeVariant type_of_typename(
 	throw std::runtime_error(err);
 }
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 ) {
-	return NodeStructs::TypeVariant{ NodeStructs::TypeTemplateInstance{
+	return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstance{
 		type_template_of_typename_v(variables, named, type.type.get()),
 		type.templated_with
 			| std::views::transform([&](const auto& e) { return type_of_typename_v(variables, named, e); })
@@ -88,19 +88,19 @@ NodeStructs::TypeVariant type_of_typename(
 	} };
 }
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::UnionTypename& type
 ) {
-	return NodeStructs::TypeVariant{ NodeStructs::TypeUnion{
+	return NodeStructs::TypeCategory{ NodeStructs::UnionType{
 		type.ors
 			| std::views::transform([&](const auto& e) { return type_of_typename_v(variables, named, e); })
 			| to_vec()
 	} };
 }
 
-NodeStructs::TypeVariant type_of_typename_v(
+NodeStructs::TypeCategory type_of_typename_v(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Typename& type

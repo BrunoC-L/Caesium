@@ -31,31 +31,31 @@ std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_temp
 	const NodeStructs::Typename& type
 );
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 );
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
 );
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 );
 
-NodeStructs::TypeVariant type_of_typename(
+NodeStructs::TypeCategory type_of_typename(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::UnionTypename& type
 );
 
-NodeStructs::TypeVariant type_of_typename_v(
+NodeStructs::TypeCategory type_of_typename_v(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Typename& type

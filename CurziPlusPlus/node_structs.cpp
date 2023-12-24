@@ -69,7 +69,7 @@ std::weak_ordering NodeStructs::Typename::operator<=>(const NodeStructs::Typenam
 	return cmp(value, other.value);
 }
 
-std::weak_ordering NodeStructs::TypeVariant::operator<=>(const NodeStructs::TypeVariant& other) const {
+std::weak_ordering NodeStructs::TypeCategory::operator<=>(const NodeStructs::TypeCategory& other) const {
 	return cmp(value, other.value);
 }
 
@@ -77,4 +77,20 @@ std::weak_ordering NodeStructs::TypeTemplateInstance::operator<=>(const NodeStru
 	if (auto c = cmp(type_template.get(), other.type_template.get()); c != 0)
 		return c;
 	return cmp(template_arguments, other.template_arguments);
+}
+
+std::weak_ordering NodeStructs::TypeType::operator<=>(const TypeType& other) const {
+	return cmp(type.get(), other.type.get());
+}
+
+std::weak_ordering NodeStructs::TypeTemplateType::operator<=>(const TypeTemplateType& other) const {
+	return cmp(type_template.get(), other.type_template.get());
+}
+
+std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionType& other) const {
+	return cmp(function.get(), other.function.get());
+}
+
+std::weak_ordering NodeStructs::FunctionTemplateType::operator<=>(const FunctionTemplateType& other) const {
+	return cmp(function_template.get(), other.function_template.get());
 }

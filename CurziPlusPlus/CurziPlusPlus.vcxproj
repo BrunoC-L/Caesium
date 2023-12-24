@@ -167,8 +167,11 @@
     <ClInclude Include="structurizer.h" />
     <ClInclude Include="toCPP.h" />
     <ClInclude Include="tokenizer.h" />
+    <ClInclude Include="transpile_type_visitor.hpp" />
     <ClInclude Include="type_of_expr.h" />
+    <ClInclude Include="type_of_function_call_with_args_visitor.hpp" />
     <ClInclude Include="type_of_typename.h" />
+    <ClInclude Include="type_variant_visitor.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
