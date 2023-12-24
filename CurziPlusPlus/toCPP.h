@@ -14,14 +14,12 @@ struct user_error {
 		return std::unexpected<user_error>{ std::move(*this) };
 	}
 };
-
+using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>>>;
 using transpile_t = std::expected<std::string, user_error>;
-
 struct type_and_representation {
 	NodeStructs::TypeVariant type;
 	std::string representation;
 };
-
 using transpile_type_repr = std::expected<type_and_representation, user_error>;
 
 template <size_t token>
@@ -209,81 +207,81 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 std::expected<std::pair<std::string, std::string>, user_error> transpile(const std::vector<NodeStructs::File>& project);
 
 transpile_t transpile_main_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
 );
 
 transpile_t transpile_declaration(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
 );
 
 transpile_t transpile_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Function& fn
 );
 
 transpile_t transpile_declaration(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Type& type
 );
 
 transpile_t transpile_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Type& type
 );
 
 template<typename T>
 transpile_t transpile_declaration(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Template<T>& tmpl
 );
 
 template<typename T>
 transpile_t transpile_definition(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Template<T>& tmpl
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>& parameters
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Typename& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::BaseTypename& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::NamespacedTypename& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TemplatedTypename& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::UnionTypename& type
 );
@@ -292,31 +290,31 @@ transpile_t transpile(
 
 
 transpile_t transpile_v(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TypeVariant& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Type& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TypeTemplateInstance& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TypeAggregate& type
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TypeType& type
 );
@@ -328,85 +326,85 @@ transpile_t transpile(
 
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const std::vector<NodeStructs::Statement>& statements
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Statement& statement
 );
 
 std::vector<NodeStructs::TypeVariant> decomposed_type(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TypeVariant& type
 );
 
 void add_for_iterator_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ForStatement& statement,
 	const NodeStructs::TypeVariant& it_type
 );
 
 void remove_for_iterator_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const NodeStructs::ForStatement& statement
 );
 
 void remove_added_variables(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Statement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::VariableDeclarationStatement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::BlockStatement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::IfStatement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ForStatement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::IForStatement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::WhileStatement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::BreakStatement& statement
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ReturnStatement& statement
 );
@@ -417,122 +415,122 @@ transpile_t transpile_statement(
 // expressions
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Expression& expr
 );
 
 transpile_t transpile_statement(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Expression& statement
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const Token<NUMBER>& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const std::string& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::AssignmentExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ConditionalExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::OrExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::AndExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::EqualityExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::CompareExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::AdditiveExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::MultiplicativeExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::UnaryExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::PostfixExpression& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ParenArguments& expr
 );
 
 transpile_t transpile(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::BraceArguments& expr
 );
 
 transpile_t transpile_arg(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::FunctionArgument& arg
 );
 
 transpile_t transpile_args(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+	variables_t& variables,
 	const Named& named,
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
-std::expected<NodeStructs::TypeVariant, user_error> type_of_member_function_like_call_with_args_v(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_member_function_like_call_with_args_v(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TypeVariant& t,
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
-std::expected<NodeStructs::TypeVariant, user_error> type_of_postfix_member_v(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_postfix_member_v(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::TypeVariant& t,
 	const std::string& property_name

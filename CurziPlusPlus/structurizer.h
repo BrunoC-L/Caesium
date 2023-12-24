@@ -363,38 +363,24 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 }
 
 NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
-	using op_types = NodeStructs::UnaryExpression::op_types;
-	return std::visit(
-		overload(overload_default_error,
-			[](const PostfixExpression& expr) {
-				return getExpressionStruct(expr);
-			},
-			[](const And<unary_operators, Alloc<UnaryExpression>
-			>& op_and_unary) -> NodeStructs::Expression {
-				const auto& op = op_and_unary.get<Or<
-					Token<NOT>,
-					Token<PLUS>,
-					Token<DASH>,
-					Token<PLUSPLUS>,
-					Token<MINUSMINUS>,
-					Token<TILDE>,
-					Token<ASTERISK>,
-					Token<AMPERSAND>
-				>>();
-				return std::visit(overload(
-					[&](const auto&) -> NodeStructs::Expression {
-						throw;
-						/*auto res = NodeStructs::UnaryExpression{
-							getExpressionStruct(op_and_unary.get<Alloc<UnaryExpression>>().get()),
-							token,
-						};
-						return NodeStructs::Expression{ std::move(res) };*/
-					}
-				), op.value());
-			}
-		),
-		statement.value()
-	);
+	const auto& prefixes = statement.get<Star<unary_operators>>().get<unary_operators>();
+	if (prefixes.size() == 0)
+		return getExpressionStruct(statement.get<PostfixExpression>());
+	else {
+		return NodeStructs::Expression{ NodeStructs::UnaryExpression {
+			.unary_operators = prefixes | std::views::transform(
+				[](const auto& e) {
+					return std::visit(
+						[](const auto& token) {
+							return NodeStructs::UnaryExpression::op_types{ token };
+						},
+						e.value()
+					);
+				})
+			| to_vec(),
+			.expr = getExpressionStruct(statement.get<PostfixExpression>())
+		} };
+	}
 }
 
 NodeStructs::Expression getExpressionStruct(const MultiplicativeExpression& statement) {
@@ -585,9 +571,8 @@ NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 	};
 }
 
-NodeStructs::ForStatement getStatementStruct(const ForStatement&) {
-	throw;
-	/*return {
+NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
+	return {
 		.collection = getExpressionStruct(statement.get<Expression>()),
 		.iterators = statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<Or<VariableDeclaration, Word>>()
 			| std::views::transform([](const Or<VariableDeclaration, Word>& or_node) {
@@ -604,7 +589,7 @@ NodeStructs::ForStatement getStatementStruct(const ForStatement&) {
 		.statements = statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
 			| LIFT_TRANSFORM(getStatementStruct)
 			| to_vec()
-	};*/
+	};
 }
 
 NodeStructs::IForStatement getStatementStruct(const IForStatement&) {

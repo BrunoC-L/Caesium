@@ -77,5 +77,8 @@
     <ClInclude Include="type_of_typename.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="re-template.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

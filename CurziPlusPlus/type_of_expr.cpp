@@ -3,80 +3,80 @@
 #include "type_of_expr.h"
 #include <ranges>
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::AssignmentExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ConditionalExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::OrExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::AndExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::EqualityExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::CompareExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::AdditiveExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::MultiplicativeExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::UnaryExpression& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::PostfixExpression& expr
 ) {
@@ -129,30 +129,37 @@ NodeStructs::TypeVariant type_of_expr(
 	}*/
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::ParenArguments& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::BraceArguments& expr
 ) {
-	return NodeStructs::TypeVariant{ NodeStructs::TypeAggregate{
-		expr.args
-		| std::views::transform(
-			[&](const NodeStructs::FunctionArgument& e) { return type_of_expr(variables, named, std::get<NodeStructs::Expression>(e)); }
-		)
-		| to_vec()
-	} };
+	// man this sucks
+	std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>> vec;
+	vec.reserve(expr.args.size());
+	for (const auto& e : expr.args) {
+		auto t_or_e = type_of_expr(variables, named, std::get<NodeStructs::Expression>(e));
+		if (!t_or_e.has_value())
+			return std::unexpected{ std::move(t_or_e).error() };
+		else
+			vec.push_back(std::move(t_or_e).value());
+	}
+	return std::pair{
+		NodeStructs::Reference{},
+		NodeStructs::TypeVariant{ NodeStructs::TypeAggregate{ std::move(vec) } }
+	};
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const std::string& expr
 ) {
@@ -164,35 +171,41 @@ NodeStructs::TypeVariant type_of_expr(
 	{
 		auto it = named.types.find(expr);
 		if (it != named.types.end())
-			return NodeStructs::TypeVariant{ NodeStructs::TypeType{ *it->second } };
+			return std::pair{
+				NodeStructs::Reference{},
+				NodeStructs::TypeVariant{ NodeStructs::TypeType{ *it->second } }
+			};
 	}
-	auto err = "could not find variable named " + transpile(variables, named, expr).value();
-	throw std::runtime_error(err);
+	auto x = transpile(variables, named, expr);
+	if (!x.has_value())
+		return std::unexpected{ std::move(x).error() };
+	else
+		return std::unexpected{ user_error{ "could not find variable named " + std::move(x).value() } };
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const Token<NUMBER>& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const Token<STRING>& expr
 ) {
 	throw;
 }
 
-NodeStructs::TypeVariant type_of_expr(
-	std::map<std::string, std::vector<NodeStructs::TypeVariant>>& variables,
+std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>, user_error> type_of_expr(
+	variables_t& variables,
 	const Named& named,
 	const NodeStructs::Expression& expr
 ) {
 	return std::visit(
-		[&](const auto& expr) -> NodeStructs::TypeVariant {
+		[&](const auto& expr) {
 			return type_of_expr(variables, named, expr);
 		},
 		expr.expression.get()

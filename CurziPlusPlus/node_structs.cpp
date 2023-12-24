@@ -33,50 +33,48 @@ std::weak_ordering cmp(const T& a, const T& b) {
 		return a <=> b;
 }
 
-namespace NodeStructs {
-	std::weak_ordering Expression::operator<=>(const Expression& other) const {
-		return cmp(expression.get(), other.expression.get());
-	}
+std::weak_ordering NodeStructs::Expression::operator<=>(const NodeStructs::Expression& other) const {
+	return cmp(expression.get(), other.expression.get());
+}
 
-	std::weak_ordering IfStatement::operator<=>(const IfStatement& other) const {
-		if (auto c = cmp(ifStatements, other.ifStatements); c != 0)
-			return c;
-		if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
-			return c;
-		return cmp(elseExprStatements, other.elseExprStatements);
-	}
+std::weak_ordering NodeStructs::IfStatement::operator<=>(const NodeStructs::IfStatement& other) const {
+	if (auto c = cmp(ifStatements, other.ifStatements); c != 0)
+		return c;
+	if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
+		return c;
+	return cmp(elseExprStatements, other.elseExprStatements);
+}
 
-	std::weak_ordering Statement::operator<=>(const Statement& other) const {
-		return cmp(statement, other.statement);
-	}
+std::weak_ordering NodeStructs::Statement::operator<=>(const NodeStructs::Statement& other) const {
+	return cmp(statement, other.statement);
+}
 
-	std::weak_ordering BreakStatement::operator<=>(const BreakStatement& other) const {
-		return cmp(ifExpr, other.ifExpr);
-	}
+std::weak_ordering NodeStructs::BreakStatement::operator<=>(const NodeStructs::BreakStatement& other) const {
+	return cmp(ifExpr, other.ifExpr);
+}
 
-	std::weak_ordering ReturnStatement::operator<=>(const ReturnStatement& other) const {
-		if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
-			return c;
-		return cmp(returnExpr, other.returnExpr);
-	}
+std::weak_ordering NodeStructs::ReturnStatement::operator<=>(const NodeStructs::ReturnStatement& other) const {
+	if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
+		return c;
+	return cmp(returnExpr, other.returnExpr);
+}
 
-	std::weak_ordering UnaryExpression::operator<=>(const UnaryExpression& other) const {
-		if (auto c = cmp(expr, other.expr); c != 0)
-			return c;
-		return cmp(unary_operator, other.unary_operator);
-	}
+std::weak_ordering NodeStructs::UnaryExpression::operator<=>(const NodeStructs::UnaryExpression& other) const {
+	if (auto c = cmp(expr, other.expr); c != 0)
+		return c;
+	return cmp(unary_operators, other.unary_operators);
+}
 
-	std::weak_ordering Typename::operator<=>(const Typename& other) const {
-		return cmp(value, other.value);
-	}
+std::weak_ordering NodeStructs::Typename::operator<=>(const NodeStructs::Typename& other) const {
+	return cmp(value, other.value);
+}
 
-	std::weak_ordering TypeVariant::operator<=>(const TypeVariant& other) const {
-		return cmp(value, other.value);
-	}
+std::weak_ordering NodeStructs::TypeVariant::operator<=>(const NodeStructs::TypeVariant& other) const {
+	return cmp(value, other.value);
+}
 
-	std::weak_ordering TypeTemplateInstance::operator<=>(const TypeTemplateInstance& other) const {
-		if (auto c = cmp(type_template.get(), other.type_template.get()); c != 0)
-			return c;
-		return cmp(template_arguments, other.template_arguments);
-	}
+std::weak_ordering NodeStructs::TypeTemplateInstance::operator<=>(const NodeStructs::TypeTemplateInstance& other) const {
+	if (auto c = cmp(type_template.get(), other.type_template.get()); c != 0)
+		return c;
+	return cmp(template_arguments, other.template_arguments);
 }

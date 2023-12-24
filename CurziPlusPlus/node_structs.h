@@ -8,7 +8,7 @@
 #include "primitives.h"
 #include "box.h"
 
-namespace NodeStructs {
+struct NodeStructs {
 	struct TemplatedTypename;
 	struct NamespacedTypename;
 	struct BaseTypename;
@@ -149,18 +149,17 @@ namespace NodeStructs {
 
 	struct UnaryExpression {
 		using op_types = std::variant<
-			Token<NOT>,
-			Token<PLUS>,
+			//Token<NOT>,
+			//Token<PLUS>,
 			Token<DASH>,
-			Token<PLUSPLUS>,
-			Token<MINUSMINUS>,
-			Token<TILDE>,
-			Token<ASTERISK>,
-			Token<AMPERSAND>
-			//, Typename // type cast operator
+			//Token<PLUSPLUS>,
+			//Token<MINUSMINUS>,
+			Token<TILDE>
+			//Token<ASTERISK>,
+			//Token<AMPERSAND>
 		>;
+		std::vector<op_types> unary_operators;
 		Expression expr;
-		op_types unary_operator;
 		std::weak_ordering operator<=>(const UnaryExpression&) const;
 	};
 
@@ -370,7 +369,7 @@ namespace NodeStructs {
 	};
 
 	struct TypeAggregate {
-		std::vector<TypeVariant> arguments;
+		std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeVariant>> arguments;
 
 		std::weak_ordering operator<=>(const TypeAggregate&) const = default;
 	};
@@ -431,4 +430,4 @@ namespace NodeStructs {
 		std::vector<Block> blocks;
 		std::weak_ordering operator<=>(const File&) const = default;
 	};
-}
+};

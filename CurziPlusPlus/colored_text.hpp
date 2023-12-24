@@ -2,17 +2,18 @@
 #include <ostream>
 #include <sstream>
 
-namespace output_stream_colors {
-	constexpr auto black  = "\033[0;30m";
-	constexpr auto red    = "\033[0;31m";
-	constexpr auto green  = "\033[0;32m";
-	constexpr auto yellow = "\033[0;33m";
-	constexpr auto blue   = "\033[0;34m";
-	constexpr auto purple = "\033[0;35m";
-	constexpr auto cyan   = "\033[0;36m";
-	constexpr auto white  = "\033[0;37m";
-	constexpr auto reset = "\033[0m";
-}
+struct output_stream_colors {
+#define self_t(name, expr) decltype(expr) name = expr
+	constexpr static self_t(black, "\033[0;30m");
+	constexpr static self_t(red, "\033[0;31m");
+	constexpr static self_t(green, "\033[0;32m");
+	constexpr static self_t(yellow, "\033[0;33m");
+	constexpr static self_t(blue, "\033[0;34m");
+	constexpr static self_t(purple, "\033[0;35m");
+	constexpr static self_t(cyan, "\033[0;36m");
+	constexpr static self_t(white, "\033[0;37m");
+	constexpr static self_t(reset, "\033[0m");
+};
 
 std::string colored_text(auto&& text, auto&& color) {
 	std::stringstream ss;

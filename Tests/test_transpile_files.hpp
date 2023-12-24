@@ -82,11 +82,21 @@ bool test_transpile_file(
 	return false;
 }
 
-bool test_transpile_file(const std::filesystem::path& folder) {
+bool test_transpile_folder(const std::filesystem::path& folder) {
 	for (const auto& file : std::filesystem::directory_iterator{ folder })
 		if (file.path().extension() == ".caesium")
 			return test_transpile_file(folder, file.path());
 
 	std::cout << "Test folder missing caesium file: " << folder << "\n";
-	return 1;
+	return false;
+}
+
+bool test_transpile_all_folders(const std::filesystem::directory_iterator& base_folder) {
+	bool compilation_success = true;
+
+	for (const auto& folder : base_folder)
+		if (folder.is_directory() && !folder.path().stem().generic_string().starts_with("."))
+			compilation_success &= test_transpile_folder(folder);
+
+	return compilation_success;
 }

@@ -28,13 +28,7 @@ int main(int argc, char** argv) {
 		return 1;
 	std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
 
-	bool compilation_success = true;
-
-	for (int i = 1; i < argc; ++i)
-		for (const auto& folder : std::filesystem::directory_iterator(argv[i]))
-			if (folder.is_directory() && !folder.path().stem().generic_string().starts_with("."))
-				compilation_success &= test_transpile_file(folder);
-	if (!compilation_success)
+	if (!test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }))
 		return 1;
 	std::cout << colored_text("All file transpile tests passed\n", output_stream_colors::green);
 
