@@ -13,22 +13,49 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\type_category_visitors">
+      <UniqueIdentifier>{1a76e0f4-9893-452b-bc11-9fb3ea399d76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\typename_visitors">
+      <UniqueIdentifier>{2515319c-f5c2-4875-8335-631134ba8d71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\expression_visitors">
+      <UniqueIdentifier>{236ee769-1afe-40c1-8419-c798a5323344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\statement_visitors">
+      <UniqueIdentifier>{b08b72ed-7526-47bd-a0f0-884b663c59e3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="node_structs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="type_of_expr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="toCPP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="type_of_typename.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="transpile_type_visitor.cpp">
+      <Filter>Header Files\type_category_visitors</Filter>
     </ClCompile>
-    <ClCompile Include="fn_util.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="type_of_function_like_call_with_args_visitor.cpp">
+      <Filter>Header Files\type_category_visitors</Filter>
+    </ClCompile>
+    <ClCompile Include="type_of_typename_visitor.cpp">
+      <Filter>Header Files\typename_visitors</Filter>
+    </ClCompile>
+    <ClCompile Include="type_template_of_typename_visitor.cpp">
+      <Filter>Header Files\typename_visitors</Filter>
+    </ClCompile>
+    <ClCompile Include="type_of_expression_visitor.cpp">
+      <Filter>Header Files\expression_visitors</Filter>
+    </ClCompile>
+    <ClCompile Include="type_of_postfix_member_visitor.cpp">
+      <Filter>Header Files\type_category_visitors</Filter>
+    </ClCompile>
+    <ClCompile Include="transpile_expression_visitor.cpp">
+      <Filter>Header Files\expression_visitors</Filter>
+    </ClCompile>
+    <ClCompile Include="transpile_statement_visitor.cpp">
+      <Filter>Header Files\statement_visitors</Filter>
+    </ClCompile>
+    <ClCompile Include="transpile_typename_visitor.cpp">
+      <Filter>Header Files\typename_visitors</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -71,23 +98,47 @@
     <ClInclude Include="tokenizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="type_of_expr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="type_of_typename.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="re-template.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="type_variant_visitor.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="type_category_visitor.hpp">
+      <Filter>Header Files\type_category_visitors</Filter>
     </ClInclude>
-    <ClInclude Include="type_of_function_call_with_args_visitor.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="type_of_function_like_call_with_args_visitor.hpp">
+      <Filter>Header Files\type_category_visitors</Filter>
     </ClInclude>
     <ClInclude Include="transpile_type_visitor.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\type_category_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="type_template_of_typename_visitor.hpp">
+      <Filter>Header Files\typename_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_typename_visitor.hpp">
+      <Filter>Header Files\typename_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="typename_visitor.hpp">
+      <Filter>Header Files\typename_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="expression_visitor.hpp">
+      <Filter>Header Files\expression_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_expression_visitor.hpp">
+      <Filter>Header Files\expression_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_postfix_member_visitor.hpp">
+      <Filter>Header Files\type_category_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="transpile_expression_visitor.hpp">
+      <Filter>Header Files\expression_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="statement_visitor.hpp">
+      <Filter>Header Files\statement_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="transpile_statement_visitor.hpp">
+      <Filter>Header Files\statement_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="transpile_typename_visitor.hpp">
+      <Filter>Header Files\typename_visitors</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

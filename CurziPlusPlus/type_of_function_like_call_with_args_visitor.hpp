@@ -2,13 +2,14 @@
 #include "toCPP.h"
 #include "type_category_visitor.hpp"
 
-struct transpile_type_visitor : TypeCategoryVisitor<transpile_type_visitor> {
-	using TypeCategoryVisitor<transpile_type_visitor>::operator();
+struct type_of_function_like_call_with_args_visitor : TypeCategoryVisitor<type_of_function_like_call_with_args_visitor> {
+	using TypeCategoryVisitor<type_of_function_like_call_with_args_visitor>::operator();
 
 	variables_t& variables;
 	const Named& named;
+	const std::vector<NodeStructs::FunctionArgument>& args;
 
-	using R = transpile_t;
+	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
 
 	R operator()(const NodeStructs::Type& t);
 	R operator()(const NodeStructs::TypeTemplateInstanceType& t);

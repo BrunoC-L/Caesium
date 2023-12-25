@@ -161,19 +161,20 @@ struct cpp_std {
 	NodeStructs::Type _int = { "Int" };
 	NodeStructs::Type _bool = { "Bool" };
 	NodeStructs::Type string = { "String" };
+	NodeStructs::Type _void = { "Void" };
 
-	NodeStructs::Function _println{
+	NodeStructs::Function println{
 		.name = std::string{ "println" },
-		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "void" } },
+		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
 		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{
-			//{ NodeStructs::Typename{ NodeStructs::BaseTypename{"T"} }, NodeStructs::ValueCategory{ NodeStructs::Reference{} }, "t" }
+			{ NodeStructs::Typename{ NodeStructs::BaseTypename{"T"} }, NodeStructs::ValueCategory{ NodeStructs::Value{} }, "t" }
 		},
 	};
 
-	NodeStructs::Template<NodeStructs::Function> println = {
+	/*NodeStructs::Template<NodeStructs::Function> println = {
 		std::vector<std::string>{ "T" },
 		_println
-	};
+	};*/
 };
 
 static constexpr auto default_includes = 
@@ -181,6 +182,7 @@ static constexpr auto default_includes =
 
 	"using Int = int;\n"
 	"using Bool = bool;\n"
+	"using Void = void;\n"
 	"template <typename First, typename Second> using Pair = std::pair<First, Second>;\n"
 
 	"#include <variant>\n"
@@ -259,43 +261,7 @@ transpile_t transpile(
 transpile_t transpile(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::Typename& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BaseTypename& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::NamespacedTypename& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TemplatedTypename& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::UnionTypename& type
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
 	const std::vector<NodeStructs::Statement>& statements
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Statement& statement
 );
 
 std::vector<NodeStructs::TypeCategory> decomposed_type(
@@ -322,155 +288,6 @@ void remove_added_variables(
 	const NodeStructs::Statement& statement
 );
 
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::VariableDeclarationStatement& statement
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BlockStatement& statement
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::IfStatement& statement
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ForStatement& statement
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::IForStatement& statement
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::WhileStatement& statement
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BreakStatement& statement
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ReturnStatement& statement
-);
-
-
-
-
-// expressions
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Expression& expr
-);
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Expression& statement
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const Token<NUMBER>& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const std::string& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::AssignmentExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ConditionalExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::OrExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::AndExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::EqualityExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::CompareExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::AdditiveExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::MultiplicativeExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::UnaryExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::PostfixExpression& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ParenArguments& expr
-);
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BraceArguments& expr
-);
-
 transpile_t transpile_arg(
 	variables_t& variables,
 	const Named& named,
@@ -483,16 +300,8 @@ transpile_t transpile_args(
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error> type_of_member_function_like_call_with_args_v(
+NodeStructs::TypeCategory iterator_type(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::TypeCategory& t,
-	const std::vector<NodeStructs::FunctionArgument>& args
-);
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error> type_of_postfix_member_v(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeCategory& t,
-	const std::string& property_name
+	const NodeStructs::TypeCategory& type
 );

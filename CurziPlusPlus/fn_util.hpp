@@ -1,9 +1,12 @@
+#pragma once
 #include <ranges>
 #include <vector>
 #include <type_traits>
 #include <variant>
 
-decltype(std::ranges::to<std::vector>()) to_vec();
+inline auto to_vec() {
+	return std::ranges::to<std::vector>();
+}
 
 #define LIFT(...) [](auto&&... e) { return __VA_ARGS__(std::forward<decltype(e)>(e)...); }
 #define LIFT_FILTER(...) std::views::filter(LIFT(__VA_ARGS__))

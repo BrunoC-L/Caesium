@@ -5,12 +5,16 @@
 #include <stacktrace>
 
 #include "toCPP.h"
-#include "type_of_expr.h"
-#include "type_of_typename.h"
+#include "type_of_expression_visitor.hpp"
 #include "ranges_fold_left_pipe.h"
 #include "overload.hpp"
-#include "type_of_function_call_with_args_visitor.hpp"
+#include "type_of_function_like_call_with_args_visitor.hpp"
 #include "transpile_type_visitor.hpp"
+#include "type_of_typename_visitor.hpp"
+#include "type_of_postfix_member_visitor.hpp"
+#include "transpile_expression_visitor.hpp"
+#include "transpile_statement_visitor.hpp"
+#include "transpile_typename_visitor.hpp"
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
@@ -58,8 +62,9 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 						named_of_file.types["Int"] = &stuff_from_cpp._int;
 						named_of_file.types["Bool"] = &stuff_from_cpp._bool;
 						named_of_file.types["String"] = &stuff_from_cpp.string;
+						named_of_file.types["Void"] = &stuff_from_cpp._void;
 
-						named_of_file.function_templates["println"] = &stuff_from_cpp.println;
+						named_of_file.functions["println"] = &stuff_from_cpp.println;
 					}
 					named_by_file[file2.filename] = named_of_file;
 				}
@@ -152,7 +157,7 @@ transpile_t transpile_declaration(
 	const Named& named,
 	const NodeStructs::Function& fn
 ) {
-	return transpile(variables, named, fn.returnType).value() + " " +
+	return transpile_typename_visitor{ {}, variables, named }(fn.returnType).value() + " " +
 		fn.name + "(" + transpile(variables, named, fn.parameters).value() + ");\n";
 }
 
@@ -161,14 +166,14 @@ transpile_t transpile_definition(
 	const Named& named,
 	const NodeStructs::Function& fn
 ) {
-	auto k1 = transpile(variables, named, fn.returnType);
+	auto k1 = transpile_typename_visitor{ {}, variables, named }(fn.returnType);
 	if (!k1.has_value())
 		return std::unexpected{ k1.error() };
 	auto k2 = transpile(variables, named, fn.parameters);
 	if (!k2.has_value())
 		return std::unexpected{ k2.error() };
 	for (auto&& [type_name, value_cat, name] : fn.parameters)
-		variables[name].push_back(std::pair{ value_cat, type_of_typename_v(variables, named, type_name) });
+		variables[name].push_back(std::pair{ value_cat, type_of_typename_visitor{ {}, variables, named }(type_name) });
 	auto k3 = transpile(variables, named, fn.statements);
 	if (!k3.has_value())
 		return std::unexpected{ k3.error() };
@@ -207,14 +212,14 @@ transpile_t transpile_definition(
 
 	for (const auto& alias : type.aliases)
 		if (std::holds_alternative<NodeStructs::BaseTypename>(alias.aliasTo.value))
-			ss << "using " << std::get<NodeStructs::BaseTypename>(alias.aliasTo.value).type << " = " << transpile(variables, named, alias.aliasFrom).value() << ";\n";
+			ss << "using " << std::get<NodeStructs::BaseTypename>(alias.aliasTo.value).type << " = " << transpile_typename_visitor{ {}, variables, named }(alias.aliasFrom).value() << ";\n";
 		else {
-			auto err = "cannot alias to " + transpile(variables, named, alias.aliasTo).value();
+			auto err = "cannot alias to " + transpile_typename_visitor{ {}, variables, named }(alias.aliasTo).value();
 			throw std::runtime_error(err);
 		}
 
 	for (const auto& member : type.memberVariables)
-		ss << transpile(variables, named, member.type).value() << " " << member.name << ";\n";
+		ss << transpile_typename_visitor{ {}, variables, named }(member.type).value() << " " << member.name << ";\n";
 
 	for (const auto& constructor : type.constructors)
 		ss << transpile_definition(variables, named, constructor, type).value() << "\n";
@@ -270,81 +275,12 @@ transpile_t transpile(
 	std::stringstream ss;
 	bool first = true;
 	for (const auto& [type, cat, name] : parameters) {
-		ss << transpile(variables, named, type).value() << " " << name;
+		ss << transpile_typename_visitor{ {}, variables, named }(type).value() << " " << name;
 		if (first)
 			first = false;
 		else
 			ss << ", ";
 	}
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Typename& type
-) {
-	return std::visit(
-		[&](const auto& type) {
-			return transpile(variables, named, type);
-		},
-		type.value
-	);
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BaseTypename& type
-) {
-	return type.type;
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::NamespacedTypename& type
-) {
-	return transpile(variables, named, type.name_space.get()).value() + "::" + transpile(variables, named, type.name_in_name_space.get()).value();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TemplatedTypename& type
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, type.type.get()).value() << "<";
-	bool first = true;
-	for (const auto& t : type.templated_with) {
-		if (first)
-			first = false;
-		else
-			ss << ", ";
-		ss << transpile(variables, named, t).value();
-	}
-	ss << ">";
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::UnionTypename& type
-) {
-	std::stringstream ss;
-	ss << "std::variant<";
-	auto ts = type.ors;
-	std::sort(ts.begin(), ts.end());
-	bool first = true;
-	for (const auto& t : ts) {
-		if (first)
-			first = false;
-		else
-			ss << ", ";
-		ss << transpile(variables, named, t).value();
-	}
-	ss << ">";
 	return ss.str();
 }
 
@@ -353,9 +289,10 @@ transpile_t transpile(
 	const Named& named,
 	const std::vector<NodeStructs::Statement>& statements
 ) {
+	auto transpile_statement = transpile_statement_visitor{ {}, variables, named };
 	std::stringstream ss;
 	for (const auto& statement : statements) {
-		auto k = transpile_statement(variables, named, statement);
+		auto k = transpile_statement(statement);
 		if (k.has_value())
 			ss << k.value();
 		else
@@ -364,21 +301,6 @@ transpile_t transpile(
 	for (const auto& statement : statements)
 		remove_added_variables(variables, named, statement);
 	return ss.str();
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Statement& statement
-) {
-	return std::visit(
-		overload(
-			[&](const auto& e) {
-				return transpile_statement(variables, named, e);
-			}
-		),
-		statement.statement
-	);
 }
 
 void remove_added_variables(
@@ -411,63 +333,6 @@ void remove_added_variables(
 	);
 }
 
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::VariableDeclarationStatement& statement
-) {
-	variables[statement.name].push_back({ NodeStructs::Value{}, type_of_typename_v(variables, named, statement.type) });
-	return transpile(variables, named, statement.type).value() + " " + statement.name + " = " + transpile(variables, named, statement.expr).value() + ";\n";
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BlockStatement& statement
-) {
-	auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value).type;
-	if (named.blocks.contains(s)) {
-		const NodeStructs::Block& block = *named.blocks.at(s);
-		std::stringstream ss;
-		for (const auto& statement_in_block : block.statements)
-			ss << transpile_statement(variables, named, statement_in_block).value();
-		return ss.str();
-	}
-	else {
-		throw std::runtime_error("bad block name" + s);
-	}
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::IfStatement& statement
-) {
-	if (statement.elseExprStatements.has_value())
-		return "if (" +
-		transpile(variables, named, statement.ifExpr).value() +
-		") {\n" +
-		transpile(variables, named, statement.ifStatements).value() +
-		"} else " +
-		std::visit(
-			overload(overload_default_error,
-				[&](const Box<NodeStructs::IfStatement>& elseif) {
-					return transpile_statement(variables, named, elseif.get()).value();
-				},
-				[&](const std::vector<NodeStructs::Statement>& justelse) {
-					return "{" + transpile(variables, named, justelse).value() + "}";
-				}
-			),
-			statement.elseExprStatements.value()
-		);
-	else
-		return "if (" +
-		transpile(variables, named, statement.ifExpr).value() +
-		") {\n" +
-		transpile(variables, named, statement.ifStatements).value() +
-		"}";
-}
-
 NodeStructs::TypeCategory iterator_type(
 	variables_t& variables,
 	const Named& named,
@@ -478,7 +343,7 @@ NodeStructs::TypeCategory iterator_type(
 			[&](const std::reference_wrapper<const NodeStructs::Type>& type) -> NodeStructs::TypeCategory {
 				throw;
 			},
-			[&](const NodeStructs::TypeTemplateInstance& type) -> NodeStructs::TypeCategory {
+			[&](const NodeStructs::TypeTemplateInstanceType& type) -> NodeStructs::TypeCategory {
 				const auto tn = type.type_template.get().templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -494,7 +359,7 @@ NodeStructs::TypeCategory iterator_type(
 					else
 						if (tn == "Map")
 							if (type.template_arguments.size() == 2)
-								return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstance{
+								return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstanceType{
 									.type_template = *named.type_templates.at("Map"),
 									.template_arguments = { type.template_arguments.at(0), type.template_arguments.at(1) },
 								} };
@@ -503,7 +368,7 @@ NodeStructs::TypeCategory iterator_type(
 						else
 							throw;
 			},
-			[&](const NodeStructs::TypeAggregate&) -> NodeStructs::TypeCategory {
+			[&](const NodeStructs::AggregateType&) -> NodeStructs::TypeCategory {
 				throw;
 			},
 			[&](const NodeStructs::TypeType&) -> NodeStructs::TypeCategory {
@@ -538,10 +403,10 @@ std::vector<NodeStructs::TypeCategory> decomposed_type(
 				if (type.name == "Int" || type.name == "String" || type.name == "Bool")
 					throw std::runtime_error("Cannot decompose type 'Int'");
 				return type.memberVariables
-					| std::views::transform([&](const auto& e) { return type_of_typename_v(variables, named, e.type); })
+					| std::views::transform([&](const auto& e) { return type_of_typename_visitor{ {}, variables, named }(e.type); })
 					| to_vec();
 			},
-			[&](const NodeStructs::TypeTemplateInstance& type) -> std::vector<NodeStructs::TypeCategory> {
+			[&](const NodeStructs::TypeTemplateInstanceType& type) -> std::vector<NodeStructs::TypeCategory> {
 				const auto tn = type.type_template.get().templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -568,7 +433,7 @@ std::vector<NodeStructs::TypeCategory> decomposed_type(
 									throw;
 				throw;
 			},
-			[&](const NodeStructs::TypeAggregate&) -> std::vector<NodeStructs::TypeCategory> {
+			[&](const NodeStructs::AggregateType&) -> std::vector<NodeStructs::TypeCategory> {
 				throw;
 			},
 			[&](const NodeStructs::TypeType&) -> std::vector<NodeStructs::TypeCategory> {
@@ -621,7 +486,7 @@ void add_for_iterator_variables(
 								auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
 								throw std::runtime_error(err);
 							}*/
-							variables[it.name].push_back({ NodeStructs::Reference{}, type_of_typename_v(variables, named, it.type) });
+							variables[it.name].push_back({ NodeStructs::Reference{}, type_of_typename_visitor{ {}, variables, named }(it.type) });
 						},
 						[&](const std::string& it) {
 							variables[it].push_back({ NodeStructs::Reference{}, decomposed_types.at(i) });
@@ -642,7 +507,7 @@ void add_for_iterator_variables(
 								auto err = "Invalid type of iterator " + transpile(variables, named, it.type);
 								throw std::runtime_error(err);
 							}*/
-							variables[it.name].push_back({ NodeStructs::Reference{}, type_of_typename_v(variables, named, it.type) });
+							variables[it.name].push_back({ NodeStructs::Reference{}, type_of_typename_visitor{ {}, variables, named }(it.type) });
 						},
 						[&](const std::string& it) {
 							variables[it].push_back({ NodeStructs::Reference{}, it_type });
@@ -651,74 +516,6 @@ void add_for_iterator_variables(
 					statement.iterators.at(0)
 				);
 		}
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ForStatement& statement
-) {
-	auto coll_type_or_e = type_of_expr(variables, named, statement.collection);
-	if (!coll_type_or_e.has_value())
-		return std::unexpected{ std::move(coll_type_or_e).error() };
-	auto it_type = iterator_type(variables, named, coll_type_or_e.value().second);
-
-	bool can_be_decomposed = [&]() {
-		if (std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(it_type.value)) {
-			const auto t = std::get<std::reference_wrapper<const NodeStructs::Type>>(it_type.value);
-			if (t.get().name == "Int")
-				return false;
-		}
-		return true;
-		}();
-		add_for_iterator_variables(variables, named, statement, it_type);
-
-		std::stringstream ss;
-		if (can_be_decomposed) {
-			ss << "for (auto&& [";
-			bool first = true;
-			for (const auto& iterator : statement.iterators) {
-				if (first)
-					first = false;
-				else
-					ss << ", ";
-				ss << std::visit(overload(overload_default_error,
-					[&](const NodeStructs::VariableDeclaration& iterator) {
-						return iterator.name;
-					},
-					[&](const std::string& iterator) {
-						return iterator;
-					}
-				), iterator);
-			}
-			ss << "]";
-		}
-		else {
-			if (statement.iterators.size() > 1)
-				throw std::runtime_error("Expected 1 iterator");
-			ss << "for (auto&& " << std::visit(overload(overload_default_error,
-				[&](const NodeStructs::VariableDeclaration& iterator) {
-					return iterator.name;
-				},
-				[&](const std::string& iterator) {
-					return iterator;
-				}
-			), statement.iterators.at(0));
-		}
-		auto s1 = transpile(variables, named, statement.collection);
-		auto s2 = transpile(variables, named, statement.statements);
-		if (!s1.has_value())
-			return std::unexpected{ s1.error() };
-		if (!s2.has_value())
-			return std::unexpected{ s2.error() };
-		ss << " : "
-			<< s1.value()
-			<< ") {\n"
-			<< s2.value()
-			<< "}\n";
-
-		remove_for_iterator_variables(variables, statement);
-		return ss.str();
 }
 
 void remove_for_iterator_variables(
@@ -739,314 +536,12 @@ void remove_for_iterator_variables(
 		);
 }
 
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::IForStatement& statement
-) {
-	throw;
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::WhileStatement& statement
-) {
-	return "while (" + transpile(variables, named, statement.whileExpr).value() + ") {\n" + transpile(variables, named, statement.statements).value() + "}";
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BreakStatement& statement
-) {
-	if (statement.ifExpr.has_value())
-		return "if (" + transpile(variables, named, statement.ifExpr.value()).value() + ") break;\n";
-	else
-		return "break;\n";
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ReturnStatement& statement
-) {
-	std::string return_value = [&]() {
-		if (statement.returnExpr.size() == 0)
-			return std::string{};
-		else if (statement.returnExpr.size() == 1)
-			return transpile(variables, named, statement.returnExpr.at(0)).value();
-		else {
-			throw;
-			//return "{" + transpile_args(variables, named, statement.returnExpr).value() + "}";
-		}
-		}();
-		if (statement.ifExpr.has_value())
-			return "if (" + transpile(variables, named, statement.ifExpr.value()).value() + ") return " + return_value + ";\n";
-		else
-			return "return " + return_value + ";\n";
-}
-
-
-
-
-// expressions
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Expression& expr
-) {
-	return std::visit(
-		[&](const auto& expr) {
-			return transpile(variables, named, expr);
-		},
-		expr.expression.get()
-	);
-}
-
-transpile_t transpile_statement(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Expression& statement
-) {
-	return transpile(variables, named, statement).transform([](auto s) { return std::move(s) + ";\n"; });
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const Token<NUMBER>& expr
-) {
-	return expr.value;
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const Token<STRING>& expr
-) {
-	return expr.value;
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const std::string& expr
-) {
-	if (variables.contains(expr))
-		return expr;
-	if (named.functions.contains(expr))
-		return expr;
-	if (named.function_templates.contains(expr))
-		return expr;
-	return std::unexpected{ user_error{ "Undeclared variable `" + expr + "`" } };
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::AssignmentExpression& expr
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& e : expr.assignments)
-		ss << " " << symbol_variant_as_text(e.first) << " " << transpile(variables, named, e.second).value();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ConditionalExpression& expr
-) {
-	if (expr.ifElseExprs.has_value()) {
-		// x if first else second
-		//                  ([&] () { if (first) return x; else return second; }());
-		return std::string("([&] () { if (") +
-			transpile(variables, named, expr.ifElseExprs.value().first).value() +
-			") return " +
-			transpile(variables, named, expr.expr).value() +
-			"; else return " +
-			transpile(variables, named, expr.ifElseExprs.value().second).value() +
-			"; }())";
-	}
-	else {
-		return transpile(variables, named, expr.expr);
-	}
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::OrExpression& expr
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& e : expr.ors)
-		ss << " || " << transpile(variables, named, e).value();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::AndExpression& expr
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& e : expr.ands)
-		ss << " && " << transpile(variables, named, e).value();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::EqualityExpression& expr
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, e] : expr.equals)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::CompareExpression& expr
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, e] : expr.comparisons)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::AdditiveExpression& expr
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, e] : expr.adds)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::MultiplicativeExpression& expr
-) {
-	std::stringstream ss;
-	ss << transpile(variables, named, expr.expr).value();
-	for (const auto& [op, e] : expr.muls)
-		ss << " " << symbol_variant_as_text(op) << " " << transpile(variables, named, e).value();
-	std::string x = ss.str();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::UnaryExpression& expr
-) {
-	std::stringstream ss;
-	for (const auto& op : expr.unary_operators)
-		ss << std::visit([&](const auto& token_expr) { return symbol_as_text(token_expr); }, op);
-	ss << transpile(variables, named, expr.expr).value();
-	return ss.str();
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::PostfixExpression& expr
-) {
-	auto t_or_e = type_of_expr(variables, named, expr.expr);
-	if (!t_or_e.has_value())
-		return std::unexpected{ std::move(t_or_e).error() };
-	type_and_representation it{
-		std::move(t_or_e).value().second, // todo maybe type and repr has to hold value category...?
-		transpile(variables, named, expr.expr).value()
-	};
-
-	for (const auto& op : expr.postfixes) {
-		transpile_type_repr next = std::visit(
-			overload(overload_default_error,
-				[&](const std::string& property_name) -> transpile_type_repr {
-					return type_of_postfix_member_v(variables, named, it.type, property_name).transform(
-						[&](auto t) {
-							return type_and_representation{
-								t.second,
-								it.representation + "." + property_name
-							};
-						}
-					);
-				},
-				[&](const NodeStructs::ParenArguments& e) -> transpile_type_repr {
-					return type_of_member_function_like_call_with_args_visitor{ {}, variables, named, e.args }(it.type).transform(
-						[&](std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>&& t) {
-							return type_and_representation{
-								std::move(t.second),
-								it.representation + "(" + transpile_args(variables, named, e.args).value() + ")"
-							};
-						}
-					);
-				},
-				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
-					throw;
-					//return "[" + transpile_args(variables, named, e.args).value() + "]";
-				},
-				[&](const NodeStructs::BraceArguments& e) -> transpile_type_repr {
-					throw;
-					//return "{" + transpile_args(variables, named, e.args).value() + "}";
-				},
-				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
-					throw;
-					//return symbol_as_text(op);
-				},
-				[&](const Token<MINUSMINUS>& op) -> transpile_type_repr {
-					throw;
-					//return symbol_as_text(op);
-				}
-			),
-			op
-		);
-		if (next.has_value())
-			it = next.value();
-		else
-			return std::unexpected{ next.error() };
-	}
-	return it.representation;
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::ParenArguments& expr
-) {
-	throw;
-	//return "(" + transpile_args(variables, named, expr.args).value() + ")";
-}
-
-transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::BraceArguments& expr
-) {
-	return "{" + transpile_args(variables, named, expr.args).value() + "}";
-}
-
 transpile_t transpile_arg(
 	variables_t& variables,
 	const Named& named,
 	const NodeStructs::FunctionArgument& arg
 ) {
-	return transpile(variables, named, std::get<1>(arg));
+	return transpile_expression_visitor{ {}, variables, named }(std::get<NodeStructs::Expression>(arg));
 }
 
 transpile_t transpile_args(
@@ -1082,43 +577,5 @@ std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, 
 			return std::unexpected{ std::move(u).error() };
 	}
 	else
-		return std::pair{ NodeStructs::Value{}, type_of_typename_v(variables, named, pos->type) };
-}
-
-std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error> type_of_postfix_member_v(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::TypeCategory& t,
-	const std::string& property_name
-) {
-	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
-	return std::visit(
-		overload(overload_default_error,
-			[&](const std::reference_wrapper<const NodeStructs::Type>& t) -> R {
-				return type_of_postfix_member(variables, named, t, property_name);
-			},
-			[&](const NodeStructs::TypeTemplateInstance&) -> R {
-				throw;
-			},
-			[&](const NodeStructs::TypeAggregate&) -> R {
-				throw;
-			},
-			[&](const NodeStructs::TypeType&) -> R {
-				throw;
-			},
-			[&](const NodeStructs::TypeTemplateType&) -> R {
-				throw;
-			},
-			[&](const NodeStructs::FunctionType&) -> R {
-				throw;
-			},
-			[&](const NodeStructs::FunctionTemplateType&) -> R {
-				throw;
-			},
-			[&](const NodeStructs::UnionType&) -> R {
-				throw;
-			}
-		),
-		t.value
-	);
+		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, variables, named }(pos->type) };
 }

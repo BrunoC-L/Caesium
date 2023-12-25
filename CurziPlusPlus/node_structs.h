@@ -7,6 +7,7 @@
 
 #include "primitives.h"
 #include "box.h"
+#include "overload.hpp"
 
 struct NodeStructs {
 
@@ -356,22 +357,18 @@ struct NodeStructs {
 	};
 
 	struct Type;
-	struct TypeTemplateInstance;
-	struct TypeAggregate;
-	struct TypeType; // String is a type, the type of String is a TypeType
-	struct UnionType;
 	struct TypeCategory;
 
-	struct TypeTemplateInstance {
+	struct TypeTemplateInstanceType {
 		std::reference_wrapper<const Template<Type>> type_template;
 		std::vector<TypeCategory> template_arguments;
 
-		std::weak_ordering operator<=>(const TypeTemplateInstance&) const;
+		std::weak_ordering operator<=>(const TypeTemplateInstanceType&) const;
 	};
 
-	struct TypeAggregate {
+	struct AggregateType {
 		std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>> arguments;
-		std::weak_ordering operator<=>(const TypeAggregate&) const = default;
+		std::weak_ordering operator<=>(const AggregateType&) const = default;
 	};
 
 	struct TypeType {
@@ -400,7 +397,7 @@ struct NodeStructs {
 	};
 
 	struct TypeCategory {
-		std::variant<std::reference_wrapper<const Type>, TypeTemplateInstance, TypeAggregate, TypeType, TypeTemplateType, FunctionType, FunctionTemplateType, UnionType> value;
+		std::variant<std::reference_wrapper<const Type>, TypeTemplateInstanceType, AggregateType, TypeType, TypeTemplateType, FunctionType, FunctionTemplateType, UnionType> value;
 		std::weak_ordering operator<=>(const TypeCategory& other) const;
 	};
 
@@ -444,3 +441,98 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const File&) const = default;
 	};
 };
+
+template <typename T>
+inline std::weak_ordering cmp(const T& a, const T& b) {
+	if constexpr (is_specialization<T, std::vector>::value) {
+		if (auto size_cmp = cmp(a.size(), b.size()); size_cmp != 0)
+			return size_cmp;
+
+		for (size_t i = 0; i < a.size(); ++i)
+			if (auto v = cmp(a.at(i), b.at(i)); v != 0)
+				return v;
+
+		return std::weak_ordering::equivalent;
+	}
+	else if constexpr (is_specialization<T, std::optional>::value) {
+		return a.has_value() && b.has_value() ? cmp(a.value(), b.value()) : cmp(a.has_value(), b.has_value());
+	}
+	else if constexpr (is_specialization<T, std::variant>::value) {
+		auto index_cmp = cmp(a.index(), b.index());
+		if (index_cmp != 0)
+			return index_cmp;
+		return std::visit(
+			[&](const auto& _a) {
+				return cmp(_a, std::get<std::remove_cvref_t<decltype(_a)>>(b));
+			},
+			a
+		);
+	}
+	else if constexpr (is_specialization<T, std::reference_wrapper>::value) {
+		return cmp(a.get(), b.get());
+	}
+	else
+		return a <=> b;
+}
+
+inline std::weak_ordering NodeStructs::Expression::operator<=>(const NodeStructs::Expression& other) const {
+	return cmp(expression.get(), other.expression.get());
+}
+
+inline std::weak_ordering NodeStructs::IfStatement::operator<=>(const NodeStructs::IfStatement& other) const {
+	if (auto c = cmp(ifStatements, other.ifStatements); c != 0)
+		return c;
+	if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
+		return c;
+	return cmp(elseExprStatements, other.elseExprStatements);
+}
+
+inline std::weak_ordering NodeStructs::Statement::operator<=>(const NodeStructs::Statement& other) const {
+	return cmp(statement, other.statement);
+}
+
+inline std::weak_ordering NodeStructs::BreakStatement::operator<=>(const NodeStructs::BreakStatement& other) const {
+	return cmp(ifExpr, other.ifExpr);
+}
+
+inline std::weak_ordering NodeStructs::ReturnStatement::operator<=>(const NodeStructs::ReturnStatement& other) const {
+	if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
+		return c;
+	return cmp(returnExpr, other.returnExpr);
+}
+
+inline std::weak_ordering NodeStructs::UnaryExpression::operator<=>(const NodeStructs::UnaryExpression& other) const {
+	if (auto c = cmp(expr, other.expr); c != 0)
+		return c;
+	return cmp(unary_operators, other.unary_operators);
+}
+
+inline std::weak_ordering NodeStructs::Typename::operator<=>(const NodeStructs::Typename& other) const {
+	return cmp(value, other.value);
+}
+
+inline std::weak_ordering NodeStructs::TypeCategory::operator<=>(const NodeStructs::TypeCategory& other) const {
+	return cmp(value, other.value);
+}
+
+inline std::weak_ordering NodeStructs::TypeTemplateInstanceType::operator<=>(const NodeStructs::TypeTemplateInstanceType& other) const {
+	if (auto c = cmp(type_template.get(), other.type_template.get()); c != 0)
+		return c;
+	return cmp(template_arguments, other.template_arguments);
+}
+
+inline std::weak_ordering NodeStructs::TypeType::operator<=>(const TypeType& other) const {
+	return cmp(type.get(), other.type.get());
+}
+
+inline std::weak_ordering NodeStructs::TypeTemplateType::operator<=>(const TypeTemplateType& other) const {
+	return cmp(type_template.get(), other.type_template.get());
+}
+
+inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionType& other) const {
+	return cmp(function.get(), other.function.get());
+}
+
+inline std::weak_ordering NodeStructs::FunctionTemplateType::operator<=>(const FunctionTemplateType& other) const {
+	return cmp(function_template.get(), other.function_template.get());
+}
