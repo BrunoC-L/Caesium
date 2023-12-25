@@ -1,5 +1,5 @@
 #pragma once
-#include "toCPP.h"
+#include "toCPP.hpp"
 #include "typename_visitor.hpp"
 
 struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_typename_visitor> {

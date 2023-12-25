@@ -4,10 +4,10 @@
 #include <variant>
 #include <ranges>
 
-#include "grammarizer.h"
+#include "tokenizer.hpp"
 #include "fn_util.hpp"
 #include "is_specialization.hpp"
-#include "box.h"
+#include "box.hpp"
 
 template <typename...> struct And;
 template <typename...> struct Or;
@@ -53,7 +53,7 @@ struct Token {
 	int n_indent;
 	Token(int n_indent) : n_indent(n_indent) {}
 
-	bool build(Grammarizer* g) {
+	bool build(tokens_and_iterator* g) {
 		bool isT = g->it->first == token;
 		if (isT)
 			value = g->it->second;
@@ -108,7 +108,7 @@ struct Token {
 struct IndentToken {
 	int n_indent;
 	IndentToken(int n_indent) : n_indent(n_indent) {}
-	bool build(Grammarizer* g) {
+	bool build(tokens_and_iterator* g) {
 		bool correct = true;
 		for (int i = 0; i < n_indent; ++i) {
 			correct &= g->it->first == TAB;
@@ -136,7 +136,7 @@ struct Alloc {
 		return value.value().get();
 	}
 
-	bool build(Grammarizer* g) {
+	bool build(tokens_and_iterator* g) {
 		T t(n_indent);
 		if (t.build(g)) {
 			value = std::move(t);
@@ -152,7 +152,7 @@ struct KNode {
 	int n_indent;
 	KNode(int n_indent) : n_indent(n_indent) {}
 
-	bool build(Grammarizer* g) {
+	bool build(tokens_and_iterator* g) {
 		while (true) {
 			auto node = T(n_indent);
 			bool parsed = node.build(g);
@@ -239,7 +239,7 @@ struct Opt {
 		return node.value();
 	}
 
-	bool build(Grammarizer* g) {
+	bool build(tokens_and_iterator* g) {
 		T _node(n_indent);
 		bool parsed = _node.build(g);
 		if (parsed)
@@ -284,7 +284,7 @@ struct And {
 		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(value);
 	}
 
-	bool build(Grammarizer* g) {
+	bool build(tokens_and_iterator* g) {
 		bool failed = false;
 		auto temp = g->it;
 		for_each(value, [&](auto& node) {
@@ -310,7 +310,7 @@ struct Or {
 		return _value.value();
 	}
 
-	bool build(Grammarizer* g) {
+	bool build(tokens_and_iterator* g) {
 		bool populated = false;
 		([&] {
 			if (populated)

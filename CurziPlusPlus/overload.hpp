@@ -1,8 +1,8 @@
 #pragma once
 
 #pragma warning(suppress: 4626)
-template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-template<class... Ts> overload(Ts...) -> overload<Ts...>; // to help IDE
+template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
+template<typename... Ts> overload(Ts...) -> overload<Ts...>; // to help IDE
 
 #define overload_default_error [&](const auto& e) {\
 static_assert(\

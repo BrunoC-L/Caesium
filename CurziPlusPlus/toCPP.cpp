@@ -4,10 +4,11 @@
 #include <format>
 #include <stacktrace>
 
-#include "toCPP.h"
+#include "toCPP.hpp"
 #include "type_of_expression_visitor.hpp"
-#include "ranges_fold_left_pipe.h"
+#include "ranges_fold_left_pipe.hpp"
 #include "overload.hpp"
+
 #include "type_of_function_like_call_with_args_visitor.hpp"
 #include "transpile_type_visitor.hpp"
 #include "type_of_typename_visitor.hpp"

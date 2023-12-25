@@ -1,8 +1,9 @@
 #pragma once
 #include <iostream>
-#include "toCpp.h"
-#include "structurizer.h"
+#include "toCpp.hpp"
+#include "structurizer.hpp"
 #include "colored_text.hpp"
+#include "tokenizer.hpp"
 
 size_t first_diff(std::string_view s1, std::string_view s2) {
 	auto first_diff_ = size_t{ 0 };
@@ -13,7 +14,7 @@ size_t first_diff(std::string_view s1, std::string_view s2) {
 
 std::optional<std::expected<std::pair<std::string, std::string>, user_error>> create_file(int line, std::string_view caesiumProgram) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
-	Grammarizer g(std::move(tokens));
+	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = File(0);
 	{
 		bool nodeBuilt = file.build(&g);

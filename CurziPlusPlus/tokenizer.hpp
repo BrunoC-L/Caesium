@@ -99,6 +99,11 @@ enum TOKENS {
 
 using TOKENVALUE = std::pair<TOKENS, std::string>;
 
+struct tokens_and_iterator {
+	std::forward_list<TOKENVALUE>& tokens;
+	std::forward_list<TOKENVALUE>::iterator it;
+};
+
 struct Tokenizer {
 	std::string program;
 	unsigned index = 0;

@@ -6,7 +6,7 @@
 #include <expected>
 #include <ranges>
 
-#include "node_structs.h"
+#include "node_structs.hpp"
 
 struct user_error {
 	std::string content;

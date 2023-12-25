@@ -71,31 +71,31 @@
     <ClInclude Include="overload.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="box.h">
+    <ClInclude Include="box.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="grammar.h">
+    <ClInclude Include="grammar.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="grammarizer.h">
+    <ClInclude Include="grammarizer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="node_structs.h">
+    <ClInclude Include="node_structs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="primitives.h">
+    <ClInclude Include="primitives.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ranges_fold_left_pipe.h">
+    <ClInclude Include="ranges_fold_left_pipe.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="structurizer.h">
+    <ClInclude Include="structurizer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="toCPP.h">
+    <ClInclude Include="toCPP.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tokenizer.h">
+    <ClInclude Include="tokenizer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="re-template.hpp">

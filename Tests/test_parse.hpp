@@ -1,13 +1,13 @@
 #pragma once
 #include <iostream>
-#include "toCpp.h"
-#include "structurizer.h"
+#include "toCpp.hpp"
+#include "structurizer.hpp"
 #include "colored_text.hpp"
 
 template <typename... Ts>
 bool testParse(int line, int n_indent, std::string program, bool expectedToBuild = true) {
-	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
-	Grammarizer g(std::move(tokens));
+	auto tokens = Tokenizer(program).read();
+	tokens_and_iterator g{ tokens, tokens.begin() };
 
 	bool nodeBuilt = expectedToBuild ?
 		And<Ts...>(n_indent).build(&g) :

@@ -1,7 +1,7 @@
 #pragma once
 #include <ranges>
-#include "node_structs.h"
-#include "grammar.h"
+#include "node_structs.hpp"
+#include "grammar.hpp"
 #include "overload.hpp"
 
 NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement);

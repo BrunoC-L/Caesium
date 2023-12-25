@@ -4,9 +4,9 @@
 #include <filesystem>
 #include <sstream>
 
-#include "structurizer.h"
-#include "grammar.h"
-#include "toCpp.h"
+#include "structurizer.hpp"
+#include "grammar.hpp"
+#include "toCpp.hpp"
 #include "test_transpile.hpp"
 
 std::optional<std::string> open_read(const std::filesystem::path& file) {

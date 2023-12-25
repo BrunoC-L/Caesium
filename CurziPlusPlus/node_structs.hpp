@@ -5,8 +5,8 @@
 #include <optional>
 #include <compare>
 
-#include "primitives.h"
-#include "box.h"
+#include "primitives.hpp"
+#include "box.hpp"
 #include "overload.hpp"
 
 struct NodeStructs {

@@ -1,5 +1,5 @@
 #pragma once
-#include "primitives.h"
+#include "primitives.hpp"
 
 // forward declare recursive rules
 struct Typename;

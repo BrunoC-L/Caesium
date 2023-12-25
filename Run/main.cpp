@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <filesystem>
 
-#include "grammar.h"
-#include "structurizer.h"
-#include "toCpp.h"
+#include "grammar.hpp"
+#include "structurizer.hpp"
+#include "toCpp.hpp"
 
 static NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	std::ifstream caesium(fileName);
@@ -14,8 +14,8 @@ static NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	std::string program;
 	std::getline(caesium, program, '\0');
 	File file(0);
-	std::forward_list<TOKENVALUE> tokens(Tokenizer(program).read());
-	Grammarizer g(std::move(tokens));
+	auto tokens = Tokenizer(program).read();
+	tokens_and_iterator g{ tokens, tokens.begin() };
 	if (file.build(&g)) {
 		std::cout << fileName << ": built\n";
 		return getStruct(file, fileName.stem().generic_string() + ".caesium");
@@ -38,7 +38,7 @@ std::optional<std::ofstream> open(const std::filesystem::path& folder, std::stri
 }
 
 static bool transpile(const std::vector<NodeStructs::File>& project, const std::filesystem::path& folder) {
-	auto h_opt = open(folder, "/header.h");
+	auto h_opt = open(folder, "/header.hpp");
 	if (!h_opt.has_value())
 		return false;
 	auto& h = h_opt.value();
