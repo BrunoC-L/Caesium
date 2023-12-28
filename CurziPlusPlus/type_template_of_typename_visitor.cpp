@@ -5,7 +5,7 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (named.type_templates.contains(t.type))
-		return *named.type_templates.at(t.type);
+		return named.type_templates.at(t.type).back();
 	auto err = "Missing type " + t.type;
 	throw std::runtime_error(err);
 }

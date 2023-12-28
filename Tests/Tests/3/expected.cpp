@@ -1,9 +1,19 @@
 #include "header.h"
+Bool bop1(const String& s) {
+return True;
+};
+Bool bop2(String& s) {
+return True;
+};
+Bool bop3(String&& s) {
+return True;
+};
 struct Main {
 Int main(const Vector<String>& cli_args) {
 for (auto&& arg : cli_args) {
-println(arg);
-}
+if (bop1(arg)) {
+return ;
+}}
 };
 };
 

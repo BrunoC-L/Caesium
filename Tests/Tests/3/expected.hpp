@@ -18,3 +18,6 @@ template <typename K, typename V> using Map = std::unordered_map<K, V>;
 static constexpr bool True = true;
 static constexpr bool False = false;
 
+Bool bop1(const String& s);
+Bool bop2(String& s);
+Bool bop3(String&& s);

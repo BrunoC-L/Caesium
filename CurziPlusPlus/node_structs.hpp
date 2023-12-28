@@ -122,9 +122,9 @@ struct NodeStructs {
 	struct Value {
 		std::weak_ordering operator<=>(const Value&) const = default;
 	};
-	struct Key {
+	/*struct Key {
 		std::weak_ordering operator<=>(const Key&) const = default;
-	};
+	};*/
 	/*
 	ref -> ref
 	ref! -> ref!
@@ -132,8 +132,8 @@ struct NodeStructs {
 	move->value
 	key->key
 	*/
-	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy, Move, Key>;
-	using ValueCategory = std::variant<Reference, MutableReference, Value, Key>;
+	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
+	using ValueCategory = std::variant<Reference, MutableReference, Value/*, Key*/>;
 	using FunctionArgument = std::tuple<std::optional<ArgumentPassingType>, Expression>;
 
 	struct BracketArguments {

@@ -10,10 +10,10 @@ bool testParse(int line, int n_indent, std::string program, bool expectedToBuild
 	tokens_and_iterator g{ tokens, tokens.begin() };
 
 	bool nodeBuilt = expectedToBuild ?
-		And<Ts...>(n_indent).build(&g) :
+		And<Ts...>(n_indent).build(g) :
 		// if it is expected to fail, try to parse END to make sure it has to get the entire input
 		// otherwise they might succeed by skipping tokens at the end with Star or Opts
-		And<Ts..., Token<END>>(n_indent).build(&g);
+		And<Ts..., Token<END>>(n_indent).build(g);
 
 	bool programReadEntirely = g.it == g.tokens.end();
 	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))

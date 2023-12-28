@@ -4,20 +4,14 @@
 #include "structurizer.hpp"
 #include "colored_text.hpp"
 #include "tokenizer.hpp"
-
-size_t first_diff(std::string_view s1, std::string_view s2) {
-	auto first_diff_ = size_t{ 0 };
-	while (first_diff_ < s1.size() && first_diff_ < s2.size() && s1.at(first_diff_) == s2.at(first_diff_))
-		++first_diff_;
-	return first_diff_;
-}
+#include "first_diff.hpp"
 
 std::optional<std::expected<std::pair<std::string, std::string>, user_error>> create_file(int line, std::string_view caesiumProgram) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = File(0);
 	{
-		bool nodeBuilt = file.build(&g);
+		bool nodeBuilt = file.build(g);
 		bool programReadEntirely = g.it == g.tokens.end();
 		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
 			programReadEntirely = ++g.it == g.tokens.end();
@@ -57,7 +51,7 @@ bool test_transpile_no_error(int line, std::string_view caesiumProgram, std::str
 
 		auto first_diff_header = first_diff(header, expected_header);
 		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;
-
+		
 		auto first_diff_cpp = first_diff(cpp, expected_cpp);
 		bool cpp_ok = cpp.size() == expected_cpp.size() && cpp.size() == first_diff_cpp;
 
@@ -70,10 +64,17 @@ bool test_transpile_no_error(int line, std::string_view caesiumProgram, std::str
 		if (!header_ok) {
 			std::cout << colored_text("\nexpected header:\n", output_stream_colors::blue) << expected_header << "\n\n";
 			std::cout << colored_text("produced header:\n", output_stream_colors::blue) << header << "\n\n";
+			std::cout << colored_text("\ndifference:\n", output_stream_colors::blue);
+			print_first_diff(expected_header, header, first_diff_header);
+			std::cout << "\n";
+
 		}
 		if (!cpp_ok) {
 			std::cout << colored_text("expected cpp:\n", output_stream_colors::blue) << expected_cpp << "\n\n";
 			std::cout << colored_text("produced cpp:\n", output_stream_colors::blue) << cpp << "\n\n";
+			std::cout << colored_text("\ndifference:\n", output_stream_colors::blue);
+			print_first_diff(expected_cpp, cpp, first_diff_cpp);
+			std::cout << "\n";
 		}
 		return ok;
 	}
@@ -106,7 +107,10 @@ bool test_transpile_error(int line, std::string_view caesiumProgram, std::string
 			std::cout << "LINE " << line << (line < 100 ? " : " : ": ") << "transpiled: " << colored_text_from_bool(false) << "\n";
 			std::cout << colored_text("input:\n", output_stream_colors::blue) << caesiumProgram << "\n\n";
 			std::cout << colored_text("expected error:\n", output_stream_colors::blue) << expected_error << "\n\n";
-			std::cout << colored_text("produced error:\n", output_stream_colors::blue) << colored_text_with_bool(error, false) << "\n\n";
+			std::cout << colored_text("produced error:\n", output_stream_colors::blue) << error << "\n\n";
+			std::cout << colored_text("\ndifference:\n", output_stream_colors::blue);
+			print_first_diff(expected_error, error, first_diff_error);
+			std::cout << "\n";
 		}
 		return error_ok;
 	}
@@ -116,7 +120,7 @@ std::string include_header = "#include \"header.h\"\n";
 
 auto add_to_main_cpp = [](std::string s) {
 	return "struct Main {\n"
-		"Int main(Vector<String> s) {\n"
+		"Int main(const Vector<String>& s) {\n"
 		+ s +
 		"};\n"
 		"};\n"

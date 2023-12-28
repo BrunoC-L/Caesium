@@ -20,17 +20,21 @@ int main(int argc, char** argv) {
 
 	std::cout << std::boolalpha;
 
+	bool success = true;
 	if (!testParse())
-		return 1;
-	std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
+		success = false;
+	else
+		std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
 
 	if (!testTranspile())
-		return 1;
-	std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
+		success = false;
+	else
+		std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
 
 	if (!test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }))
-		return 1;
-	std::cout << colored_text("All file transpile tests passed\n", output_stream_colors::green);
+		success = false;
+	else
+		std::cout << colored_text("All file transpile tests passed\n", output_stream_colors::green);
 
-	return 0;
+	return success ? 0 : 1;
 }

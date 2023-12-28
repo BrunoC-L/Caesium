@@ -89,7 +89,7 @@ enum TOKENS {
 	MOVE,
 	REF,
 	VAL,
-	KEY,
+	//KEY,
 
 	AUTO,
 	VARIANT,
@@ -477,8 +477,8 @@ private:
 				return { REF, word };
 			if (word == "val")
 				return { VAL, word };
-			if (word == "key")
-				return { KEY, word };
+			/*if (word == "key")
+				return { KEY, word };*/
 
 			return { WORD, word };
 		}

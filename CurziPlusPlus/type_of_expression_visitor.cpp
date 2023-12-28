@@ -122,7 +122,7 @@ R T::operator()(const std::string& expr) {
 		if (it != named.types.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::TypeType{ *it->second } }
+				NodeStructs::TypeCategory{ NodeStructs::TypeType{ it->second.back() } }
 		};
 	}
 	{
@@ -130,7 +130,7 @@ R T::operator()(const std::string& expr) {
 		if (it != named.function_templates.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::FunctionTemplateType{ *it->second } }
+				NodeStructs::TypeCategory{ NodeStructs::FunctionTemplateType{ it->second.back() } }
 		};
 	}
 	{
@@ -138,7 +138,7 @@ R T::operator()(const std::string& expr) {
 		if (it != named.functions.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::FunctionType{ *it->second } }
+				NodeStructs::TypeCategory{ NodeStructs::FunctionType{ it->second.back() } }
 		};
 	}
 	auto x = transpile_expression_visitor{ {}, variables, named }(expr);

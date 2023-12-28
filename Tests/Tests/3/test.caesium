@@ -1,0 +1,13 @@
+Int main(Vector<String> ref cli_args):
+    for arg in cli_args:
+        if bop1(arg):
+            return
+
+Bool bop1(String ref s):
+    return True
+
+Bool bop2(String ref! s):
+    return True
+
+Bool bop3(String val s):
+    return True

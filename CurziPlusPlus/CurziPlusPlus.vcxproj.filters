@@ -140,5 +140,8 @@
     <ClInclude Include="transpile_typename_visitor.hpp">
       <Filter>Header Files\typename_visitors</Filter>
     </ClInclude>
+    <ClInclude Include="scoped_transpilation_state.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

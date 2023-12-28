@@ -100,13 +100,13 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 }
 
 struct Named {
-	template <typename T> using map2ptr = std::map<std::string, const T*>;
-	map2ptr<NodeStructs::Function> functions;
-	map2ptr<NodeStructs::Template<NodeStructs::Function>> function_templates;
-	map2ptr<NodeStructs::Type> types;
-	map2ptr<NodeStructs::Template<NodeStructs::Type>> type_templates;
-	map2ptr<NodeStructs::Block> blocks;
-	map2ptr<NodeStructs::Template<NodeStructs::Block>> block_templates;
+	template <typename T> using map2vec = std::map<std::string, std::vector<std::reference_wrapper<const T>>>;
+	map2vec<NodeStructs::Function> functions;
+	map2vec<NodeStructs::Template<NodeStructs::Function>> function_templates;
+	map2vec<NodeStructs::Type> types;
+	map2vec<NodeStructs::Template<NodeStructs::Type>> type_templates;
+	map2vec<NodeStructs::Block> blocks;
+	map2vec<NodeStructs::Template<NodeStructs::Block>> block_templates;
 };
 
 struct cpp_std {
@@ -203,6 +203,9 @@ static constexpr auto default_includes =
 	"#include <unordered_map>\n"
 	"template <typename K, typename V> using Map = std::unordered_map<K, V>;\n"
 
+	"static constexpr bool True = true;\n"
+	"static constexpr bool False = false;\n"
+
 	"\n";
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename);
@@ -270,10 +273,17 @@ std::vector<NodeStructs::TypeCategory> decomposed_type(
 	const NodeStructs::TypeCategory& type
 );
 
-void add_for_iterator_variables(
+std::optional<user_error> add_decomposed_for_iterator_variables(
 	variables_t& variables,
 	const Named& named,
-	const NodeStructs::ForStatement& statement,
+	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
+	const NodeStructs::TypeCategory& it_type
+);
+
+std::optional<user_error> add_for_iterator_variable(
+	variables_t& variables,
+	const Named& named,
+	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::TypeCategory& it_type
 );
 

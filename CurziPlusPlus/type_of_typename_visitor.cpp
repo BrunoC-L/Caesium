@@ -6,7 +6,7 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (named.types.contains(t.type))
-		return NodeStructs::TypeCategory{ *named.types.at(t.type) };
+		return NodeStructs::TypeCategory{ named.types.at(t.type).back() };
 	auto err = "Missing type " + t.type;
 	throw std::runtime_error(err);
 }

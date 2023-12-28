@@ -53,15 +53,15 @@ struct Token {
 	int n_indent;
 	Token(int n_indent) : n_indent(n_indent) {}
 
-	bool build(tokens_and_iterator* g) {
-		bool isT = g->it->first == token;
+	bool build(tokens_and_iterator& g) {
+		bool isT = g.it->first == token;
 		if (isT)
-			value = g->it->second;
+			value = g.it->second;
 		if constexpr (token == END) {
-			while (g->it != g->tokens.end()) {
-				if (g->it->first == TAB || g->it->first == SPACE || g->it->first == NEWLINE)
-					g->it++;
-				else if (g->it->first == END)
+			while (g.it != g.tokens.end()) {
+				if (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)
+					g.it++;
+				else if (g.it->first == END)
 					return true;
 				else
 					break;
@@ -71,24 +71,24 @@ struct Token {
 		else {
 			if (!isT)
 				return false;
-			g->it++;
+			g.it++;
 			if constexpr (token == NEWLINE) {
-				auto savepoint = g->it;
-				while (g->it != g->tokens.end() && (g->it->first == TAB || g->it->first == SPACE || g->it->first == NEWLINE)) {
-					if (g->it->first == NEWLINE) {
-						g->it++;
-						savepoint = g->it;
+				auto savepoint = g.it;
+				while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)) {
+					if (g.it->first == NEWLINE) {
+						g.it++;
+						savepoint = g.it;
 					}
 					else {
-						g->it++;
+						g.it++;
 					}
 				}
-				g->it = savepoint;
+				g.it = savepoint;
 				return true;
 			}
 			else {
-				while (g->it != g->tokens.end() && (g->it->first == TAB || g->it->first == SPACE)) // ignoring trailing tabs & spaces
-					g->it++;
+				while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE)) // ignoring trailing tabs & spaces
+					g.it++;
 				return true;
 			}
 		}
@@ -108,22 +108,22 @@ struct Token {
 struct IndentToken {
 	int n_indent;
 	IndentToken(int n_indent) : n_indent(n_indent) {}
-	bool build(tokens_and_iterator* g) {
+	bool build(tokens_and_iterator& g) {
 		bool correct = true;
 		for (int i = 0; i < n_indent; ++i) {
-			correct &= g->it->first == TAB;
-			g->it++;
-			if (g->it == g->tokens.end())
+			correct &= g.it->first == TAB;
+			g.it++;
+			if (g.it == g.tokens.end())
 				return false;
 		}
-		correct &= g->it->first != TAB && g->it->first != NEWLINE && g->it->first != SPACE;
+		correct &= g.it->first != TAB && g.it->first != NEWLINE && g.it->first != SPACE;
 		return correct;
 	}
 };
 
 template <typename T>
 struct Indent : public T {
-	Indent(int n_indent): T(n_indent + 1) {}
+	Indent(int n_indent) : T(n_indent + 1) {}
 };
 
 template <typename T>
@@ -136,7 +136,7 @@ struct Alloc {
 		return value.value().get();
 	}
 
-	bool build(tokens_and_iterator* g) {
+	bool build(tokens_and_iterator& g) {
 		T t(n_indent);
 		if (t.build(g)) {
 			value = std::move(t);
@@ -152,7 +152,7 @@ struct KNode {
 	int n_indent;
 	KNode(int n_indent) : n_indent(n_indent) {}
 
-	bool build(tokens_and_iterator* g) {
+	bool build(tokens_and_iterator& g) {
 		while (true) {
 			auto node = T(n_indent);
 			bool parsed = node.build(g);
@@ -239,7 +239,7 @@ struct Opt {
 		return node.value();
 	}
 
-	bool build(tokens_and_iterator* g) {
+	bool build(tokens_and_iterator& g) {
 		T _node(n_indent);
 		bool parsed = _node.build(g);
 		if (parsed)
@@ -284,17 +284,17 @@ struct And {
 		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(value);
 	}
 
-	bool build(tokens_and_iterator* g) {
+	bool build(tokens_and_iterator& g) {
 		bool failed = false;
-		auto temp = g->it;
+		auto temp = g.it;
 		for_each(value, [&](auto& node) {
 			if (failed)
 				return;
 			if (!node.build(g)) {
-				g->it = temp;
+				g.it = temp;
 				failed = true;
 			}
-		});
+			});
 		return !failed;
 	}
 };
@@ -310,7 +310,7 @@ struct Or {
 		return _value.value();
 	}
 
-	bool build(tokens_and_iterator* g) {
+	bool build(tokens_and_iterator& g) {
 		bool populated = false;
 		([&] {
 			if (populated)
@@ -321,7 +321,7 @@ struct Or {
 				_value.emplace(std::move(node));
 				populated = true;
 			}
-		}(), ...);
+			}(), ...);
 		return populated;
 	}
 };

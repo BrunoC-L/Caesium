@@ -26,6 +26,9 @@
     <ClInclude Include="test_transpile.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="first_diff.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="test_transpile_files.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

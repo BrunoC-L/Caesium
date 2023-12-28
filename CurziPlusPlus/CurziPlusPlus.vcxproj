@@ -170,6 +170,7 @@
     <ClInclude Include="grammar.hpp" />
     <ClInclude Include="primitives.hpp" />
     <ClInclude Include="re-template.hpp" />
+    <ClInclude Include="scoped_transpilation_state.hpp" />
     <ClInclude Include="statement_visitor.hpp" />
     <ClInclude Include="structurizer.hpp" />
     <ClInclude Include="transpile_expression_visitor.hpp" />

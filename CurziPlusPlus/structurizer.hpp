@@ -84,9 +84,9 @@ NodeStructs::Typename getStruct(const Typename& t) {
 NodeStructs::ValueCategory getStruct(const ValueCategory& vc) {
 	return std::visit(
 		overload(overload_default_error,
-			[](const Token<KEY>&) -> NodeStructs::ValueCategory {
+			/*[](const Token<KEY>&) -> NodeStructs::ValueCategory {
 				return NodeStructs::Key{};
-			},
+			},*/
 			[](const Token<VAL>&) -> NodeStructs::ValueCategory {
 				return NodeStructs::Value{};
 			},
