@@ -9,7 +9,6 @@
 
 #include "no_copy.hpp"
 #include "node_structs.hpp"
-#include "on_exit.hpp"
 
 struct user_error {
 	std::string content;
@@ -17,15 +16,14 @@ struct user_error {
 		return std::unexpected<user_error>{ std::move(*this) };
 	}
 };
-using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>>>;
+using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>>>;
 using transpile_header_cpp_t = std::expected<std::pair<std::string, std::string>, user_error>;
 using transpile_t = std::expected<std::string, user_error>;
 struct type_and_representation {
-	NodeStructs::TypeCategory type;
+	NodeStructs::UniversalType type;
 	std::string representation;
 };
 using transpile_type_repr = std::expected<type_and_representation, user_error>;
-
 
 struct Named {
 	template <typename T> using map2ref = std::map<std::string, T const *>;
@@ -33,39 +31,42 @@ struct Named {
 	map2ref<NodeStructs::Template<NodeStructs::Function>> function_templates;
 	map2ref<NodeStructs::Type> types;
 	map2ref<NodeStructs::Template<NodeStructs::Type>> type_templates;
+	std::map<std::string, NodeStructs::UniversalType> type_aliases;
 	map2ref<NodeStructs::Block> blocks;
 	map2ref<NodeStructs::Template<NodeStructs::Block>> block_templates;
 };
+
 struct transpilation_state {
 	variables_t variables;
 	Named named;
 	std::vector<std::pair<std::string, std::string>> transpile_in_reverse_order;
-	size_t indent = 0;
 
 	transpilation_state(
 		variables_t&& variables,
 		Named&& named
 	) : variables(std::move(variables)), named(std::move(named)) {}
 
-	[[nodiscard]] auto indent_sentinel() {
-		indent += 1;
-		return OnExit([&]() { indent -= 1; });
-	}
-
-	[[nodiscard]] auto zero_indent_sentinel() {
-		auto old = indent;
-		indent = 0;
-		return OnExit([this, _old = old]() { indent  = _old; });
-	}
-
 	std::set<NodeStructs::Function> traversed_functions;
-	//std::set<NodeStructs::Template<NodeStructs::Function>> traversed_function_templates;
+	std::set<NodeStructs::Template<NodeStructs::Function>> traversed_function_templates;
 	std::set<NodeStructs::Type> traversed_types;
 	//std::set<NodeStructs::Template<NodeStructs::Type>> traversed_type_templates;
 	std::set<NodeStructs::Block> traversed_blocks;
 	//std::set<NodeStructs::Template<NodeStructs::Block>> traversed_block_templates;
 private:
 	no_copy _;
+};
+
+struct transpilation_state_with_indent {
+	transpilation_state& state;
+	size_t indent = 0;
+
+	transpilation_state_with_indent indented() {
+		return { state, indent + 1 };
+	}
+
+	transpilation_state_with_indent unindented() {
+		return { state, 0 };
+	}
 };
 
 template <size_t token>
@@ -134,7 +135,7 @@ struct cpp_std {
 			NodeStructs::Function{
 				"at",
 				NodeStructs::BaseTypename{ "V" },
-				std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{},
+				std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>{},
 				std::vector<NodeStructs::Statement>{},
 			}
 		};
@@ -163,8 +164,8 @@ struct cpp_std {
 	NodeStructs::Function println{
 		.name = std::string{ "println" },
 		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
-		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{
-			{ NodeStructs::Typename{ NodeStructs::BaseTypename{"String"} }, NodeStructs::ValueCategory{ NodeStructs::Value{} }, "t" }
+		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>{
+			{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } }, NodeStructs::ParameterCategory{ NodeStructs::Reference{} }, "t" }
 		},
 	};
 
@@ -172,6 +173,18 @@ struct cpp_std {
 		std::vector<std::string>{ "T" },
 		_println
 	};*/
+
+	NodeStructs::Function __size{
+		.name = std::string{ "size" },
+		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Int" } },
+		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>{
+			{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "T" } }, NodeStructs::ParameterCategory{ NodeStructs::Reference{} }, "t" }
+		},
+	};
+	NodeStructs::Template<NodeStructs::Function> _size = {
+		std::vector<std::string>{ "T" },
+		__size
+	};
 };
 
 static constexpr auto default_includes = 
@@ -205,31 +218,30 @@ static constexpr auto default_includes =
 
 	"\n";
 
-void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename);
 std::expected<std::pair<std::string, std::string>, user_error> transpile(const std::vector<NodeStructs::File>& project);
 
 transpile_header_cpp_t transpile_main(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 );
 
 transpile_header_cpp_t transpile(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 );
 
 transpile_header_cpp_t transpile(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
 );
 
 transpile_t transpile(
-	transpilation_state& state,
-	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>& parameters
+	transpilation_state_with_indent state,
+	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>& parameters
 );
 
 transpile_t transpile(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const std::vector<NodeStructs::Statement>& statements
 );
 
@@ -241,44 +253,44 @@ static std::string indent(size_t n) {
 	return res;
 };
 
-std::vector<NodeStructs::TypeCategory> decomposed_type(
-	transpilation_state& state,
-	const NodeStructs::TypeCategory& type
+std::vector<NodeStructs::UniversalType> decomposed_type(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& type
 );
 
 std::optional<user_error> add_decomposed_for_iterator_variables(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
-	const NodeStructs::TypeCategory& it_type
+	const NodeStructs::UniversalType& it_type
 );
 
 std::optional<user_error> add_for_iterator_variable(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
-	const NodeStructs::TypeCategory& it_type
+	const NodeStructs::UniversalType& it_type
 );
 
 void remove_for_iterator_variables(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const NodeStructs::ForStatement& statement
 );
 
 void remove_added_variables(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const NodeStructs::Statement& statement
 );
 
 transpile_t transpile_arg(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const NodeStructs::FunctionArgument& arg
 );
 
 transpile_t transpile_args(
-	transpilation_state& state,
+	transpilation_state_with_indent state,
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
-NodeStructs::TypeCategory iterator_type(
-	transpilation_state& state,
-	const NodeStructs::TypeCategory& type
+NodeStructs::UniversalType iterator_type(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& type
 );

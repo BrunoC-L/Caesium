@@ -1,13 +1,15 @@
 #include "header.h"
-Bool bop1(const String& s) {
-	return True;
+struct Dog {
 };
-Int _redirect_main(const Vector<String>& cli_args) {
-	for (auto&& arg : cli_args) {
-		if (bop1(arg)) {
-			return;
-		}
-	}
+
+struct Cat {
+};
+
+using Animal = std::variant<Cat, Dog>;
+
+Int _redirect_main(const Vector<String>& s) {
+    Vector<Animal> animals = {};
+    return size(animals);
 };
 
 int main(int argc, char** argv) {

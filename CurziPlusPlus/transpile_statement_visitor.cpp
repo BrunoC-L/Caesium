@@ -12,7 +12,7 @@ R T::operator()(const NodeStructs::Expression& statement) {
 }
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
-	state.variables[statement.name].push_back({ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(statement.type).value() });
+	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(statement.type).value() });
 	auto type = transpile_typename_visitor{ {}, state }(statement.type);
 	if (!type.has_value())
 		return std::unexpected{ type.error() };
@@ -23,10 +23,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::IfStatement& statement) {
-	auto if_statements = [&]() {
-		auto _ = state.indent_sentinel();
-		return transpile(state, statement.ifStatements);
-	}();
+	auto if_statements = transpile(state.indented(), statement.ifStatements);
 	if (!if_statements.has_value())
 		return std::unexpected{ if_statements.error() };
 	if (statement.elseExprStatements.has_value())
@@ -109,10 +106,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 	}
 	
 	auto s1 = transpile_expression_visitor{ {}, state }(statement.collection);
-	auto s2 = [&]() {
-		auto _ = state.indent_sentinel();
-		return transpile(state, statement.statements);
-	}();
+	auto s2 = transpile(state.indented(), statement.statements);
 	if (!s1.has_value())
 		return std::unexpected{ s1.error() };
 	if (!s2.has_value())
@@ -144,22 +138,21 @@ R T::operator()(const NodeStructs::BreakStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::ReturnStatement& statement) {
+	if (statement.returnExpr.size() == 0)
+		return "return;\n";
 	R return_expression = [&]() -> R {
-		if (statement.returnExpr.size() == 0)
-			return std::string{};
-		else if (statement.returnExpr.size() == 1)
-			return transpile_expression_visitor{ {}, state }(statement.returnExpr.at(0));
+		if (statement.returnExpr.size() == 1)
+			return transpile_args(state, statement.returnExpr).value();
 		else
-			throw;
-			//return "{" + transpile_args(state, statement.returnExpr).value() + "}";
+			return "{" + transpile_args(state, statement.returnExpr).value() + "}";
 	}();
 	if (!return_expression.has_value())
 		return std::unexpected{ return_expression.error() };
 	if (statement.ifExpr.has_value()) {
-		auto a = transpile_expression_visitor{ {}, state }(statement.ifExpr.value());
-		if (!a.has_value())
-			return std::unexpected{ a.error() };
-		return "if (" + a.value() + ") return " + return_expression.value() + ";\n";
+		auto cnd = transpile_expression_visitor{ {}, state }(statement.ifExpr.value());
+		if (!cnd.has_value())
+			return std::unexpected{ cnd.error() };
+		return "if (" + cnd.value() + ") return " + return_expression.value() + ";\n";
 	}
 	else
 		return "return " + return_expression.value() + ";\n";
@@ -167,8 +160,8 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 
 R T::operator()(const NodeStructs::BlockStatement& statement) {
 	auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value).type;
-	if (state.named.blocks.contains(s)) {
-		const NodeStructs::Block& block = *state.named.blocks.at(s);
+	if (state.state.named.blocks.contains(s)) {
+		const NodeStructs::Block& block = *state.state.named.blocks.at(s);
 		std::stringstream ss;
 		for (const auto& statement_in_block : block.statements)
 			ss << operator()(statement_in_block).value();

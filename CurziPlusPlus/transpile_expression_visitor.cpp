@@ -56,7 +56,10 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 
 R T::operator()(const NodeStructs::CompareExpression& expr) {
 	std::stringstream ss;
-	ss << operator()(expr.expr).value();
+	auto base_expr = operator()(expr.expr);
+	if (!base_expr.has_value())
+		return std::unexpected{ std::move(base_expr).error() };
+	ss << base_expr.value();
 	for (const auto& [op, e] : expr.comparisons)
 		ss << " " << symbol_variant_as_text(op) << " " << operator()(e).value();
 	return ss.str();
@@ -92,33 +95,38 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 	if (!t_or_e.has_value())
 		return std::unexpected{ std::move(t_or_e).error() };
 
+	auto v = operator()(expr.expr);
+	if (!v.has_value())
+		return std::unexpected{ std::move(v).error() };
+
 	type_and_representation it{
 		std::move(t_or_e).value().second, // todo maybe type and repr has to hold value category...?
-		operator()(expr.expr).value()
+		std::move(v).value()
 	};
 
 	for (const auto& op : expr.postfixes) {
 		transpile_type_repr next = std::visit(
 			overload(overload_default_error,
 				[&](const std::string& property_name) -> transpile_type_repr {
-					return type_of_postfix_member_visitor{ {}, state, property_name }(it.type).transform(
-						[&](auto t) {
-							return type_and_representation{
-								t.second,
-								it.representation + "." + property_name
-							};
-						}
-					);
+					auto t = type_of_postfix_member_visitor{ {}, state, property_name }(it.type);
+					if (!t.has_value())
+						return std::unexpected{ std::move(t).error() };
+					return type_and_representation{
+						std::move(t).value().second,
+						it.representation + "." + property_name
+					};
 				},
 				[&](const NodeStructs::ParenArguments& e) -> transpile_type_repr {
-					return type_of_function_like_call_with_args_visitor{ {}, state, e.args }(it.type).transform(
-						[&](std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>&& t) {
-							return type_and_representation{
-								std::move(t.second),
-								it.representation + "(" + transpile_args(state, e.args).value() + ")"
-							};
-						}
-					);
+					auto t = type_of_function_like_call_with_args_visitor{ {}, state, e.args }(it.type);
+					if (!t.has_value())
+						return std::unexpected{ std::move(t).error() };
+					auto v = transpile_args(state, e.args);
+					if (!v.has_value())
+						return std::unexpected{ std::move(v).error() };
+					return type_and_representation{
+						std::move(t).value().second,
+						it.representation + "(" + std::move(v).value() + ")"
+					};
 				},
 				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
 					throw;
@@ -139,10 +147,9 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 			),
 			op
 		);
-		if (next.has_value())
-			it = next.value();
-		else
+		if (!next.has_value())
 			return std::unexpected{ next.error() };
+		it = std::move(next).value();
 	}
 	return it.representation;
 }
@@ -167,28 +174,27 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 }
 
 R T::operator()(const std::string& expr) {
-	if (state.variables.contains(expr))
+	if (state.state.variables.contains(expr))
 		return expr;
-	if (auto it = state.named.functions.find(expr); it != state.named.functions.end()) {
+	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end()) {
 		const auto& e = *it->second;
-		if (!state.traversed_functions.contains(e)) {
-			state.traversed_functions.insert(e);
-			auto _ = state.zero_indent_sentinel();
-			auto t = transpile(state, e);
+		if (!state.state.traversed_functions.contains(e)) {
+			state.state.traversed_functions.insert(e);
+			auto t = transpile(state.unindented(), e);
 			if (!t.has_value())
 				return std::unexpected{ t.error() };
-			state.transpile_in_reverse_order.push_back(std::move(t).value());
+			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
 		}
 		return expr;
 	}
-	if (auto it = state.named.types.find(expr); it != state.named.types.end()) {
+	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end()) {
 		const auto& e = *it->second;
-		if (!state.traversed_types.contains(e)) {
-			state.traversed_types.insert(e);
+		if (!state.state.traversed_types.contains(e)) {
+			state.state.traversed_types.insert(e);
 			auto t = transpile(state, e);
 			if (!t.has_value())
 				return std::unexpected{ t.error() };
-			state.transpile_in_reverse_order.push_back(std::move(t).value());
+			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
 		}
 		return expr;
 	}

@@ -19,24 +19,38 @@ R T::operator()(const NodeStructs::Type& t) {
 	else
 		return type_of_typename_visitor{ {}, state }(pos->type).transform([](auto&& val) { return std::pair{ NodeStructs::Value{}, std::move(val) }; });
 }
+
 R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
+	// basically trying to implement transpilation of Vector<T>{}.size()
+	// Vector<T> is the type template instance and `size` is `property_name`
+	if (auto it = state.state.named.function_templates.find(property_name); it != state.state.named.function_templates.end()) {
+		return std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>{ NodeStructs::Value{}, NodeStructs::FunctionTemplateType{
+			.function_template = *it->second
+		} };
+	}
 	throw;
 }
+
 R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
 }
+
 R T::operator()(const NodeStructs::TypeType& t) {
 	throw;
 }
+
 R T::operator()(const NodeStructs::TypeTemplateType t) {
 	throw;
 }
+
 R T::operator()(const NodeStructs::FunctionType& t) {
 	throw;
 }
+
 R T::operator()(const NodeStructs::FunctionTemplateType& t) {
 	throw;
 }
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }

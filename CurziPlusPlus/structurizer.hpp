@@ -81,19 +81,19 @@ NodeStructs::Typename getStruct(const Typename& t) {
 		);
 }
 
-NodeStructs::ValueCategory getStruct(const ParameterCategory& vc) {
+NodeStructs::ParameterCategory getStruct(const ParameterCategory& vc) {
 	return std::visit(
 		overload(overload_default_error,
 			/*[](const Token<KEY>&) -> NodeStructs::ValueCategory {
 				return NodeStructs::Key{};
 			},*/
-			[](const Token<VAL>&) -> NodeStructs::ValueCategory {
+			[](const Token<VAL>&) -> NodeStructs::ParameterCategory {
 				return NodeStructs::Value{};
 			},
-			[](const Token<REF>&) -> NodeStructs::ValueCategory {
+			[](const Token<REF>&) -> NodeStructs::ParameterCategory {
 				return NodeStructs::Reference{};
 			},
-			[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ValueCategory {
+			[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ParameterCategory {
 				return NodeStructs::MutableReference{};
 			}
 		),
@@ -148,7 +148,7 @@ NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
 NodeStructs::Alias getStruct(const Alias& f) {
 	return NodeStructs::Alias{
 		.aliasFrom = getStruct(f.get<Typename>()),
-		.aliasTo = NodeStructs::BaseTypename{ f.get<Word>().value },
+		.aliasTo = f.get<Word>().value,
 	};
 }
 
@@ -186,7 +186,7 @@ NodeStructs::Template<NodeStructs::Type> getStruct(const Template<Type>& cl) {
 }
 
 NodeStructs::File getStruct(const File& f, std::string fileName) {
-	using T = Star<Or<Token<NEWLINE>, Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>>>;
+	using T = Star<Or<Token<NEWLINE>, Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>, Alias>>;
 
 	return NodeStructs::File{
 		.filename = fileName,
@@ -205,21 +205,24 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 		.function_templates = f.get<T>().get<Template<Function>>()
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
+		.aliases = f.get<T>().get<Alias>()
+			| LIFT_TRANSFORM(getStruct)
+			| to_vec(),
 	};
 }
 
-NodeStructs::ArgumentPassingType getStruct(const Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t) {
+NodeStructs::ArgumentCategory getStruct(const Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t) {
 	return std::visit(overload(overload_default_error,
-		[](const Token<COPY>&) -> NodeStructs::ArgumentPassingType {
+		[](const Token<COPY>&) -> NodeStructs::ArgumentCategory {
 			return NodeStructs::Copy{};
 		},
-		[](const Token<MOVE>&) -> NodeStructs::ArgumentPassingType {
+		[](const Token<MOVE>&) -> NodeStructs::ArgumentCategory {
 			return NodeStructs::Move{};
 		},
-		[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ArgumentPassingType {
+		[](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ArgumentCategory {
 			return NodeStructs::MutableReference{};
 		},
-		[](const Token<REF>&) -> NodeStructs::ArgumentPassingType {
+		[](const Token<REF>&) -> NodeStructs::ArgumentCategory {
 			return NodeStructs::Reference{};
 		}),
 		t.value()
@@ -637,8 +640,11 @@ std::vector<NodeStructs::Expression> getExpressions(const std::vector<Expression
 }
 
 NodeStructs::ReturnStatement getStatementStruct(const ReturnStatement& statement) {
+	std::vector<NodeStructs::FunctionArgument> returns = statement.get<CommaStar<FunctionArgument>>().get<FunctionArgument>()
+		| LIFT_TRANSFORM(getStruct)
+		| to_vec();
 	return {
-		getExpressions(statement.get<CommaStar<Expression>>().get<Expression>()),
+		std::move(returns),
 		statement.get<Opt<And<Token<IF>, Expression>>>().has_value()
 			? getExpressionStruct(statement.get<Opt<And<Token<IF>, Expression>>>().value().get<Expression>())
 			: std::optional<NodeStructs::Expression>{}

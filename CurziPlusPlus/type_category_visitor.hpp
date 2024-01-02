@@ -2,7 +2,7 @@
 #include "node_structs.hpp"
 
 template <typename T>
-concept TypeCategoryVisitorConcept = requires(T&& t, const NodeStructs::TypeCategory& v) {
+concept TypeCategoryVisitorConcept = requires(T&& t, const NodeStructs::UniversalType& v) {
 	t(v);
 	std::visit(t, v.value);
 };
@@ -10,7 +10,7 @@ concept TypeCategoryVisitorConcept = requires(T&& t, const NodeStructs::TypeCate
 template <typename T>
 struct TypeCategoryVisitor {
 	template <typename Self>
-	auto operator()(this Self&& self, const NodeStructs::TypeCategory& t) {
+	auto operator()(this Self&& self, const NodeStructs::UniversalType& t) {
 		return std::visit(
 			[&](const auto& t) {
 				return self(t);

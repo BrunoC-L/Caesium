@@ -36,26 +36,22 @@ struct NodeStructs {
 	struct TemplatedTypename {
 		Box<Typename> type;
 		std::vector<Typename> templated_with;
-
 		std::weak_ordering operator<=>(const TemplatedTypename&) const = default;
 	};
 
 	struct NamespacedTypename {
 		Box<Typename> name_space;
 		Box<Typename> name_in_name_space;
-
 		std::weak_ordering operator<=>(const NamespacedTypename&) const = default;
 	};
 
 	struct BaseTypename {
 		std::string type;
-
 		std::weak_ordering operator<=>(const BaseTypename& other) const = default;
 	};
 
 	struct UnionTypename {
 		std::vector<Typename> ors;
-
 		std::weak_ordering operator<=>(const UnionTypename& other) const = default;
 	};
 
@@ -66,7 +62,7 @@ struct NodeStructs {
 
 	struct Alias {
 		Typename aliasFrom;
-		Typename aliasTo;
+		std::string aliasTo;
 		std::weak_ordering operator<=>(const Alias&) const = default;
 	};
 
@@ -134,9 +130,9 @@ struct NodeStructs {
 	move->value
 	key->key
 	*/
-	using ArgumentPassingType = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
-	using ValueCategory = std::variant<Reference, MutableReference, Value/*, Key*/>;
-	using FunctionArgument = std::tuple<std::optional<ArgumentPassingType>, Expression>;
+	using ArgumentCategory  = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
+	using ParameterCategory = std::variant<Reference, MutableReference, Value/*, Key*/>;
+	using FunctionArgument = std::tuple<std::optional<ArgumentCategory>, Expression>;
 
 	struct BracketArguments {
 		std::vector<FunctionArgument> args;
@@ -313,7 +309,7 @@ struct NodeStructs {
 	};
 
 	struct ReturnStatement {
-		std::vector<Expression> returnExpr;
+		std::vector<FunctionArgument> returnExpr;
 		std::optional<Expression> ifExpr;
 		std::weak_ordering operator<=>(const ReturnStatement&) const;
 	};
@@ -339,7 +335,7 @@ struct NodeStructs {
 	};
 
 	struct Constructor {
-		std::vector<std::tuple<Typename, ValueCategory, std::string>> parameters;
+		std::vector<std::tuple<Typename, ParameterCategory, std::string>> parameters;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Constructor&) const = default;
 	};
@@ -358,24 +354,23 @@ struct NodeStructs {
 	struct Function {
 		std::string name;
 		Typename returnType;
-		std::vector<std::tuple<Typename, ValueCategory, std::string>> parameters;
+		std::vector<std::tuple<Typename, ParameterCategory, std::string>> parameters;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Function&) const = default;
 		bool operator==(const Function&) const;
 	};
 
 	struct Type;
-	struct TypeCategory;
+	struct UniversalType;
 
 	struct TypeTemplateInstanceType {
 		std::reference_wrapper<const Template<Type>> type_template;
-		std::vector<TypeCategory> template_arguments;
-
+		std::vector<UniversalType> template_arguments;
 		std::weak_ordering operator<=>(const TypeTemplateInstanceType&) const;
 	};
 
 	struct AggregateType {
-		std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>> arguments;
+		std::vector<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> arguments;
 		std::weak_ordering operator<=>(const AggregateType&) const = default;
 	};
 
@@ -400,13 +395,13 @@ struct NodeStructs {
 	};
 
 	struct UnionType {
-		std::vector<TypeCategory> arguments;
+		std::vector<UniversalType> arguments;
 		std::weak_ordering operator<=>(const UnionType&) const = default;
 	};
 
-	struct TypeCategory {
+	struct UniversalType {
 		std::variant<std::reference_wrapper<const Type>, TypeTemplateInstanceType, AggregateType, TypeType, TypeTemplateType, FunctionType, FunctionTemplateType, UnionType> value;
-		std::weak_ordering operator<=>(const TypeCategory& other) const;
+		std::weak_ordering operator<=>(const UniversalType& other) const;
 	};
 
 	struct Type {
@@ -448,6 +443,7 @@ struct NodeStructs {
 		std::vector<Function> functions;
 		std::vector<Template<Function>> function_templates;
 		std::vector<Block> blocks;
+		std::vector<Alias> aliases;
 		std::weak_ordering operator<=>(const File&) const = default;
 	};
 };
@@ -521,7 +517,7 @@ inline std::weak_ordering NodeStructs::Typename::operator<=>(const NodeStructs::
 	return cmp(value, other.value);
 }
 
-inline std::weak_ordering NodeStructs::TypeCategory::operator<=>(const NodeStructs::TypeCategory& other) const {
+inline std::weak_ordering NodeStructs::UniversalType::operator<=>(const NodeStructs::UniversalType& other) const {
 	return cmp(value, other.value);
 }
 

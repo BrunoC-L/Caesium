@@ -321,7 +321,7 @@ struct Or {
 				_value.emplace(std::move(node));
 				populated = true;
 			}
-			}(), ...);
+		}(), ...);
 		return populated;
 	}
 };

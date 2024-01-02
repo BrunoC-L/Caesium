@@ -5,10 +5,10 @@
 struct type_of_function_like_call_with_args_visitor : TypeCategoryVisitor<type_of_function_like_call_with_args_visitor> {
 	using TypeCategoryVisitor<type_of_function_like_call_with_args_visitor>::operator();
 
-	transpilation_state& state;
+	transpilation_state_with_indent state;
 	const std::vector<NodeStructs::FunctionArgument>& args;
 
-	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
+	using R = std::expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>, user_error>;
 
 	R operator()(const NodeStructs::Type& t);
 	R operator()(const NodeStructs::TypeTemplateInstanceType& t);

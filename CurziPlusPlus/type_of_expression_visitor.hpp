@@ -5,9 +5,9 @@
 struct type_of_expression_visitor : ExpressionVisitor<type_of_expression_visitor> {
 	using ExpressionVisitor<type_of_expression_visitor>::operator();
 
-	transpilation_state& state;
+	transpilation_state_with_indent state;
 
-	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
+	using R = std::expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>, user_error>;
 
 	//R operator()(const NodeStructs::AssignmentExpression& expr);
 	R operator()(const NodeStructs::ConditionalExpression& expr);

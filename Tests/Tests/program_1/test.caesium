@@ -1,0 +1,8 @@
+type Dog:
+type Cat:
+
+using Animal = Dog | Cat
+
+Int main(Vector<String> ref s):
+    Vector<Animal> animals = {}
+    return animals.size()

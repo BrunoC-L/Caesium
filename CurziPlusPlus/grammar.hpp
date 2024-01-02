@@ -115,7 +115,7 @@ using IForStatement = And<
 using WhileStatement = And<Token<WHILE>, Expression, ColonIndentCodeBlock>;
 using ReturnStatement = And<
 	Token<RETURN>,
-	CommaStar<Expression>,
+	CommaStar<FunctionArgument>,
 	Opt<And<
 		Token<IF>,
 		Expression
@@ -164,7 +164,8 @@ using File = And<
 			Function,
 			Template<Type>,
 			Template<Function>,
-			Template<BlockDeclaration>
+			Template<BlockDeclaration>,
+			Alias
 		>
 	>,
 	Token<END>

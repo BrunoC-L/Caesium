@@ -5,7 +5,7 @@
 struct transpile_type_visitor : TypeCategoryVisitor<transpile_type_visitor> {
 	using TypeCategoryVisitor<transpile_type_visitor>::operator();
 
-	transpilation_state& state;
+	transpilation_state_with_indent state;
 
 	using R = transpile_t;
 

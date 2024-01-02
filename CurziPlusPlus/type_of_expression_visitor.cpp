@@ -100,7 +100,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
 	// man this sucks
-	std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>> vec;
+	std::vector<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> vec;
 	vec.reserve(expr.args.size());
 	for (const auto& e : expr.args) {
 		auto t_or_e = operator()(std::get<NodeStructs::Expression>(e));
@@ -111,38 +111,38 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 	}
 	return std::pair{
 		NodeStructs::Reference{},
-		NodeStructs::TypeCategory{ NodeStructs::AggregateType{ std::move(vec) } }
+		NodeStructs::UniversalType{ NodeStructs::AggregateType{ std::move(vec) } }
 	};
 }
 
 R T::operator()(const std::string& expr) {
 	{
-		auto it = state.variables.find(expr);
-		if (it != state.variables.end())
+		auto it = state.state.variables.find(expr);
+		if (it != state.state.variables.end())
 			return it->second.back();
 	}
 	{
-		auto it = state.named.types.find(expr);
-		if (it != state.named.types.end())
+		auto it = state.state.named.types.find(expr);
+		if (it != state.state.named.types.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::TypeType{ *it->second } }
+				NodeStructs::UniversalType{ NodeStructs::TypeType{ *it->second } }
 		};
 	}
 	{
-		auto it = state.named.function_templates.find(expr);
-		if (it != state.named.function_templates.end())
+		auto it = state.state.named.function_templates.find(expr);
+		if (it != state.state.named.function_templates.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::FunctionTemplateType{ *it->second } }
+				NodeStructs::UniversalType{ NodeStructs::FunctionTemplateType{ *it->second } }
 		};
 	}
 	{
-		auto it = state.named.functions.find(expr);
-		if (it != state.named.functions.end())
+		auto it = state.state.named.functions.find(expr);
+		if (it != state.state.named.functions.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::FunctionType{ *it->second } }
+				NodeStructs::UniversalType{ NodeStructs::FunctionType{ *it->second } }
 		};
 	}
 	auto x = transpile_expression_visitor{ {}, state }(expr);

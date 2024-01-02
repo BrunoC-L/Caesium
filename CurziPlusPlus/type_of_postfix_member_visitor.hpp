@@ -5,10 +5,10 @@
 struct type_of_postfix_member_visitor : TypeCategoryVisitor<type_of_postfix_member_visitor> {
 	using TypeCategoryVisitor<type_of_postfix_member_visitor>::operator();
 
-	transpilation_state& state;
+	transpilation_state_with_indent state;
 	const std::string& property_name;
 
-	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
+	using R = std::expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>, user_error>;
 
 	R operator()(const NodeStructs::Type& t);
 	R operator()(const NodeStructs::TypeTemplateInstanceType& t);
