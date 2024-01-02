@@ -5,7 +5,7 @@
 struct Typename;
 struct Statement;
 struct ElseStatement;
-struct AssignmentExpression;
+struct ConditionalExpression;
 struct FunctionArgument;
 
 // to save some space since these are the most used token
@@ -13,11 +13,12 @@ using Word = Token<WORD>;
 using String = Token<STRING>;
 using Newline = Token<NEWLINE>;
 
-using Expression = AssignmentExpression;
+using Expression = ConditionalExpression;
 using Import = And<Star<Token<NEWLINE>>, Token<IMPORT>, Or<Word, String>, Newline>;
 using Alias = And<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
-using ValueCategory = Or</*Token<KEY>, */Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
-using FunctionParameter = And<Typename, ValueCategory, Word>;
+using ParameterCategory = Or</*Token<KEY>, */Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
+using ArgumentCategory  = Or<Token<COPY>,   Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
+using FunctionParameter = And<Typename, ParameterCategory, Word>;
 using FunctionParameters = CommaStar<FunctionParameter>;
 using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Statement>>>;
 using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
@@ -38,12 +39,13 @@ using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENC
 using ClassElement = Or<Alias, Function, MemberVariable, Constructor>;
 
 using ParenExpression = Or<
-	ParenArguments,
-	BracketArguments,
-	BraceArguments,
 	Word,
 	Token<NUMBER>,
-	Token<STRING>
+	Token<STRING>,
+	And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>,
+	ParenArguments,
+	BracketArguments,
+	BraceArguments
 >;
 using PostfixExpression = And<
 	ParenExpression,
@@ -60,24 +62,15 @@ using PostfixExpression = And<
 	>>
 >;
 
-using unary_operators = Or<
-	//Token<NOT>,
-	//Token<PLUS>,
-	Token<DASH>,
-	//Token<PLUSPLUS>,
-	//Token<MINUSMINUS>,
-	Token<TILDE>
-	//Token<ASTERISK>,
-	//Token<AMPERSAND>
->;
-using UnaryExpression = And<Star<unary_operators>, PostfixExpression>;
+using unary_operators = Or<Token<DASH>, Token<TILDE> /*, Token<NOT>, Token<ASTERISK>, Token<AMPERSAND>*/>;
+using UnaryExpression = Alloc<And<Star<unary_operators>, PostfixExpression>>;
 using MultiplicativeExpression = And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>>;
 using AdditiveExpression = And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>>;
 using CompareExpression = And<AdditiveExpression, Star<And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, AdditiveExpression>>>;
 using EqualityExpression = And<CompareExpression, Star<And<Or<Token<EQUALEQUAL>, Token<NEQUAL>>, CompareExpression>>>;
 using AndExpression = And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>;
 using OrExpression = And<AndExpression, Star<And<Token<OR>, AndExpression>>>;
-using ConditionalExpression = And<
+struct ConditionalExpression : public And<
 	OrExpression,
 	Opt<And<
 		Token<IF>,
@@ -85,27 +78,9 @@ using ConditionalExpression = And<
 		Token<ELSE>,
 		OrExpression
 	>>
->;
+> {};
 
-struct AssignmentExpression : public And<
-	ConditionalExpression,
-	Star<And<
-		Or<
-			Token<EQUAL>,
-			Token<PLUSEQUAL>,
-			Token<MINUSEQUAL>,
-			Token<TIMESEQUAL>,
-			Token<DIVEQUAL>,
-			Token<MODEQUAL>,
-			Token<ANDEQUAL>,
-			Token<OREQUAL>,
-			Token<XOREQUAL>
-		>,
-		ConditionalExpression
-	>>
->{};
-
-struct FunctionArgument : And<Opt<Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>>, Expression> {};
+struct FunctionArgument : And<Opt<ArgumentCategory>, Expression> {};
 
 using ExpressionStatement = And<Expression, Newline>;
 using BlockDeclaration = And<Token<BLOCK>, ColonIndentCodeBlock>;

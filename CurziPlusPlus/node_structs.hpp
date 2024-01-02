@@ -72,7 +72,7 @@ struct NodeStructs {
 
 	struct Statement;
 
-	struct AssignmentExpression;
+	//struct AssignmentExpression;
 	struct ConditionalExpression;
 	struct OrExpression;
 	struct AndExpression;
@@ -82,12 +82,13 @@ struct NodeStructs {
 	struct MultiplicativeExpression;
 	struct UnaryExpression;
 	struct PostfixExpression;
+	struct ParenExpression;
 	struct ParenArguments;
 	struct BraceArguments;
 
 	struct Expression {
 		using vt = std::variant<
-			AssignmentExpression,
+			//AssignmentExpression,
 			ConditionalExpression,
 			OrExpression,
 			AndExpression,
@@ -99,6 +100,7 @@ struct NodeStructs {
 			PostfixExpression,
 			ParenArguments,
 			BraceArguments,
+			ParenExpression,
 			std::string,
 			Token<NUMBER>,
 			Token<STRING>
@@ -149,6 +151,11 @@ struct NodeStructs {
 	struct ParenArguments {
 		std::vector<FunctionArgument> args;
 		std::weak_ordering operator<=>(const ParenArguments&) const = default;
+	};
+
+	struct ParenExpression {
+		std::vector<Expression> args;
+		std::weak_ordering operator<=>(const ParenExpression&) const = default;
 	};
 
 	struct PostfixExpression {
@@ -242,7 +249,7 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const ConditionalExpression&) const = default;
 	};
 
-	struct AssignmentExpression {
+	/*struct AssignmentExpression {
 		Expression expr;
 		using op_types = std::variant<
 			Token<EQUAL>,
@@ -257,7 +264,7 @@ struct NodeStructs {
 		>;
 		std::vector<std::pair<op_types, Expression>> assignments;
 		std::weak_ordering operator<=>(const AssignmentExpression&) const = default;
-	};
+	};*/
 
 	struct VariableDeclaration {
 		Typename type;
@@ -354,6 +361,7 @@ struct NodeStructs {
 		std::vector<std::tuple<Typename, ValueCategory, std::string>> parameters;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Function&) const = default;
+		bool operator==(const Function&) const;
 	};
 
 	struct Type;
@@ -422,12 +430,14 @@ struct NodeStructs {
 		}
 
 		std::weak_ordering operator<=>(const Type&) const = default;
+		bool operator==(const Type&) const;
 	};
 
 	struct Block {
 		std::string name;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Block&) const = default;
+		bool operator==(const Block&) const;
 	};
 
 	struct File {
@@ -443,7 +453,7 @@ struct NodeStructs {
 };
 
 template <typename T>
-inline std::weak_ordering cmp(const T& a, const T& b) {
+static std::weak_ordering cmp(const T& a, const T& b) {
 	if constexpr (is_specialization<T, std::vector>::value) {
 		if (auto size_cmp = cmp(a.size(), b.size()); size_cmp != 0)
 			return size_cmp;
@@ -535,4 +545,19 @@ inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionT
 
 inline std::weak_ordering NodeStructs::FunctionTemplateType::operator<=>(const FunctionTemplateType& other) const {
 	return cmp(function_template.get(), other.function_template.get());
+}
+
+inline bool NodeStructs::Function::operator==(const Function& other) const {
+	// todo arg types matter
+	if (name != other.name || parameters.size() == other.parameters.size())
+		return false;
+	return true;
+}
+
+inline bool NodeStructs::Type::operator==(const Type& other) const {
+	return name == other.name;
+}
+
+inline bool NodeStructs::Block::operator==(const Block& other) const {
+	return name == other.name;
 }

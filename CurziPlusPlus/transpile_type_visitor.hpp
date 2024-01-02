@@ -5,8 +5,7 @@
 struct transpile_type_visitor : TypeCategoryVisitor<transpile_type_visitor> {
 	using TypeCategoryVisitor<transpile_type_visitor>::operator();
 
-	variables_t& variables;
-	const Named& named;
+	transpilation_state& state;
 
 	using R = transpile_t;
 

@@ -140,7 +140,6 @@
   <ItemGroup>
     <ClInclude Include="first_diff.hpp" />
     <ClInclude Include="test_parse.hpp" />
-    <ClInclude Include="test_transpile.hpp" />
     <ClInclude Include="test_transpile_files.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

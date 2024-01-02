@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "transpile_typename_visitor.hpp"
+#include "type_template_of_typename_visitor.hpp"
 
 using T = transpile_typename_visitor;
 using R = T::R;
@@ -14,6 +15,9 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
 	std::stringstream ss;
+	auto tmpl = type_template_of_typename_visitor{ {}, state }(type.type.get());
+	if (!tmpl.has_value())
+		return std::unexpected{ tmpl.error() };
 	ss << operator()(type.type.get()).value() << "<";
 	bool first = true;
 	for (const auto& t : type.templated_with) {

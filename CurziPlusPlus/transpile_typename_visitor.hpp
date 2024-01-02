@@ -5,8 +5,7 @@
 struct transpile_typename_visitor : TypenameVisitor<transpile_typename_visitor> {
 	using TypenameVisitor<transpile_typename_visitor>::operator();
 
-	variables_t& variables;
-	const Named& named;
+	transpilation_state& state;
 
 	using R = transpile_t;
 

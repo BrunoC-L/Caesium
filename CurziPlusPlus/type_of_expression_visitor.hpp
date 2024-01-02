@@ -5,12 +5,11 @@
 struct type_of_expression_visitor : ExpressionVisitor<type_of_expression_visitor> {
 	using ExpressionVisitor<type_of_expression_visitor>::operator();
 
-	variables_t& variables;
-	const Named& named;
+	transpilation_state& state;
 
 	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
 
-	R operator()(const NodeStructs::AssignmentExpression& expr);
+	//R operator()(const NodeStructs::AssignmentExpression& expr);
 	R operator()(const NodeStructs::ConditionalExpression& expr);
 	R operator()(const NodeStructs::OrExpression& expr);
 	R operator()(const NodeStructs::AndExpression& expr);
@@ -20,6 +19,7 @@ struct type_of_expression_visitor : ExpressionVisitor<type_of_expression_visitor
 	R operator()(const NodeStructs::MultiplicativeExpression& expr);
 	R operator()(const NodeStructs::UnaryExpression& expr);
 	R operator()(const NodeStructs::PostfixExpression& expr);
+	R operator()(const NodeStructs::ParenExpression& expr);
 	R operator()(const NodeStructs::ParenArguments& expr);
 	R operator()(const NodeStructs::BraceArguments& expr);
 	R operator()(const std::string& expr);

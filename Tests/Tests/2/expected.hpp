@@ -18,3 +18,4 @@ template <typename K, typename V> using Map = std::unordered_map<K, V>;
 static constexpr bool True = true;
 static constexpr bool False = false;
 
+Int _redirect_main(const Vector<String>& cli_args);

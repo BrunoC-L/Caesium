@@ -5,8 +5,7 @@
 struct type_of_postfix_member_visitor : TypeCategoryVisitor<type_of_postfix_member_visitor> {
 	using TypeCategoryVisitor<type_of_postfix_member_visitor>::operator();
 
-	variables_t& variables;
-	const Named& named;
+	transpilation_state& state;
 	const std::string& property_name;
 
 	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;

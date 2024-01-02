@@ -1,0 +1,6 @@
+type A:
+type B:
+
+Int main(Vector<String> ref s):
+    A | B v1 = {}
+    B | A v2 = {}

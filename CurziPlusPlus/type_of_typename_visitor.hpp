@@ -5,10 +5,9 @@
 struct type_of_typename_visitor : TypenameVisitor<type_of_typename_visitor> {
 	using TypenameVisitor<type_of_typename_visitor>::operator();
 
-	variables_t& variables;
-	const Named& named;
+	transpilation_state& state;
 
-	using R = NodeStructs::TypeCategory;
+	using R = std::expected<NodeStructs::TypeCategory, user_error>;
 
 	R operator()(const NodeStructs::BaseTypename& t);
 	R operator()(const NodeStructs::NamespacedTypename& t);

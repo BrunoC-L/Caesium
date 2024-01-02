@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "test_parse.hpp"
-#include "test_transpile.hpp"
 #include "test_transpile_files.hpp"
 
 int main(int argc, char** argv) {
@@ -26,15 +25,10 @@ int main(int argc, char** argv) {
 	else
 		std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
 
-	if (!testTranspile())
-		success = false;
-	else
-		std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
-
 	if (!test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }))
 		success = false;
 	else
-		std::cout << colored_text("All file transpile tests passed\n", output_stream_colors::green);
+		std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
 
 	return success ? 0 : 1;
 }

@@ -57,8 +57,8 @@ enum TOKENS {
 	OR,
 	ANDAND,
 	OROR,
-	GTE,
 	LTE,
+	GTE,
 
 	WORD,
 	NUMBER,

@@ -3,10 +3,13 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <set>
 #include <expected>
 #include <ranges>
 
+#include "no_copy.hpp"
 #include "node_structs.hpp"
+#include "on_exit.hpp"
 
 struct user_error {
 	std::string content;
@@ -15,6 +18,7 @@ struct user_error {
 	}
 };
 using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>>>;
+using transpile_header_cpp_t = std::expected<std::pair<std::string, std::string>, user_error>;
 using transpile_t = std::expected<std::string, user_error>;
 struct type_and_representation {
 	NodeStructs::TypeCategory type;
@@ -22,40 +26,59 @@ struct type_and_representation {
 };
 using transpile_type_repr = std::expected<type_and_representation, user_error>;
 
+
+struct Named {
+	template <typename T> using map2ref = std::map<std::string, T const *>;
+	map2ref<NodeStructs::Function> functions;
+	map2ref<NodeStructs::Template<NodeStructs::Function>> function_templates;
+	map2ref<NodeStructs::Type> types;
+	map2ref<NodeStructs::Template<NodeStructs::Type>> type_templates;
+	map2ref<NodeStructs::Block> blocks;
+	map2ref<NodeStructs::Template<NodeStructs::Block>> block_templates;
+};
+struct transpilation_state {
+	variables_t variables;
+	Named named;
+	std::vector<std::pair<std::string, std::string>> transpile_in_reverse_order;
+	size_t indent = 0;
+
+	transpilation_state(
+		variables_t&& variables,
+		Named&& named
+	) : variables(std::move(variables)), named(std::move(named)) {}
+
+	[[nodiscard]] auto indent_sentinel() {
+		indent += 1;
+		return OnExit([&]() { indent -= 1; });
+	}
+
+	[[nodiscard]] auto zero_indent_sentinel() {
+		auto old = indent;
+		indent = 0;
+		return OnExit([this, _old = old]() { indent  = _old; });
+	}
+
+	std::set<NodeStructs::Function> traversed_functions;
+	//std::set<NodeStructs::Template<NodeStructs::Function>> traversed_function_templates;
+	std::set<NodeStructs::Type> traversed_types;
+	//std::set<NodeStructs::Template<NodeStructs::Type>> traversed_type_templates;
+	std::set<NodeStructs::Block> traversed_blocks;
+	//std::set<NodeStructs::Template<NodeStructs::Block>> traversed_block_templates;
+private:
+	no_copy _;
+};
+
 template <size_t token>
-std::string _symbol_as_text() {
-	if constexpr (token == TOKENS::SEMICOLON) return ";";
-	if constexpr (token == TOKENS::COLON || token == TOKENS::IN) return ":";
-	if constexpr (token == TOKENS::NS) return "::";
-	if constexpr (token == TOKENS::BACKSLASH) return "\\";
-	if constexpr (token == TOKENS::DOT) return ".";
-	if constexpr (token == TOKENS::COMMA) return ",";
-	if constexpr (token == TOKENS::SPACE) return " ";
-	if constexpr (token == TOKENS::TAB) return "\t";
-	if constexpr (token == TOKENS::NEWLINE) return "\n";
-	if constexpr (token == TOKENS::BRACEOPEN) return "{";
-	if constexpr (token == TOKENS::BRACECLOSE) return "}";
-	if constexpr (token == TOKENS::BRACKETOPEN) return "[";
-	if constexpr (token == TOKENS::BRACKETCLOSE) return "]";
-	if constexpr (token == TOKENS::PARENOPEN) return "(";
-	if constexpr (token == TOKENS::PARENCLOSE) return ")";
+static constexpr std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::ASTERISK) return "*";
 	if constexpr (token == TOKENS::SLASH) return "/";
 	if constexpr (token == TOKENS::PERCENT) return "%";
-	if constexpr (token == TOKENS::AMPERSAND) return "&";
-	if constexpr (token == TOKENS::QUESTION) return "?";
-	if constexpr (token == TOKENS::POUND) return "#";
 	if constexpr (token == TOKENS::EQUAL) return "=";
 	if constexpr (token == TOKENS::LT) return "<";
 	if constexpr (token == TOKENS::GT) return ">";
 	if constexpr (token == TOKENS::DASH) return "-";
-	if constexpr (token == TOKENS::NOT) return "!";
-	if constexpr (token == TOKENS::CARET) return "^";
-	if constexpr (token == TOKENS::BITOR) return "|";
 	if constexpr (token == TOKENS::PLUS) return "+";
 	if constexpr (token == TOKENS::TILDE) return "~";
-	if constexpr (token == TOKENS::PLUSPLUS) return "++";
-	if constexpr (token == TOKENS::MINUSMINUS) return "--";
 	if constexpr (token == TOKENS::EQUALEQUAL) return "==";
 	if constexpr (token == TOKENS::NEQUAL) return "!=";
 	if constexpr (token == TOKENS::PLUSEQUAL) return "+=";
@@ -65,25 +88,9 @@ std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::MODEQUAL) return "%=";
 	if constexpr (token == TOKENS::ANDEQUAL) return "&=";
 	if constexpr (token == TOKENS::OREQUAL) return "|=";
+	if constexpr (token == TOKENS::XOREQUAL) return "^=";
 	if constexpr (token == TOKENS::LTE) return "<=";
 	if constexpr (token == TOKENS::GTE) return ">=";
-	if constexpr (token == TOKENS::XOREQUAL) return "^=";
-	if constexpr (token == TOKENS::AND || token == TOKENS::ANDAND) return "&&";
-	if constexpr (token == TOKENS::OR || token == TOKENS::OROR) return "||";
-	if constexpr (token == TOKENS::RETURN) return "return";
-	if constexpr (token == TOKENS::SWITCH) return "switch";
-	if constexpr (token == TOKENS::FOR) return "for";
-	if constexpr (token == TOKENS::WHILE) return "while";
-	if constexpr (token == TOKENS::IF) return "if";
-	if constexpr (token == TOKENS::ELSE) return "else";
-	if constexpr (token == TOKENS::BREAK) return "break";
-	if constexpr (token == TOKENS::CASE) return "case";
-	if constexpr (token == TOKENS::DO) return "do";
-	if constexpr (token == TOKENS::USING) return "using";
-	if constexpr (token == TOKENS::STATIC) return "static";
-	if constexpr (token == TOKENS::TYPE) return "struct";
-	if constexpr (token == TOKENS::TEMPLATE) return "template";
-	if constexpr (token == TOKENS::AUTO) return "auto";
 }
 
 template <size_t token>
@@ -98,16 +105,6 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 		token
 	);
 }
-
-struct Named {
-	template <typename T> using map2vec = std::map<std::string, std::vector<std::reference_wrapper<const T>>>;
-	map2vec<NodeStructs::Function> functions;
-	map2vec<NodeStructs::Template<NodeStructs::Function>> function_templates;
-	map2vec<NodeStructs::Type> types;
-	map2vec<NodeStructs::Template<NodeStructs::Type>> type_templates;
-	map2vec<NodeStructs::Block> blocks;
-	map2vec<NodeStructs::Template<NodeStructs::Block>> block_templates;
-};
 
 struct cpp_std {
 	NodeStructs::Type _uset = NodeStructs::Type{
@@ -167,7 +164,7 @@ struct cpp_std {
 		.name = std::string{ "println" },
 		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
 		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>{
-			{ NodeStructs::Typename{ NodeStructs::BaseTypename{"T"} }, NodeStructs::ValueCategory{ NodeStructs::Value{} }, "t" }
+			{ NodeStructs::Typename{ NodeStructs::BaseTypename{"String"} }, NodeStructs::ValueCategory{ NodeStructs::Value{} }, "t" }
 		},
 	};
 
@@ -211,107 +208,77 @@ static constexpr auto default_includes =
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, Named& named, const std::string& filename);
 std::expected<std::pair<std::string, std::string>, user_error> transpile(const std::vector<NodeStructs::File>& project);
 
-transpile_t transpile_main_definition(
-	variables_t& variables,
-	const Named& named,
+transpile_header_cpp_t transpile_main(
+	transpilation_state& state,
 	const NodeStructs::Function& fn
 );
 
-transpile_t transpile_declaration(
-	variables_t& variables,
-	const Named& named,
+transpile_header_cpp_t transpile(
+	transpilation_state& state,
 	const NodeStructs::Function& fn
 );
 
-transpile_t transpile_definition(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Function& fn
-);
-
-transpile_t transpile_declaration(
-	variables_t& variables,
-	const Named& named,
+transpile_header_cpp_t transpile(
+	transpilation_state& state,
 	const NodeStructs::Type& type
-);
-
-transpile_t transpile_definition(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Type& type
-);
-
-template<typename T>
-transpile_t transpile_declaration(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Template<T>& tmpl
-);
-
-template<typename T>
-transpile_t transpile_definition(
-	variables_t& variables,
-	const Named& named,
-	const NodeStructs::Template<T>& tmpl
 );
 
 transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ValueCategory, std::string>>& parameters
 );
 
 transpile_t transpile(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const std::vector<NodeStructs::Statement>& statements
 );
 
+static std::string indent(size_t n) {
+	std::string res;
+	res.reserve(n);
+	for (size_t i = 0; i < n; ++i)
+		res += '\t';
+	return res;
+};
+
 std::vector<NodeStructs::TypeCategory> decomposed_type(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const NodeStructs::TypeCategory& type
 );
 
 std::optional<user_error> add_decomposed_for_iterator_variables(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::TypeCategory& it_type
 );
 
 std::optional<user_error> add_for_iterator_variable(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::TypeCategory& it_type
 );
 
 void remove_for_iterator_variables(
-	variables_t& variables,
+	transpilation_state& state,
 	const NodeStructs::ForStatement& statement
 );
 
 void remove_added_variables(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const NodeStructs::Statement& statement
 );
 
 transpile_t transpile_arg(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const NodeStructs::FunctionArgument& arg
 );
 
 transpile_t transpile_args(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
 NodeStructs::TypeCategory iterator_type(
-	variables_t& variables,
-	const Named& named,
+	transpilation_state& state,
 	const NodeStructs::TypeCategory& type
 );

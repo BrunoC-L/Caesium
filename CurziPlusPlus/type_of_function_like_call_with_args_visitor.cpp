@@ -35,7 +35,7 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 	}
 	else {
 		// if args apply... TODO
-		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, variables, named }(t.function.get().returnType) };
+		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(t.function.get().returnType).value() };
 	}
 	throw;
 }

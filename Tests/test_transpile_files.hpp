@@ -7,6 +7,7 @@
 #include "structurizer.hpp"
 #include "grammar.hpp"
 #include "toCpp.hpp"
+#include "first_diff.hpp"
 
 std::optional<std::expected<std::pair<std::string, std::string>, user_error>> create_file(const std::string& folder_name, std::string_view caesiumProgram) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
@@ -38,7 +39,7 @@ std::optional<std::expected<std::pair<std::string, std::string>, user_error>> cr
 	return transpile(std::vector{ std::move(f) });
 }
 
-bool test_transpile_no_error(const const std::filesystem::path& folder, std::string_view caesiumProgram, std::string_view expected_header, std::string_view expected_cpp) {
+bool test_transpile_no_error(const std::filesystem::path& folder, std::string_view caesiumProgram, std::string_view expected_header, std::string_view expected_cpp) {
 	auto folder_name = folder.filename().string();
 	auto optional_produced_file = create_file(folder_name, caesiumProgram);
 	if (!optional_produced_file.has_value())
@@ -77,7 +78,7 @@ bool test_transpile_no_error(const const std::filesystem::path& folder, std::str
 	}
 }
 
-bool test_transpile_error(const const std::filesystem::path& folder, std::string_view caesiumProgram, std::string_view expected_error) {
+bool test_transpile_error(const std::filesystem::path& folder, std::string_view caesiumProgram, std::string_view expected_error) {
 	auto folder_name = folder.filename().string();
 	auto optional_produced_file = create_file(folder_name, caesiumProgram);
 	if (!optional_produced_file.has_value())
@@ -117,6 +118,7 @@ std::optional<std::string> open_read(const std::filesystem::path& file) {
 }
 
 bool test_transpile_file_error(
+	const std::filesystem::path& folder,
 	const std::filesystem::path& caesium_file,
 	const std::filesystem::path& error_file
 ) {
@@ -128,11 +130,11 @@ bool test_transpile_file_error(
 	if (!error_opt.has_value())
 		throw;
 
-	return test_transpile_error(-1, caesium_opt.value(), error_opt.value());
+	return test_transpile_error(folder, caesium_opt.value(), error_opt.value());
 }
 
 bool test_transpile_file_no_error(
-	const const std::filesystem::path& folder,
+	const std::filesystem::path& folder,
 	const std::filesystem::path& caesium_file,
 	const std::filesystem::path& header,
 	const std::filesystem::path& cpp
@@ -171,7 +173,7 @@ bool test_transpile_file(
 ) {
 	for (const auto& file : std::filesystem::directory_iterator{ folder })
 		if (file.path().filename() == "expected_error.txt")
-			return test_transpile_file_error(caesium_file, file.path());
+			return test_transpile_file_error(folder, caesium_file, file.path());
 		else if (file.path().filename() == "expected.hpp")
 			return test_transpile_file_no_error_step(folder, caesium_file, file.path());
 

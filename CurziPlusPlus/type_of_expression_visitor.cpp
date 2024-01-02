@@ -4,9 +4,9 @@
 using T = type_of_expression_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::AssignmentExpression& expr) {
-	throw;
-}
+//R T::operator()(const NodeStructs::AssignmentExpression& expr) {
+//	throw;
+//}
 
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 	throw;
@@ -90,6 +90,10 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 	}*/
 }
 
+R T::operator()(const NodeStructs::ParenExpression& expr) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::ParenArguments& expr) {
 	throw;
 }
@@ -113,35 +117,35 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 
 R T::operator()(const std::string& expr) {
 	{
-		auto it = variables.find(expr);
-		if (it != variables.end())
+		auto it = state.variables.find(expr);
+		if (it != state.variables.end())
 			return it->second.back();
 	}
 	{
-		auto it = named.types.find(expr);
-		if (it != named.types.end())
+		auto it = state.named.types.find(expr);
+		if (it != state.named.types.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::TypeType{ it->second.back() } }
+				NodeStructs::TypeCategory{ NodeStructs::TypeType{ *it->second } }
 		};
 	}
 	{
-		auto it = named.function_templates.find(expr);
-		if (it != named.function_templates.end())
+		auto it = state.named.function_templates.find(expr);
+		if (it != state.named.function_templates.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::FunctionTemplateType{ it->second.back() } }
+				NodeStructs::TypeCategory{ NodeStructs::FunctionTemplateType{ *it->second } }
 		};
 	}
 	{
-		auto it = named.functions.find(expr);
-		if (it != named.functions.end())
+		auto it = state.named.functions.find(expr);
+		if (it != state.named.functions.end())
 			return std::pair{
 				NodeStructs::Reference{},
-				NodeStructs::TypeCategory{ NodeStructs::FunctionType{ it->second.back() } }
+				NodeStructs::TypeCategory{ NodeStructs::FunctionType{ *it->second } }
 		};
 	}
-	auto x = transpile_expression_visitor{ {}, variables, named }(expr);
+	auto x = transpile_expression_visitor{ {}, state }(expr);
 	if (!x.has_value())
 		return std::unexpected{ std::move(x).error() };
 	else

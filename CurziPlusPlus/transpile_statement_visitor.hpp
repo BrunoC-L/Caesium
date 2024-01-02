@@ -5,8 +5,7 @@
 struct transpile_statement_visitor : StatementVisitor<transpile_statement_visitor> {
 	using StatementVisitor<transpile_statement_visitor>::operator();
 
-	variables_t& variables;
-	const Named& named;
+	transpilation_state& state;
 
 	using R = transpile_t;
 

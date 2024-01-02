@@ -6,13 +6,13 @@
 using T = transpile_expression_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::AssignmentExpression& expr) {
-	std::stringstream ss;
-	ss << operator()(expr.expr).value();
-	for (const auto& e : expr.assignments)
-		ss << " " << symbol_variant_as_text(e.first) << " " << operator()(e.second).value();
-	return ss.str();
-}
+//R T::operator()(const NodeStructs::AssignmentExpression& expr) {
+//	std::stringstream ss;
+//	ss << operator()(expr.expr).value();
+//	for (const auto& e : expr.assignments)
+//		ss << " " << symbol_variant_as_text(e.first) << " " << operator()(e.second).value();
+//	return ss.str();
+//}
 
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 	if (expr.ifElseExprs.has_value()) {
@@ -88,9 +88,10 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PostfixExpression& expr) {
-	auto t_or_e = type_of_expression_visitor{ {}, variables, named }(expr.expr);
+	auto t_or_e = type_of_expression_visitor{ {}, state }(expr.expr);
 	if (!t_or_e.has_value())
 		return std::unexpected{ std::move(t_or_e).error() };
+
 	type_and_representation it{
 		std::move(t_or_e).value().second, // todo maybe type and repr has to hold value category...?
 		operator()(expr.expr).value()
@@ -100,7 +101,7 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 		transpile_type_repr next = std::visit(
 			overload(overload_default_error,
 				[&](const std::string& property_name) -> transpile_type_repr {
-					return type_of_postfix_member_visitor{ {}, variables, named, property_name }(it.type).transform(
+					return type_of_postfix_member_visitor{ {}, state, property_name }(it.type).transform(
 						[&](auto t) {
 							return type_and_representation{
 								t.second,
@@ -110,22 +111,22 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 					);
 				},
 				[&](const NodeStructs::ParenArguments& e) -> transpile_type_repr {
-					return type_of_function_like_call_with_args_visitor{ {}, variables, named, e.args }(it.type).transform(
+					return type_of_function_like_call_with_args_visitor{ {}, state, e.args }(it.type).transform(
 						[&](std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>&& t) {
 							return type_and_representation{
 								std::move(t.second),
-								it.representation + "(" + transpile_args(variables, named, e.args).value() + ")"
+								it.representation + "(" + transpile_args(state, e.args).value() + ")"
 							};
 						}
 					);
 				},
 				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
 					throw;
-					//return "[" + transpile_args(variables, named, e.args).value() + "]";
+					//return "[" + transpile_args(state, e.args).value() + "]";
 				},
 				[&](const NodeStructs::BraceArguments& e) -> transpile_type_repr {
 					throw;
-					//return "{" + transpile_args(variables, named, e.args).value() + "}";
+					//return "{" + transpile_args(state, e.args).value() + "}";
 				},
 				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
 					throw;
@@ -146,21 +147,51 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 	return it.representation;
 }
 
+R T::operator()(const NodeStructs::ParenExpression& expr) {
+	std::stringstream ss;
+	for (const auto& e : expr.args) {
+		auto t = operator()(e);
+		if (!t.has_value())
+			return std::unexpected{ t.error() };
+		ss << std::move(t).value();
+	}
+	return "(" + ss.str() + ")";
+}
+
 R T::operator()(const NodeStructs::ParenArguments& expr) {
 	throw;
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
-	return "{" + transpile_args(variables, named, expr.args).value() + "}";
+	return "{" + transpile_args(state, expr.args).value() + "}";
 }
 
 R T::operator()(const std::string& expr) {
-	if (variables.contains(expr))
+	if (state.variables.contains(expr))
 		return expr;
-	if (named.functions.contains(expr))
+	if (auto it = state.named.functions.find(expr); it != state.named.functions.end()) {
+		const auto& e = *it->second;
+		if (!state.traversed_functions.contains(e)) {
+			state.traversed_functions.insert(e);
+			auto _ = state.zero_indent_sentinel();
+			auto t = transpile(state, e);
+			if (!t.has_value())
+				return std::unexpected{ t.error() };
+			state.transpile_in_reverse_order.push_back(std::move(t).value());
+		}
 		return expr;
-	if (named.function_templates.contains(expr))
+	}
+	if (auto it = state.named.types.find(expr); it != state.named.types.end()) {
+		const auto& e = *it->second;
+		if (!state.traversed_types.contains(e)) {
+			state.traversed_types.insert(e);
+			auto t = transpile(state, e);
+			if (!t.has_value())
+				return std::unexpected{ t.error() };
+			state.transpile_in_reverse_order.push_back(std::move(t).value());
+		}
 		return expr;
+	}
 	return std::unexpected{ user_error{ "Undeclared variable `" + expr + "`" } };
 }
 

@@ -4,7 +4,7 @@
 #include "grammar.hpp"
 #include "overload.hpp"
 
-NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement);
+NodeStructs::Expression getExpressionStruct(const Expression& statement);
 NodeStructs::Statement getStatementStruct(const Statement& statement);
 
 NodeStructs::Import getStruct(const Import& f) {
@@ -81,7 +81,7 @@ NodeStructs::Typename getStruct(const Typename& t) {
 		);
 }
 
-NodeStructs::ValueCategory getStruct(const ValueCategory& vc) {
+NodeStructs::ValueCategory getStruct(const ParameterCategory& vc) {
 	return std::visit(
 		overload(overload_default_error,
 			/*[](const Token<KEY>&) -> NodeStructs::ValueCategory {
@@ -105,8 +105,8 @@ NodeStructs::Function getStruct(const Function& f) {
 	return NodeStructs::Function{
 		.name = f.get<Word>().value,
 		.returnType = getStruct(f.get<Typename>()),
-		.parameters = f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>()
-			| LIFT_TRANSFORM_X(type_and_name, std::tuple{ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ValueCategory>()), type_and_name.get<Word>().value })
+		.parameters = f.get<FunctionParameters>().get<And<Typename, ParameterCategory, Word>>()
+			| LIFT_TRANSFORM_X(type_and_name, std::tuple{ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ParameterCategory>()), type_and_name.get<Word>().value })
 			| to_vec(),
 		.statements = f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
 			| LIFT_TRANSFORM(getStatementStruct)
@@ -297,6 +297,14 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 				//auto res = getExpressionStruct(e);
 				//return NodeStructs::Expression{ std::move(res) };
 			},
+			[](const And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>& e) -> NodeStructs::Expression {
+			const auto& args = e.get<CommaStar<Expression>>().get<Expression>();
+			return { NodeStructs::ParenExpression{ 
+					args
+					| LIFT_TRANSFORM(getExpressionStruct)
+					| to_vec()
+				} };
+			},
 			[](const Word& e) {
 				return NodeStructs::Expression{ e.value };
 			},
@@ -363,9 +371,9 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 }
 
 NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
-	const auto& prefixes = statement.get<Star<unary_operators>>().get<unary_operators>();
+	const auto& prefixes = statement.get().get<Star<unary_operators>>().get<unary_operators>();
 	if (prefixes.size() == 0)
-		return getExpressionStruct(statement.get<PostfixExpression>());
+		return getExpressionStruct(statement.get().get<PostfixExpression>());
 	else {
 		return NodeStructs::Expression{ NodeStructs::UnaryExpression {
 			.unary_operators = prefixes | std::views::transform(
@@ -378,7 +386,7 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 					);
 				})
 			| to_vec(),
-			.expr = getExpressionStruct(statement.get<PostfixExpression>())
+			.expr = getExpressionStruct(statement.get().get<PostfixExpression>())
 		} };
 	}
 }
@@ -495,34 +503,34 @@ NodeStructs::Expression getExpressionStruct(const ConditionalExpression& stateme
 	else
 		return getExpressionStruct(statement.get<OrExpression>());
 }
-
-NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement) {
-	using operators = Or<
-		Token<EQUAL>,
-		Token<PLUSEQUAL>,
-		Token<MINUSEQUAL>,
-		Token<TIMESEQUAL>,
-		Token<DIVEQUAL>,
-		Token<MODEQUAL>,
-		Token<ANDEQUAL>,
-		Token<OREQUAL>,
-		Token<XOREQUAL>
-	>;
-
-	const auto& assignments = statement.get<Star<And<operators, ConditionalExpression>>>().get<And<operators, ConditionalExpression>>();
-	if (assignments.size() == 0)
-		return getExpressionStruct(statement.get<ConditionalExpression>());
-	else
-		return NodeStructs::Expression{ NodeStructs::AssignmentExpression{
-			getExpressionStruct(statement.get<ConditionalExpression>()),
-			assignments
-				| LIFT_TRANSFORM_X(op_exp, std::pair{
-						operators::variant_t{ op_exp.get<operators>().value() },
-						getExpressionStruct(op_exp.get<ConditionalExpression>())
-					})
-				| to_vec()
-		} };
-}
+//
+//NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement) {
+//	using operators = Or<
+//		Token<EQUAL>,
+//		Token<PLUSEQUAL>,
+//		Token<MINUSEQUAL>,
+//		Token<TIMESEQUAL>,
+//		Token<DIVEQUAL>,
+//		Token<MODEQUAL>,
+//		Token<ANDEQUAL>,
+//		Token<OREQUAL>,
+//		Token<XOREQUAL>
+//	>;
+//
+//	const auto& assignments = statement.get<Star<And<operators, ConditionalExpression>>>().get<And<operators, ConditionalExpression>>();
+//	if (assignments.size() == 0)
+//		return getExpressionStruct(statement.get<ConditionalExpression>());
+//	else
+//		return NodeStructs::Expression{ NodeStructs::AssignmentExpression{
+//			getExpressionStruct(statement.get<ConditionalExpression>()),
+//			assignments
+//				| LIFT_TRANSFORM_X(op_exp, std::pair{
+//						operators::variant_t{ op_exp.get<operators>().value() },
+//						getExpressionStruct(op_exp.get<ConditionalExpression>())
+//					})
+//				| to_vec()
+//		} };
+//}
 
 NodeStructs::Expression getExpressionStruct(const ExpressionStatement& statement) {
 	return getExpressionStruct(statement.get<Expression>());

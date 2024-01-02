@@ -146,6 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="node_structs.cpp" />
     <ClCompile Include="transpile_expression_visitor.cpp" />
     <ClCompile Include="transpile_statement_visitor.cpp" />
     <ClCompile Include="transpile_typename_visitor.cpp" />
@@ -163,13 +164,14 @@
     <ClInclude Include="expression_visitor.hpp" />
     <ClInclude Include="fn_util.hpp" />
     <ClInclude Include="is_specialization.hpp" />
+    <ClInclude Include="no_copy.hpp" />
+    <ClInclude Include="on_exit.hpp" />
     <ClInclude Include="overload.hpp" />
     <ClInclude Include="ranges_fold_left_pipe.hpp" />
     <ClInclude Include="grammarizer.hpp" />
     <ClInclude Include="node_structs.hpp" />
     <ClInclude Include="grammar.hpp" />
     <ClInclude Include="primitives.hpp" />
-    <ClInclude Include="re-template.hpp" />
     <ClInclude Include="scoped_transpilation_state.hpp" />
     <ClInclude Include="statement_visitor.hpp" />
     <ClInclude Include="structurizer.hpp" />

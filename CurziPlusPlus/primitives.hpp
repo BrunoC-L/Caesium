@@ -294,7 +294,7 @@ struct And {
 				g.it = temp;
 				failed = true;
 			}
-			});
+		});
 		return !failed;
 	}
 };

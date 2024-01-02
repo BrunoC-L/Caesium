@@ -5,8 +5,7 @@
 struct type_of_function_like_call_with_args_visitor : TypeCategoryVisitor<type_of_function_like_call_with_args_visitor> {
 	using TypeCategoryVisitor<type_of_function_like_call_with_args_visitor>::operator();
 
-	variables_t& variables;
-	const Named& named;
+	transpilation_state& state;
 	const std::vector<NodeStructs::FunctionArgument>& args;
 
 	using R = std::expected<std::pair<NodeStructs::ValueCategory, NodeStructs::TypeCategory>, user_error>;
