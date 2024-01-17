@@ -2,12 +2,13 @@
 #include "toCPP.hpp"
 #include "type_category_visitor.hpp"
 
-struct transpile_type_visitor : TypeCategoryVisitor<transpile_type_visitor> {
-	using TypeCategoryVisitor<transpile_type_visitor>::operator();
+struct type_of_template_instantiation_with_args_visitor : TypeCategoryVisitor<type_of_template_instantiation_with_args_visitor> {
+	using TypeCategoryVisitor<type_of_template_instantiation_with_args_visitor>::operator();
 
 	transpilation_state_with_indent state;
+	const std::vector<NodeStructs::Expression>& args;
 
-	using R = transpile_t;
+	using R = expected<NodeStructs::UniversalType>;
 
 	R operator()(const NodeStructs::Type& t);
 	R operator()(const NodeStructs::TypeTemplateInstanceType& t);

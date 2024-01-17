@@ -4,36 +4,34 @@
 #include <sstream>
 #include <map>
 #include <set>
-#include <expected>
+#include "expected.hpp"
 #include <ranges>
 
 #include "no_copy.hpp"
 #include "node_structs.hpp"
 
-struct user_error {
-	std::string content;
-	std::unexpected<user_error> unexpected() && {
-		return std::unexpected<user_error>{ std::move(*this) };
-	}
-};
-using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>>>;
-using transpile_header_cpp_t = std::expected<std::pair<std::string, std::string>, user_error>;
-using transpile_t = std::expected<std::string, user_error>;
+using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>>;
+using transpile_header_cpp_t = expected<std::pair<std::string, std::string>>;
+using transpile_t = expected<std::string>;
 struct type_and_representation {
 	NodeStructs::UniversalType type;
 	std::string representation;
 };
-using transpile_type_repr = std::expected<type_and_representation, user_error>;
+using transpile_type_repr = expected<type_and_representation>;
 
 struct Named {
-	template <typename T> using map2ref = std::map<std::string, T const *>;
-	map2ref<NodeStructs::Function> functions;
-	map2ref<NodeStructs::Template<NodeStructs::Function>> function_templates;
-	map2ref<NodeStructs::Type> types;
-	map2ref<NodeStructs::Template<NodeStructs::Type>> type_templates;
+	template <typename T> using map_to_vec = std::map<std::string, std::vector<T const*>>;
+
+	map_to_vec<NodeStructs::Function> functions;
+	map_to_vec<NodeStructs::Template<NodeStructs::Function>> function_templates;
+
+	map_to_vec<NodeStructs::Type> types;
+	map_to_vec<NodeStructs::Template<NodeStructs::Type>> type_templates;
+
+	map_to_vec<NodeStructs::Block> blocks;
+	map_to_vec<NodeStructs::Template<NodeStructs::Block>> block_templates;
+
 	std::map<std::string, NodeStructs::UniversalType> type_aliases;
-	map2ref<NodeStructs::Block> blocks;
-	map2ref<NodeStructs::Template<NodeStructs::Block>> block_templates;
 };
 
 struct transpilation_state {
@@ -75,8 +73,6 @@ static constexpr std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::SLASH) return "/";
 	if constexpr (token == TOKENS::PERCENT) return "%";
 	if constexpr (token == TOKENS::EQUAL) return "=";
-	if constexpr (token == TOKENS::LT) return "<";
-	if constexpr (token == TOKENS::GT) return ">";
 	if constexpr (token == TOKENS::DASH) return "-";
 	if constexpr (token == TOKENS::PLUS) return "+";
 	if constexpr (token == TOKENS::TILDE) return "~";
@@ -90,8 +86,10 @@ static constexpr std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::ANDEQUAL) return "&=";
 	if constexpr (token == TOKENS::OREQUAL) return "|=";
 	if constexpr (token == TOKENS::XOREQUAL) return "^=";
-	if constexpr (token == TOKENS::LTE) return "<=";
-	if constexpr (token == TOKENS::GTE) return ">=";
+	if constexpr (token == TOKENS::LTQ) return "<";
+	if constexpr (token == TOKENS::GTQ) return ">";
+	if constexpr (token == TOKENS::LTEQ) return "<=";
+	if constexpr (token == TOKENS::GTEQ) return ">=";
 }
 
 template <size_t token>
@@ -174,16 +172,12 @@ struct cpp_std {
 		_println
 	};*/
 
-	NodeStructs::Function __size{
+	NodeStructs::Function size{
 		.name = std::string{ "size" },
 		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Int" } },
 		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>{
 			{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "T" } }, NodeStructs::ParameterCategory{ NodeStructs::Reference{} }, "t" }
 		},
-	};
-	NodeStructs::Template<NodeStructs::Function> _size = {
-		std::vector<std::string>{ "T" },
-		__size
 	};
 };
 
@@ -218,7 +212,7 @@ static constexpr auto default_includes =
 
 	"\n";
 
-std::expected<std::pair<std::string, std::string>, user_error> transpile(const std::vector<NodeStructs::File>& project);
+transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project);
 
 transpile_header_cpp_t transpile_main(
 	transpilation_state_with_indent state,
@@ -258,13 +252,13 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 	const NodeStructs::UniversalType& type
 );
 
-std::optional<user_error> add_decomposed_for_iterator_variables(
+std::optional<error> add_decomposed_for_iterator_variables(
 	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::UniversalType& it_type
 );
 
-std::optional<user_error> add_for_iterator_variable(
+std::optional<error> add_for_iterator_variable(
 	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::UniversalType& it_type
@@ -290,7 +284,18 @@ transpile_t transpile_args(
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
+transpile_t transpile_expressions(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::Expression>& args
+);
+
 NodeStructs::UniversalType iterator_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::UniversalType& type
+);
+
+expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
+	transpilation_state_with_indent state,
+	const NodeStructs::Template<NodeStructs::Function>& fn,
+	const std::vector<NodeStructs::FunctionArgument>& called_with
 );

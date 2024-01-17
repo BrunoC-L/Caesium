@@ -56,7 +56,7 @@ static bool transpile(const std::vector<NodeStructs::File>& project, const std::
 		return true;
 	}
 	else {
-		std::cout << compilation_result.error().content << "\n";
+		std::cout << compilation_result.error().message << "\n";
 		return false;
 	}
 }

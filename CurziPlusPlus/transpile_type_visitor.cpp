@@ -36,6 +36,18 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 R T::operator()(const NodeStructs::FunctionTemplateType& t) {
 	throw;
 }
+R T::operator()(const NodeStructs::FunctionTemplateInstanceType& t) {
+	throw;
+}
 R T::operator()(const NodeStructs::UnionType& t) {
+	throw;
+}
+R T::operator()(const std::string&) {
+	throw;
+}
+R T::operator()(const double&) {
+	throw;
+}
+R T::operator()(const int&) {
 	throw;
 }

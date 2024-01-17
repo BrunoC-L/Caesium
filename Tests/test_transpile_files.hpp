@@ -9,7 +9,7 @@
 #include "toCpp.hpp"
 #include "first_diff.hpp"
 
-std::optional<std::expected<std::pair<std::string, std::string>, user_error>> create_file(const std::string& folder_name, std::string_view caesiumProgram) {
+std::optional<expected<std::pair<std::string, std::string>>> create_file(const std::string& folder_name, std::string_view caesiumProgram) {
 	std::forward_list<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = File(0);
@@ -25,11 +25,10 @@ std::optional<std::expected<std::pair<std::string, std::string>, user_error>> cr
 				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 			std::cout << caesiumProgram << "\n\n";
-			auto save = g.it;
-			g.it = g.tokens.begin();
-			while (g.it != save) {
-				std::cout << g.it->second << " ";
-				++g.it;
+			auto it = g.tokens.begin();
+			while (it != g.it) {
+				std::cout << it->second << " ";
+				++it;
 			}
 			std::cout << "\n";
 			return std::nullopt;
@@ -70,7 +69,7 @@ bool test_transpile_no_error(const std::filesystem::path& folder, std::string_vi
 		return ok;
 	}
 	else {
-		auto err = std::move(produced_file_or_error).error().content;
+		auto err = std::move(produced_file_or_error).error().message;
 		auto e_file = std::ofstream{ folder / "produced_error.txt" };
 		e_file << err;
 		std::cout << folder_name << " transpiled: " << colored_text_from_bool(false) << "\n";
@@ -83,7 +82,7 @@ bool test_transpile_error(const std::filesystem::path& folder, std::string_view 
 	auto optional_produced_file = create_file(folder_name, caesiumProgram);
 	if (!optional_produced_file.has_value())
 		return false;
-	auto produced_file_or_error = optional_produced_file.value();
+	auto produced_file_or_error = std::move(optional_produced_file).value();
 
 	if (produced_file_or_error.has_value()) {
 		auto [header, cpp] = std::move(produced_file_or_error).value();
@@ -94,7 +93,7 @@ bool test_transpile_error(const std::filesystem::path& folder, std::string_view 
 		return false;
 	}
 	else {
-		auto error = std::move(produced_file_or_error).error().content;
+		auto error = std::move(produced_file_or_error).error().message;
 		auto first_diff_error = first_diff(error, expected_error);
 		bool error_ok = error.size() == expected_error.size() && error.size() == first_diff_error;
 		if (!error_ok) {

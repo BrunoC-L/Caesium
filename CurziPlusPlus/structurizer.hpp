@@ -114,7 +114,7 @@ NodeStructs::Function getStruct(const Function& f) {
 	};
 }
 
-NodeStructs::TemplateArguments getStruct(const TemplateDeclaration& t) {
+NodeStructs::TemplateParameters getStruct(const TemplateDeclaration& t) {
 	return {
 		t.get<CommaPlus<Word>>().get<Word>()
 		| LIFT_TRANSFORM_TRAIL(.value)
@@ -122,8 +122,11 @@ NodeStructs::TemplateArguments getStruct(const TemplateDeclaration& t) {
 	};
 }
 
-NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>&) {
-	throw;
+NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>& t) {
+	return {
+		getStruct(t.get<TemplateDeclaration>()),
+		getStruct(t.get<Function>())
+	};
 }
 
 NodeStructs::Constructor getStruct(const Constructor&) {
@@ -267,6 +270,14 @@ NodeStructs::BraceArguments getStruct(const BraceArguments& args) {
 	};
 }
 
+NodeStructs::TemplateArguments getStruct(const TemplateArguments& args) {
+	return {
+		args.get<CommaStar<Expression>>().get<Expression>()
+			| LIFT_TRANSFORM(getExpressionStruct)
+			| to_vec()
+	};
+}
+
 NodeStructs::Expression getExpressionStruct(const BraceArguments&) {
 	throw;
 	/*NodeStructs::BraceArguments res;
@@ -311,7 +322,10 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 			[](const Word& e) {
 				return NodeStructs::Expression{ e.value };
 			},
-			[](const Token<NUMBER>& e) {
+			[](const Token<INTEGER_NUMBER>& e) {
+				return NodeStructs::Expression{ e };
+			},
+			[](const Token<FLOATING_POINT_NUMBER>& e) {
 				return NodeStructs::Expression{ e };
 			},
 			[](const Token<STRING>& e) {
@@ -323,19 +337,7 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 }
 
 NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) {
-	using opts = Or<
-		And<
-			Token<DOT>,
-			Word
-		>,
-		ParenArguments,
-		BracketArguments,
-		BraceArguments,
-		Token<PLUSPLUS>,
-		Token<MINUSMINUS>
-	>;
-
-	const auto& postfixes = statement.get<Star<opts>>().get<opts>();
+	const auto& postfixes = statement.get<Star<Postfix>>().get<Postfix>();
 	if (postfixes.size() == 0) {
 		return getExpressionStruct(statement.get<ParenExpression>());
 	} else {
@@ -356,6 +358,9 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 								return nodestruct_opts{ getStruct(args) };
 							},
 							[](const BraceArguments& args) {
+								return nodestruct_opts{ getStruct(args) };
+							},
+							[](const TemplateArguments& args) -> nodestruct_opts {
 								return nodestruct_opts{ getStruct(args) };
 							},
 							[](const Token<PLUSPLUS>& token) {
@@ -429,8 +434,7 @@ NodeStructs::Expression getExpressionStruct(const AdditiveExpression& statement)
 }
 
 NodeStructs::Expression getExpressionStruct(const CompareExpression& statement) {
-	using operators = Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>;
-	const auto& comparisons = statement.get<Star<And<operators, AdditiveExpression>>>().get<And<operators, AdditiveExpression>>();
+	const auto& comparisons = statement.get<Star<And<CompareOperator, AdditiveExpression>>>().get<And<CompareOperator, AdditiveExpression>>();
 	if (comparisons.size() == 0)
 		return getExpressionStruct(statement.get<AdditiveExpression>());
 	else
@@ -438,7 +442,7 @@ NodeStructs::Expression getExpressionStruct(const CompareExpression& statement) 
 			getExpressionStruct(statement.get<AdditiveExpression>()),
 			comparisons
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
-						operators::variant_t{ op_exp.get<operators>().value() },
+						CompareOperator::variant_t{ op_exp.get<CompareOperator>().value() },
 						getExpressionStruct(op_exp.get<AdditiveExpression>())
 					})
 				| to_vec()

@@ -12,12 +12,12 @@ R T::operator()(const NodeStructs::Type& t) {
 	if (pos == v.end()) {
 		auto u = transpile_type_visitor{ {}, state }(t);
 		if (u.has_value())
-			return std::unexpected{ user_error{ "Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"} };
+			return error{ "user error","Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"};
 		else
-			return std::unexpected{ std::move(u).error() };
+			return std::move(u).error();
 	}
 	else
-		return type_of_typename_visitor{ {}, state }(pos->type).transform([](auto&& val) { return std::pair{ NodeStructs::Value{}, std::move(val) }; });
+		return type_of_typename_visitor{ {}, state }(pos->type).transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 }
 
 R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
@@ -25,7 +25,7 @@ R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
 	// Vector<T> is the type template instance and `size` is `property_name`
 	if (auto it = state.state.named.function_templates.find(property_name); it != state.state.named.function_templates.end()) {
 		return std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>{ NodeStructs::Value{}, NodeStructs::FunctionTemplateType{
-			.function_template = *it->second
+			.function_template = *it->second.back()
 		} };
 	}
 	throw;
@@ -51,6 +51,22 @@ R T::operator()(const NodeStructs::FunctionTemplateType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::FunctionTemplateInstanceType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
+	throw;
+}
+
+R T::operator()(const std::string&) {
+	throw;
+}
+
+R T::operator()(const double&) {
+	throw;
+}
+
+R T::operator()(const int&) {
 	throw;
 }

@@ -33,6 +33,9 @@ public:
 	// ptr never empty
 	Box() = delete;
 
+	Box& operator=(const Box&) = delete;
+	Box& operator=(Box&&) = default;
+
 	// construct from T& or U&
 	Box(const T& t) : ptr(std::make_unique<T>(t)) {}
 	template <typename U>
@@ -57,7 +60,7 @@ public:
 	template <typename U>
 	Box(Box<U>&& other) : Box(std::move(other).get()) {};
 
-	// operator= same type&
+	/*// operator= same type&
 	Box& operator=(const Box& other) noexcept {
 		ptr = std::make_unique<T>(other.get());
 		return *this;
@@ -81,7 +84,7 @@ public:
 	Box& operator=(Box<U>&& other) noexcept {
 		ptr = std::make_unique<T>(std::move(other).get());
 		return *this;
-	}
+	}*/
 
 	std::weak_ordering operator<=>(const Box& other) const noexcept {
 		return (*ptr) <=> (*other.ptr);

@@ -14,18 +14,15 @@ R T::operator()(const NodeStructs::Expression& statement) {
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(statement.type).value() });
 	auto type = transpile_typename_visitor{ {}, state }(statement.type);
-	if (!type.has_value())
-		return std::unexpected{ type.error() };
+	return_if_error(type);
 	auto variable_name = transpile_expression_visitor{ {}, state }(statement.expr);
-	if (!variable_name.has_value())
-		return std::unexpected{ variable_name.error() };
+	return_if_error(variable_name);
 	return type.value() + " " + statement.name + " = " + variable_name.value() + ";\n";
 }
 
 R T::operator()(const NodeStructs::IfStatement& statement) {
 	auto if_statements = transpile(state.indented(), statement.ifStatements);
-	if (!if_statements.has_value())
-		return std::unexpected{ if_statements.error() };
+	return_if_error(if_statements);
 	if (statement.elseExprStatements.has_value())
 		return "if (" +
 		transpile_expression_visitor{ {}, state }(statement.ifExpr).value() +
@@ -54,8 +51,7 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 
 R T::operator()(const NodeStructs::ForStatement& statement) {
 	auto coll_type_or_e = type_of_expression_visitor{ {}, state }(statement.collection);
-	if (!coll_type_or_e.has_value())
-		return std::unexpected{ std::move(coll_type_or_e).error() };
+	return_if_error(coll_type_or_e);
 	auto it_type = iterator_type(state, coll_type_or_e.value().second);
 
 	std::stringstream ss;
@@ -69,10 +65,10 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 			return true;
 		}();
 		if (!can_be_decomposed)
-			return std::unexpected{ user_error{ "" } };
+			return error{ "user error", "" };
 		auto opt_e = add_decomposed_for_iterator_variables(state, statement.iterators, it_type);
 		if (opt_e.has_value())
-			return std::unexpected{ opt_e.value() };
+			return opt_e.value();
 		ss << "for (auto&& [";
 		bool first = true;
 		for (const auto& iterator : statement.iterators) {
@@ -94,7 +90,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 	else {
 		auto opt_e = add_for_iterator_variable(state, statement.iterators, it_type);
 		if (opt_e.has_value())
-			return std::unexpected{ opt_e.value() };
+			return opt_e.value();
 		ss << "for (auto&& " << std::visit(overload(overload_default_error,
 			[&](const NodeStructs::VariableDeclaration& iterator) {
 				return iterator.name;
@@ -106,11 +102,9 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 	}
 	
 	auto s1 = transpile_expression_visitor{ {}, state }(statement.collection);
+	return_if_error(s1);
 	auto s2 = transpile(state.indented(), statement.statements);
-	if (!s1.has_value())
-		return std::unexpected{ s1.error() };
-	if (!s2.has_value())
-		return std::unexpected{ s2.error() };
+	return_if_error(s2);
 	ss << " : "
 		<< s1.value()
 		<< ") {\n"
@@ -141,17 +135,17 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 	if (statement.returnExpr.size() == 0)
 		return "return;\n";
 	R return_expression = [&]() -> R {
+		auto args_repr = transpile_args(state, statement.returnExpr);
+		return_if_error(args_repr);
 		if (statement.returnExpr.size() == 1)
-			return transpile_args(state, statement.returnExpr).value();
+			return args_repr.value();
 		else
-			return "{" + transpile_args(state, statement.returnExpr).value() + "}";
+			return "{" + args_repr.value() + "}";
 	}();
-	if (!return_expression.has_value())
-		return std::unexpected{ return_expression.error() };
+	return_if_error(return_expression);
 	if (statement.ifExpr.has_value()) {
 		auto cnd = transpile_expression_visitor{ {}, state }(statement.ifExpr.value());
-		if (!cnd.has_value())
-			return std::unexpected{ cnd.error() };
+		return_if_error(cnd);
 		return "if (" + cnd.value() + ") return " + return_expression.value() + ";\n";
 	}
 	else
@@ -161,7 +155,7 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 R T::operator()(const NodeStructs::BlockStatement& statement) {
 	auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value).type;
 	if (state.state.named.blocks.contains(s)) {
-		const NodeStructs::Block& block = *state.state.named.blocks.at(s);
+		const NodeStructs::Block& block = *state.state.named.blocks.at(s).back();
 		std::stringstream ss;
 		for (const auto& statement_in_block : block.statements)
 			ss << operator()(statement_in_block).value();

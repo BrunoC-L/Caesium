@@ -14,14 +14,14 @@ struct NodeStructs {
 	template <typename T>
 	struct Template;
 
-	struct TemplateArguments {
-		std::vector<std::string> arguments;
-		std::weak_ordering operator<=>(const TemplateArguments&) const = default;
+	struct TemplateParameters {
+		std::vector<std::string> parameters;
+		std::weak_ordering operator<=>(const TemplateParameters&) const = default;
 	};
 
 	template <typename T>
 	struct Template {
-		TemplateArguments arguments;
+		TemplateParameters parameters;
 		T templated;
 
 		std::weak_ordering operator<=>(const Template&) const = default;
@@ -98,7 +98,8 @@ struct NodeStructs {
 			BraceArguments,
 			ParenExpression,
 			std::string,
-			Token<NUMBER>,
+			Token<FLOATING_POINT_NUMBER>,
+			Token<INTEGER_NUMBER>,
 			Token<STRING>
 		>;
 		Box<vt> expression;
@@ -120,6 +121,9 @@ struct NodeStructs {
 	struct Value {
 		std::weak_ordering operator<=>(const Value&) const = default;
 	};
+	struct Temporary {
+		std::weak_ordering operator<=>(const Temporary&) const = default;
+	};
 	/*struct Key {
 		std::weak_ordering operator<=>(const Key&) const = default;
 	};*/
@@ -130,8 +134,9 @@ struct NodeStructs {
 	move->value
 	key->key
 	*/
-	using ArgumentCategory  = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
+	using ArgumentCategory  = std::variant<Reference, MutableReference, Copy, Move, Temporary/*, Key*/>;
 	using ParameterCategory = std::variant<Reference, MutableReference, Value/*, Key*/>;
+	using ValueCategory = std::variant<Reference, MutableReference, Value>;
 	using FunctionArgument = std::tuple<std::optional<ArgumentCategory>, Expression>;
 
 	struct BracketArguments {
@@ -142,6 +147,11 @@ struct NodeStructs {
 	struct BraceArguments {
 		std::vector<FunctionArgument> args;
 		std::weak_ordering operator<=>(const BraceArguments&) const = default;
+	};
+
+	struct TemplateArguments {
+		std::vector<Expression> args;
+		std::weak_ordering operator<=>(const TemplateArguments&) const = default;
 	};
 
 	struct ParenArguments {
@@ -161,6 +171,7 @@ struct NodeStructs {
 			ParenArguments, // call
 			BracketArguments, // access
 			BraceArguments, // construct
+			TemplateArguments, // template instantiation
 			Token<PLUSPLUS>,
 			Token<MINUSMINUS>
 		>;
@@ -170,14 +181,8 @@ struct NodeStructs {
 
 	struct UnaryExpression {
 		using op_types = std::variant<
-			//Token<NOT>,
-			//Token<PLUS>,
 			Token<DASH>,
-			//Token<PLUSPLUS>,
-			//Token<MINUSMINUS>,
 			Token<TILDE>
-			//Token<ASTERISK>,
-			//Token<AMPERSAND>
 		>;
 		std::vector<op_types> unary_operators;
 		Expression expr;
@@ -208,10 +213,10 @@ struct NodeStructs {
 	struct CompareExpression {
 		Expression expr;
 		using op_types = std::variant<
-			Token<LT>,
-			Token<LTE>,
-			Token<GT>,
-			Token<GTE>
+			Token<LTQ>,
+			Token<LTEQ>,
+			Token<GTQ>,
+			Token<GTEQ>
 		>;
 		std::vector<std::pair<op_types, Expression>> comparisons;
 		std::weak_ordering operator<=>(const CompareExpression&) const = default;
@@ -370,28 +375,34 @@ struct NodeStructs {
 	};
 
 	struct AggregateType {
-		std::vector<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> arguments;
+		std::vector<std::pair<ArgumentCategory, UniversalType>> arguments;
 		std::weak_ordering operator<=>(const AggregateType&) const = default;
 	};
 
 	struct TypeType {
-		std::reference_wrapper<const NodeStructs::Type> type;
+		std::reference_wrapper<const Type> type;
 		std::weak_ordering operator<=>(const TypeType&) const;
 	};
 
 	struct FunctionType {
-		std::reference_wrapper<const NodeStructs::Function> function;
+		std::reference_wrapper<const Function> function;
 		std::weak_ordering operator<=>(const FunctionType&) const;
 	};
 
 	struct TypeTemplateType {
-		std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>> type_template;
+		std::reference_wrapper<const Template<Type>> type_template;
 		std::weak_ordering operator<=>(const TypeTemplateType&) const;
 	};
 
 	struct FunctionTemplateType {
-		std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>> function_template;
+		std::reference_wrapper<const Template<Function>> function_template;
 		std::weak_ordering operator<=>(const FunctionTemplateType&) const;
+	};
+
+	struct FunctionTemplateInstanceType {
+		std::reference_wrapper<const Template<Function>> function_template;
+		std::vector<UniversalType> template_arguments;
+		std::weak_ordering operator<=>(const FunctionTemplateInstanceType&) const;
 	};
 
 	struct UnionType {
@@ -400,7 +411,20 @@ struct NodeStructs {
 	};
 
 	struct UniversalType {
-		std::variant<std::reference_wrapper<const Type>, TypeTemplateInstanceType, AggregateType, TypeType, TypeTemplateType, FunctionType, FunctionTemplateType, UnionType> value;
+		std::variant<
+			std::reference_wrapper<const Type>,
+			TypeTemplateInstanceType,
+			AggregateType,
+			TypeType,
+			TypeTemplateType,
+			FunctionType,
+			FunctionTemplateType,
+			FunctionTemplateInstanceType,
+			UnionType,
+			std::string,
+			double,
+			int
+		> value;
 		std::weak_ordering operator<=>(const UniversalType& other) const;
 	};
 
@@ -477,6 +501,21 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 	else if constexpr (is_specialization<T, std::reference_wrapper>::value) {
 		return cmp(a.get(), b.get());
 	}
+	else if constexpr (std::is_same_v<T, std::string>)
+		return a <=> b;
+	else if constexpr (std::is_same_v<T, double>) {
+		std::partial_ordering partial = a <=> b;
+		if (partial == partial.greater)
+			return std::weak_ordering::greater;
+		if (partial == partial.less)
+			return std::weak_ordering::less;
+		if (partial == partial.equivalent)
+			return std::weak_ordering::equivalent;
+		//if (partial == partial.unordered)
+		throw;
+	}
+	else if constexpr (std::is_same_v<T, int>)
+		return a <=> b;
 	else
 		return a <=> b;
 }
@@ -541,6 +580,12 @@ inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionT
 
 inline std::weak_ordering NodeStructs::FunctionTemplateType::operator<=>(const FunctionTemplateType& other) const {
 	return cmp(function_template.get(), other.function_template.get());
+}
+
+inline std::weak_ordering NodeStructs::FunctionTemplateInstanceType::operator<=>(const FunctionTemplateInstanceType& other) const {
+	if (auto c = cmp(function_template.get(), other.function_template.get()); c != 0)
+		return c;
+	return cmp(template_arguments, other.template_arguments);
 }
 
 inline bool NodeStructs::Function::operator==(const Function& other) const {

@@ -23,22 +23,22 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 			Named& named = named_by_file[filename];
 
 			for (const auto& e : file.types)
-				named.types[e.name] = &e;
+				named.types[e.name].push_back(&e);
 
 			for (const auto& e : file.type_templates)
-				named.type_templates[e.templated.name] = &e;
+				named.type_templates[e.templated.name].push_back(&e);
 
 			for (const auto& e : file.functions)
-				named.functions[e.name] = &e;
+				named.functions[e.name].push_back(&e);
 
 			for (const auto& e : file.function_templates)
-				named.function_templates[e.templated.name] = &e;
+				named.function_templates[e.templated.name].push_back(&e);
 
 			for (const auto& e : file.blocks)
-				named.blocks[e.name] = &e;
+				named.blocks[e.name].push_back(&e);
 
 			/*for (const auto& e : file.block_templates)
-				named.blocks[e.name] = &e;*/
+				named.blocks[e.name].push_back(&e);*/
 
 			for (const auto& i : file.imports) {
 				insert_all_named_recursive_with_imports(project, named_by_file, i.imported);
@@ -65,7 +65,7 @@ void insert_aliases_recursive_with_imports(const std::vector<NodeStructs::File>&
 			auto state = transpilation_state{ {}, Named(named) };
 			for (const auto& alias : file.aliases) {
 				auto t = type_of_typename_visitor{ {}, { state, 0 } }(alias.aliasFrom);
-				if (!t.has_value())
+				if (t.has_error())
 					throw;
 				named.type_aliases.emplace(alias.aliasTo, std::move(t).value());
 			}
@@ -81,8 +81,7 @@ void insert_aliases_recursive_with_imports(const std::vector<NodeStructs::File>&
 	throw std::runtime_error(err);
 }
 
-
-std::expected<std::pair<std::string, std::string>, user_error> transpile(const std::vector<NodeStructs::File>& project) {
+transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) {
 	for (const auto& file : project)
 		for (const auto& fn : file.functions)
 			if (fn.name == "main") {
@@ -98,18 +97,18 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 				for (const auto& file2 : project) {
 					Named named_of_file;
 					{
-						named_of_file.type_templates["Set"] = &stuff_from_cpp.unordered_set;
-						named_of_file.type_templates["Vector"] = &stuff_from_cpp.vector;
-						named_of_file.type_templates["Map"] = &stuff_from_cpp.unordered_map;
-						named_of_file.type_templates["Pair"] = &stuff_from_cpp.pair;
+						named_of_file.type_templates["Set"].push_back(&stuff_from_cpp.unordered_set);
+						named_of_file.type_templates["Vector"].push_back(&stuff_from_cpp.vector);
+						named_of_file.type_templates["Map"].push_back(&stuff_from_cpp.unordered_map);
+						named_of_file.type_templates["Pair"].push_back(&stuff_from_cpp.pair);
 
-						named_of_file.types["Int"] = &stuff_from_cpp._int;
-						named_of_file.types["Bool"] = &stuff_from_cpp._bool;
-						named_of_file.types["String"] = &stuff_from_cpp.string;
-						named_of_file.types["Void"] = &stuff_from_cpp._void;
+						named_of_file.types["Int"].push_back(&stuff_from_cpp._int);
+						named_of_file.types["Bool"].push_back(&stuff_from_cpp._bool);
+						named_of_file.types["String"].push_back(&stuff_from_cpp.string);
+						named_of_file.types["Void"].push_back(&stuff_from_cpp._void);
 
-						named_of_file.functions["println"] = &stuff_from_cpp.println;
-						named_of_file.function_templates["size"] = &stuff_from_cpp._size;
+						named_of_file.functions["println"].push_back(&stuff_from_cpp.println);
+						named_of_file.functions["size"].push_back(&stuff_from_cpp.size);
 					}
 					named_by_file[file2.filename] = named_of_file;
 					insert_all_named_recursive_with_imports(project, named_by_file, file2.filename);
@@ -122,15 +121,15 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 
 				transpilation_state state{ std::move(variables), Named(named_by_file[file.filename]) };
 				state.traversed_functions.insert(stuff_from_cpp.println);
-				state.traversed_function_templates.insert(stuff_from_cpp._size);
+				state.traversed_functions.insert(stuff_from_cpp.size);
 				state.traversed_types.insert(stuff_from_cpp._int);
 				state.traversed_types.insert(stuff_from_cpp._bool);
 				state.traversed_types.insert(stuff_from_cpp.string);
 				state.traversed_types.insert(stuff_from_cpp._void);
 
 				transpile_header_cpp_t k = transpile_main(transpilation_state_with_indent{ state, 0 }, fn);
-				if (!k.has_value())
-					return std::unexpected{ k.error() };
+				if (k.has_error())
+					return k;
 
 				std::stringstream h, cpp;
 				h << default_includes << k.value().first;
@@ -153,7 +152,7 @@ std::expected<std::pair<std::string, std::string>, user_error> transpile(const s
 
 				return std::pair{ h.str(), cpp.str() };
 			}
-	return std::unexpected{ user_error{ "Missing \"main\" function" } };
+	return error{ "user error", "Missing \"main\" function" };
 }
 
 transpile_header_cpp_t transpile_main(
@@ -161,7 +160,7 @@ transpile_header_cpp_t transpile_main(
 	const NodeStructs::Function& fn
 ) {
 	if (fn.parameters.size() != 1)
-		return std::unexpected{ user_error{ "\"main\" function requires 1 argument of type `Vector<String> ref`" } };
+		return error{ "user error","\"main\" function requires 1 argument of type `Vector<String> ref`" };
 
 	const auto& [type, cat, name] = fn.parameters.at(0);
 	auto vector_str = NodeStructs::Typename{ NodeStructs::TemplatedTypename{
@@ -170,7 +169,7 @@ transpile_header_cpp_t transpile_main(
 	} };
 	bool is_vec_str = type <=> vector_str == 0;
 	if (!is_vec_str)
-		return std::unexpected{ user_error{ "\"main\" function using 1 argument must be of `Vector<String> ref` type" } };
+		return error{ "user error","\"main\" function using 1 argument must be of `Vector<String> ref` type" };
 	return transpile(
 		state,
 		NodeStructs::Function{
@@ -187,16 +186,13 @@ transpile_header_cpp_t transpile(
 	const NodeStructs::Function& fn
 ) {
 	auto return_type = transpile_typename_visitor{ {}, state }(fn.returnType);
-	if (!return_type.has_value())
-		return std::unexpected{ return_type.error() };
+	return_if_error(return_type);
 	auto parameters = transpile(state, fn.parameters);
-	if (!parameters.has_value())
-		return std::unexpected{ parameters.error() };
+	return_if_error(parameters);
 	for (auto&& [type_name, value_cat, name] : fn.parameters)
 		state.state.variables[name].push_back(std::pair{ value_cat, type_of_typename_visitor{ {}, state }(type_name).value() });
 	auto statements = transpile(state.indented(), fn.statements);
-	if (!statements.has_value())
-		return std::unexpected{ statements.error() };
+	return_if_error(statements);
 	for (auto&& [type_name, value_cat, name] : fn.parameters)
 		state.state.variables[name].pop_back();
 	auto common = return_type.value() + " " + fn.name + "(" + parameters.value() + ")";
@@ -227,11 +223,9 @@ transpile_header_cpp_t transpile(
 
 	for (const auto& member : type.memberVariables) {
 		auto type = type_of_typename_visitor{ {}, state }(member.type);
-		if (!type.has_value())
-			return std::unexpected{ type.error() };
+		return_if_error(type);
 		auto transpiled = transpile_typename_visitor{ {}, state }(member.type);
-		if (!transpiled.has_value())
-			return std::unexpected{ transpiled.error() };
+		return_if_error(transpiled);
 		cpp << transpiled.value() << " " << member.name << ";\n";
 	}
 
@@ -284,7 +278,7 @@ transpile_t transpile(
 		if (k.has_value())
 			ss << indent(state.indent) << k.value();
 		else
-			return std::unexpected{ k.error() };
+			return k.error();
 	}
 	for (const auto& statement : statements)
 		remove_added_variables(state, statement);
@@ -305,7 +299,7 @@ void remove_added_variables(
 				auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value).type;
 
 				if (state.state.named.blocks.contains(s)) {
-					const NodeStructs::Block& block = *state.state.named.blocks.at(s);
+					const NodeStructs::Block& block = *state.state.named.blocks.at(s).back();
 					for (const auto& statement_in_block : block.statements)
 						remove_added_variables(state, statement_in_block);
 				}
@@ -347,7 +341,7 @@ NodeStructs::UniversalType iterator_type(
 						if (tn == "Map")
 							if (type.template_arguments.size() == 2)
 								return NodeStructs::UniversalType{ NodeStructs::TypeTemplateInstanceType{
-									.type_template = *state.state.named.type_templates.at("Map"),
+									.type_template = *state.state.named.type_templates.at("Map").back(),
 									.template_arguments = { type.template_arguments.at(0), type.template_arguments.at(1) },
 								} };
 							else
@@ -370,7 +364,19 @@ NodeStructs::UniversalType iterator_type(
 			[&](const NodeStructs::FunctionTemplateType&) -> NodeStructs::UniversalType {
 				throw;
 			},
+			[&](const NodeStructs::FunctionTemplateInstanceType&) -> NodeStructs::UniversalType {
+				throw;
+			},
 			[&](const NodeStructs::UnionType&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const std::string&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const double&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const int&) -> NodeStructs::UniversalType {
 				throw;
 			}
 		),
@@ -434,7 +440,19 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 			[&](const NodeStructs::FunctionTemplateType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
+			[&](const NodeStructs::FunctionTemplateInstanceType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
 			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const std::string&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const double&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const int&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			}
 		),
@@ -442,13 +460,13 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 	);
 }
 
-std::optional<user_error> add_decomposed_for_iterator_variables(
+std::optional<error> add_decomposed_for_iterator_variables(
 	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::UniversalType& it_type
 ) {
 	if (iterators.size() == 0)
-		return user_error{ "Expected at least 1 iterator" };
+		return error{ "user error","Expected at least 1 iterator" };
 	auto decomposed_types = decomposed_type(state, it_type);
 	if (iterators.size() != decomposed_types.size())
 		throw std::runtime_error("");
@@ -456,18 +474,17 @@ std::optional<user_error> add_decomposed_for_iterator_variables(
 		const auto& iterator = iterators.at(i);
 		auto opt_error = std::visit(
 			overload(overload_default_error,
-				[&](const NodeStructs::VariableDeclaration& it) -> std::optional<user_error> {
+				[&](const NodeStructs::VariableDeclaration& it) -> std::optional<error> {
 					NodeStructs::UniversalType iterator_type = type_of_typename_visitor{ {}, state }(it.type).value();
 					if (decomposed_types.at(i) <=> iterator_type != std::weak_ordering::equivalent) {
 						auto t = transpile_typename_visitor{ {}, state }(it.type);
-						if (!t.has_value())
-							return t.error();
-						return user_error{ "Invalid type of iterator " + t.value() };
+						return_if_error(t);
+						return error{ "user error","Invalid type of iterator " + t.value() };
 					}
 					state.state.variables[it.name].push_back({ NodeStructs::Reference{}, type_of_typename_visitor{ {}, state }(it.type).value() });
 					return std::nullopt;
 				},
-				[&](const std::string& it) -> std::optional<user_error> {
+				[&](const std::string& it) -> std::optional<error> {
 					state.state.variables[it].push_back({ NodeStructs::Reference{}, decomposed_types.at(i) });
 					return std::nullopt;
 				}
@@ -494,27 +511,26 @@ std::optional<user_error> add_decomposed_for_iterator_variables(
 	return std::nullopt;
 }
 
-std::optional<user_error> add_for_iterator_variable(
+std::optional<error> add_for_iterator_variable(
 	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::UniversalType& it_type
 ) {
 	if (iterators.size() != 1)
-		return user_error{ "Expected 1 iterator" };
+		return error{ "user error","Expected 1 iterator" };
 	return std::visit(
 		overload(overload_default_error,
-			[&](const NodeStructs::VariableDeclaration& it) -> std::optional<user_error> {
+			[&](const NodeStructs::VariableDeclaration& it) -> std::optional<error> {
 				NodeStructs::UniversalType iterator_type = type_of_typename_visitor{ {}, state }(it.type).value();
 				if (it_type <=> iterator_type != std::weak_ordering::equivalent) {
 					auto t = transpile_typename_visitor{ {}, state }(it.type);
-					if (!t.has_value())
-						return t.error();
-					return user_error{ "Invalid type of iterator " + t.value() };
+					return_if_error(t);
+					return error{ "user error","Invalid type of iterator " + t.value() };
 				}
 				state.state.variables[it.name].push_back({ NodeStructs::Reference{}, type_of_typename_visitor{ {}, state }(it.type).value() });
 				return std::nullopt;
 			},
-			[&](const std::string& it) -> std::optional<user_error> {
+			[&](const std::string& it) -> std::optional<error> {
 				state.state.variables[it].push_back({ NodeStructs::Reference{}, it_type });
 				return std::nullopt;
 			}
@@ -559,12 +575,31 @@ transpile_t transpile_args(
 			first = false;
 		else
 			ss << ", ";
-		ss << transpile_arg(state, arg).value();
+
+		auto repr = transpile_arg(state, arg);
+		return_if_error(repr);
+		ss << repr.value();
 	}
 	return ss.str();
 }
 
-std::expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>, user_error> type_of_postfix_member(
+transpile_t transpile_expressions(transpilation_state_with_indent state, const std::vector<NodeStructs::Expression>& args) {
+	std::stringstream ss;
+	bool first = true;
+	for (const auto& arg : args) {
+		if (first)
+			first = false;
+		else
+			ss << ", ";
+
+		auto repr = transpile_expression_visitor{ {}, state }(arg);
+		return_if_error(repr);
+		ss << repr.value();
+	}
+	return ss.str();
+}
+
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& t,
 	const std::string& property_name
@@ -574,10 +609,29 @@ std::expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalTy
 	if (pos == v.end()) {
 		auto u = transpile_type_visitor{ {}, state }(t);
 		if (u.has_value())
-			return std::unexpected{ user_error{ "Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"} };
+			return error{ "user error","Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"};
 		else
-			return std::unexpected{ std::move(u).error() };
+			return std::move(u).error();
 	}
 	else
 		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(pos->type).value() };
+}
+
+expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
+	transpilation_state_with_indent state,
+	const NodeStructs::Template<NodeStructs::Function>& fn,
+	const std::vector<NodeStructs::FunctionArgument>& called_with
+) {
+	// we need to make use of template argument deduction through function parameters and arguments
+	const auto& template_parameters = fn.parameters.parameters;
+	for (const auto& [parameter_type_name, parameter_cat, parameter_name] : fn.templated.parameters) {
+		// parameter_type_name will look like `std::vector<T>` and we need to determine if it is a typename template or not
+		// something like `optional<type> get_template_if_its_a_template_otherwise_give_me_nothing(type_name, template_parameters, called_with) {...}`
+
+		// A<B>::C is not a template of type T
+		// T, T<U>, U<T>, T::U may be templates of type T
+		// U::T is not a template of type T
+
+	}
+	throw;
 }

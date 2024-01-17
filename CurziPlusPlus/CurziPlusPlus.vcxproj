@@ -146,7 +146,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="node_structs.cpp" />
     <ClCompile Include="transpile_expression_visitor.cpp" />
     <ClCompile Include="transpile_statement_visitor.cpp" />
     <ClCompile Include="transpile_typename_visitor.cpp" />
@@ -155,14 +154,17 @@
     <ClCompile Include="transpile_type_visitor.cpp" />
     <ClCompile Include="type_of_expression_visitor.cpp" />
     <ClCompile Include="type_of_function_like_call_with_args_visitor.cpp" />
+    <ClCompile Include="type_of_template_instantiation_with_args_visitor.cpp" />
     <ClCompile Include="type_of_typename_visitor.cpp" />
     <ClCompile Include="type_template_of_typename_visitor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="box.hpp" />
     <ClInclude Include="colored_text.hpp" />
+    <ClInclude Include="expected.hpp" />
     <ClInclude Include="expression_visitor.hpp" />
     <ClInclude Include="fn_util.hpp" />
+    <ClInclude Include="cursor_vector_view.hpp" />
     <ClInclude Include="is_specialization.hpp" />
     <ClInclude Include="no_copy.hpp" />
     <ClInclude Include="overload.hpp" />
@@ -178,6 +180,7 @@
     <ClInclude Include="transpile_typename_visitor.hpp" />
     <ClInclude Include="type_of_expression_visitor.hpp" />
     <ClInclude Include="type_of_postfix_member_visitor.hpp" />
+    <ClInclude Include="type_of_template_instantiation_with_args_visitor.hpp" />
     <ClInclude Include="type_template_of_typename_visitor.hpp" />
     <ClInclude Include="toCPP.hpp" />
     <ClInclude Include="tokenizer.hpp" />
@@ -186,6 +189,7 @@
     <ClInclude Include="type_of_function_like_call_with_args_visitor.hpp" />
     <ClInclude Include="type_of_typename_visitor.hpp" />
     <ClInclude Include="type_category_visitor.hpp" />
+    <ClInclude Include="vec_of_expected_to_expected_of_vec.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

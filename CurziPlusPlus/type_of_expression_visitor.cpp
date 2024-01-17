@@ -25,11 +25,15 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CompareExpression& expr) {
-	throw;
+	return R::value_type{ NodeStructs::Value{}, std::reference_wrapper{ *state.state.named.types.at("Bool").at(0) } };
 }
 
 R T::operator()(const NodeStructs::AdditiveExpression& expr) {
-	throw;
+	auto type_of_first_term = operator()(expr.expr);
+	return_if_error(type_of_first_term);
+	return std::pair{
+		NodeStructs::Value{}, type_of_first_term.value().second
+	};
 }
 
 R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
@@ -100,14 +104,14 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
 	// man this sucks
-	std::vector<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> vec;
+	std::vector<std::pair<NodeStructs::ArgumentCategory, NodeStructs::UniversalType>> vec;
 	vec.reserve(expr.args.size());
-	for (const auto& e : expr.args) {
-		auto t_or_e = operator()(std::get<NodeStructs::Expression>(e));
-		if (!t_or_e.has_value())
-			return std::unexpected{ std::move(t_or_e).error() };
-		else
-			vec.push_back(std::move(t_or_e).value());
+	for (const auto& [arg_cat, arg] : expr.args) {
+		auto type_of_expression = operator()(arg);
+		return_if_error(type_of_expression);
+		if (!arg_cat.has_value())
+			throw;
+		vec.push_back(std::pair{ arg_cat.value(), std::move(type_of_expression).value().second });
 	}
 	return std::pair{
 		NodeStructs::Reference{},
@@ -116,44 +120,44 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 }
 
 R T::operator()(const std::string& expr) {
-	{
-		auto it = state.state.variables.find(expr);
-		if (it != state.state.variables.end())
-			return it->second.back();
-	}
-	{
-		auto it = state.state.named.types.find(expr);
-		if (it != state.state.named.types.end())
-			return std::pair{
-				NodeStructs::Reference{},
-				NodeStructs::UniversalType{ NodeStructs::TypeType{ *it->second } }
+	if (auto it = state.state.variables.find(expr); it != state.state.variables.end())
+		return it->second.back();
+
+	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end())
+		return std::pair{
+			NodeStructs::Reference{},
+			NodeStructs::UniversalType{ NodeStructs::TypeType{ *it->second.back() } }
+	};
+
+	if (auto it = state.state.named.function_templates.find(expr); it != state.state.named.function_templates.end())
+		return std::pair{
+			NodeStructs::Reference{},
+			NodeStructs::UniversalType{ NodeStructs::FunctionTemplateType{ *it->second.back() } }
 		};
-	}
-	{
-		auto it = state.state.named.function_templates.find(expr);
-		if (it != state.state.named.function_templates.end())
-			return std::pair{
-				NodeStructs::Reference{},
-				NodeStructs::UniversalType{ NodeStructs::FunctionTemplateType{ *it->second } }
-		};
-	}
-	{
-		auto it = state.state.named.functions.find(expr);
-		if (it != state.state.named.functions.end())
-			return std::pair{
-				NodeStructs::Reference{},
-				NodeStructs::UniversalType{ NodeStructs::FunctionType{ *it->second } }
-		};
-	}
+
+	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end())
+		return std::pair{
+			NodeStructs::Reference{},
+			NodeStructs::UniversalType{ NodeStructs::FunctionType{ *it->second.back() } }
+	};
+
 	auto x = transpile_expression_visitor{ {}, state }(expr);
-	if (!x.has_value())
-		return std::unexpected{ std::move(x).error() };
-	else
-		return std::unexpected{ user_error{ "could not find variable named " + std::move(x).value() } };
+	return_if_error(x);
+	return error{ "user error", "could not find variable named " + std::move(x).value() };
 }
 
-R T::operator()(const Token<NUMBER>& expr) {
-	throw;
+R T::operator()(const Token<INTEGER_NUMBER>& expr) {
+	return std::pair{
+		NodeStructs::Reference{},
+		NodeStructs::UniversalType{ stoi(expr.value) }
+	};
+}
+
+R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
+	return std::pair{
+		NodeStructs::Reference{},
+		NodeStructs::UniversalType{ stod(expr.value) }
+	};
 }
 
 R T::operator()(const Token<STRING>& expr) {

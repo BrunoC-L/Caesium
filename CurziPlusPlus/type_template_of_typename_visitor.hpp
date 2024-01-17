@@ -7,7 +7,7 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 
 	transpilation_state_with_indent state;
 
-	using R = std::expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>>, user_error>;
+	using R = expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>>>;
 
 	R operator()(const NodeStructs::BaseTypename& t);
 	R operator()(const NodeStructs::NamespacedTypename& t);

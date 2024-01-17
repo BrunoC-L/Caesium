@@ -23,6 +23,7 @@ struct transpile_expression_visitor : ExpressionVisitor<transpile_expression_vis
 	R operator()(const NodeStructs::ParenArguments& expr);
 	R operator()(const NodeStructs::BraceArguments& expr);
 	R operator()(const std::string& expr);
-	R operator()(const Token<NUMBER>& expr);
+	R operator()(const Token<FLOATING_POINT_NUMBER>& expr);
+	R operator()(const Token<INTEGER_NUMBER>& expr);
 	R operator()(const Token<STRING>& expr);
 };

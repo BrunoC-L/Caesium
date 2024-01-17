@@ -28,11 +28,10 @@ bool test_parse(int line, int n_indent, std::string program) {
 			<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 		std::cout << program << "\n\n";
-		auto save = g.it;
-		g.it = g.tokens.begin();
-		while (g.it != save) {
-			std::cout << g.it->second << " ";
-			++g.it;
+		auto it = g.tokens.begin();
+		while (it != g.it) {
+			std::cout << it->second << " ";
+			++it;
 		}
 		std::cout << "\n";
 		return false;
@@ -79,12 +78,16 @@ bool testParse() {
 	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "2 + 2 * 2 + 2");
 	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "2 + 2 * 2 + 2 * 2 + 2 * 2 + 2");
 	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "((2) + ((2) * 2) + 2) * 2 + 2 * 2 + 2");
-	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "a  < b > c");
-	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "Set<Int> x");
+	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "a  <? b >? c");
+	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "Set<?Int>? x");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "()");
-	ok &= test_parse_correct<Expression>(__LINE__, 0, "a  < b > c");
-	ok &= test_parse_correct<Expression>(__LINE__, 0, "Set<Int> x");
-	ok &= test_parse_correct<VariableDeclarationStatement>(__LINE__, 0, "Set<Int> x = {}");
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "a  <? b >? c");
+	ok &= test_parse_incorrect<Expression>(__LINE__, 0,                 "Set<Int> x");
+	ok &= test_parse_correct<VariableDeclarationStatement>(__LINE__, 0, "Set<Int> x = {}"); 
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "size<Animal>(animals)");
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "size<Animal, Animal>(animals)");
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "a<b,c>?d>");
+	
 
 	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n");
 	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");

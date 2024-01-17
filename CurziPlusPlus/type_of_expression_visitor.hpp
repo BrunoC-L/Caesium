@@ -7,7 +7,7 @@ struct type_of_expression_visitor : ExpressionVisitor<type_of_expression_visitor
 
 	transpilation_state_with_indent state;
 
-	using R = std::expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>, user_error>;
+	using R = expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>;
 
 	//R operator()(const NodeStructs::AssignmentExpression& expr);
 	R operator()(const NodeStructs::ConditionalExpression& expr);
@@ -23,6 +23,7 @@ struct type_of_expression_visitor : ExpressionVisitor<type_of_expression_visitor
 	R operator()(const NodeStructs::ParenArguments& expr);
 	R operator()(const NodeStructs::BraceArguments& expr);
 	R operator()(const std::string& expr);
-	R operator()(const Token<NUMBER>& expr);
+	R operator()(const Token<FLOATING_POINT_NUMBER>& expr);
+	R operator()(const Token<INTEGER_NUMBER>& expr);
 	R operator()(const Token<STRING>& expr);
 };

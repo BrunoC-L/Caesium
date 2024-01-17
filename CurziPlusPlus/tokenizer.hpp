@@ -31,8 +31,15 @@ enum TOKENS {
 	POUND,
 
 	EQUAL,
+	EQUALQ,
 	LT,
+	LTQ,
+	LTE,
+	LTEQ,
 	GT,
+	GTQ,
+	GTE,
+	GTEQ,
 	DASH,
 	NOT,
 	CARET,
@@ -57,11 +64,10 @@ enum TOKENS {
 	OR,
 	ANDAND,
 	OROR,
-	LTE,
-	GTE,
 
 	WORD,
-	NUMBER,
+	FLOATING_POINT_NUMBER,
+	INTEGER_NUMBER,
 	STRING,
 
 	IMPORT,
@@ -302,15 +308,37 @@ private:
 			if (index < program.size()) {
 				if (program[index] == '=') {
 					index += 1;
-						return { LTE, "<=" };
+					if (index < program.size()) {
+						if (program[index] == '?') {
+							index += 1;
+							return { LTEQ, "<=?" };
+						}
+					}
+					return { LTE, "<=" };
+				}
+				if (program[index] == '?') {
+					index += 1;
+					return { LTQ, "<?" };
 				}
 			}
 			return { LT, "<" };
 		case '>':
 			index += 1;
-			if (index < program.size() && program[index] == '=') {
-				index += 1;
-				return { GTE, ">=" };
+			if (index < program.size()) {
+				if (program[index] == '=') {
+					index += 1;
+					if (index < program.size()) {
+						if (program[index] == '?') {
+							index += 1;
+							return { GTEQ, ">=?" };
+						}
+					}
+					return { GTE, ">=" };
+				}
+				if (program[index] == '?') {
+					index += 1;
+					return { GTQ, ">?" };
+				}
 			}
 			return { GT, ">" };
 		case '-':
@@ -490,8 +518,8 @@ private:
 			index += 1;
 			std::string part2 = parseInt();
 			if (part2.length())
-				return { NUMBER, num + "." + part2 };
+				return { FLOATING_POINT_NUMBER, num + "." + part2 };
 		}
-		return { NUMBER, num };
+		return { INTEGER_NUMBER, num };
 	}
 };

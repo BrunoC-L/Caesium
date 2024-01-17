@@ -7,7 +7,7 @@ struct type_of_typename_visitor : TypenameVisitor<type_of_typename_visitor> {
 
 	transpilation_state_with_indent state;
 
-	using R = std::expected<NodeStructs::UniversalType, user_error>;
+	using R = expected<NodeStructs::UniversalType>;
 
 	R operator()(const NodeStructs::BaseTypename& t);
 	R operator()(const NodeStructs::NamespacedTypename& t);

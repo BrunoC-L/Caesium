@@ -57,8 +57,8 @@
     <ClCompile Include="transpile_typename_visitor.cpp">
       <Filter>Header Files\typename_visitors</Filter>
     </ClCompile>
-    <ClCompile Include="node_structs.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="type_of_template_instantiation_with_args_visitor.cpp">
+      <Filter>Header Files\type_category_visitors</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +141,18 @@
       <Filter>Header Files\typename_visitors</Filter>
     </ClInclude>
     <ClInclude Include="no_copy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="expected.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cursor_vector_view.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="type_of_template_instantiation_with_args_visitor.hpp">
+      <Filter>Header Files\type_category_visitors</Filter>
+    </ClInclude>
+    <ClInclude Include="vec_of_expected_to_expected_of_vec.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

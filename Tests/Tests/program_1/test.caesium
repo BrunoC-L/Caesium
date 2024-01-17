@@ -3,6 +3,10 @@ type Cat:
 
 using Animal = Dog | Cat
 
+template <T>
+Int size(Vector<T> ref vec):
+    return 0
+
 Int main(Vector<String> ref s):
     Vector<Animal> animals = {}
-    return animals.size()
+    return size<Animal>(animals)

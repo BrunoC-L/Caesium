@@ -53,54 +53,67 @@ struct Token {
 	int n_indent;
 	Token(int n_indent) : n_indent(n_indent) {}
 
-	bool build(tokens_and_iterator& g) {
+	bool build_end_token(tokens_and_iterator& g) {
 		bool isT = g.it->first == token;
 		if (isT)
 			value = g.it->second;
-		if constexpr (token == END) {
-			while (g.it != g.tokens.end()) {
-				if (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)
-					g.it++;
-				else if (g.it->first == END)
-					return true;
-				else
-					break;
-			}
-			return false;
-		}
-		else {
-			if (!isT)
-				return false;
-			g.it++;
-			if constexpr (token == NEWLINE) {
-				auto savepoint = g.it;
-				while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)) {
-					if (g.it->first == NEWLINE) {
-						g.it++;
-						savepoint = g.it;
-					}
-					else {
-						g.it++;
-					}
-				}
-				g.it = savepoint;
+		while (g.it != g.tokens.end()) {
+			if (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)
+				g.it++;
+			else if (g.it->first == END)
 				return true;
+			else
+				break;
+		}
+		return false;
+	}
+	
+	bool build_newline_token(tokens_and_iterator& g) {
+		bool isT = g.it->first == token;
+		if (isT)
+			value = g.it->second;
+		else
+			return false;
+		g.it++;
+		auto savepoint = g.it;
+		while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)) {
+			if (g.it->first == NEWLINE) {
+				g.it++;
+				savepoint = g.it;
 			}
 			else {
-				while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE)) // ignoring trailing tabs & spaces
-					g.it++;
-				return true;
+				g.it++;
 			}
 		}
+		g.it = savepoint;
+		return true;
+	}
 
+	bool build_normal_token(tokens_and_iterator& g) {
+		bool isT = g.it->first == token;
+		if (isT)
+			value = g.it->second;
+		else
+			return false;
+		g.it++;
+		while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE)) // ignoring trailing tabs & spaces
+			g.it++;
+		return true;
+	}
+
+	bool build(tokens_and_iterator& g) {
+		if constexpr (token == END)
+			return build_end_token(g);
+		else if constexpr (token == NEWLINE)
+			return build_newline_token(g);
+		else
+			return build_normal_token(g);
 	}
 
 	std::weak_ordering operator<=>(const Token& other) const {
-
 		// might want to trim tokens for comparison but i cant figure if thats a problem right now, lets throw in case and fix later if it is
 		if (std::find(value.begin(), value.end(), ' ') != value.end())
 			throw;
-
 		return value <=> other.value;
 	}
 };

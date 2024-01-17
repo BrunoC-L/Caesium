@@ -2,13 +2,12 @@
 #include "primitives.hpp"
 
 // forward declare recursive rules
-struct Typename;
-struct Statement;
-struct ElseStatement;
-struct ConditionalExpression;
-struct FunctionArgument;
+struct Typename; // typenames contain typenames
+struct Statement; // statements contain statements
+struct ConditionalExpression; // expressions contain expressions
+struct FunctionArgument; // expressions use function arguments and function arguments use expressions
 
-// to save some space since these are the most used token
+// alias the most used tokens
 using Word = Token<WORD>;
 using String = Token<STRING>;
 using Newline = Token<NEWLINE>;
@@ -25,6 +24,7 @@ using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token
 using ParenArguments = And<Token<PARENOPEN>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 using BraceArguments = And<Token<BRACEOPEN>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
 using BracketArguments = And<Token<BRACKETOPEN>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
+using TemplateArguments = And<Token<LT>, CommaStar<Expression>, Token<GT>>;
 
 using NamespaceTypenameExtension = And<Token<NS>, Alloc<Typename>>;
 using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NamespaceTypenameExtension>>;
@@ -40,33 +40,37 @@ using ClassElement = Or<Alias, Function, MemberVariable, Constructor>;
 
 using ParenExpression = Or<
 	Word,
-	Token<NUMBER>,
+	Token<FLOATING_POINT_NUMBER>,
+	Token<INTEGER_NUMBER>,
 	Token<STRING>,
 	And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>,
 	ParenArguments,
 	BracketArguments,
 	BraceArguments
 >;
+using Postfix = Or<
+	And<
+		Token<DOT>,
+		Word
+	>,
+	ParenArguments,
+	BracketArguments,
+	BraceArguments,
+	TemplateArguments,
+	Token<PLUSPLUS>,
+	Token<MINUSMINUS>
+>;
 using PostfixExpression = And<
 	ParenExpression,
-	Star<Or<
-        And<
-			Token<DOT>,
-            Word
-        >,
-        ParenArguments,
-        BracketArguments,
-        BraceArguments,
-		Token<PLUSPLUS>,
-		Token<MINUSMINUS>
-	>>
+	Star<Postfix>
 >;
 
 using unary_operators = Or<Token<DASH>, Token<TILDE> /*, Token<NOT>, Token<ASTERISK>, Token<AMPERSAND>*/>;
 using UnaryExpression = Alloc<And<Star<unary_operators>, PostfixExpression>>;
 using MultiplicativeExpression = And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>>;
 using AdditiveExpression = And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>>;
-using CompareExpression = And<AdditiveExpression, Star<And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, AdditiveExpression>>>;
+using CompareOperator = Or<Token<LTQ>, Token<LTEQ>, Token<GTQ>, Token<GTEQ>>;
+using CompareExpression = And<AdditiveExpression, Star<And<CompareOperator, AdditiveExpression>>>;
 using EqualityExpression = And<CompareExpression, Star<And<Or<Token<EQUALEQUAL>, Token<NEQUAL>>, CompareExpression>>>;
 using AndExpression = And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>;
 using OrExpression = And<AndExpression, Star<And<Token<OR>, AndExpression>>>;
@@ -87,8 +91,9 @@ using BlockDeclaration = And<Token<BLOCK>, ColonIndentCodeBlock>;
 using BlockStatement = And<Token<BLOCK>, Typename>;
 using VariableDeclaration = And<Typename, Word>;
 using VariableDeclarationStatement = And<Typename, Word, Token<EQUAL>, Expression, Newline>;
-using IfStatement = And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>;
 
+struct ElseStatement; // we need to explicitly allow `else if <>:` otherwise a typical `else {statments}` would require indentation
+using IfStatement = And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>;
 struct ElseStatement : public And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>> {};
 
 using BreakStatement = And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
