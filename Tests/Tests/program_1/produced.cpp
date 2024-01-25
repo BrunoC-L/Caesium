@@ -5,13 +5,9 @@ struct Cat {
 struct Dog {
 };
 
-template <typename T>
-Int size(const Vector<T>& vec):
-    return 0
-
 Int _redirect_main(const Vector<String>& s) {
-    Vector<std::variant<Cat, Dog>> animals = {};
-    return size<std::variant<Cat, Dog>>(animals);
+	Vector<std::variant<Cat, Dog>> animals = {};
+	return size<std::variant<Cat, Dog>>(animals);
 };
 
 int main(int argc, char** argv) {

@@ -31,6 +31,7 @@ struct Named {
 	map_to_vec<NodeStructs::Block> blocks;
 	map_to_vec<NodeStructs::Template<NodeStructs::Block>> block_templates;
 
+	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
 	std::map<std::string, NodeStructs::UniversalType> type_aliases;
 };
 
@@ -50,6 +51,7 @@ struct transpilation_state {
 	//std::set<NodeStructs::Template<NodeStructs::Type>> traversed_type_templates;
 	std::set<NodeStructs::Block> traversed_blocks;
 	//std::set<NodeStructs::Template<NodeStructs::Block>> traversed_block_templates;
+	std::set<NodeStructs::Alias> traversed_type_aliases;
 private:
 	no_copy _;
 };

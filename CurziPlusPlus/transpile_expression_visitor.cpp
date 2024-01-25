@@ -4,6 +4,8 @@
 #include "type_of_function_like_call_with_args_visitor.hpp"
 #include "type_of_template_instantiation_with_args_visitor.hpp"
 #include "cursor_vector_view.hpp"
+#include "traverse_type_visitor.hpp"
+#include "transpile_typename_visitor.hpp";
 
 using T = transpile_expression_visitor;
 using R = T::R;
@@ -169,7 +171,7 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 					return_if_error(v);
 					return type_and_representation{
 						std::move(t).value(),
-						it.representation + "(" + std::move(v).value() + ")"
+						it.representation + "<" + std::move(v).value() + ">"
 					};
 				},
 				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
@@ -222,13 +224,14 @@ R T::operator()(const std::string& expr) {
 	}
 	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end()) {
 		const auto& e = *it->second.back();
-		if (!state.state.traversed_types.contains(e)) {
-			state.state.traversed_types.insert(e);
-			auto t = transpile(state, e);
-			return_if_error(t);
-			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
-		}
+		if (auto t = traverse_type_visitor{ {}, state }(e); t.has_value())
+			return t.value();
 		return expr;
+	}
+	if (auto it = state.state.named.type_aliases.find(expr); it != state.state.named.type_aliases.end()) {
+		if (std::optional<error> t = traverse_type_visitor{{}, state}(it->second); t.has_value())
+			return t.value();
+		return transpile_typename_visitor{ {}, state }(state.state.named.type_aliases_typenames.at(expr));
 	}
 	return error{ "user error", "Undeclared variable `" + expr + "`" };
 }

@@ -181,6 +181,8 @@ bool test_transpile_file(
 }
 
 bool test_transpile_folder(const std::filesystem::path& folder) {
+	auto s = folder.string();
+	bool b = std::string_view(s).ends_with("program_1");
 	std::remove((folder / "produced_error.txt").string().c_str());
 	std::remove((folder / "produced.hpp").string().c_str());
 	std::remove((folder / "produced.cpp").string().c_str());

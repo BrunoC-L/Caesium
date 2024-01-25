@@ -32,12 +32,12 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 
 R T::operator()(const NodeStructs::FunctionTemplateType& t) {
 	const auto& f = t.function_template;
-	if (!state.state.traversed_function_templates.contains(f)) {
+	/*if (!state.state.traversed_function_templates.contains(f)) {
 		state.state.traversed_function_templates.insert(f);
-		/*auto template_definition = transpile(state.unindented(), f);
+		auto template_definition = transpile(state.unindented(), f);
 		return_if_error(template_definition);
-		state.state.transpile_in_reverse_order.push_back(std::move(template_definition).value());*/
-	}
+		state.state.transpile_in_reverse_order.push_back(std::move(template_definition).value());
+	}*/
 	auto type = type_of_expression_visitor{ {}, state };
 	std::vector<expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>> v1 = args
 		| LIFT_TRANSFORM(type)

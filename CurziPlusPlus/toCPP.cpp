@@ -67,12 +67,14 @@ void insert_aliases_recursive_with_imports(const std::vector<NodeStructs::File>&
 				auto t = type_of_typename_visitor{ {}, { state, 0 } }(alias.aliasFrom);
 				if (t.has_error())
 					throw;
+				named.type_aliases_typenames.emplace(alias.aliasTo, alias.aliasFrom);
 				named.type_aliases.emplace(alias.aliasTo, std::move(t).value());
 			}
 			for (const auto& i : file.imports) {
 				insert_aliases_recursive_with_imports(project, named_by_file, i.imported);
 				Named& imported_named = named_by_file[i.imported];
 				named.type_aliases.insert(imported_named.type_aliases.begin(), imported_named.type_aliases.end());
+				named.type_aliases_typenames.insert(imported_named.type_aliases_typenames.begin(), imported_named.type_aliases_typenames.end());
 			}
 
 			return;

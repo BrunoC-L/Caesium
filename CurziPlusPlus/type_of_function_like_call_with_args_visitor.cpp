@@ -56,7 +56,14 @@ R T::operator()(const NodeStructs::FunctionTemplateType& t) {
 }
 
 R T::operator()(const NodeStructs::FunctionTemplateInstanceType& t) {
-	throw;
+	// if the return type comes from the template this won't work
+	// we can iterate the template parameters and check if the names match with the names used in the return type typename to detect if we need to do more work
+	auto res = type_of_typename_visitor{ {}, state }(t.function_template.get().templated.returnType);
+	return_if_error(res);
+	return std::pair{
+		NodeStructs::Value{},
+		std::move(res).value()
+	};
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {

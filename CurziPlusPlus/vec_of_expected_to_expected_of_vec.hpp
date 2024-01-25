@@ -8,4 +8,5 @@ expected<cnt<T>> vec_of_expected_to_expected_of_vec(const cnt<expected<T>>& vec)
 		return_if_error(e);
 		res.push_back(e.value());
 	}
+	return res;
 }

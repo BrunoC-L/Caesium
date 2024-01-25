@@ -125,25 +125,29 @@ R T::operator()(const std::string& expr) {
 
 	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end())
 		return std::pair{
-			NodeStructs::Reference{},
+			NodeStructs::Reference{}, // dummy arg
 			NodeStructs::UniversalType{ NodeStructs::TypeType{ *it->second.back() } }
-	};
+		};
 
 	if (auto it = state.state.named.function_templates.find(expr); it != state.state.named.function_templates.end())
 		return std::pair{
-			NodeStructs::Reference{},
+			NodeStructs::Reference{}, // dummy arg
 			NodeStructs::UniversalType{ NodeStructs::FunctionTemplateType{ *it->second.back() } }
 		};
 
 	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end())
 		return std::pair{
-			NodeStructs::Reference{},
+			NodeStructs::Reference{}, // dummy arg
 			NodeStructs::UniversalType{ NodeStructs::FunctionType{ *it->second.back() } }
 	};
 
-	auto x = transpile_expression_visitor{ {}, state }(expr);
-	return_if_error(x);
-	return error{ "user error", "could not find variable named " + std::move(x).value() };
+	if (auto it = state.state.named.type_aliases.find(expr); it != state.state.named.type_aliases.end())
+		return std::pair{
+			NodeStructs::Reference{}, // dummy arg
+			it->second
+		};
+
+	return error{ "user error", "could not find variable named `" + expr + "`"};
 }
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {

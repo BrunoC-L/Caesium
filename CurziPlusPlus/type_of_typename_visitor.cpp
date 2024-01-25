@@ -1,5 +1,6 @@
 #include "type_of_typename_visitor.hpp"
 #include "type_template_of_typename_visitor.hpp"
+#include "traverse_type_visitor.hpp"
 
 using T = type_of_typename_visitor;
 using R = T::R;
@@ -17,7 +18,8 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	}
 	if (auto it = state.state.named.type_aliases.find(t.type); it != state.state.named.type_aliases.end()) {
 		const auto& type = it->second;
-		return type;
+		traverse_type_visitor{ {}, state }(type);
+		return it->second;
 	}
 	auto err = "Missing type " + t.type;
 	throw std::runtime_error(err);

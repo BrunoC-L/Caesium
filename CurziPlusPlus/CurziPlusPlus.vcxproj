@@ -149,6 +149,7 @@
     <ClCompile Include="transpile_expression_visitor.cpp" />
     <ClCompile Include="transpile_statement_visitor.cpp" />
     <ClCompile Include="transpile_typename_visitor.cpp" />
+    <ClCompile Include="traverse_type_visitor.cpp" />
     <ClCompile Include="type_of_postfix_member_visitor.cpp" />
     <ClCompile Include="toCPP.cpp" />
     <ClCompile Include="transpile_type_visitor.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="transpile_expression_visitor.hpp" />
     <ClInclude Include="transpile_statement_visitor.hpp" />
     <ClInclude Include="transpile_typename_visitor.hpp" />
+    <ClInclude Include="traverse_type_visitor.hpp" />
     <ClInclude Include="type_of_expression_visitor.hpp" />
     <ClInclude Include="type_of_postfix_member_visitor.hpp" />
     <ClInclude Include="type_of_template_instantiation_with_args_visitor.hpp" />
