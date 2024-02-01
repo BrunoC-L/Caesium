@@ -6,6 +6,7 @@
 
 NodeStructs::Expression getExpressionStruct(const Expression& statement);
 NodeStructs::Statement getStatementStruct(const Statement& statement);
+std::vector<NodeStructs::Statement> getStatements(const ColonIndentCodeBlock& code);
 
 NodeStructs::Import getStruct(const Import& f) {
 	return { std::visit(
@@ -108,9 +109,7 @@ NodeStructs::Function getStruct(const Function& f) {
 		.parameters = f.get<FunctionParameters>().get<And<Typename, ParameterCategory, Word>>()
 			| LIFT_TRANSFORM_X(type_and_name, std::tuple{ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ParameterCategory>()), type_and_name.get<Word>().value })
 			| to_vec(),
-		.statements = f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
-			| LIFT_TRANSFORM(getStatementStruct)
-			| to_vec()
+		.statements = getStatements(f.get<ColonIndentCodeBlock>())
 	};
 }
 
@@ -552,7 +551,9 @@ NodeStructs::VariableDeclarationStatement getStatementStruct(const VariableDecla
 }
 
 std::vector<NodeStructs::Statement> getStatements(const ColonIndentCodeBlock& code) {
-	return code.get<Indent<Star<Statement>>>().get<Statement>()
+	return code.get<Indent<Star<Or<Token<NEWLINE>, Statement>>>>().get<Or<Token<NEWLINE>, Statement>>()
+		| LIFT_TRANSFORM_TRAIL(.value())
+		| filter_transform_variant_type_eq(Statement)
 		| LIFT_TRANSFORM(getStatementStruct)
 		| to_vec();
 }
@@ -565,9 +566,7 @@ NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
 	using T = std::variant<Box<NodeStructs::IfStatement>, std::vector<NodeStructs::Statement>>;
 	return {
 		getExpressionStruct(statement.get<Expression>()),
-		statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
-			| LIFT_TRANSFORM(getStatementStruct)
-			| to_vec(),
+		getStatements(statement.get<ColonIndentCodeBlock>()),
 		statement.get<Opt<Alloc<ElseStatement>>>().node.transform([](const auto& e) -> T {
 			return std::visit(
 				overload(overload_default_error,
@@ -601,9 +600,7 @@ NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
 				), or_node.value());
 			})
 			| to_vec(),
-		.statements = statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
-			| LIFT_TRANSFORM(getStatementStruct)
-			| to_vec()
+		.statements = getStatements(statement.get<ColonIndentCodeBlock>())
 	};
 }
 

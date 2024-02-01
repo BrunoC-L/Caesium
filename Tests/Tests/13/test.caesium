@@ -1,0 +1,6 @@
+template f<T>:
+    Int f():
+        return 0
+
+Int main(Vector<String> ref args):
+    return f<Int>()

@@ -19,7 +19,7 @@ using ParameterCategory = Or</*Token<KEY>, */Token<VAL>, And<Token<REF>, Token<N
 using ArgumentCategory  = Or<Token<COPY>,   Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 using FunctionParameter = And<Typename, ParameterCategory, Word>;
 using FunctionParameters = CommaStar<FunctionParameter>;
-using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Statement>>>;
+using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Statement>>>>;
 using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ParenArguments = And<Token<PARENOPEN>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 using BraceArguments = And<Token<BRACEOPEN>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
@@ -92,7 +92,7 @@ using BlockStatement = And<Token<BLOCK>, Typename>;
 using VariableDeclaration = And<Typename, Word>;
 using VariableDeclarationStatement = And<Typename, Word, Token<EQUAL>, Expression, Newline>;
 
-struct ElseStatement; // we need to explicitly allow `else if <>:` otherwise a typical `else {statments}` would require indentation
+struct ElseStatement; // we need to explicitly allow `else if <>:` otherwise using `else {ifstatement}` would require indentation
 using IfStatement = And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>;
 struct ElseStatement : public And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>> {};
 
@@ -153,11 +153,12 @@ using Type = And<
 	>>>
 >;
 
+using Template2 = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<Word>, Token<GT>, Token<SEMICOLON>, Token<NEWLINE>, TemplateBody>;
 
 template <typename T>
 using Template = And<
 	TemplateDeclaration,
-	Token<NEWLINE>,
+	Star<Token<NEWLINE>>,
 	T
 >;
 

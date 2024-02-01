@@ -116,17 +116,22 @@ struct Tokenizer {
 
 	std::forward_list<TOKENVALUE> read() {
 		std::forward_list<TOKENVALUE> out;
-		TOKENVALUE t;
-		do {
-			t = readToken();
-			out.push_front(t);
-		} while (t.first != END);
-		// allow for files not to end with a new line
-		if (std::next(out.begin(), 1)->first != NEWLINE) {
-			out.front().first = NEWLINE; // replace END with newline
-			out.push_front(TOKENVALUE(END, "")); // add the new END
+		if (program.size() != 0) {
+			TOKENVALUE t;
+			do {
+				t = readToken();
+				out.push_front(t);
+			} while (t.first != END);
+			// allow for files not to end with a new line
+			if (std::next(out.begin(), 1)->first != NEWLINE) {
+				out.front().first = NEWLINE; // replace END with newline
+				out.push_front(TOKENVALUE(END, "")); // add the new END
+			}
+			out.reverse();
 		}
-		out.reverse();
+		else {
+			out.push_front(TOKENVALUE(END, ""));
+		}
 		return out;
 	}
 private:

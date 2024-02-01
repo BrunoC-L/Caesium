@@ -52,7 +52,13 @@ auto test_parse_incorrect(auto&&... es) {
 bool testParse() {
 	bool ok = true;
 
-	ok &= test_parse_correct<Token<END>>(__LINE__, 0, "\n");
+	ok &= test_parse_correct<Token<END>>(__LINE__, 0, "");
+	ok &= test_parse_incorrect<Token<END>>(__LINE__, 0, "\n");
+	ok &= test_parse_correct<Token<NEWLINE>>(__LINE__, 0, "\n");
+	ok &= test_parse_correct<Token<NEWLINE>>(__LINE__, 0, "\t\n");
+	ok &= test_parse_correct<Token<NEWLINE>>(__LINE__, 0, " \n");
+	ok &= test_parse_incorrect<Token<NEWLINE>>(__LINE__, 0, "\n\n");
+	ok &= test_parse_incorrect<Token<NEWLINE>>(__LINE__, 0, "\n\t");
 
 	ok &= test_parse_correct<Import>(__LINE__, 0, "import a");
 
@@ -88,8 +94,14 @@ bool testParse() {
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "size<Animal, Animal>(animals)");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "a<b,c>?d>");
 	
-
+	
+	ok &= test_parse_correct<And<Token<COLON>, Newline, Indent<Star<Statement>>>>(__LINE__, 0, ":\n\tx");
+	ok &= test_parse_correct<And<Newline, Indent<Star<Statement>>>>(__LINE__, 0, "\n\tx");
+	ok &= test_parse_correct<Indent<Star<Statement>>>(__LINE__, 0, "\tx");
+	ok &= test_parse_correct<Indent<And<IndentToken, Word>>>(__LINE__, 0, "\tx");
+	ok &= test_parse_correct<IndentToken, Word>(__LINE__, 1, "\tx");
 	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n");
+	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n\tb");
 	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for a in b:\n\tif a:\n\t\tb\n");
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for i in arr:\n");

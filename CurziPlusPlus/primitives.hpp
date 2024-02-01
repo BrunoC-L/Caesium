@@ -53,52 +53,37 @@ struct Token {
 	int n_indent;
 	Token(int n_indent) : n_indent(n_indent) {}
 
+	void parse_whitespaces(tokens_and_iterator& g) {
+		while (g.it->first == TAB || g.it->first == SPACE)
+			g.it++;
+	}
+
 	bool build_end_token(tokens_and_iterator& g) {
-		bool isT = g.it->first == token;
-		if (isT)
-			value = g.it->second;
-		while (g.it != g.tokens.end()) {
-			if (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)
-				g.it++;
-			else if (g.it->first == END)
-				return true;
-			else
-				break;
-		}
-		return false;
+		bool ok = g.it->first == token;
+		if (ok)
+			g.it++;
+		return ok;
 	}
 	
 	bool build_newline_token(tokens_and_iterator& g) {
-		bool isT = g.it->first == token;
-		if (isT)
-			value = g.it->second;
+		auto save = g.it;
+		parse_whitespaces(g);
+		bool ok = g.it->first == token;
+		if (ok)
+			g.it++;
 		else
-			return false;
-		g.it++;
-		auto savepoint = g.it;
-		while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE || g.it->first == NEWLINE)) {
-			if (g.it->first == NEWLINE) {
-				g.it++;
-				savepoint = g.it;
-			}
-			else {
-				g.it++;
-			}
-		}
-		g.it = savepoint;
-		return true;
+			g.it = save;
+		return ok;
 	}
 
 	bool build_normal_token(tokens_and_iterator& g) {
-		bool isT = g.it->first == token;
-		if (isT)
+		bool ok = g.it->first == token;
+		if (ok) {
 			value = g.it->second;
-		else
-			return false;
-		g.it++;
-		while (g.it != g.tokens.end() && (g.it->first == TAB || g.it->first == SPACE)) // ignoring trailing tabs & spaces
 			g.it++;
-		return true;
+			parse_whitespaces(g);
+		}
+		return ok;
 	}
 
 	bool build(tokens_and_iterator& g) {
@@ -336,5 +321,18 @@ struct Or {
 			}
 		}(), ...);
 		return populated;
+	}
+};
+
+struct TemplateBody {
+	std::string value;
+	TemplateBody(int) {}
+	bool build(tokens_and_iterator& g) {
+		// look for first line that isnt just spaces/tabs/newline and doesnt begin with a tab
+
+	}
+
+	bool line_is_empty(tokens_and_iterator& g) {
+		return Token<NEWLINE>{0}.build(g);
 	}
 };
