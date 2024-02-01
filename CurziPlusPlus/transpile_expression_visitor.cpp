@@ -6,6 +6,7 @@
 #include "cursor_vector_view.hpp"
 #include "traverse_type_visitor.hpp"
 #include "transpile_typename_visitor.hpp";
+#include <algorithm>
 
 using T = transpile_expression_visitor;
 using R = T::R;
@@ -123,6 +124,18 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 	return ss.str();
 }
 
+
+std::string replace_all(std::string str, const std::string& from, const std::string& to, auto&&... args) {
+	if constexpr (sizeof...(args) > 0)
+		str = replace_all(std::move(str), args...);
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+	}
+	return str;
+}
+
 R T::operator()(const NodeStructs::PostfixExpression& expr) {
 	auto t_or_e = type_of_expression_visitor{ {}, state }(expr.expr);
 	return_if_error(t_or_e);
@@ -151,6 +164,15 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 					return_if_error(t);
 					auto v = transpile_args(state, e.args);
 					return_if_error(v);
+
+					if (std::holds_alternative<NodeStructs::FunctionTemplateType>(it.type.value)) {
+						throw;
+					}
+
+					/*if (std::holds_alternative<NodeStructs::FunctionTemplateInstanceType>(it.type.value)) {
+						throw;
+					}*/
+
 					return type_and_representation{
 						std::move(t).value().second,
 						it.representation + "(" + std::move(v).value() + ")"
@@ -169,9 +191,18 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 					return_if_error(t);
 					auto v = transpile_expressions(state, e.args);
 					return_if_error(v);
+
+					std::string x = replace_all(
+						std::move(v).value(),
+						"<", "_open_",
+						">", "_close_",
+						"::", "_ns_",
+						", ", "_"
+					);
+
 					return type_and_representation{
 						std::move(t).value(),
-						it.representation + "<" + std::move(v).value() + ">"
+						it.representation + "_open_" + std::move(x) + "_close_"
 					};
 				},
 				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {

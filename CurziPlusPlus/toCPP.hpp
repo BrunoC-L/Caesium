@@ -46,7 +46,7 @@ struct transpilation_state {
 	) : variables(std::move(variables)), named(std::move(named)) {}
 
 	std::set<NodeStructs::Function> traversed_functions;
-	std::set<NodeStructs::Template<NodeStructs::Function>> traversed_function_templates;
+	std::set<NodeStructs::FunctionTemplateInstanceType> traversed_function_template_instances;
 	std::set<NodeStructs::Type> traversed_types;
 	//std::set<NodeStructs::Template<NodeStructs::Type>> traversed_type_templates;
 	std::set<NodeStructs::Block> traversed_blocks;
@@ -301,3 +301,9 @@ expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve
 	const NodeStructs::Template<NodeStructs::Function>& fn,
 	const std::vector<NodeStructs::FunctionArgument>& called_with
 );
+//
+//expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>>> find_or_traverse_function_template_instance(
+//	transpilation_state_with_indent state,
+//	const std::string& name,
+//	const std::vector<NodeStructs::UniversalType> template_arguments
+//);

@@ -637,3 +637,20 @@ expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve
 	}
 	throw;
 }
+//
+//expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>>> find_or_traverse_function_template_instance(
+//	transpilation_state_with_indent state,
+//	const std::string& name,
+//	const std::vector<NodeStructs::UniversalType> template_arguments
+//) {
+//	if (auto it = state.state.named.function_templates.find(name); it != state.state.named.function_templates.end()) {
+//		const auto& f_tmpl = *it->second.back();
+//		if (auto it2 = state.state.traversed_function_template_instances.find(f_tmpl); it2 != state.state.traversed_function_template_instances.end()) {
+//			//auto [h, cpp] = transpile(state, f_tmpl);
+//		}
+//		return f_tmpl;
+//	}
+//	else
+//		return error{ "user error", "unable to find function template `" + name + "`" };
+//}
+//

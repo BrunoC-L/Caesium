@@ -139,7 +139,7 @@ R T::operator()(const std::string& expr) {
 		return std::pair{
 			NodeStructs::Reference{}, // dummy arg
 			NodeStructs::UniversalType{ NodeStructs::FunctionType{ *it->second.back() } }
-	};
+		};
 
 	if (auto it = state.state.named.type_aliases.find(expr); it != state.state.named.type_aliases.end())
 		return std::pair{
