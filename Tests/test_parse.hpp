@@ -154,7 +154,11 @@ bool testParse() {
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for a in b:\n\tb\n");
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for a in b:\n");
 
-	// previous tests ensure good code works and these tests ensure bad code fails
+	ok &= test_parse_correct<Template2>(__LINE__, 0, "template f<T>:\n");
+	ok &= test_parse_correct<Template2>(__LINE__, 0, "template f<T>:\n\tInt f():\n\t\treturn 0");
+		
+
+
 	ok &= test_parse_incorrect<VariableDeclarationStatement>(__LINE__, 0, "Set<Int> x");
 	ok &= test_parse_incorrect<Type>(__LINE__, 1, "type A:\n\tA a\n\tA a\n\tA a\n\tA a\n");
 	ok &= test_parse_incorrect<Type>(__LINE__, 0, "type A:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");

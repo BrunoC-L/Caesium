@@ -103,6 +103,23 @@ struct Token {
 	}
 };
 
+template <typename T>
+struct Until {
+	int n_indent;
+	Until(int n_indent) : n_indent(n_indent) {}
+	bool build(tokens_and_iterator& g) {
+		T t{ n_indent };
+		auto save = g.it;
+		while (g.it != g.tokens.end()) {
+			if (t.build(g))
+				return true;
+			++g.it;
+		}
+		g.it = save;
+		return false;
+	}
+};
+
 struct IndentToken {
 	int n_indent;
 	IndentToken(int n_indent) : n_indent(n_indent) {}
@@ -325,14 +342,39 @@ struct Or {
 };
 
 struct TemplateBody {
+	int n_indent;
 	std::string value;
-	TemplateBody(int) {}
+	TemplateBody(int n_indent) : n_indent(n_indent) {};
 	bool build(tokens_and_iterator& g) {
-		// look for first line that isnt just spaces/tabs/newline and doesnt begin with a tab
+		// look for first line that isnt just spaces/tabs/newline and doesnt begin with a tab, leave the iterator at the beginning of that line
+		auto beg = g.it;
+		while (parse_one_line(g));
 
+		std::stringstream ss;
+		while (beg != g.it) {
+			ss << beg->second;
+			++beg;
+		}
+
+		value = std::move(ss).str();
+		return true;
 	}
 
-	bool line_is_empty(tokens_and_iterator& g) {
+	bool parse_one_line(tokens_and_iterator& g) {
+		return parse_empty_line(g) || parse_indented_line(g);
+	}
+
+	bool parse_empty_line(tokens_and_iterator& g) {
 		return Token<NEWLINE>{0}.build(g);
+	}
+
+	bool parse_indented_line(tokens_and_iterator& g) {
+		_ASSERT(n_indent == 0); // change code later to accomodate if needed but recursive templates or templates inside classes are not on the menu
+		bool is_indented = g.it != g.tokens.end() && g.it->first == TAB;
+		if (!is_indented)
+			return false;
+		bool has_newline = Until<Token<NEWLINE>>{ n_indent }.build(g);
+		_ASSERT(has_newline); // if that doesnt work something is just wrong with the tokenizer.
+		return true;
 	}
 };

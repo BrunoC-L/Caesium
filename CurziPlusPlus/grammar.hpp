@@ -153,7 +153,7 @@ using Type = And<
 	>>>
 >;
 
-using Template2 = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<Word>, Token<GT>, Token<SEMICOLON>, Token<NEWLINE>, TemplateBody>;
+using Template2 = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<Word>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>;
 
 template <typename T>
 using Template = And<
@@ -168,6 +168,7 @@ using File = And<
 		Or< Token<NEWLINE>,
 			Type,
 			Function,
+			Template2,
 			Template<Type>,
 			Template<Function>,
 			Template<BlockDeclaration>,

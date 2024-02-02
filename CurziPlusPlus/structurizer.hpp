@@ -188,7 +188,7 @@ NodeStructs::Template<NodeStructs::Type> getStruct(const Template<Type>& cl) {
 }
 
 NodeStructs::File getStruct(const File& f, std::string fileName) {
-	using T = Star<Or<Token<NEWLINE>, Type, Function, Template<Type>, Template<Function>, Template<BlockDeclaration>, Alias>>;
+	using T = Star<Or<Token<NEWLINE>, Type, Function, Template2, Template<Type>, Template<Function>, Template<BlockDeclaration>, Alias>>;
 
 	return NodeStructs::File{
 		.filename = fileName,
