@@ -6,8 +6,9 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 	using TypenameVisitor<type_template_of_typename_visitor>::operator();
 
 	transpilation_state_with_indent state;
+	const std::vector<NodeStructs::Typename>& templated_with;
 
-	using R = expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Type>>>;
+	using R = expected<NodeStructs::UniversalType>;
 
 	R operator()(const NodeStructs::BaseTypename& t);
 	R operator()(const NodeStructs::NamespacedTypename& t);

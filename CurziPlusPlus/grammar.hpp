@@ -153,14 +153,14 @@ using Type = And<
 	>>>
 >;
 
-using Template2 = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<Word>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>;
+using Template = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<Word>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>;
 
-template <typename T>
-using Template = And<
-	TemplateDeclaration,
-	Star<Token<NEWLINE>>,
-	T
->;
+//template <typename T>
+//using Template = And<
+//	TemplateDeclaration,
+//	Star<Token<NEWLINE>>,
+//	T
+//>;
 
 using File = And<
 	Star<Import>,
@@ -168,10 +168,10 @@ using File = And<
 		Or< Token<NEWLINE>,
 			Type,
 			Function,
-			Template2,
-			Template<Type>,
+			Template,
+			/*Template<Type>,
 			Template<Function>,
-			Template<BlockDeclaration>,
+			Template<BlockDeclaration>,*/
 			Alias
 		>
 	>,

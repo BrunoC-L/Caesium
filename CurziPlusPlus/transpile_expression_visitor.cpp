@@ -165,9 +165,9 @@ R T::operator()(const NodeStructs::PostfixExpression& expr) {
 					auto v = transpile_args(state, e.args);
 					return_if_error(v);
 
-					if (std::holds_alternative<NodeStructs::FunctionTemplateType>(it.type.value)) {
+					/*if (std::holds_alternative<NodeStructs::FunctionTemplateType>(it.type.value)) {
 						throw;
-					}
+					}*/
 
 					/*if (std::holds_alternative<NodeStructs::FunctionTemplateInstanceType>(it.type.value)) {
 						throw;
@@ -260,9 +260,12 @@ R T::operator()(const std::string& expr) {
 		return expr;
 	}
 	if (auto it = state.state.named.type_aliases.find(expr); it != state.state.named.type_aliases.end()) {
-		if (std::optional<error> t = traverse_type_visitor{{}, state}(it->second); t.has_value())
+		if (std::optional<error> t = traverse_type_visitor{ {}, state }(it->second); t.has_value())
 			return t.value();
 		return transpile_typename_visitor{ {}, state }(state.state.named.type_aliases_typenames.at(expr));
+	}
+	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end()) {
+		return expr;
 	}
 	return error{ "user error", "Undeclared variable `" + expr + "`" };
 }

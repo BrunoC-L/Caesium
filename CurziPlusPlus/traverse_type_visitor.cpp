@@ -14,11 +14,6 @@ R T::operator()(const NodeStructs::Type& type) {
 	return std::nullopt;
 }
 
-R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
-	throw;
-	return std::nullopt;
-}
-
 R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
 	return std::nullopt;
@@ -29,22 +24,7 @@ R T::operator()(const NodeStructs::TypeType& t) {
 	return std::nullopt;
 }
 
-R T::operator()(const NodeStructs::TypeTemplateType t) {
-	throw;
-	return std::nullopt;
-}
-
 R T::operator()(const NodeStructs::FunctionType& t) {
-	throw;
-	return std::nullopt;
-}
-
-R T::operator()(const NodeStructs::FunctionTemplateType& t) {
-	throw;
-	return std::nullopt;
-}
-
-R T::operator()(const NodeStructs::FunctionTemplateInstanceType& t) {
 	throw;
 	return std::nullopt;
 }
@@ -54,6 +34,22 @@ R T::operator()(const NodeStructs::UnionType& t) {
 		if (auto optional_error = operator()(union_type); optional_error.has_value())
 			return optional_error.value();
 	return std::nullopt;
+}
+
+R T::operator()(const NodeStructs::VectorType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::SetType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::MapType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Template& t) {
+	throw;
 }
 
 R T::operator()(const std::string&) {
@@ -69,4 +65,8 @@ R T::operator()(const double&) {
 R T::operator()(const int&) {
 	throw;
 	return std::nullopt;
+}
+
+R T::operator()(const bool&) {
+	throw;
 }

@@ -129,11 +129,11 @@ R T::operator()(const std::string& expr) {
 			NodeStructs::UniversalType{ NodeStructs::TypeType{ *it->second.back() } }
 		};
 
-	if (auto it = state.state.named.function_templates.find(expr); it != state.state.named.function_templates.end())
-		return std::pair{
-			NodeStructs::Reference{}, // dummy arg
-			NodeStructs::UniversalType{ NodeStructs::FunctionTemplateType{ *it->second.back() } }
-		};
+	//if (auto it = state.state.named.function_templates.find(expr); it != state.state.named.function_templates.end())
+	//	return std::pair{
+	//		NodeStructs::Reference{}, // dummy arg
+	//		NodeStructs::UniversalType{ NodeStructs::FunctionTemplateType{ *it->second.back() } }
+	//	};
 
 	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end())
 		return std::pair{
@@ -146,6 +146,13 @@ R T::operator()(const std::string& expr) {
 			NodeStructs::Reference{}, // dummy arg
 			it->second
 		};
+
+	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end())
+		return std::pair{
+			NodeStructs::Reference{}, // dummy arg
+			NodeStructs::UniversalType{ *it->second.back() }
+		};
+
 
 	return error{ "user error", "could not find variable named `" + expr + "`"};
 }

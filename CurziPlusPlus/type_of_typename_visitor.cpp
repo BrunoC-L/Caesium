@@ -30,19 +30,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
-	auto tmpl = type_template_of_typename_visitor{ {}, state }(t.type.get());
-	return_if_error(tmpl);
-	std::vector<NodeStructs::UniversalType> v;
-	v.reserve(t.templated_with.size());
-	for (const auto& e : t.templated_with) {
-		auto exp = operator()(e);
-		return_if_error(exp);
-		v.push_back(exp.value());
-	}
-	return NodeStructs::UniversalType{ NodeStructs::TypeTemplateInstanceType{
-		tmpl.value(),
-		std::move(v)
-	} };
+	return type_template_of_typename_visitor{ {}, state, t.templated_with }(t.type.get());
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {

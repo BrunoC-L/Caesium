@@ -63,6 +63,9 @@
     <ClCompile Include="traverse_type_visitor.cpp">
       <Filter>Header Files\type_category_visitors</Filter>
     </ClCompile>
+    <ClCompile Include="structurizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fn_util.hpp">

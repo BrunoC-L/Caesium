@@ -23,16 +23,14 @@ struct Named {
 	template <typename T> using map_to_vec = std::map<std::string, std::vector<T const*>>;
 
 	map_to_vec<NodeStructs::Function> functions;
-	map_to_vec<NodeStructs::Template<NodeStructs::Function>> function_templates;
-
 	map_to_vec<NodeStructs::Type> types;
-	map_to_vec<NodeStructs::Template<NodeStructs::Type>> type_templates;
-
 	map_to_vec<NodeStructs::Block> blocks;
-	map_to_vec<NodeStructs::Template<NodeStructs::Block>> block_templates;
-
+	map_to_vec<NodeStructs::Template> templates;
 	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
 	std::map<std::string, NodeStructs::UniversalType> type_aliases;
+	//map_to_vec<NodeStructs::Template<NodeStructs::Function>> function_templates;
+	//map_to_vec<NodeStructs::Template<NodeStructs::Type>> type_templates;
+	//map_to_vec<NodeStructs::Template<NodeStructs::Block>> block_templates;
 };
 
 struct transpilation_state {
@@ -46,7 +44,7 @@ struct transpilation_state {
 	) : variables(std::move(variables)), named(std::move(named)) {}
 
 	std::set<NodeStructs::Function> traversed_functions;
-	std::set<NodeStructs::FunctionTemplateInstanceType> traversed_function_template_instances;
+	//std::set<NodeStructs::FunctionTemplateInstanceType> traversed_function_template_instances;
 	std::set<NodeStructs::Type> traversed_types;
 	//std::set<NodeStructs::Template<NodeStructs::Type>> traversed_type_templates;
 	std::set<NodeStructs::Block> traversed_blocks;
@@ -108,7 +106,7 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 }
 
 struct cpp_std {
-	NodeStructs::Type _uset = NodeStructs::Type{
+	/*NodeStructs::Type _uset = NodeStructs::Type{
 		.name = std::string{ "Set" },
 		.methods = std::vector<NodeStructs::Function>{},
 		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
@@ -155,11 +153,14 @@ struct cpp_std {
 			.methods = std::vector<NodeStructs::Function>{},
 			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 		},
-	};
-	NodeStructs::Type _int = { "Int" };
-	NodeStructs::Type _bool = { "Bool" };
-	NodeStructs::Type string = { "String" };
-	NodeStructs::Type _void = { "Void" };
+	};*/
+	NodeStructs::Template builtin_set = { "Set" , { "T" }, "BUILTIN" };
+	NodeStructs::Template builtin_vector = { "Vector" , { "T" }, "BUILTIN" };
+	NodeStructs::Template builtin_map = { "Map" , { "K", "V" }, "BUILTIN" };
+	NodeStructs::Type builtin_int = { "Int" };
+	NodeStructs::Type builtin_bool = { "Bool" };
+	NodeStructs::Type builtin_string = { "String" };
+	NodeStructs::Type builtin_void = { "Void" };
 
 	NodeStructs::Function println{
 		.name = std::string{ "println" },
@@ -296,11 +297,11 @@ NodeStructs::UniversalType iterator_type(
 	const NodeStructs::UniversalType& type
 );
 
-expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
-	transpilation_state_with_indent state,
-	const NodeStructs::Template<NodeStructs::Function>& fn,
-	const std::vector<NodeStructs::FunctionArgument>& called_with
-);
+//expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::Template<NodeStructs::Function>& fn,
+//	const std::vector<NodeStructs::FunctionArgument>& called_with
+//);
 //
 //expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>>> find_or_traverse_function_template_instance(
 //	transpilation_state_with_indent state,

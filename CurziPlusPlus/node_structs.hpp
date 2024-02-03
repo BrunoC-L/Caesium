@@ -11,18 +11,10 @@
 
 struct NodeStructs {
 
-	template <typename T>
-	struct Template;
-
-	struct TemplateParameters {
-		std::vector<std::string> parameters;
-		std::weak_ordering operator<=>(const TemplateParameters&) const = default;
-	};
-
-	template <typename T>
 	struct Template {
-		TemplateParameters parameters;
-		T templated;
+		std::string name;
+		std::vector<std::string> parameters;
+		std::string templated;
 
 		std::weak_ordering operator<=>(const Template&) const = default;
 	};
@@ -368,12 +360,6 @@ struct NodeStructs {
 	struct Type;
 	struct UniversalType;
 
-	struct TypeTemplateInstanceType {
-		std::reference_wrapper<const Template<Type>> type_template;
-		std::vector<UniversalType> template_arguments;
-		std::weak_ordering operator<=>(const TypeTemplateInstanceType&) const;
-	};
-
 	struct AggregateType {
 		std::vector<std::pair<ArgumentCategory, UniversalType>> arguments;
 		std::weak_ordering operator<=>(const AggregateType&) const = default;
@@ -389,9 +375,15 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const FunctionType&) const;
 	};
 
-	struct TypeTemplateType {
+	/*struct TypeTemplateType {
 		std::reference_wrapper<const Template<Type>> type_template;
 		std::weak_ordering operator<=>(const TypeTemplateType&) const;
+	};
+
+	struct TypeTemplateInstanceType {
+		std::reference_wrapper<const Template<Type>> type_template;
+		std::vector<UniversalType> template_arguments;
+		std::weak_ordering operator<=>(const TypeTemplateInstanceType&) const;
 	};
 
 	struct FunctionTemplateType {
@@ -403,27 +395,44 @@ struct NodeStructs {
 		std::reference_wrapper<const Template<Function>> function_template;
 		std::vector<UniversalType> template_arguments;
 		std::weak_ordering operator<=>(const FunctionTemplateInstanceType&) const;
-	};
+	};*/
 
 	struct UnionType {
 		std::vector<UniversalType> arguments;
 		std::weak_ordering operator<=>(const UnionType&) const = default;
 	};
 
+	struct VectorType {
+		Box<UniversalType> value_type;
+		std::weak_ordering operator<=>(const VectorType&) const = default;
+	};
+
+	struct SetType {
+		Box<UniversalType> value_type;
+		std::weak_ordering operator<=>(const SetType&) const = default;
+	};
+
+	struct MapType {
+		Box<UniversalType> key_type;
+		Box<UniversalType> value_type;
+		std::weak_ordering operator<=>(const MapType&) const = default;
+	};
+
 	struct UniversalType {
 		std::variant<
 			std::reference_wrapper<const Type>,
-			TypeTemplateInstanceType,
 			AggregateType,
 			TypeType,
-			TypeTemplateType,
 			FunctionType,
-			FunctionTemplateType,
-			FunctionTemplateInstanceType,
 			UnionType,
+			VectorType,
+			SetType,
+			MapType,
+			Template,
 			std::string,
 			double,
-			int
+			int,
+			bool
 		> value;
 		std::weak_ordering operator<=>(const UniversalType& other) const;
 	};
@@ -463,9 +472,8 @@ struct NodeStructs {
 		std::string filename;
 		std::vector<Import> imports;
 		std::vector<Type> types;
-		std::vector<Template<Type>> type_templates;
 		std::vector<Function> functions;
-		std::vector<Template<Function>> function_templates;
+		std::vector<Template> templates;
 		std::vector<Block> blocks;
 		std::vector<Alias> aliases;
 		std::weak_ordering operator<=>(const File&) const = default;
@@ -560,33 +568,33 @@ inline std::weak_ordering NodeStructs::UniversalType::operator<=>(const NodeStru
 	return cmp(value, other.value);
 }
 
-inline std::weak_ordering NodeStructs::TypeTemplateInstanceType::operator<=>(const NodeStructs::TypeTemplateInstanceType& other) const {
-	if (auto c = cmp(type_template.get(), other.type_template.get()); c != 0)
-		return c;
-	return cmp(template_arguments, other.template_arguments);
-}
-
 inline std::weak_ordering NodeStructs::TypeType::operator<=>(const TypeType& other) const {
 	return cmp(type.get(), other.type.get());
-}
-
-inline std::weak_ordering NodeStructs::TypeTemplateType::operator<=>(const TypeTemplateType& other) const {
-	return cmp(type_template.get(), other.type_template.get());
 }
 
 inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionType& other) const {
 	return cmp(function.get(), other.function.get());
 }
 
-inline std::weak_ordering NodeStructs::FunctionTemplateType::operator<=>(const FunctionTemplateType& other) const {
-	return cmp(function_template.get(), other.function_template.get());
-}
-
-inline std::weak_ordering NodeStructs::FunctionTemplateInstanceType::operator<=>(const FunctionTemplateInstanceType& other) const {
-	if (auto c = cmp(function_template.get(), other.function_template.get()); c != 0)
-		return c;
-	return cmp(template_arguments, other.template_arguments);
-}
+//inline std::weak_ordering NodeStructs::TypeTemplateInstanceType::operator<=>(const NodeStructs::TypeTemplateInstanceType& other) const {
+//	if (auto c = cmp(type_template.get(), other.type_template.get()); c != 0)
+//		return c;
+//	return cmp(template_arguments, other.template_arguments);
+//}
+//
+//inline std::weak_ordering NodeStructs::TypeTemplateType::operator<=>(const TypeTemplateType& other) const {
+//	return cmp(type_template.get(), other.type_template.get());
+//}
+//
+//inline std::weak_ordering NodeStructs::FunctionTemplateType::operator<=>(const FunctionTemplateType& other) const {
+//	return cmp(function_template.get(), other.function_template.get());
+//}
+//
+//inline std::weak_ordering NodeStructs::FunctionTemplateInstanceType::operator<=>(const FunctionTemplateInstanceType& other) const {
+//	if (auto c = cmp(function_template.get(), other.function_template.get()); c != 0)
+//		return c;
+//	return cmp(template_arguments, other.template_arguments);
+//}
 
 inline bool NodeStructs::Function::operator==(const Function& other) const {
 	// todo arg types matter

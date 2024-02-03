@@ -25,30 +25,23 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 			for (const auto& e : file.types)
 				named.types[e.name].push_back(&e);
 
-			for (const auto& e : file.type_templates)
-				named.type_templates[e.templated.name].push_back(&e);
-
 			for (const auto& e : file.functions)
 				named.functions[e.name].push_back(&e);
-
-			for (const auto& e : file.function_templates)
-				named.function_templates[e.templated.name].push_back(&e);
 
 			for (const auto& e : file.blocks)
 				named.blocks[e.name].push_back(&e);
 
-			/*for (const auto& e : file.block_templates)
-				named.blocks[e.name].push_back(&e);*/
+			for (const auto& e : file.templates)
+				named.templates[e.name].push_back(&e);
 
 			for (const auto& i : file.imports) {
 				insert_all_named_recursive_with_imports(project, named_by_file, i.imported);
 				Named& imported_named = named_by_file[i.imported];
 
 				named.types.insert(imported_named.types.begin(), imported_named.types.end());
-				named.type_templates.insert(imported_named.type_templates.begin(), imported_named.type_templates.end());
 				named.functions.insert(imported_named.functions.begin(), imported_named.functions.end());
-				named.function_templates.insert(imported_named.function_templates.begin(), imported_named.function_templates.end());
 				named.blocks.insert(imported_named.blocks.begin(), imported_named.blocks.end());
+				named.templates.insert(imported_named.templates.begin(), imported_named.templates.end());
 			}
 
 			return;
@@ -90,8 +83,8 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 				cpp_std stuff_from_cpp{};
 				variables_t variables;
 				{
-					variables["True"].push_back({ NodeStructs::Value{}, { stuff_from_cpp._bool } });
-					variables["False"].push_back({ NodeStructs::Value{}, { stuff_from_cpp._bool } });
+					variables["True"].push_back({ NodeStructs::Value{}, { stuff_from_cpp.builtin_bool } });
+					variables["False"].push_back({ NodeStructs::Value{}, { stuff_from_cpp.builtin_bool } });
 				}
 
 				std::map<std::string, Named> named_by_file;
@@ -99,15 +92,14 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 				for (const auto& file2 : project) {
 					Named named_of_file;
 					{
-						named_of_file.type_templates["Set"].push_back(&stuff_from_cpp.unordered_set);
-						named_of_file.type_templates["Vector"].push_back(&stuff_from_cpp.vector);
-						named_of_file.type_templates["Map"].push_back(&stuff_from_cpp.unordered_map);
-						named_of_file.type_templates["Pair"].push_back(&stuff_from_cpp.pair);
+						named_of_file.templates["Set"].push_back(&stuff_from_cpp.builtin_set);
+						named_of_file.templates["Vector"].push_back(&stuff_from_cpp.builtin_vector);
+						named_of_file.templates["Map"].push_back(&stuff_from_cpp.builtin_map);
 
-						named_of_file.types["Int"].push_back(&stuff_from_cpp._int);
-						named_of_file.types["Bool"].push_back(&stuff_from_cpp._bool);
-						named_of_file.types["String"].push_back(&stuff_from_cpp.string);
-						named_of_file.types["Void"].push_back(&stuff_from_cpp._void);
+						named_of_file.types["Int"].push_back(&stuff_from_cpp.builtin_int);
+						named_of_file.types["Bool"].push_back(&stuff_from_cpp.builtin_bool);
+						named_of_file.types["String"].push_back(&stuff_from_cpp.builtin_string);
+						named_of_file.types["Void"].push_back(&stuff_from_cpp.builtin_void);
 
 						named_of_file.functions["println"].push_back(&stuff_from_cpp.println);
 						named_of_file.functions["size"].push_back(&stuff_from_cpp.size);
@@ -124,10 +116,10 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 				transpilation_state state{ std::move(variables), Named(named_by_file[file.filename]) };
 				state.traversed_functions.insert(stuff_from_cpp.println);
 				state.traversed_functions.insert(stuff_from_cpp.size);
-				state.traversed_types.insert(stuff_from_cpp._int);
-				state.traversed_types.insert(stuff_from_cpp._bool);
-				state.traversed_types.insert(stuff_from_cpp.string);
-				state.traversed_types.insert(stuff_from_cpp._void);
+				state.traversed_types.insert(stuff_from_cpp.builtin_int);
+				state.traversed_types.insert(stuff_from_cpp.builtin_bool);
+				state.traversed_types.insert(stuff_from_cpp.builtin_string);
+				state.traversed_types.insert(stuff_from_cpp.builtin_void);
 
 				transpile_header_cpp_t k = transpile_main(transpilation_state_with_indent{ state, 0 }, fn);
 				if (k.has_error())
@@ -326,7 +318,7 @@ NodeStructs::UniversalType iterator_type(
 			[&](const std::reference_wrapper<const NodeStructs::Type>& type) -> NodeStructs::UniversalType {
 				throw;
 			},
-			[&](const NodeStructs::TypeTemplateInstanceType& type) -> NodeStructs::UniversalType {
+			/*[&](const NodeStructs::TypeTemplateInstanceType& type) -> NodeStructs::UniversalType {
 				const auto tn = type.type_template.get().templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -350,26 +342,29 @@ NodeStructs::UniversalType iterator_type(
 								throw;
 						else
 							throw;
-			},
+			},*/
 			[&](const NodeStructs::AggregateType&) -> NodeStructs::UniversalType {
 				throw;
 			},
 			[&](const NodeStructs::TypeType&) -> NodeStructs::UniversalType {
 				throw;
 			},
-			[&](const NodeStructs::TypeTemplateType&) -> NodeStructs::UniversalType {
-				throw;
-			},
 			[&](const NodeStructs::FunctionType&) -> NodeStructs::UniversalType {
 				throw;
 			},
-			[&](const NodeStructs::FunctionTemplateType&) -> NodeStructs::UniversalType {
-				throw;
-			},
-			[&](const NodeStructs::FunctionTemplateInstanceType&) -> NodeStructs::UniversalType {
-				throw;
-			},
 			[&](const NodeStructs::UnionType&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const NodeStructs::VectorType& t) -> NodeStructs::UniversalType {
+				return t.value_type;
+			},
+			[&](const NodeStructs::SetType&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const NodeStructs::MapType&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const NodeStructs::Template&) -> NodeStructs::UniversalType {
 				throw;
 			},
 			[&](const std::string&) -> NodeStructs::UniversalType {
@@ -379,6 +374,9 @@ NodeStructs::UniversalType iterator_type(
 				throw;
 			},
 			[&](const int&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const bool&) -> NodeStructs::UniversalType {
 				throw;
 			}
 		),
@@ -400,7 +398,7 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 					| std::views::transform([&](const auto& e) { return type_of_typename_visitor{ {}, state }(e.type).value(); })
 					| to_vec();
 			},
-			[&](const NodeStructs::TypeTemplateInstanceType& type) -> std::vector<NodeStructs::UniversalType> {
+			/*[&](const NodeStructs::TypeTemplateInstanceType& type) -> std::vector<NodeStructs::UniversalType> {
 				const auto tn = type.type_template.get().templated.name;
 				if (tn == "Set")
 					if (type.template_arguments.size() == 1)
@@ -426,26 +424,29 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 								else
 									throw;
 				throw;
-			},
+			},*/
 			[&](const NodeStructs::AggregateType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
 			[&](const NodeStructs::TypeType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
-			[&](const NodeStructs::TypeTemplateType&) -> std::vector<NodeStructs::UniversalType> {
-				throw;
-			},
 			[&](const NodeStructs::FunctionType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
-			[&](const NodeStructs::FunctionTemplateType&) -> std::vector<NodeStructs::UniversalType> {
-				throw;
-			},
-			[&](const NodeStructs::FunctionTemplateInstanceType&) -> std::vector<NodeStructs::UniversalType> {
-				throw;
-			},
 			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const NodeStructs::VectorType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const NodeStructs::SetType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const NodeStructs::MapType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const NodeStructs::Template&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
 			[&](const std::string&) -> std::vector<NodeStructs::UniversalType> {
@@ -455,6 +456,9 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 				throw;
 			},
 			[&](const int&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const bool&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			}
 		),
@@ -618,25 +622,25 @@ expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> 
 	else
 		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(pos->type).value() };
 }
-
-expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
-	transpilation_state_with_indent state,
-	const NodeStructs::Template<NodeStructs::Function>& fn,
-	const std::vector<NodeStructs::FunctionArgument>& called_with
-) {
-	// we need to make use of template argument deduction through function parameters and arguments
-	const auto& template_parameters = fn.parameters.parameters;
-	for (const auto& [parameter_type_name, parameter_cat, parameter_name] : fn.templated.parameters) {
-		// parameter_type_name will look like `std::vector<T>` and we need to determine if it is a typename template or not
-		// something like `optional<type> get_template_if_its_a_template_otherwise_give_me_nothing(type_name, template_parameters, called_with) {...}`
-
-		// A<B>::C is not a template of type T
-		// T, T<U>, U<T>, T::U may be templates of type T
-		// U::T is not a template of type T
-
-	}
-	throw;
-}
+//
+//expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::Template<NodeStructs::Function>& fn,
+//	const std::vector<NodeStructs::FunctionArgument>& called_with
+//) {
+//	// we need to make use of template argument deduction through function parameters and arguments
+//	const auto& template_parameters = fn.parameters.parameters;
+//	for (const auto& [parameter_type_name, parameter_cat, parameter_name] : fn.templated.parameters) {
+//		// parameter_type_name will look like `std::vector<T>` and we need to determine if it is a typename template or not
+//		// something like `optional<type> get_template_if_its_a_template_otherwise_give_me_nothing(type_name, template_parameters, called_with) {...}`
+//
+//		// A<B>::C is not a template of type T
+//		// T, T<U>, U<T>, T::U may be templates of type T
+//		// U::T is not a template of type T
+//
+//	}
+//	throw;
+//}
 //
 //expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>>> find_or_traverse_function_template_instance(
 //	transpilation_state_with_indent state,

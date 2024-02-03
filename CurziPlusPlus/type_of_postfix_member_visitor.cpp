@@ -19,17 +19,17 @@ R T::operator()(const NodeStructs::Type& t) {
 	else
 		return type_of_typename_visitor{ {}, state }(pos->type).transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 }
-
-R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
-	// basically trying to implement transpilation of Vector<T>{}.size()
-	// Vector<T> is the type template instance and `size` is `property_name`
-	if (auto it = state.state.named.function_templates.find(property_name); it != state.state.named.function_templates.end()) {
-		return std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>{ NodeStructs::Value{}, NodeStructs::FunctionTemplateType{
-			.function_template = *it->second.back()
-		} };
-	}
-	throw;
-}
+//
+//R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
+//	// basically trying to implement transpilation of Vector<T>{}.size()
+//	// Vector<T> is the type template instance and `size` is `property_name`
+//	if (auto it = state.state.named.function_templates.find(property_name); it != state.state.named.function_templates.end()) {
+//		return std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>{ NodeStructs::Value{}, NodeStructs::FunctionTemplateType{
+//			.function_template = *it->second.back()
+//		} };
+//	}
+//	throw;
+//}
 
 R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
@@ -39,23 +39,27 @@ R T::operator()(const NodeStructs::TypeType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::TypeTemplateType t) {
-	throw;
-}
-
 R T::operator()(const NodeStructs::FunctionType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::FunctionTemplateType& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::FunctionTemplateInstanceType& t) {
-	throw;
-}
-
 R T::operator()(const NodeStructs::UnionType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::VectorType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::SetType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::MapType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Template& t) {
 	throw;
 }
 
@@ -68,5 +72,9 @@ R T::operator()(const double&) {
 }
 
 R T::operator()(const int&) {
+	throw;
+}
+
+R T::operator()(const bool&) {
 	throw;
 }

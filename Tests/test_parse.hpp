@@ -125,9 +125,6 @@ bool testParse() {
 	ok &= test_parse_correct<TemplateDeclaration>(__LINE__, 0, "template <x>");
 	ok &= test_parse_correct<TemplateDeclaration>(__LINE__, 0, "template <B, A>");
 
-	ok &= test_parse_correct<Template<Type>>(__LINE__, 0, "template <x>\ntype u:\n");
-	ok &= test_parse_correct<Template<Type>>(__LINE__, 0, "template <B, A>\ntype A:\n");
-
 	ok &= test_parse_correct<File>(__LINE__, 0, "type A:\n\nInt main(Vector<String> ref s):\n");
 	ok &= test_parse_correct<File>(__LINE__, 0, "\nint main():\n");
 	ok &= test_parse_correct<File>(__LINE__, 0, "Int main(Vector<String> ref args):\n\tCat cat = {}\n");
@@ -154,8 +151,8 @@ bool testParse() {
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for a in b:\n\tb\n");
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for a in b:\n");
 
-	ok &= test_parse_correct<Template2>(__LINE__, 0, "template f<T>:\n");
-	ok &= test_parse_correct<Template2>(__LINE__, 0, "template f<T>:\n\tInt f():\n\t\treturn 0");
+	ok &= test_parse_correct<Template>(__LINE__, 0, "template f<T>:\n");
+	ok &= test_parse_correct<Template>(__LINE__, 0, "template f<T>:\n\tInt f():\n\t\treturn 0");
 		
 
 
