@@ -1,10 +1,8 @@
 #include "header.h"
-
 Int f_Int() {
-    return 0;
-}
-
-Int _redirect_main(const Vector<String>& s) {
+		return 0;
+};
+Int _redirect_main(const Vector<String>& args) {
 	return f_Int();
 };
 

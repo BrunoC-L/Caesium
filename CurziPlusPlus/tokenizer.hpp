@@ -274,10 +274,10 @@ private:
 			return { SPACE, " " };
 		case '\n':
 			index += 1;
-			return { NEWLINE, "\\n" };
+			return { NEWLINE, "\n" };
 		case '\t':
 			index += 1;
-			return { TAB, "\\t" };
+			return { TAB, "\t" };
 		case '.':
 			index += 1;
 			return { DOT, "." };

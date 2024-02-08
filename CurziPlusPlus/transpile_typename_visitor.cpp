@@ -34,7 +34,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 
 R T::operator()(const NodeStructs::UnionTypename& type) {
 	std::stringstream ss;
-	ss << "std::variant<";
+	ss << "Variant<";
 	auto ts = type.ors;
 	std::sort(ts.begin(), ts.end());
 	bool first = true;

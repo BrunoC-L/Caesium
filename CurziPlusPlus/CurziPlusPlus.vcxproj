@@ -146,6 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="expression_for_template_visitor.cpp" />
     <ClCompile Include="structurizer.cpp" />
     <ClCompile Include="transpile_expression_visitor.cpp" />
     <ClCompile Include="transpile_statement_visitor.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="box.hpp" />
     <ClInclude Include="colored_text.hpp" />
     <ClInclude Include="expected.hpp" />
+    <ClInclude Include="expression_for_template_visitor.hpp" />
     <ClInclude Include="expression_visitor.hpp" />
     <ClInclude Include="fn_util.hpp" />
     <ClInclude Include="cursor_vector_view.hpp" />
@@ -175,6 +177,7 @@
     <ClInclude Include="node_structs.hpp" />
     <ClInclude Include="grammar.hpp" />
     <ClInclude Include="primitives.hpp" />
+    <ClInclude Include="replace_all.hpp" />
     <ClInclude Include="statement_visitor.hpp" />
     <ClInclude Include="structurizer.hpp" />
     <ClInclude Include="transpile_expression_visitor.hpp" />

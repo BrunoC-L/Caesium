@@ -18,6 +18,7 @@ template <typename K, typename V> using Map = std::unordered_map<K, V>;
 static constexpr bool True = true;
 static constexpr bool False = false;
 
-struct Dog;
-struct Cat;
 Int _redirect_main(const Vector<String>& s);
+Int f_Animal(const Vector<Variant<Cat, Dog>>& vec);
+struct Cat;
+struct Dog;

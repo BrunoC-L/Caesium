@@ -622,39 +622,63 @@ expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> 
 	else
 		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(pos->type).value() };
 }
-//
-//expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::Template<NodeStructs::Function>& fn,
-//	const std::vector<NodeStructs::FunctionArgument>& called_with
-//) {
-//	// we need to make use of template argument deduction through function parameters and arguments
-//	const auto& template_parameters = fn.parameters.parameters;
-//	for (const auto& [parameter_type_name, parameter_cat, parameter_name] : fn.templated.parameters) {
-//		// parameter_type_name will look like `std::vector<T>` and we need to determine if it is a typename template or not
-//		// something like `optional<type> get_template_if_its_a_template_otherwise_give_me_nothing(type_name, template_parameters, called_with) {...}`
-//
-//		// A<B>::C is not a template of type T
-//		// T, T<U>, U<T>, T::U may be templates of type T
-//		// U::T is not a template of type T
-//
-//	}
-//	throw;
-//}
-//
-//expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>>> find_or_traverse_function_template_instance(
-//	transpilation_state_with_indent state,
-//	const std::string& name,
-//	const std::vector<NodeStructs::UniversalType> template_arguments
-//) {
-//	if (auto it = state.state.named.function_templates.find(name); it != state.state.named.function_templates.end()) {
-//		const auto& f_tmpl = *it->second.back();
-//		if (auto it2 = state.state.traversed_function_template_instances.find(f_tmpl); it2 != state.state.traversed_function_template_instances.end()) {
-//			//auto [h, cpp] = transpile(state, f_tmpl);
-//		}
-//		return f_tmpl;
-//	}
-//	else
-//		return error{ "user error", "unable to find function template `" + name + "`" };
-//}
-//
+
+std::string _template_name(
+	const NodeStructs::Expression& argument
+) {
+	std::visit(
+		overload(overload_default_error,
+			[](const NodeStructs::ConditionalExpression&) {
+			},
+			[](const NodeStructs::OrExpression&) {
+			},
+			[](const NodeStructs::AndExpression&) {
+			},
+			[](const NodeStructs::EqualityExpression&) {
+			},
+			[](const NodeStructs::CompareExpression&) {
+			},
+			[](const NodeStructs::AdditiveExpression&) {
+			},
+			[](const NodeStructs::MultiplicativeExpression&) {
+			},
+			[](const NodeStructs::UnaryExpression&) {
+			},
+			[](const NodeStructs::CallExpression&) {
+			},
+			[](const NodeStructs::TemplateExpression&) {
+			},
+			[](const NodeStructs::ConstructExpression&) {
+			},
+			[](const NodeStructs::BracketAccessExpression&) {
+			},
+			[](const NodeStructs::PropertyAccessExpression&) {
+			},
+			[](const NodeStructs::ParenArguments&) {
+			},
+			[](const NodeStructs::BraceArguments&) {
+			},
+			[](const std::string&) {
+			},
+			[](const Token<FLOATING_POINT_NUMBER>&) {
+			},
+			[](const Token<INTEGER_NUMBER>&) {
+			},
+			[](const Token<STRING>&) {
+			}
+		),
+		argument.expression.get()
+	);
+	return std::string();
+}
+
+std::string _template_names(
+	const std::vector<NodeStructs::Expression>& arguments
+) {
+	return std::string();
+}
+
+std::string template_name(std::string original_name, const std::vector<NodeStructs::Expression>& arguments)
+{
+	return std::string();
+}

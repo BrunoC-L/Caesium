@@ -7,6 +7,8 @@
 #include "traverse_type_visitor.hpp"
 #include "transpile_typename_visitor.hpp";
 #include <algorithm>
+#include "replace_all.hpp"
+#include "expression_for_template_visitor.hpp"
 
 using T = transpile_expression_visitor;
 using R = T::R;
@@ -124,116 +126,123 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 	return ss.str();
 }
 
-
-std::string replace_all(std::string str, const std::string& from, const std::string& to, auto&&... args) {
-	if constexpr (sizeof...(args) > 0)
-		str = replace_all(std::move(str), args...);
-	size_t start_pos = 0;
-	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-		str.replace(start_pos, from.length(), to);
-		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
-	}
-	return str;
+R T::operator()(const NodeStructs::CallExpression& expr) {
+	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
+	return_if_error(operand_t);
+	auto t = type_of_function_like_call_with_args_visitor{ {}, state, expr.arguments.args }(operand_t.value().second);
+	return_if_error(t);
+	auto args_or_error = transpile_args(state, expr.arguments.args);
+	return_if_error(args_or_error);
+	auto operand_repr = operator()(expr.operand);
+	return_if_error(operand_repr);
+	return std::move(operand_repr).value() + "(" + std::move(args_or_error).value() + ")";
 }
 
-R T::operator()(const NodeStructs::PostfixExpression& expr) {
-	auto t_or_e = type_of_expression_visitor{ {}, state }(expr.expr);
+R T::operator()(const NodeStructs::TemplateExpression& expr) {
+	auto t_or_e = type_of_expression_visitor{ {}, state }(expr.operand);
 	return_if_error(t_or_e);
-
-	auto v = operator()(expr.expr);
-	return_if_error(v);
-
-	type_and_representation it{
-		std::move(t_or_e).value().second, // todo maybe type and repr has to hold value category...?
-		std::move(v).value()
-	};
-
-	for (const auto& op : expr.postfixes) {
-		transpile_type_repr next = std::visit(
-			overload(overload_default_error,
-				[&](const std::string& property_name) -> transpile_type_repr {
-					auto t = type_of_postfix_member_visitor{ {}, state, property_name }(it.type);
-					return_if_error(t);
-					return type_and_representation{
-						std::move(t).value().second,
-						it.representation + "." + property_name
-					};
-				},
-				[&](const NodeStructs::ParenArguments& e) -> transpile_type_repr {
-					auto t = type_of_function_like_call_with_args_visitor{ {}, state, e.args }(it.type);
-					return_if_error(t);
-					auto v = transpile_args(state, e.args);
-					return_if_error(v);
-
-					/*if (std::holds_alternative<NodeStructs::FunctionTemplateType>(it.type.value)) {
-						throw;
-					}*/
-
-					/*if (std::holds_alternative<NodeStructs::FunctionTemplateInstanceType>(it.type.value)) {
-						throw;
-					}*/
-
-					return type_and_representation{
-						std::move(t).value().second,
-						it.representation + "(" + std::move(v).value() + ")"
-					};
-				},
-				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
-					throw;
-					//return "[" + transpile_args(state, e.args).value() + "]";
-				},
-				[&](const NodeStructs::BraceArguments& e) -> transpile_type_repr {
-					throw;
-					//return "{" + transpile_args(state, e.args).value() + "}";
-				},
-				[&](const NodeStructs::TemplateArguments& e) -> transpile_type_repr {
-					auto t = type_of_template_instantiation_with_args_visitor{ {}, state, e.args }(it.type);
-					return_if_error(t);
-					auto v = transpile_expressions(state, e.args);
-					return_if_error(v);
-
-					std::string x = replace_all(
-						std::move(v).value(),
-						"<", "_open_",
-						">", "_close_",
-						"::", "_ns_",
-						", ", "_"
-					);
-
-					return type_and_representation{
-						std::move(t).value(),
-						it.representation + "_open_" + std::move(x) + "_close_"
-					};
-				},
-				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
-					throw;
-					//return symbol_as_text(op);
-				},
-				[&](const Token<MINUSMINUS>& op) -> transpile_type_repr {
-					throw;
-					//return symbol_as_text(op);
-				}
-			),
-			op
-		);
-		return_if_error(next);
-		it = std::move(next).value();
+	if (std::holds_alternative<NodeStructs::Template>(t_or_e.value().second.value)) {
+		const auto& tmpl = std::get<NodeStructs::Template>(t_or_e.value().second.value);
+		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template_visitor{ {}, state }) | to_vec();
+		std::string template_name = [&](const std::string& name) {
+			std::stringstream ss;
+			ss << name;
+			for (const auto& arg : args)
+				ss << "_" << arg;
+			return ss.str();
+			}(tmpl.name);
+		return template_name;
 	}
-	return it.representation;
+	throw;
 }
 
-R T::operator()(const NodeStructs::ParenExpression& expr) {
+R T::operator()(const NodeStructs::ConstructExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
+	throw;
+}
+//
+//R T::operator()(const NodeStructs::PostfixExpression& expr) {
+//	auto t_or_e = type_of_expression_visitor{ {}, state }(expr.expr);
+//	return_if_error(t_or_e);
+//
+//	auto v = operator()(expr.expr);
+//	return_if_error(v);
+//
+//	type_and_representation it{
+//		std::move(t_or_e).value().second, // todo maybe type and repr has to hold value category...?
+//		std::move(v).value()
+//	};
+//
+//	for (const auto& op : expr.postfixes) {
+//		transpile_type_repr next = std::visit(
+//			overload(overload_default_error,
+//				[&](const std::string& property_name) -> transpile_type_repr {
+//					auto t = type_of_postfix_member_visitor{ {}, state, property_name }(it.type);
+//					return_if_error(t);
+//					return type_and_representation{
+//						std::move(t).value().second,
+//						it.representation + "." + property_name
+//					};
+//				},
+//				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
+//					throw;
+//					//return "[" + transpile_args(state, e.args).value() + "]";
+//				},
+//				[&](const NodeStructs::BraceArguments& e) -> transpile_type_repr {
+//					throw;
+//					//return "{" + transpile_args(state, e.args).value() + "}";
+//				},
+//				[&](const NodeStructs::TemplateArguments& e) -> transpile_type_repr {
+//					auto t = type_of_template_instantiation_with_args_visitor{ {}, state, e.args }(it.type);
+//					return_if_error(t);
+//					auto v = transpile_expressions(state, e.args);
+//					return_if_error(v);
+//
+//					std::string x = replace_all(
+//						std::move(v).value(),
+//						"<", "_open_",
+//						">", "_close_",
+//						"::", "_ns_",
+//						", ", "_"
+//					);
+//
+//					return type_and_representation{
+//						std::move(t).value(),
+//						it.representation + "_open_" + std::move(x) + "_close_"
+//					};
+//				},
+//				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
+//					throw;
+//					//return symbol_as_text(op);
+//				},
+//				[&](const Token<MINUSMINUS>& op) -> transpile_type_repr {
+//					throw;
+//					//return symbol_as_text(op);
+//				}
+//			),
+//			op
+//		);
+//		return_if_error(next);
+//		it = std::move(next).value();
+//	}
+//	return it.representation;
+//}
+
+R T::operator()(const NodeStructs::ParenArguments& expr) {
 	std::stringstream ss;
 	for (const auto& e : expr.args) {
-		auto t = operator()(e);
+		auto t = operator()(std::get<NodeStructs::Expression>(e));
 		return_if_error(t);
 		ss << std::move(t).value();
 	}
 	return "(" + ss.str() + ")";
-}
-
-R T::operator()(const NodeStructs::ParenArguments& expr) {
-	throw;
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {

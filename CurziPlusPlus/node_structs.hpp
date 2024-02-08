@@ -69,8 +69,11 @@ struct NodeStructs {
 	struct AdditiveExpression;
 	struct MultiplicativeExpression;
 	struct UnaryExpression;
-	struct PostfixExpression;
-	struct ParenExpression;
+	struct CallExpression;
+	struct TemplateExpression;
+	struct ConstructExpression;
+	struct BracketAccessExpression;
+	struct PropertyAccessExpression;
 	struct ParenArguments;
 	struct BraceArguments;
 
@@ -85,14 +88,17 @@ struct NodeStructs {
 			AdditiveExpression,
 			MultiplicativeExpression,
 			UnaryExpression,
-			PostfixExpression,
+			CallExpression,
+			TemplateExpression,
+			ConstructExpression,
+			BracketAccessExpression,
+			PropertyAccessExpression,
 			ParenArguments,
 			BraceArguments,
-			ParenExpression,
-			std::string,
+			std::string, // variable name like abc
 			Token<FLOATING_POINT_NUMBER>,
 			Token<INTEGER_NUMBER>,
-			Token<STRING>
+			Token<STRING> // string token like "abc"
 		>;
 		Box<vt> expression;
 		std::weak_ordering operator<=>(const Expression& other) const;
@@ -151,24 +157,34 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const ParenArguments&) const = default;
 	};
 
-	struct ParenExpression {
-		std::vector<Expression> args;
-		std::weak_ordering operator<=>(const ParenExpression&) const = default;
+	struct CallExpression {
+		Expression operand;
+		ParenArguments arguments;
+		std::weak_ordering operator<=>(const CallExpression&) const = default;
 	};
 
-	struct PostfixExpression {
-		Expression expr;
-		using op_types = std::variant<
-			std::string, // property
-			ParenArguments, // call
-			BracketArguments, // access
-			BraceArguments, // construct
-			TemplateArguments, // template instantiation
-			Token<PLUSPLUS>,
-			Token<MINUSMINUS>
-		>;
-		std::vector<op_types> postfixes;
-		std::weak_ordering operator<=>(const PostfixExpression&) const = default;
+	struct TemplateExpression {
+		Expression operand;
+		TemplateArguments arguments;
+		std::weak_ordering operator<=>(const TemplateExpression&) const = default;
+	};
+
+	struct ConstructExpression {
+		Expression operand;
+		BraceArguments arguments;
+		std::weak_ordering operator<=>(const ConstructExpression&) const = default;
+	};
+
+	struct BracketAccessExpression {
+		Expression operand;
+		BracketArguments arguments;
+		std::weak_ordering operator<=>(const BracketAccessExpression&) const = default;
+	};
+
+	struct PropertyAccessExpression {
+		Expression operand;
+		std::string property_name;
+		std::weak_ordering operator<=>(const PropertyAccessExpression&) const = default;
 	};
 
 	struct UnaryExpression {

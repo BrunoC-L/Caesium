@@ -9,8 +9,8 @@ struct A {
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	std::variant<A, B> v1 = {};
-	std::variant<A, B, C> v2 = v1;
+	Variant<A, B> v1 = {};
+	Variant<A, B, C> v2 = v1;
 };
 
 int main(int argc, char** argv) {

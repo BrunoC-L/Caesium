@@ -14,12 +14,11 @@ NodeStructs::Import getStruct(const Import& f) {
 	) };
 }
 
-NodeStructs::Typename extend(NodeStructs::Typename&&, const NamespaceTypenameExtension&) {
-	throw;
-	/*return NodeStructs::NamespacedTypename{
+NodeStructs::Typename extend(NodeStructs::Typename&& t, const NamespaceTypenameExtension& nst) {
+	return { NodeStructs::NamespacedTypename{
 		std::move(t),
 		getStruct(nst.get<Alloc<Typename>>().get())
-	};*/
+	} };
 }
 
 NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std::vector<Alloc<Typename>>& templates) {
@@ -299,19 +298,20 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 		},
 		[](const BraceArguments& e) -> NodeStructs::Expression {
 			const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
-			return { NodeStructs::PostfixExpression{ NodeStructs::BraceArguments{
+			return { NodeStructs::BraceArguments{
 				args
 				| LIFT_TRANSFORM(getStruct)
 				| to_vec()
-			} } };
+			} };
 			//auto res = getExpressionStruct(e);
 			//return NodeStructs::Expression{ std::move(res) };
 		},
 		[](const And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>& e) -> NodeStructs::Expression {
 			const auto& args = e.get<CommaStar<Expression>>().get<Expression>();
-			return { NodeStructs::ParenExpression{
+			return { NodeStructs::ParenArguments{
 					args
 					| LIFT_TRANSFORM(getExpressionStruct)
+					| LIFT_TRANSFORM_X(e, NodeStructs::FunctionArgument{ std::nullopt, e })
 					| to_vec()
 				} };
 		},
@@ -332,47 +332,71 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 	);
 }
 
+NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& expr, const Postfix& postfix) {
+	return std::visit(
+		overload(overload_default_error,
+			[&](const And<Token<DOT>, Word>& e) {
+				return NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ std::move(expr), e.get<Word>().value } };
+			},
+			[&](const ParenArguments& args) {
+				return NodeStructs::Expression{ NodeStructs::CallExpression{ std::move(expr), getStruct(args) } };
+			},
+			[&](const BracketArguments& args) {
+				return NodeStructs::Expression{ NodeStructs::BracketAccessExpression{ std::move(expr), getStruct(args) } };
+			},
+			[&](const BraceArguments& args) {
+				return NodeStructs::Expression{ NodeStructs::ConstructExpression{ std::move(expr), getStruct(args) } };
+			},
+			[&](const TemplateArguments& args) {
+				return NodeStructs::Expression{ NodeStructs::TemplateExpression{ std::move(expr), getStruct(args) } };
+			}
+		),
+		postfix.value()
+	);
+}
+
 NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) {
 	const auto& postfixes = statement.get<Star<Postfix>>().get<Postfix>();
-	if (postfixes.size() == 0) {
-		return getExpressionStruct(statement.get<ParenExpression>());
-	}
-	else {
-		using nodestruct_opts = NodeStructs::PostfixExpression::op_types;
-		return NodeStructs::Expression{ NodeStructs::PostfixExpression {
-			getExpressionStruct(statement.get<ParenExpression>()),
-			postfixes | std::views::transform(
-				[](const auto& e) {
-					return std::visit(
-						overload(overload_default_error,
-							[](const And<Token<DOT>, Word>& e) {
-								return nodestruct_opts{ e.get<Word>().value };
-							},
-							[](const ParenArguments& args) {
-								return nodestruct_opts{ getStruct(args) };
-							},
-							[](const BracketArguments& args) {
-								return nodestruct_opts{ getStruct(args) };
-							},
-							[](const BraceArguments& args) {
-								return nodestruct_opts{ getStruct(args) };
-							},
-							[](const TemplateArguments& args) -> nodestruct_opts {
-								return nodestruct_opts{ getStruct(args) };
-							},
-							[](const Token<PLUSPLUS>& token) {
-								return nodestruct_opts{ token };
-							},
-							[](const Token<MINUSMINUS>& token) {
-								return nodestruct_opts{ token };
-							}
-						),
-						e.value()
-					);
-				})
-			| to_vec()
-		} };
-	}
+	auto expr = getExpressionStruct(statement.get<ParenExpression>());
+	if (postfixes.size() == 0)
+		return expr;
+	for (const auto& postfix : postfixes)
+		expr = getPostfixExpressionStruct(std::move(expr), postfix);
+	return expr;
+	/*using nodestruct_opts = NodeStructs::PostfixExpression::op_types;
+	return NodeStructs::Expression{ NodeStructs::PostfixExpression {
+		getExpressionStruct(statement.get<ParenExpression>()),
+		postfixes | std::views::transform(
+			[](const auto& e) {
+				return std::visit(
+					overload(overload_default_error,
+						[](const And<Token<DOT>, Word>& e) {
+							return nodestruct_opts{ e.get<Word>().value };
+						},
+						[](const ParenArguments& args) {
+							return nodestruct_opts{ getStruct(args) };
+						},
+						[](const BracketArguments& args) {
+							return nodestruct_opts{ getStruct(args) };
+						},
+						[](const BraceArguments& args) {
+							return nodestruct_opts{ getStruct(args) };
+						},
+						[](const TemplateArguments& args) -> nodestruct_opts {
+							return nodestruct_opts{ getStruct(args) };
+						},
+						[](const Token<PLUSPLUS>& token) {
+							return nodestruct_opts{ token };
+						},
+						[](const Token<MINUSMINUS>& token) {
+							return nodestruct_opts{ token };
+						}
+					),
+					e.value()
+				);
+			})
+		| to_vec()
+	} };*/
 }
 
 NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {

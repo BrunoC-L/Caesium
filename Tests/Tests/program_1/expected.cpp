@@ -1,16 +1,16 @@
 #include "header.h"
+Int f_Animal(const Vector<Variant<Cat, Dog>>& vec) {
+		return 0;
+};
 struct Cat {
 };
 
 struct Dog {
 };
 
-Int sizestdvariantcatdog(const Vector<std::variant<Cat, Dog>>& vec):
-    return 0
-
 Int _redirect_main(const Vector<String>& s) {
-    Vector<std::variant<Cat, Dog>> animals = {};
-    return sizestdvariantcatdog(animals);
+	Vector<Variant<Cat, Dog>> animals = {};
+	return f_Animal(animals);
 };
 
 int main(int argc, char** argv) {

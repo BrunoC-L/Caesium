@@ -1,5 +1,11 @@
 #include "type_of_expression_visitor.hpp"
 #include "transpile_expression_visitor.hpp"
+#include "type_of_postfix_member_visitor.hpp"
+#include "structurizer.hpp"
+#include "vec_of_expected_to_expected_of_vec.hpp"
+#include "replace_all.hpp"
+#include "traverse_type_visitor.hpp"
+#include "expression_for_template_visitor.hpp"
 
 using T = type_of_expression_visitor;
 using R = T::R;
@@ -44,58 +50,125 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::PostfixExpression& expr) {
+R T::operator()(const NodeStructs::CallExpression& expr) {
 	throw;
-	/*if (expr.postfixes.size() == 0) {
-		return type_of_expr(variables, named, expr.expr);
-	}
-	else {
-		auto next_t = type_of_expr(variables, named, expr.expr);
-		for (const NodeStructs::PostfixExpression::op_types& postfix : expr.postfixes) {
-			next_t = std::visit(overload(
-				[&](const std::string& property_name) {
-					auto methods = methods_of_type(variables, named, next_t);
-					throw;
-					return next_t;
-				},
-				[&](const NodeStructs::ParenExpression& call) {
-					throw;
-					return next_t;
-				},
-				[&](const NodeStructs::BracketArguments& access) {
-					throw;
-					return next_t;
-				},
-				[&](const NodeStructs::BraceExpression& construct) {
-					throw;
-					return next_t;
-				},
-				[&](const NodeStructs::ParenArguments& call) {
-					throw;
-					return next_t;
-				},
-				[&](const NodeStructs::BraceArguments& construct) {
-					throw;
-					return next_t;
-				},
-				[&](const Token<PLUSPLUS>& e) {
-					throw;
-					return next_t;
-				},
-				[&](const Token<MINUSMINUS>& e) {
-					throw;
-					return next_t;
-				}
-				),
-				postfix
-			);
-		}
-		return next_t;
-	}*/
 }
 
-R T::operator()(const NodeStructs::ParenExpression& expr) {
+R T::operator()(const NodeStructs::TemplateExpression& expr) {
+	if (!std::holds_alternative<std::string>(expr.operand.expression.get())) {
+		throw;
+	}
+	if (auto it = state.state.named.templates.find(std::get<std::string>(expr.operand.expression.get())); it != state.state.named.templates.end()) {
+		if (it->second.size() != 1)
+			throw;
+
+		const auto& tmpl = *it->second.back();
+
+		// todo check if already traversed
+		if (tmpl.parameters.size() != expr.arguments.args.size()) {
+			std::stringstream ss;
+			ss << "invalid number of arguments to template `"
+				<< tmpl.name
+				<< "`, expected `"
+				<< tmpl.parameters.size()
+				<< "`, received `"
+				<< expr.arguments.args.size()
+				<< "`";
+			return error{ "user error", ss.str() };
+		}
+
+		if (tmpl.templated == "BUILTIN") {
+			/*if (tmpl.name == "Vector") {
+				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
+				return_if_error(x);
+				return NodeStructs::UniversalType{ NodeStructs::VectorType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
+			}
+			if (tmpl.name == "Set") {
+				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
+				return_if_error(x);
+				return NodeStructs::UniversalType{ NodeStructs::SetType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
+			}
+			if (tmpl.name == "Map") {
+				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
+				auto y = type_of_typename_visitor{ {}, state }(templated_with.at(1));
+				return_if_error(x);
+				return_if_error(y);
+				return NodeStructs::UniversalType{ NodeStructs::MapType{
+					Box<NodeStructs::UniversalType>{ std::move(x).value() },
+					Box<NodeStructs::UniversalType>{ std::move(y).value() }
+				} };
+			}*/
+			throw;
+		}
+
+		std::string replaced = tmpl.templated;
+		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template_visitor{ {}, state }) | to_vec();
+		for (int i = 0; i < expr.arguments.args.size(); ++i)
+			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i), args.at(i));
+
+		std::string template_name = [&](const std::string& name) {
+			std::stringstream ss;
+			ss << name;
+			for (const auto& arg : args)
+				ss << "_" << arg;
+			return ss.str();
+		}(tmpl.name);
+
+		if (auto it = state.state.named.functions.find(template_name); it != state.state.named.functions.end()) {
+			throw;
+		}
+
+		if (auto it = state.state.named.types.find(template_name); it != state.state.named.types.end()) {
+			throw;
+		}
+
+		{
+			And<IndentToken, Function, Token<END>> f{ 1 };
+			auto tokens = Tokenizer(replaced).read();
+			tokens_and_iterator g{ tokens, tokens.begin() };
+			if (!f.build(g))
+				throw;
+			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<Function>()) };
+			structured_f->name = template_name;
+			state.state.named.functions[structured_f->name].push_back(structured_f);
+			state.state.traversed_functions.insert(*structured_f);
+			auto transpiled_or_e = transpile(state, *structured_f);
+			return_if_error(transpiled_or_e);
+			state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
+			return std::pair{ NodeStructs::Reference{}, NodeStructs::UniversalType{ NodeStructs::FunctionType{*structured_f}} };
+		}
+		{
+			And<IndentToken, Type, Token<END>> t{ 1 };
+			auto tokens = Tokenizer(replaced).read();
+			tokens_and_iterator g{ tokens, tokens.begin() };
+			if (!t.build(g))
+				throw;
+			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<Type>()) };
+			structured_t->name = template_name;
+			state.state.named.types[structured_t->name].push_back(structured_t);
+			auto opt_error = traverse_type_visitor{ {}, state }(*structured_t);
+			if (opt_error.has_value())
+				return opt_error.value();
+			return std::pair{ NodeStructs::Reference{}, NodeStructs::UniversalType{ std::reference_wrapper{*structured_t}} };
+		}
+		throw;
+	}
+}
+
+R T::operator()(const NodeStructs::ConstructExpression& expr) {
 	throw;
+}
+
+R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
+	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
+	return_if_error(operand_t);
+	auto t = type_of_postfix_member_visitor{ {}, state, expr.property_name }(operand_t.value().second);
+	return_if_error(t);
+	return std::pair{ operand_t.value().first, std::move(t).value().second };
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {

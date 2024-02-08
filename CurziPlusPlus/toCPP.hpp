@@ -43,12 +43,10 @@ struct transpilation_state {
 		Named&& named
 	) : variables(std::move(variables)), named(std::move(named)) {}
 
+	// shouldnt those be pointers...?
 	std::set<NodeStructs::Function> traversed_functions;
-	//std::set<NodeStructs::FunctionTemplateInstanceType> traversed_function_template_instances;
 	std::set<NodeStructs::Type> traversed_types;
-	//std::set<NodeStructs::Template<NodeStructs::Type>> traversed_type_templates;
 	std::set<NodeStructs::Block> traversed_blocks;
-	//std::set<NodeStructs::Template<NodeStructs::Block>> traversed_block_templates;
 	std::set<NodeStructs::Alias> traversed_type_aliases;
 private:
 	no_copy _;
@@ -297,14 +295,7 @@ NodeStructs::UniversalType iterator_type(
 	const NodeStructs::UniversalType& type
 );
 
-//expected<std::reference_wrapper<const NodeStructs::Function>> create_or_retrieve_instance(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::Template<NodeStructs::Function>& fn,
-//	const std::vector<NodeStructs::FunctionArgument>& called_with
-//);
-//
-//expected<std::reference_wrapper<const NodeStructs::Template<NodeStructs::Function>>> find_or_traverse_function_template_instance(
-//	transpilation_state_with_indent state,
-//	const std::string& name,
-//	const std::vector<NodeStructs::UniversalType> template_arguments
-//);
+std::string template_name(
+	std::string original_name,
+	const std::vector<NodeStructs::Expression>& arguments
+);

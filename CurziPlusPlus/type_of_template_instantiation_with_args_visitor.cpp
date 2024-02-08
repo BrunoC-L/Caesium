@@ -29,7 +29,7 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 //		| LIFT_TRANSFORM(type_of_expression_visitor{ {}, state })
 //		| to_vec()
 //		;
-//	auto v2 = vec_of_expected_to_expected_of_vec<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>, std::vector>(v1);
+//	auto v2 = vec_of_expected_to_expected_of_vec(v1);
 //	return_if_error(v2);
 //
 //	std::vector<NodeStructs::UniversalType> arg_types = std::move(v2).value() | LIFT_TRANSFORM_TRAIL(.second) | to_vec();
