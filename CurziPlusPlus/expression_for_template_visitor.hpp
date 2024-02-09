@@ -5,8 +5,6 @@
 struct expression_for_template_visitor : ExpressionVisitor<expression_for_template_visitor> {
 	using ExpressionVisitor<expression_for_template_visitor>::operator();
 
-	transpilation_state_with_indent state;
-
 	using R = std::string;
 
 	//R operator()(const NodeStructs::AssignmentExpression& expr);

@@ -16,6 +16,7 @@
 #include "transpile_expression_visitor.hpp"
 #include "transpile_statement_visitor.hpp"
 #include "transpile_typename_visitor.hpp"
+#include "expression_for_template_visitor.hpp"
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
@@ -678,7 +679,14 @@ std::string _template_names(
 	return std::string();
 }
 
-std::string template_name(std::string original_name, const std::vector<NodeStructs::Expression>& arguments)
-{
-	return std::string();
+std::string template_name(std::string original_name, const std::vector<std::string>& args) {
+	std::stringstream ss;
+	ss << original_name;
+	for (const auto& arg : args)
+		ss << "_" << arg;
+	return ss.str();
+}
+
+std::string template_name(std::string original_name, const std::vector<NodeStructs::Expression>& arguments) {
+	return template_name(original_name, arguments | LIFT_TRANSFORM(expression_for_template_visitor{ {} }) | to_vec());
 }

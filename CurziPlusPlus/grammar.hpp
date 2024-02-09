@@ -32,8 +32,6 @@ using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
 
 struct Typename : public And<Word, Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>> {};
 
-using TemplateDeclaration = And<Token<TEMPLATE>, Token<LT>, CommaPlus<Word>, Token<GT>>;
-
 using MemberVariable = And<Typename, Word, Newline>;
 using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ClassElement = Or<Alias, Function, MemberVariable, Constructor>;
@@ -154,14 +152,7 @@ using Type = And<
 	>>>
 >;
 
-using Template = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<Word>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>;
-
-//template <typename T>
-//using Template = And<
-//	TemplateDeclaration,
-//	Star<Token<NEWLINE>>,
-//	T
-//>;
+using Template = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<And<Word, Opt<And<Token<EQUAL>, Expression>>>>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>;
 
 using File = And<
 	Star<Import>,

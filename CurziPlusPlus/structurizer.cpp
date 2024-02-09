@@ -103,26 +103,24 @@ NodeStructs::Function getStruct(const Function& f) {
 	};
 }
 
-//NodeStructs::TemplateParameters getStruct(const TemplateDeclaration& t) {
-//	return {
-//		t.get<CommaPlus<Word>>().get<Word>()
-//		| LIFT_TRANSFORM_TRAIL(.value)
-//		| to_vec()
-//	};
-//}
-
-//NodeStructs::Template<NodeStructs::Function> getStruct(const Template<Function>& t) {
-//	return {
-//		getStruct(t.get<TemplateDeclaration>()),
-//		getStruct(t.get<Function>())
-//	};
-//}
+std::pair<std::string, std::optional<NodeStructs::Expression>> getTemplateParameter(const And<Word, Opt<And<Token<EQUAL>, Expression>>>& parameter_and_optional_value) {
+	if (parameter_and_optional_value.get<Opt<And<Token<EQUAL>, Expression>>>().has_value())
+		return {
+			parameter_and_optional_value.get<Word>().value,
+			getExpressionStruct(parameter_and_optional_value.get<Opt<And<Token<EQUAL>, Expression>>>().value().get<Expression>())
+		};
+	else
+		return {
+			parameter_and_optional_value.get<Word>().value,
+			std::nullopt
+		};
+}
 
 NodeStructs::Template getStruct(const Template& t) {
 	return {
 		.name = t.get<Word>().value,
-		.parameters = t.get<CommaStar<Word>>().get<Word>()
-			| LIFT_TRANSFORM_TRAIL(.value)
+		.parameters = t.get<CommaStar<And<Word, Opt<And<Token<EQUAL>, Expression>>>>>().get<And<Word, Opt<And<Token<EQUAL>, Expression>>>>()
+			| LIFT_TRANSFORM(getTemplateParameter)
 			| to_vec(),
 		.templated = t.get<TemplateBody>().value
 	};

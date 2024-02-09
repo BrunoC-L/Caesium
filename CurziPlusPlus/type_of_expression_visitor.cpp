@@ -54,17 +54,84 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::TemplateExpression& expr) {
-	if (!std::holds_alternative<std::string>(expr.operand.expression.get())) {
-		throw;
+expected<std::reference_wrapper<const NodeStructs::Template>> find_best_template(
+	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Expression>& args
+) {
+	auto n_parameters = templates.at(0)->parameters.size();
+	for (unsigned i = 0; i < n_parameters; ++i) {
+		const auto& parameter_name = templates.at(0)->parameters.at(i).first;
+		for (auto const* a : templates)
+			if (parameter_name != a->parameters.at(i).first)
+				throw;
 	}
+	NodeStructs::Template const* best = nullptr;
+	for (auto const* a : templates) {
+		bool is_base = true;
+		for (const auto& p : a->parameters)
+			if (p.second.has_value()) {
+				is_base = false;
+				break;
+			}
+		if (!is_base)
+			continue;
+		if (best != nullptr)
+			throw; // 2 templates have no default params
+		best = a;
+	}
+
+	if (best == nullptr)
+		throw;
+
+	int best_matches = 0;
+	int second_best_matches = 0;
+	for (auto const* a : templates) {
+		int n_matches = 0;
+		for (unsigned i = 0; i < n_parameters; ++i) {
+			const auto& [name, opt_value] = a->parameters.at(i);
+			if (!opt_value.has_value())
+				continue;
+			if (opt_value.value() <=> args.at(i) == std::strong_ordering::equal)
+				n_matches += 1;
+			else {
+				n_matches = -1;
+				break;
+			}
+		}
+		if (n_matches >= best_matches) {
+			second_best_matches = best_matches;
+			best_matches = n_matches;
+			best = a;
+		}
+	}
+	if (second_best_matches == best_matches && best_matches > 0) {
+		std::stringstream ss;
+		for (const auto& arg : args)
+			ss << expression_for_template_visitor{ {} }(arg) << ", ";
+		return error{
+			"user error",
+			"template collision, example: can't choose between template<T, U=X> and template<T=X, U> for template<X,X>."
+			" Template was : `" + templates.at(0)->name + "` and arguments were [" + ss.str() + "]"
+		};
+	}
+	return std::reference_wrapper<const NodeStructs::Template>{*best};
+}
+
+R T::operator()(const NodeStructs::TemplateExpression& expr) {
+	if (!std::holds_alternative<std::string>(expr.operand.expression.get()))
+		throw;
+
 	if (auto it = state.state.named.templates.find(std::get<std::string>(expr.operand.expression.get())); it != state.state.named.templates.end()) {
-		if (it->second.size() != 1)
-			throw;
+		auto t = find_best_template(it->second, expr.arguments.args);
+		return_if_error(t);
+		const auto& tmpl = t.value().get();
+		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template_visitor{ {} }) | to_vec();
+		std::string tmpl_name = template_name(it->first, args);
 
-		const auto& tmpl = *it->second.back();
+		size_t max_params = it->second.at(0)->parameters.size();
+		for (unsigned i = 1; i < it->second.size(); ++i)
+			max_params = std::max(max_params, it->second.at(i)->parameters.size());
 
-		// todo check if already traversed
 		if (tmpl.parameters.size() != expr.arguments.args.size()) {
 			std::stringstream ss;
 			ss << "invalid number of arguments to template `"
@@ -102,23 +169,14 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		}
 
 		std::string replaced = tmpl.templated;
-		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template_visitor{ {}, state }) | to_vec();
 		for (int i = 0; i < expr.arguments.args.size(); ++i)
-			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i), args.at(i));
+			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i).first, args.at(i));
 
-		std::string template_name = [&](const std::string& name) {
-			std::stringstream ss;
-			ss << name;
-			for (const auto& arg : args)
-				ss << "_" << arg;
-			return ss.str();
-		}(tmpl.name);
-
-		if (auto it = state.state.named.functions.find(template_name); it != state.state.named.functions.end()) {
+		if (auto it = state.state.named.functions.find(tmpl_name); it != state.state.named.functions.end()) {
 			throw;
 		}
 
-		if (auto it = state.state.named.types.find(template_name); it != state.state.named.types.end()) {
+		if (auto it = state.state.named.types.find(tmpl_name); it != state.state.named.types.end()) {
 			throw;
 		}
 
@@ -129,7 +187,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			if (!f.build(g))
 				throw;
 			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<Function>()) };
-			structured_f->name = template_name;
+			structured_f->name = tmpl_name;
 			state.state.named.functions[structured_f->name].push_back(structured_f);
 			state.state.traversed_functions.insert(*structured_f);
 			auto transpiled_or_e = transpile(state, *structured_f);
@@ -144,7 +202,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			if (!t.build(g))
 				throw;
 			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<Type>()) };
-			structured_t->name = template_name;
+			structured_t->name = tmpl_name;
 			state.state.named.types[structured_t->name].push_back(structured_t);
 			auto opt_error = traverse_type_visitor{ {}, state }(*structured_t);
 			if (opt_error.has_value())
@@ -193,6 +251,12 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 }
 
 R T::operator()(const std::string& expr) {
+	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end())
+		return std::pair{
+			NodeStructs::Reference{}, // dummy arg
+			NodeStructs::UniversalType{ *it->second.back() }
+	};
+
 	if (auto it = state.state.variables.find(expr); it != state.state.variables.end())
 		return it->second.back();
 
@@ -201,12 +265,6 @@ R T::operator()(const std::string& expr) {
 			NodeStructs::Reference{}, // dummy arg
 			NodeStructs::UniversalType{ NodeStructs::TypeType{ *it->second.back() } }
 		};
-
-	//if (auto it = state.state.named.function_templates.find(expr); it != state.state.named.function_templates.end())
-	//	return std::pair{
-	//		NodeStructs::Reference{}, // dummy arg
-	//		NodeStructs::UniversalType{ NodeStructs::FunctionTemplateType{ *it->second.back() } }
-	//	};
 
 	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end())
 		return std::pair{
@@ -218,12 +276,6 @@ R T::operator()(const std::string& expr) {
 		return std::pair{
 			NodeStructs::Reference{}, // dummy arg
 			it->second
-		};
-
-	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end())
-		return std::pair{
-			NodeStructs::Reference{}, // dummy arg
-			NodeStructs::UniversalType{ *it->second.back() }
 		};
 
 

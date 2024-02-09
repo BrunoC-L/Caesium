@@ -1,0 +1,1 @@
+template collision, example: can't choose between template<T, U=X> and template<T=X, U> for template<X,X>. Template was : `f` and arguments were [String, Int, ]

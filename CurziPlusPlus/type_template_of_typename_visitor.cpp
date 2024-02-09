@@ -63,7 +63,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		for (int i = 0; i < tmpl.parameters.size(); ++i) {
 			auto e = transpile_typename_visitor{ {}, state }(templated_with.at(i));
 			return_if_error(e);
-			replaced = ReplaceAll(std::move(replaced), tmpl.parameters.at(i), e.value());
+			replaced = ReplaceAll(std::move(replaced), tmpl.parameters.at(i).first, e.value());
 		}
 
 		Type t{ 1 };

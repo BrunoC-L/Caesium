@@ -94,11 +94,19 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
-	throw;
+	auto args = expr.args | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | LIFT_TRANSFORM(operator());
+	std::stringstream ss;
+	for (const auto& arg : args)
+		ss << "_" << arg;
+	return "_" + ss.str() + "_";
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
-	return "{" + transpile_args(state, expr.args).value() + "}";
+	auto args = expr.args | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | LIFT_TRANSFORM(operator());
+	std::stringstream ss;
+	for (const auto& arg : args)
+		ss << "_" << arg;
+	return "_" + ss.str() + "_";
 }
 
 R T::operator()(const std::string& expr) {

@@ -143,15 +143,16 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 	return_if_error(t_or_e);
 	if (std::holds_alternative<NodeStructs::Template>(t_or_e.value().second.value)) {
 		const auto& tmpl = std::get<NodeStructs::Template>(t_or_e.value().second.value);
-		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template_visitor{ {}, state }) | to_vec();
-		std::string template_name = [&](const std::string& name) {
-			std::stringstream ss;
-			ss << name;
-			for (const auto& arg : args)
-				ss << "_" << arg;
-			return ss.str();
-			}(tmpl.name);
-		return template_name;
+
+		if (auto it = state.state.named.functions.find(tmpl.name); it != state.state.named.functions.end()) {
+			throw;
+		}
+
+		if (auto it = state.state.named.types.find(tmpl.name); it != state.state.named.types.end()) {
+			throw;
+		}
+
+		return template_name(tmpl.name, expr.arguments.args);
 	}
 	throw;
 }

@@ -1,0 +1,14 @@
+template f<T, U>:
+    Int f():
+        return 0
+
+template f<T=String, U>:
+    Int f():
+        return 1
+
+template f<T=String, U=String>:
+    Int f():
+        return 2
+
+Int main(Vector<String> ref s):
+    return f<String, String>() + f<String, Int>() + f<Int, String>()

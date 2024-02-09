@@ -10,15 +10,6 @@
 #include "overload.hpp"
 
 struct NodeStructs {
-
-	struct Template {
-		std::string name;
-		std::vector<std::string> parameters;
-		std::string templated;
-
-		std::weak_ordering operator<=>(const Template&) const = default;
-	};
-
 	struct TemplatedTypename;
 	struct NamespacedTypename;
 	struct BaseTypename;
@@ -391,28 +382,6 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const FunctionType&) const;
 	};
 
-	/*struct TypeTemplateType {
-		std::reference_wrapper<const Template<Type>> type_template;
-		std::weak_ordering operator<=>(const TypeTemplateType&) const;
-	};
-
-	struct TypeTemplateInstanceType {
-		std::reference_wrapper<const Template<Type>> type_template;
-		std::vector<UniversalType> template_arguments;
-		std::weak_ordering operator<=>(const TypeTemplateInstanceType&) const;
-	};
-
-	struct FunctionTemplateType {
-		std::reference_wrapper<const Template<Function>> function_template;
-		std::weak_ordering operator<=>(const FunctionTemplateType&) const;
-	};
-
-	struct FunctionTemplateInstanceType {
-		std::reference_wrapper<const Template<Function>> function_template;
-		std::vector<UniversalType> template_arguments;
-		std::weak_ordering operator<=>(const FunctionTemplateInstanceType&) const;
-	};*/
-
 	struct UnionType {
 		std::vector<UniversalType> arguments;
 		std::weak_ordering operator<=>(const UnionType&) const = default;
@@ -432,6 +401,14 @@ struct NodeStructs {
 		Box<UniversalType> key_type;
 		Box<UniversalType> value_type;
 		std::weak_ordering operator<=>(const MapType&) const = default;
+	};
+
+	struct Template {
+		std::string name;
+		std::vector<std::pair<std::string, std::optional<NodeStructs::Expression>>> parameters;
+		std::string templated;
+
+		std::weak_ordering operator<=>(const Template&) const = default;
 	};
 
 	struct UniversalType {

@@ -152,9 +152,9 @@ struct cpp_std {
 			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
 		},
 	};*/
-	NodeStructs::Template builtin_set = { "Set" , { "T" }, "BUILTIN" };
-	NodeStructs::Template builtin_vector = { "Vector" , { "T" }, "BUILTIN" };
-	NodeStructs::Template builtin_map = { "Map" , { "K", "V" }, "BUILTIN" };
+	NodeStructs::Template builtin_set = { "Set" , { { "T", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_vector = { "Vector" , { { "T", std::nullopt}}, "BUILTIN"};
+	NodeStructs::Template builtin_map = { "Map" , { { "K", {} }, { "V", {} } }, "BUILTIN" };
 	NodeStructs::Type builtin_int = { "Int" };
 	NodeStructs::Type builtin_bool = { "Bool" };
 	NodeStructs::Type builtin_string = { "String" };
@@ -293,6 +293,11 @@ transpile_t transpile_expressions(
 NodeStructs::UniversalType iterator_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::UniversalType& type
+);
+
+std::string template_name(
+	std::string original_name,
+	const std::vector<std::string>& args
 );
 
 std::string template_name(
