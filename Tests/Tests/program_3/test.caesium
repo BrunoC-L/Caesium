@@ -1,14 +1,14 @@
-template f<T, U>:
-    Int f():
+template problematic<T, U>:
+    Int problematic():
         return 0
 
-template f<T=String, U>:
-    Int f():
+template problematic<T=String, U>:
+    Int problematic():
         return 1
 
-template f<T, U=Int>:
-    Int f():
+template problematic<T, U=Int>:
+    Int problematic():
         return 2
 
 Int main(Vector<String> ref s):
-    return f<String, Int>()
+    return problematic<String, Int>()

@@ -54,67 +54,103 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	throw;
 }
 
+bool has_argument_and_forced_parameter_mismatch(const std::vector<NodeStructs::Expression>& args, const NodeStructs::Template& tmpl) {
+	auto n_parameters = args.size();
+	for (auto i = 0; i < n_parameters; ++i)
+		if (tmpl.parameters.at(i).second.has_value() && (args.at(i) <=> tmpl.parameters.at(i).second.value() != std::strong_ordering::equal))
+			return true;
+	return false;
+}
+
+auto eliminate_argument_and_forced_parameter_mismatches(const std::vector<NodeStructs::Expression>& args, std::vector<NodeStructs::Template const*>&& templates) {
+	for (int i = templates.size() - 1; i >= 0; --i)
+		if (has_argument_and_forced_parameter_mismatch(args, *templates.at(i)))
+			templates.erase(templates.begin() + i);
+	return std::move(templates);
+}
+
+bool is_redundant_wrt_to(const NodeStructs::Template& tmpl, const NodeStructs::Template& reference) {
+	auto n_parameters = tmpl.parameters.size();
+	for (auto i = 0; i < n_parameters; ++i)
+		if (!reference.parameters.at(i).second.has_value() && tmpl.parameters.at(i).second.has_value())
+			return false;
+	return true;
+}
+
+auto eliminate_underspecified(const std::vector<NodeStructs::Expression>& args, std::vector<NodeStructs::Template const*>&& templates) {
+	if (templates.at(0)->name == "problematic") {
+		int a = 0;
+	}
+	auto mask = std::vector<bool>(templates.size(), false);
+	for (int i = 0; i < templates.size(); ++i)
+		for (int j = 0; j < templates.size(); ++j)
+			if (i != j && mask[j] == false && is_redundant_wrt_to(*templates.at(i), *templates.at(j))) {
+				mask[i] = true;
+				break;
+			}
+	unsigned index = 0;
+	templates.erase(std::remove_if(templates.begin(), templates.end(), [&](NodeStructs::Template const* t) {
+		return bool(mask.at(index++));
+	}), templates.end());
+	return std::move(templates);
+}
+
 expected<std::reference_wrapper<const NodeStructs::Template>> find_best_template(
 	const std::vector<NodeStructs::Template const*>& templates,
 	const std::vector<NodeStructs::Expression>& args
 ) {
-	auto n_parameters = templates.at(0)->parameters.size();
+	auto n_parameters = args.size();
 	for (unsigned i = 0; i < n_parameters; ++i) {
 		const auto& parameter_name = templates.at(0)->parameters.at(i).first;
 		for (auto const* a : templates)
-			if (parameter_name != a->parameters.at(i).first)
+			if (a->parameters.size() != n_parameters || parameter_name != a->parameters.at(i).first)
 				throw;
 	}
-	NodeStructs::Template const* best = nullptr;
-	for (auto const* a : templates) {
-		bool is_base = true;
-		for (const auto& p : a->parameters)
-			if (p.second.has_value()) {
-				is_base = false;
-				break;
-			}
-		if (!is_base)
-			continue;
-		if (best != nullptr)
-			throw; // 2 templates have no default params
-		best = a;
-	}
 
-	if (best == nullptr)
+	auto candidates = templates;
+	candidates = eliminate_argument_and_forced_parameter_mismatches(args, std::move(candidates));
+	auto candidates2 = candidates;
+	candidates = eliminate_underspecified(args, std::move(candidates));
+
+	if (candidates.size() == 0)
 		throw;
-
-	int best_matches = 0;
-	int second_best_matches = 0;
-	for (auto const* a : templates) {
-		int n_matches = 0;
-		for (unsigned i = 0; i < n_parameters; ++i) {
-			const auto& [name, opt_value] = a->parameters.at(i);
-			if (!opt_value.has_value())
-				continue;
-			if (opt_value.value() <=> args.at(i) == std::strong_ordering::equal)
-				n_matches += 1;
-			else {
-				n_matches = -1;
-				break;
+	else if (candidates.size() == 1)
+		return std::reference_wrapper<const NodeStructs::Template>{ *candidates.at(0) };
+	else {
+		std::stringstream args_ss;
+		bool has_prev_args = false;
+		for (const auto& arg : args) {
+			if (has_prev_args)
+				args_ss << ", ";
+			has_prev_args = true;
+			args_ss << expression_for_template_visitor{ {} }(arg);
+		}
+		std::stringstream templates_ss;
+		bool has_prev_templates = false;
+		for (auto const* a : candidates) {
+			if (has_prev_templates)
+				templates_ss << ", ";
+			has_prev_templates = true;
+			std::stringstream parameters_ss;
+			bool has_prev_parameters = false;
+			for (const auto& parameter : a->parameters) {
+				if (has_prev_parameters)
+					parameters_ss << ", ";
+				has_prev_parameters = true;
+				parameters_ss << parameter.first;
+				if (parameter.second.has_value())
+					parameters_ss << " = " << expression_for_template_visitor{ {} }(parameter.second.value());
 			}
+			templates_ss << "template " + templates.at(0)->name + "<" + parameters_ss.str() + ">";
 		}
-		if (n_matches >= best_matches) {
-			second_best_matches = best_matches;
-			best_matches = n_matches;
-			best = a;
-		}
-	}
-	if (second_best_matches == best_matches && best_matches > 0) {
-		std::stringstream ss;
-		for (const auto& arg : args)
-			ss << expression_for_template_visitor{ {} }(arg) << ", ";
 		return error{
 			"user error",
-			"template collision, example: can't choose between template<T, U=X> and template<T=X, U> for template<X,X>."
-			" Template was : `" + templates.at(0)->name + "` and arguments were [" + ss.str() + "]"
+			// todo collision isn't the right word
+			"More than one instance of `" + templates.at(0)->name + "`"
+			" matched the provided arguments [" + args_ss.str() + "]"
+			", contenders were [" + templates_ss.str() + "]"
 		};
 	}
-	return std::reference_wrapper<const NodeStructs::Template>{*best};
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {

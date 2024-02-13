@@ -1,1 +1,1 @@
-template collision, example: can't choose between template<T, U=X> and template<T=X, U> for template<X,X>. Template was : `f` and arguments were [String, Int, ]
+More than one instance of `problematic` matched the provided arguments [String, Int], contenders were [template problematic<T = String, U>, template problematic<T, U = Int>]
