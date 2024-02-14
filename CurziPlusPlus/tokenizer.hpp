@@ -1,7 +1,6 @@
 #pragma once
 #include <sstream>
 #include <vector>
-#include <forward_list>
 
 enum TOKENS {
 	END, // marks the last token of a stream
@@ -104,33 +103,34 @@ enum TOKENS {
 };
 
 using TOKENVALUE = std::pair<TOKENS, std::string>;
-
+using Iterator = std::vector<TOKENVALUE>::iterator;
 struct tokens_and_iterator {
-	std::forward_list<TOKENVALUE>& tokens;
-	std::forward_list<TOKENVALUE>::iterator it;
+	std::vector<TOKENVALUE>& tokens;
+	std::vector<TOKENVALUE>::iterator it;
 };
 
 struct Tokenizer {
 	std::string program;
 	unsigned index = 0;
 
-	std::forward_list<TOKENVALUE> read() {
-		std::forward_list<TOKENVALUE> out;
+	std::vector<TOKENVALUE> read() {
+		std::vector<TOKENVALUE> out;
+		out.reserve(program.size());
 		if (program.size() != 0) {
 			TOKENVALUE t;
 			do {
 				t = readToken();
-				out.push_front(t);
+				out.push_back(t);
 			} while (t.first != END);
-			// allow for files not to end with a new line
-			if (std::next(out.begin(), 1)->first != NEWLINE) {
-				out.front().first = NEWLINE; // replace END with newline
-				out.push_front(TOKENVALUE(END, "")); // add the new END
+
+			// this allows for files not to end with a new line, we add it manually so we can later act as if all files end with a new line
+			if (out.size() > 1 && out.at(out.size() - 2).first != NEWLINE) {
+				out.back().first = NEWLINE; // replace END with newline
+				out.push_back(TOKENVALUE(END, "")); // add the new END
 			}
-			out.reverse();
 		}
 		else {
-			out.push_front(TOKENVALUE(END, ""));
+			out.push_back(TOKENVALUE(END, ""));
 		}
 		return out;
 	}

@@ -145,7 +145,6 @@ expected<std::reference_wrapper<const NodeStructs::Template>> find_best_template
 		}
 		return error{
 			"user error",
-			// todo collision isn't the right word
 			"More than one instance of `" + templates.at(0)->name + "`"
 			" matched the provided arguments [" + args_ss.str() + "]"
 			", contenders were [" + templates_ss.str() + "]"
@@ -220,7 +219,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			And<IndentToken, Function, Token<END>> f{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (!f.build(g))
+			if (!f.build(g.it))
 				throw;
 			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<Function>()) };
 			structured_f->name = tmpl_name;
@@ -235,7 +234,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			And<IndentToken, Type, Token<END>> t{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (!t.build(g))
+			if (!t.build(g.it))
 				throw;
 			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<Type>()) };
 			structured_t->name = tmpl_name;

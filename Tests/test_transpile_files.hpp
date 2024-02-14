@@ -10,11 +10,11 @@
 #include "first_diff.hpp"
 
 std::optional<expected<std::pair<std::string, std::string>>> create_file(const std::string& folder_name, std::string_view caesiumProgram) {
-	std::forward_list<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
+	std::vector<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = File(0);
 	{
-		bool nodeBuilt = file.build(g);
+		bool nodeBuilt = file.build(g.it);
 		bool programReadEntirely = g.it == g.tokens.end();
 		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
 			programReadEntirely = ++g.it == g.tokens.end();

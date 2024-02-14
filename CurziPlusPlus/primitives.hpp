@@ -53,46 +53,46 @@ struct Token {
 	int n_indent;
 	Token(int n_indent) : n_indent(n_indent) {}
 
-	void parse_whitespaces(tokens_and_iterator& g) {
-		while (g.it->first == TAB || g.it->first == SPACE)
-			g.it++;
+	void parse_whitespaces(Iterator& it) {
+		while (it->first == TAB || it->first == SPACE)
+			it++;
 	}
 
-	bool build_end_token(tokens_and_iterator& g) {
-		bool ok = g.it->first == token;
+	bool build_end_token(Iterator& it) {
+		bool ok = it->first == token;
 		if (ok)
-			g.it++;
+			it++;
 		return ok;
 	}
 	
-	bool build_newline_token(tokens_and_iterator& g) {
-		auto save = g.it;
-		parse_whitespaces(g);
-		bool ok = g.it->first == token;
+	bool build_newline_token(Iterator& it) {
+		auto save = it;
+		parse_whitespaces(it);
+		bool ok = it->first == token;
 		if (ok)
-			g.it++;
+			it++;
 		else
-			g.it = save;
+			it = save;
 		return ok;
 	}
 
-	bool build_normal_token(tokens_and_iterator& g) {
-		bool ok = g.it->first == token;
+	bool build_normal_token(Iterator& it) {
+		bool ok = it->first == token;
 		if (ok) {
-			value = g.it->second;
-			g.it++;
-			parse_whitespaces(g);
+			value = it->second;
+			it++;
+			parse_whitespaces(it);
 		}
 		return ok;
 	}
 
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		if constexpr (token == END)
-			return build_end_token(g);
+			return build_end_token(it);
 		else if constexpr (token == NEWLINE)
-			return build_newline_token(g);
+			return build_newline_token(it);
 		else
-			return build_normal_token(g);
+			return build_normal_token(it);
 	}
 
 	std::weak_ordering operator<=>(const Token& other) const {
@@ -107,15 +107,15 @@ template <typename T>
 struct Until {
 	int n_indent;
 	Until(int n_indent) : n_indent(n_indent) {}
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		T t{ n_indent };
-		auto save = g.it;
-		while (g.it != g.tokens.end()) {
-			if (t.build(g))
+		auto save = it;
+		while (it->first != END) {
+			if (t.build(it))
 				return true;
-			++g.it;
+			++it;
 		}
-		g.it = save;
+		it = save;
 		return false;
 	}
 };
@@ -123,15 +123,15 @@ struct Until {
 struct IndentToken {
 	int n_indent;
 	IndentToken(int n_indent) : n_indent(n_indent) {}
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		bool correct = true;
 		for (int i = 0; i < n_indent; ++i) {
-			correct &= g.it->first == TAB;
-			g.it++;
-			if (g.it == g.tokens.end())
+			correct &= it->first == TAB;
+			if (it->first == END)
 				return false;
+			it++;
 		}
-		correct &= g.it->first != TAB && g.it->first != NEWLINE && g.it->first != SPACE;
+		correct &= it->first != TAB && it->first != NEWLINE && it->first != SPACE;
 		return correct;
 	}
 };
@@ -151,9 +151,9 @@ struct Alloc {
 		return value.value().get();
 	}
 
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		T t(n_indent);
-		if (t.build(g)) {
+		if (t.build(it)) {
 			value = std::move(t);
 			return true;
 		}
@@ -167,14 +167,14 @@ struct KNode {
 	int n_indent;
 	KNode(int n_indent) : n_indent(n_indent) {}
 
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		while (true) {
 			auto node = T(n_indent);
-			bool parsed = node.build(g);
+			bool parsed = node.build(it);
 			if (parsed) {
 				nodes.push_back(std::move(node));
 				if constexpr (requiresComma::value)
-					parsed = Token<COMMA>(0).build(g);
+					parsed = Token<COMMA>(0).build(it);
 			}
 			if (!parsed)
 				break;
@@ -254,9 +254,9 @@ struct Opt {
 		return node.value();
 	}
 
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		T _node(n_indent);
-		bool parsed = _node.build(g);
+		bool parsed = _node.build(it);
 		if (parsed)
 			node.emplace(std::move(_node));
 		return true;
@@ -299,14 +299,14 @@ struct And {
 		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(value);
 	}
 
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		bool failed = false;
-		auto temp = g.it;
+		auto temp = it;
 		for_each(value, [&](auto& node) {
 			if (failed)
 				return;
-			if (!node.build(g)) {
-				g.it = temp;
+			if (!node.build(it)) {
+				it = temp;
 				failed = true;
 			}
 		});
@@ -325,13 +325,13 @@ struct Or {
 		return _value.value();
 	}
 
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		bool populated = false;
 		([&] {
 			if (populated)
 				return;
 			Ors node = Ors(n_indent);
-			bool built = node.build(g);
+			bool built = node.build(it);
 			if (built) {
 				_value.emplace(std::move(node));
 				populated = true;
@@ -345,13 +345,13 @@ struct TemplateBody {
 	int n_indent;
 	std::string value;
 	TemplateBody(int n_indent) : n_indent(n_indent) {};
-	bool build(tokens_and_iterator& g) {
+	bool build(Iterator& it) {
 		// look for first line that isnt just spaces/tabs/newline and doesnt begin with a tab, leave the iterator at the beginning of that line
-		auto beg = g.it;
-		while (parse_one_line(g));
+		auto beg = it;
+		while (parse_one_line(it));
 
 		std::stringstream ss;
-		while (beg != g.it) {
+		while (beg != it) {
 			ss << beg->second;
 			++beg;
 		}
@@ -360,20 +360,20 @@ struct TemplateBody {
 		return true;
 	}
 
-	bool parse_one_line(tokens_and_iterator& g) {
-		return parse_empty_line(g) || parse_indented_line(g);
+	bool parse_one_line(Iterator& it) {
+		return parse_empty_line(it) || parse_indented_line(it);
 	}
 
-	bool parse_empty_line(tokens_and_iterator& g) {
-		return Token<NEWLINE>{0}.build(g);
+	bool parse_empty_line(Iterator& it) {
+		return Token<NEWLINE>{0}.build(it);
 	}
 
-	bool parse_indented_line(tokens_and_iterator& g) {
+	bool parse_indented_line(Iterator& it) {
 		_ASSERT(n_indent == 0); // change code later to accomodate if needed but recursive templates or templates inside classes are not on the menu
-		bool is_indented = g.it != g.tokens.end() && g.it->first == TAB;
+		bool is_indented = it->first != END && it->first == TAB;
 		if (!is_indented)
 			return false;
-		bool has_newline = Until<Token<NEWLINE>>{ n_indent }.build(g);
+		bool has_newline = Until<Token<NEWLINE>>{ n_indent }.build(it);
 		_ASSERT(has_newline); // if that doesnt work something is just wrong with the tokenizer.
 		return true;
 	}

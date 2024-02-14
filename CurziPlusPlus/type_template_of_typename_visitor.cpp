@@ -69,7 +69,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		Type t{ 1 };
 		auto tokens = Tokenizer(replaced).read();
 		tokens_and_iterator g{ tokens, tokens.begin() };
-		bool ok = t.build(g) && g.it == g.tokens.end();
+		bool ok = t.build(g.it) && g.it == g.tokens.end();
 		if (!ok)
 			throw;
 	}
