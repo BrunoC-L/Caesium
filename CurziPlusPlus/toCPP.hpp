@@ -24,6 +24,7 @@ struct Named {
 
 	map_to_vec<NodeStructs::Function> functions;
 	map_to_vec<NodeStructs::Type> types;
+	map_to_vec<NodeStructs::Interface> interfaces;
 	map_to_vec<NodeStructs::Block> blocks;
 	map_to_vec<NodeStructs::Template> templates;
 	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
@@ -46,8 +47,10 @@ struct transpilation_state {
 	// shouldnt those be pointers...?
 	std::set<NodeStructs::Function> traversed_functions;
 	std::set<NodeStructs::Type> traversed_types;
+	std::set<NodeStructs::Interface> traversed_interfaces;
 	std::set<NodeStructs::Block> traversed_blocks;
 	std::set<NodeStructs::Alias> traversed_type_aliases;
+	std::map<NodeStructs::Typename, std::vector<NodeStructs::UniversalType>> interface_symbol_to_members;
 private:
 	no_copy _;
 };
@@ -104,57 +107,11 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 }
 
 struct cpp_std {
-	/*NodeStructs::Type _uset = NodeStructs::Type{
-		.name = std::string{ "Set" },
-		.methods = std::vector<NodeStructs::Function>{},
-		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
-	};
-
-	NodeStructs::Template<NodeStructs::Type> unordered_set = {
-		std::vector{ std::string{ "T" } },
-		_uset,
-	};
-
-	NodeStructs::Type _vec = NodeStructs::Type{
-		.name = std::string{ "Vector" },
-		.methods = std::vector<NodeStructs::Function>{},
-		.memberVariables = std::vector<NodeStructs::MemberVariable>{},
-	};
-
-	NodeStructs::Template<NodeStructs::Type> vector = {
-		std::vector{std::string{"T"}},
-		_vec,
-	};
-
-	NodeStructs::Template<NodeStructs::Type> unordered_map = []() {
-		std::vector<NodeStructs::Function> methods = {
-			NodeStructs::Function{
-				"at",
-				NodeStructs::BaseTypename{ "V" },
-				std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>{},
-				std::vector<NodeStructs::Statement>{},
-			}
-		};
-		return NodeStructs::Template<NodeStructs::Type>{
-			std::vector<std::string>{ "K", "V" },
-			NodeStructs::Type{
-				.name = std::string{ "Map" },
-				.methods = std::move(methods),
-			},
-		};
-	}();
-
-	NodeStructs::Template<NodeStructs::Type> pair = {
-		std::vector<std::string>{ "First", "Second" },
-		NodeStructs::Type{
-			.name = std::string{ "Pair" },
-			.methods = std::vector<NodeStructs::Function>{},
-			.memberVariables = std::vector<NodeStructs::MemberVariable>{},
-		},
-	};*/
 	NodeStructs::Template builtin_set = { "Set" , { { "T", {} } }, "BUILTIN" };
 	NodeStructs::Template builtin_vector = { "Vector" , { { "T", std::nullopt}}, "BUILTIN"};
 	NodeStructs::Template builtin_map = { "Map" , { { "K", {} }, { "V", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_push = { "push" , { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // vec
+	NodeStructs::Template builtin_insert = { "insert" , { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // map or set
 	NodeStructs::Type builtin_int = { "Int" };
 	NodeStructs::Type builtin_bool = { "Bool" };
 	NodeStructs::Type builtin_string = { "String" };
@@ -167,11 +124,6 @@ struct cpp_std {
 			{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } }, NodeStructs::ParameterCategory{ NodeStructs::Reference{} }, "t" }
 		},
 	};
-
-	/*NodeStructs::Template<NodeStructs::Function> println = {
-		std::vector<std::string>{ "T" },
-		_println
-	};*/
 
 	NodeStructs::Function size{
 		.name = std::string{ "size" },
@@ -228,6 +180,11 @@ transpile_header_cpp_t transpile(
 transpile_header_cpp_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
+);
+
+transpile_header_cpp_t transpile(
+	transpilation_state_with_indent state,
+	const NodeStructs::Interface& interface
 );
 
 transpile_t transpile(
@@ -290,6 +247,11 @@ transpile_t transpile_expressions(
 	const std::vector<NodeStructs::Expression>& args
 );
 
+transpile_t transpile_types(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::UniversalType>& args
+);
+
 NodeStructs::UniversalType iterator_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::UniversalType& type
@@ -303,4 +265,10 @@ std::string template_name(
 std::string template_name(
 	std::string original_name,
 	const std::vector<NodeStructs::Expression>& arguments
+);
+
+bool is_assignable_to(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& expected_union_or_interface,
+	const NodeStructs::UniversalType& observed_type
 );

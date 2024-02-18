@@ -18,20 +18,21 @@ struct TypeCategoryVisitor {
 			t.value
 		);
 	}
-	/*
-	R operator()(const NodeStructs::Type& t);
-	R operator()(const NodeStructs::AggregateType& t);
-	R operator()(const NodeStructs::TypeType& t);
-	R operator()(const NodeStructs::FunctionType& t);
-	R operator()(const NodeStructs::UnionType& t);
-	R operator()(const NodeStructs::VectorType& t);
-	R operator()(const NodeStructs::SetType& t);
-	R operator()(const NodeStructs::MapType& t);
-	R operator()(const NodeStructs::Template& t);
-	R operator()(const std::string& t);
-	R operator()(const double& t);
-	R operator()(const int& t);
+#define TypeCategoryVisitorDeclarations \
+	R operator()(const NodeStructs::Type& t);\
+	R operator()(const NodeStructs::AggregateType& t);\
+	R operator()(const NodeStructs::TypeType& t);\
+	R operator()(const NodeStructs::FunctionType& t);\
+	R operator()(const NodeStructs::UnionType& t);\
+	R operator()(const NodeStructs::InterfaceType& t);\
+	R operator()(const NodeStructs::VectorType& t);\
+	R operator()(const NodeStructs::SetType& t);\
+	R operator()(const NodeStructs::MapType& t);\
+	R operator()(const NodeStructs::Template& t);\
+	R operator()(const NodeStructs::BuiltInType& t);\
+	R operator()(const std::string& t);\
+	R operator()(const double& t);\
+	R operator()(const int& t);\
 	R operator()(const bool& t);
-	*/
 };
 

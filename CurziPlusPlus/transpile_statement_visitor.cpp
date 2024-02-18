@@ -12,7 +12,9 @@ R T::operator()(const NodeStructs::Expression& statement) {
 }
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
-	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(statement.type).value() });
+	auto t = type_of_typename_visitor{ {}, state }(statement.type);
+	return_if_error(t);
+	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, t.value() });
 	auto type = transpile_typename_visitor{ {}, state }(statement.type);
 	return_if_error(type);
 	auto variable_name = transpile_expression_visitor{ {}, state }(statement.expr);

@@ -33,8 +33,8 @@ using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
 struct Typename : public And<Word, Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>> {};
 
 using MemberVariable = And<Typename, Word, Newline>;
-using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
-using ClassElement = Or<Alias, Function, MemberVariable, Constructor>;
+//using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+using ClassElement = Or<Alias/*, Function*/, MemberVariable/*, Constructor*/>;
 
 using ParenExpression = Or<
 	Word,
@@ -141,6 +141,20 @@ struct Statement : public And<
 	>>
 >{};
 
+using Interface = And<
+	Token<INTERFACE>,
+	Word,
+	Token<COLON>,
+	Newline,
+	Indent<Star<And<
+        IndentToken,
+		Or<
+			Alias,
+			MemberVariable
+		>
+	>>>
+>;
+
 using Type = And<
 	Token<TYPE>,
 	Word,
@@ -160,6 +174,7 @@ using File = And<
 		Or< Token<NEWLINE>,
 			Type,
 			Function,
+			Interface,
 			Template,
 			/*Template<Type>,
 			Template<Function>,

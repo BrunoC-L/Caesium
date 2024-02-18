@@ -116,10 +116,7 @@ bool testParse() {
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type A:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type A:\n\t\tA a\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n");
-	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n");
-	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1():\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G member1");
-	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G method1(K ref k, U ref u, R<U,E<H>,I>::V ref kuv):\n\t\tfor i in arr:\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type B:");
 
 	ok &= test_parse_correct<File>(__LINE__, 0, "type A:\n\nInt main(Vector<String> ref s):\n");

@@ -28,8 +28,6 @@ NodeStructs::Function getStruct(const Function& f);
 
 NodeStructs::Template getStruct(const Template& t);
 
-NodeStructs::Constructor getStruct(const Constructor&);
-
 NodeStructs::MemberVariable getStruct(const MemberVariable& f);
 
 NodeStructs::Alias getStruct(const Alias& f);

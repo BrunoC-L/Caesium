@@ -5,10 +5,11 @@
 #include "type_of_template_instantiation_with_args_visitor.hpp"
 #include "cursor_vector_view.hpp"
 #include "traverse_type_visitor.hpp"
-#include "transpile_typename_visitor.hpp";
+#include "transpile_typename_visitor.hpp"
 #include <algorithm>
 #include "replace_all.hpp"
 #include "expression_for_template_visitor.hpp"
+#include "transpile_call_expression_with_args.hpp"
 
 using T = transpile_expression_visitor;
 using R = T::R;
@@ -127,15 +128,7 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
-	return_if_error(operand_t);
-	auto t = type_of_function_like_call_with_args_visitor{ {}, state, expr.arguments.args }(operand_t.value().second);
-	return_if_error(t);
-	auto args_or_error = transpile_args(state, expr.arguments.args);
-	return_if_error(args_or_error);
-	auto operand_repr = operator()(expr.operand);
-	return_if_error(operand_repr);
-	return std::move(operand_repr).value() + "(" + std::move(args_or_error).value() + ")";
+	return transpile_call_expression_with_args{ {}, state, expr.arguments.args }(expr.operand);
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
@@ -158,7 +151,11 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ConstructExpression& expr) {
-	throw;
+	auto operand_repr = operator()(expr.operand);
+	return_if_error(operand_repr);
+	auto args_repr = transpile_args(state, expr.arguments.args);
+	return_if_error(args_repr);
+	return operand_repr.value() + "{" + args_repr.value() + "}";
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
@@ -166,75 +163,11 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
+	auto t = type_of_expression_visitor{ {}, state }(expr);
+	return_if_error(t);
+
 	throw;
 }
-//
-//R T::operator()(const NodeStructs::PostfixExpression& expr) {
-//	auto t_or_e = type_of_expression_visitor{ {}, state }(expr.expr);
-//	return_if_error(t_or_e);
-//
-//	auto v = operator()(expr.expr);
-//	return_if_error(v);
-//
-//	type_and_representation it{
-//		std::move(t_or_e).value().second, // todo maybe type and repr has to hold value category...?
-//		std::move(v).value()
-//	};
-//
-//	for (const auto& op : expr.postfixes) {
-//		transpile_type_repr next = std::visit(
-//			overload(overload_default_error,
-//				[&](const std::string& property_name) -> transpile_type_repr {
-//					auto t = type_of_postfix_member_visitor{ {}, state, property_name }(it.type);
-//					return_if_error(t);
-//					return type_and_representation{
-//						std::move(t).value().second,
-//						it.representation + "." + property_name
-//					};
-//				},
-//				[&](const NodeStructs::BracketArguments& e) -> transpile_type_repr {
-//					throw;
-//					//return "[" + transpile_args(state, e.args).value() + "]";
-//				},
-//				[&](const NodeStructs::BraceArguments& e) -> transpile_type_repr {
-//					throw;
-//					//return "{" + transpile_args(state, e.args).value() + "}";
-//				},
-//				[&](const NodeStructs::TemplateArguments& e) -> transpile_type_repr {
-//					auto t = type_of_template_instantiation_with_args_visitor{ {}, state, e.args }(it.type);
-//					return_if_error(t);
-//					auto v = transpile_expressions(state, e.args);
-//					return_if_error(v);
-//
-//					std::string x = replace_all(
-//						std::move(v).value(),
-//						"<", "_open_",
-//						">", "_close_",
-//						"::", "_ns_",
-//						", ", "_"
-//					);
-//
-//					return type_and_representation{
-//						std::move(t).value(),
-//						it.representation + "_open_" + std::move(x) + "_close_"
-//					};
-//				},
-//				[&](const Token<PLUSPLUS>& op) -> transpile_type_repr {
-//					throw;
-//					//return symbol_as_text(op);
-//				},
-//				[&](const Token<MINUSMINUS>& op) -> transpile_type_repr {
-//					throw;
-//					//return symbol_as_text(op);
-//				}
-//			),
-//			op
-//		);
-//		return_if_error(next);
-//		it = std::move(next).value();
-//	}
-//	return it.representation;
-//}
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
 	std::stringstream ss;

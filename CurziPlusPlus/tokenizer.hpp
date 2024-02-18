@@ -88,6 +88,7 @@ enum TOKENS {
 
 	TYPE,
 	TEMPLATE,
+	INTERFACE,
 	BLOCK,
 
 	COPY,
@@ -460,56 +461,33 @@ private:
 
 		std::string word = parseWord();
 		if (word.length()) {
-			if (word == "and")
-				return { AND, word };
-			if (word == "auto")
-				return { AUTO, word };
-			if (word == "break")
-				return { BREAK, word };
-			if (word == "block")
-				return { BLOCK, word };
-			if (word == "case")
-				return { CASE, word };
-			if (word == "do")
-				return { DO, word };
-			if (word == "else")
-				return { ELSE, word };
-			if (word == "for")
-				return { FOR, word };
-			if (word == "if")
-				return { IF, word };
-			if (word == "ifor")
-				return { IFOR, word };
-			if (word == "import")
-				return { IMPORT, word };
-			if (word == "from")
-				return { FROM, word };
-			if (word == "in")
-				return { IN, word };
-			if (word == "or")
-				return { OR, word };
-			if (word == "return")
-				return { RETURN, word };
-			if (word == "static")
-				return { STATIC, word };
-			if (word == "switch")
-				return { SWITCH, word };
-			if (word == "using")
-				return { USING, word };
-			if (word == "while")
-				return { WHILE, word };
-			if (word == "type")
-				return { TYPE, word };
-			if (word == "template")
-				return { TEMPLATE, word };
-			if (word == "copy")
-				return { COPY, word };
-			if (word == "move")
-				return { MOVE, word };
-			if (word == "ref")
-				return { REF, word };
-			if (word == "val")
-				return { VAL, word };
+			#define return_token(s, v) if (word == #s) return { v, word }
+			return_token(and, AND);
+			return_token(auto, AUTO);
+			return_token(break, BREAK);
+			return_token(block, BLOCK);
+			return_token(case, CASE);
+			return_token(do, DO);
+			return_token(else, ELSE);
+			return_token(for, FOR);
+			return_token(if, IF);
+			return_token(interface, INTERFACE);
+			return_token(ifor, IFOR);
+			return_token(import, IMPORT);
+			return_token(from, FROM);
+			return_token(in, IN);
+			return_token(or , OR);
+			return_token(return, RETURN);
+			return_token(static, STATIC);
+			return_token(switch, SWITCH);
+			return_token(using, USING);
+			return_token(while, WHILE);
+			return_token(type, TYPE);
+			return_token(template, TEMPLATE);
+			return_token(copy, COPY);
+			return_token(move, MOVE);
+			return_token(ref, REF);
+			return_token(val, VAL);
 			/*if (word == "key")
 				return { KEY, word };*/
 

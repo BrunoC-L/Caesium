@@ -17,6 +17,8 @@
 #include "transpile_statement_visitor.hpp"
 #include "transpile_typename_visitor.hpp"
 #include "expression_for_template_visitor.hpp"
+#include "vec_of_expected_to_expected_of_vec.hpp"
+#include <numeric>
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
@@ -28,6 +30,9 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 
 			for (const auto& e : file.functions)
 				named.functions[e.name].push_back(&e);
+
+			for (const auto& e : file.interfaces)
+				named.interfaces[e.name].push_back(&e);
 
 			for (const auto& e : file.blocks)
 				named.blocks[e.name].push_back(&e);
@@ -41,6 +46,7 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 
 				named.types.insert(imported_named.types.begin(), imported_named.types.end());
 				named.functions.insert(imported_named.functions.begin(), imported_named.functions.end());
+				named.interfaces.insert(imported_named.interfaces.begin(), imported_named.interfaces.end());
 				named.blocks.insert(imported_named.blocks.begin(), imported_named.blocks.end());
 				named.templates.insert(imported_named.templates.begin(), imported_named.templates.end());
 			}
@@ -96,7 +102,9 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 						named_of_file.templates["Set"].push_back(&stuff_from_cpp.builtin_set);
 						named_of_file.templates["Vector"].push_back(&stuff_from_cpp.builtin_vector);
 						named_of_file.templates["Map"].push_back(&stuff_from_cpp.builtin_map);
-
+						named_of_file.templates["push"].push_back(&stuff_from_cpp.builtin_push);
+						named_of_file.templates["insert"].push_back(&stuff_from_cpp.builtin_insert);
+						
 						named_of_file.types["Int"].push_back(&stuff_from_cpp.builtin_int);
 						named_of_file.types["Bool"].push_back(&stuff_from_cpp.builtin_bool);
 						named_of_file.types["String"].push_back(&stuff_from_cpp.builtin_string);
@@ -135,6 +143,13 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 					const auto& [_h, _cpp] = *reverse_iterator;
 					h << _h;
 					cpp << _cpp;
+				}
+				for (const auto& [interface, members] : state.interface_symbol_to_members) {
+					auto interface_repr = transpile_typename_visitor{ {}, state }(interface);
+					return_if_error(interface_repr);
+					auto members_repr = transpile_types(transpilation_state_with_indent{ state, 0 }, members);
+					return_if_error(members_repr);
+					h << "using " << interface_repr.value() << " = Variant<" << members_repr.value() << ">;\n";
 				}
 				cpp << k.value().second
 					<< "\n"
@@ -224,19 +239,15 @@ transpile_header_cpp_t transpile(
 		cpp << transpiled.value() << " " << member.name << ";\n";
 	}
 
-	for (const auto& constructor : type.constructors) {
-		throw;
-		//cpp << transpile(state, constructor, type).value() << "\n";
-	}
-
-	for (const auto& fn : type.methods) {
-		throw;
-		/*auto [_h, _cpp] = transpile(state, fn).value();
-		cpp << _cpp;*/
-	}
-
 	cpp << "};\n\n";
 	return std::pair{ "struct " + type.name + ";\n", cpp.str() };
+}
+
+transpile_header_cpp_t transpile(
+	transpilation_state_with_indent state,
+	const NodeStructs::Interface& interface
+) {
+	return std::pair{ "", ""};
 }
 
 transpile_t transpile(
@@ -353,6 +364,9 @@ NodeStructs::UniversalType iterator_type(
 			[&](const NodeStructs::FunctionType&) -> NodeStructs::UniversalType {
 				throw;
 			},
+			[&](const NodeStructs::InterfaceType&) -> NodeStructs::UniversalType {
+				throw;
+			},
 			[&](const NodeStructs::UnionType&) -> NodeStructs::UniversalType {
 				throw;
 			},
@@ -366,6 +380,9 @@ NodeStructs::UniversalType iterator_type(
 				throw;
 			},
 			[&](const NodeStructs::Template&) -> NodeStructs::UniversalType {
+				throw;
+			},
+			[&](const NodeStructs::BuiltInType&) -> NodeStructs::UniversalType {
 				throw;
 			},
 			[&](const std::string&) -> NodeStructs::UniversalType {
@@ -435,6 +452,9 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 			[&](const NodeStructs::FunctionType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
+			[&](const NodeStructs::InterfaceType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
 			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
@@ -448,6 +468,9 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 				throw;
 			},
 			[&](const NodeStructs::Template&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const NodeStructs::BuiltInType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
 			[&](const std::string&) -> std::vector<NodeStructs::UniversalType> {
@@ -606,6 +629,17 @@ transpile_t transpile_expressions(transpilation_state_with_indent state, const s
 	return ss.str();
 }
 
+transpile_t transpile_types(transpilation_state_with_indent state, const std::vector<NodeStructs::UniversalType>& args) {
+	auto vec = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM(transpile_type_visitor{ {}, state }) | to_vec());
+	return_if_error(vec);
+	return std::accumulate(
+		std::next(vec.value().begin()),
+		vec.value().end(),
+		vec.value()[0],
+		[](const std::string& a, const std::string& b){ return a + ", " + b; }
+	);
+}
+
 expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& t,
@@ -624,61 +658,6 @@ expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> 
 		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(pos->type).value() };
 }
 
-std::string _template_name(
-	const NodeStructs::Expression& argument
-) {
-	std::visit(
-		overload(overload_default_error,
-			[](const NodeStructs::ConditionalExpression&) {
-			},
-			[](const NodeStructs::OrExpression&) {
-			},
-			[](const NodeStructs::AndExpression&) {
-			},
-			[](const NodeStructs::EqualityExpression&) {
-			},
-			[](const NodeStructs::CompareExpression&) {
-			},
-			[](const NodeStructs::AdditiveExpression&) {
-			},
-			[](const NodeStructs::MultiplicativeExpression&) {
-			},
-			[](const NodeStructs::UnaryExpression&) {
-			},
-			[](const NodeStructs::CallExpression&) {
-			},
-			[](const NodeStructs::TemplateExpression&) {
-			},
-			[](const NodeStructs::ConstructExpression&) {
-			},
-			[](const NodeStructs::BracketAccessExpression&) {
-			},
-			[](const NodeStructs::PropertyAccessExpression&) {
-			},
-			[](const NodeStructs::ParenArguments&) {
-			},
-			[](const NodeStructs::BraceArguments&) {
-			},
-			[](const std::string&) {
-			},
-			[](const Token<FLOATING_POINT_NUMBER>&) {
-			},
-			[](const Token<INTEGER_NUMBER>&) {
-			},
-			[](const Token<STRING>&) {
-			}
-		),
-		argument.expression.get()
-	);
-	return std::string();
-}
-
-std::string _template_names(
-	const std::vector<NodeStructs::Expression>& arguments
-) {
-	return std::string();
-}
-
 std::string template_name(std::string original_name, const std::vector<std::string>& args) {
 	std::stringstream ss;
 	ss << original_name;
@@ -689,4 +668,42 @@ std::string template_name(std::string original_name, const std::vector<std::stri
 
 std::string template_name(std::string original_name, const std::vector<NodeStructs::Expression>& arguments) {
 	return template_name(original_name, arguments | LIFT_TRANSFORM(expression_for_template_visitor{ {} }) | to_vec());
+}
+
+// return source is assignable to target
+bool is_assignable_to(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& target,
+	const NodeStructs::UniversalType& source
+) {
+	return std::visit(
+		overload(
+			[&](const auto& e, const auto& u) {
+				return false;
+			},
+			[&](const NodeStructs::InterfaceType& e, std::reference_wrapper<const NodeStructs::Type> u) {
+				for (const auto& [type_name, name] : e.interface.get().memberVariables) {
+					auto t = type_of_typename_visitor{ {}, state }(type_name);
+					if (t.has_error())
+						throw;
+					for (const auto& [source_type_name, source_name] : u.get().memberVariables)
+						if (name == source_name) {
+							auto t2 = type_of_typename_visitor{ {}, state }(source_type_name);
+							if (t2.has_error())
+								throw;
+							if (t.value() <=> t2.value() != std::weak_ordering::equivalent)
+								return false;
+						}
+				}
+				state.state.interface_symbol_to_members[
+					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name} }
+				].push_back(NodeStructs::UniversalType{ u });
+				return true;
+			},
+			[&](const NodeStructs::InterfaceType& e, const NodeStructs::TypeType& u) {
+				return false;
+			}
+		),
+		target.value, source.value
+	);
 }

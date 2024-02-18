@@ -148,6 +148,7 @@
   <ItemGroup>
     <ClCompile Include="expression_for_template_visitor.cpp" />
     <ClCompile Include="structurizer.cpp" />
+    <ClCompile Include="transpile_call_expression_with_args.cpp" />
     <ClCompile Include="transpile_expression_visitor.cpp" />
     <ClCompile Include="transpile_statement_visitor.cpp" />
     <ClCompile Include="transpile_typename_visitor.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="replace_all.hpp" />
     <ClInclude Include="statement_visitor.hpp" />
     <ClInclude Include="structurizer.hpp" />
+    <ClInclude Include="transpile_call_expression_with_args.hpp" />
     <ClInclude Include="transpile_expression_visitor.hpp" />
     <ClInclude Include="transpile_statement_visitor.hpp" />
     <ClInclude Include="transpile_typename_visitor.hpp" />

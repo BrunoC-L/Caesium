@@ -249,7 +249,18 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ConstructExpression& expr) {
-	throw;
+	auto operand_t = operator()(expr.operand);
+	return_if_error(operand_t);
+	if (std::holds_alternative<NodeStructs::TypeType>(operand_t.value().second.value)) {
+		return std::pair{
+			NodeStructs::Reference{},
+			NodeStructs::UniversalType{
+				std::reference_wrapper {
+				std::get<NodeStructs::TypeType>(operand_t.value().second.value).type
+				}
+			}
+		};
+	}
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
@@ -257,7 +268,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
-	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
+	auto operand_t = operator()(expr.operand);
 	return_if_error(operand_t);
 	auto t = type_of_postfix_member_visitor{ {}, state, expr.property_name }(operand_t.value().second);
 	return_if_error(t);

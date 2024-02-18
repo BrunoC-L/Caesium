@@ -43,11 +43,26 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::InterfaceType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
 
 R T::operator()(const NodeStructs::VectorType& t) {
+	if (this->property_name == "push")
+		return std::pair{
+			NodeStructs::Value{},
+				NodeStructs::UniversalType{
+					NodeStructs::BuiltInType{
+						NodeStructs::BuiltInType::push_t{
+							t
+						}
+					}
+				}
+			};
 	throw;
 }
 
@@ -60,6 +75,10 @@ R T::operator()(const NodeStructs::MapType& t) {
 }
 
 R T::operator()(const NodeStructs::Template& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::BuiltInType& t) {
 	throw;
 }
 

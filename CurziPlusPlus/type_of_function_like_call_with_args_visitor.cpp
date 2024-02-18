@@ -1,5 +1,6 @@
 #include "type_of_function_like_call_with_args_visitor.hpp"
 #include "type_of_typename_visitor.hpp"
+#include "type_of_expression_visitor.hpp"
 
 using T = type_of_function_like_call_with_args_visitor;
 using R = T::R;
@@ -45,6 +46,10 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::InterfaceType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
@@ -62,6 +67,35 @@ R T::operator()(const NodeStructs::MapType& t) {
 }
 
 R T::operator()(const NodeStructs::Template& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::BuiltInType& t) {
+	return std::visit(
+		overload(
+			[&](const auto& e) -> R {
+				throw;
+			},
+			[&](const NodeStructs::BuiltInType::push_t& e) -> R {
+				if (this->args.size() != 1)
+					throw;
+				auto arg_t = type_of_expression_visitor{ {}, state }(std::get<NodeStructs::Expression>(args.at(0)));
+				return_if_error(arg_t);
+				if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
+					throw;
+				}
+				return std::pair{
+					NodeStructs::Value{},
+					NodeStructs::UniversalType{
+						std::reference_wrapper<const NodeStructs::Type>{
+							*state.state.named.types.at("Void").back()
+						}
+					}
+				};
+			}
+		),
+		t.builtin
+	);
 	throw;
 }
 

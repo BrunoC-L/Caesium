@@ -23,7 +23,11 @@ R T::operator()(const NodeStructs::TypeType& t) {
 R T::operator()(const NodeStructs::FunctionType& t) {
 	throw;
 }
-//
+
+R T::operator()(const NodeStructs::InterfaceType& t) {
+	throw;
+}
+
 //R T::operator()(const NodeStructs::FunctionTemplateType& t) {
 //	std::vector<expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>> v1 = args
 //		| LIFT_TRANSFORM(type_of_expression_visitor{ {}, state })
@@ -143,6 +147,10 @@ R T::operator()(const NodeStructs::Template& tmpl) {
 	bool ok = t.build(g) && g.it == g.tokens.end();
 	if (!ok)*/
 		throw;
+}
+
+R T::operator()(const NodeStructs::BuiltInType& t) {
+	throw;
 }
 
 R T::operator()(const std::string&) {

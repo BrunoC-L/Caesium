@@ -19,7 +19,9 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 	std::stringstream ss;
 	auto tmpl = type_template_of_typename_visitor{ {}, state, type.templated_with }(type.type.get());
 	return_if_error(tmpl);
-	ss << operator()(type.type.get()).value() << "<";
+	auto t = operator()(type.type.get());
+	return_if_error(t);
+	ss << t.value() << "<";
 	bool first = true;
 	for (const auto& t : type.templated_with) {
 		if (first)

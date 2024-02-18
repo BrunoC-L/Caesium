@@ -126,22 +126,10 @@ NodeStructs::Template getStruct(const Template& t) {
 	};
 }
 
-NodeStructs::Constructor getStruct(const Constructor&) {
-	throw;
-	/*return {
-		f.get<FunctionParameters>().get<And<Typename, ValueCategory, Word>>()
-			| LIFT_TRANSFORM_X(arg, std::tuple{ getStruct(arg.get<Typename>()), getStruct(arg.get<ValueCategory>()), arg.get<Word>().value })
-			| to_vec(),
-		f.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>()
-			| LIFT_TRANSFORM(getStatementStruct)
-			| to_vec()
-	};*/
-}
-
 NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
 	return NodeStructs::MemberVariable{
-		.name = f.get<Word>().value,
 		.type = getStruct(f.get<Typename>()),
+		.name = f.get<Word>().value,
 	};
 }
 
@@ -161,14 +149,30 @@ NodeStructs::Type getStruct(const Type& cl) {
 			| tranform_variant_type_eq<Alias>
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.constructors = elems
-			| filter_variant_type_eq<Constructor>
-			| tranform_variant_type_eq<Constructor>
-			| LIFT_TRANSFORM(getStruct)
-			| to_vec(),
-		.methods = elems
+		/*.methods = elems
 			| filter_variant_type_eq<Function>
 			| tranform_variant_type_eq<Function>
+			| LIFT_TRANSFORM(getStruct)
+			| to_vec(),*/
+		.memberVariables = elems
+			| filter_transform_variant_type_eq(MemberVariable)
+			| LIFT_TRANSFORM(getStruct)
+			| to_vec()
+	};
+}
+
+NodeStructs::Interface getStruct(const Interface& interface) {
+	using Member = Or<
+		Alias,
+		MemberVariable
+	>;
+	using Members = Indent<Star<And<IndentToken, Member>>>;
+	auto elems = interface.get<Members>().get_view<Member>() | LIFT_TRANSFORM_TRAIL(.value());
+	return {
+		.name = interface.get<Word>().value,
+		.aliases = elems
+			| filter_variant_type_eq<Alias>
+			| tranform_variant_type_eq<Alias>
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
 		.memberVariables = elems
@@ -179,7 +183,7 @@ NodeStructs::Type getStruct(const Type& cl) {
 }
 
 NodeStructs::File getStruct(const File& f, std::string fileName) {
-	using T = Star<Or<Token<NEWLINE>, Type, Function, Template/*, Template<Type>, Template<Function>, Template<BlockDeclaration>*/, Alias>>;
+	using T = Star<Or<Token<NEWLINE>, Type, Function, Interface, Template/*, Template<Type>, Template<Function>, Template<BlockDeclaration>*/, Alias>>;
 
 	return NodeStructs::File{
 		.filename = fileName,
@@ -190,6 +194,9 @@ NodeStructs::File getStruct(const File& f, std::string fileName) {
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
 		.functions = f.get<T>().get<Function>()
+			| LIFT_TRANSFORM(getStruct)
+			| to_vec(),
+		.interfaces = f.get<T>().get<Interface>()
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
 		.templates = f.get<T>().get<Template>()
