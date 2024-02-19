@@ -20,6 +20,12 @@ The only design downside of Caesium is the impossibility of dynamic extension, s
   - [set](https://en.cppreference.com/w/cpp/container/unordered_set)
   - [map](https://en.cppreference.com/w/cpp/container/unordered_map)
 
+- values
+  - [move](https://en.cppreference.com/w/cpp/utility/move)
+  - [references as values](https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper)
+  - [unique_ptr*](https://en.cppreference.com/w/cpp/memory/unique_ptr)
+    - * Uniqueness is associated to a type by disabling copy, while pointers are implemented with Boxing.
+
 ## Removing Branches From Generated Code
 
 Typical programming patterns with expected, optionals and variants involve duplicate branching.
@@ -58,6 +64,19 @@ Types are instanciated using a construction operator `Type{ arguments... }`, as 
 
 To associate functions to types, for usage such as `house.is_inhabited_by(person)`, define a function `is_inhabited_by` with a `House` and a `Person` parameter, which will allow the `is_inhabited_by` function to be called like a member function of `House`.
 
+## Functions
+
+Functions in Caesium are a different than other languages, as they require more input from the programmer to describe the argument passing behaviour.
+Specifically, this is in hopes of completely getting rid of accidental copying and correctly overload for references and values.
+Parameters are described using either reference `ref`, mutable reference `ref!` or value `val`, for example: `Void f(String ref name): ...`.
+Most function parameters should be values, the need for mutability or reference should be reserved for parameters which are expected to live in a data structure.
+Arguments are described using either `ref`, `ref!`, `copy` or `move`, for example: `String name = "Caesium"` can be used like `f(ref! name)`.
+
+Const variables may not be mutably referenced, but may be moved.
+This is unlike C++ where const disables move.
+copy and move arguments only bind to value parameters, while reference and mutable reference arguments bind only to reference and mutable reference parameters.
+For metaprogramming approach where values or reference are acceptable, it is possible to accept `ref | val` parameters, but callers may not use `ref | copy` arguments.
+
 ## Templates
 
 Templates in Caesium are similar to C++, but not as much of a part of the type system.
@@ -75,6 +94,11 @@ Caesium accepts, types, expressions, string literals, numbers and arbitrary code
 This allows for very simple policy based design ([watch this, for example at 18:00](https://www.youtube.com/watch?v=HdzwvY8Mo-w&t=3564s&ab_channel=TheDLanguageFoundation)).
 Expression templates can be used for optional variable declaration, which is not possible in C++.
 Variable declarations are one example, but class member declarations are another example of an otherwise impossible task in most languages.
+
+## References, Views, Lifetimes
+
+Similarly to Rust, Caesium allows for references if the compiler can determine the lifetime of the referenced object to be greater than that of its reference.
+Unlike C++, types with reference member variables may be copied, these are also known as views in C++ terminology, which are typically passed by value.
 
 ## Long Term View on Parallelism
 
