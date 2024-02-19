@@ -75,3 +75,11 @@ Caesium accepts, types, expressions, string literals, numbers and arbitrary code
 This allows for very simple policy based design ([watch this, for example at 18:00](https://www.youtube.com/watch?v=HdzwvY8Mo-w&t=3564s&ab_channel=TheDLanguageFoundation)).
 Expression templates can be used for optional variable declaration, which is not possible in C++.
 Variable declarations are one example, but class member declarations are another example of an otherwise impossible task in most languages.
+
+## Long Term View on Parallelism
+
+Caesium will never allow for user crafted data structures, other than by composing existing data structures.
+All the code storing or acessing data at runtime can be deduced at compile time, leading to interesting approaches to safety of parallel execution and concurrent access of data.
+Caesium will offer parallel concurent data structures and algorithms which can be validated at compile time.
+Code with synchronization overhead will never be generated unless specified, but the compiler will not allow for unsafe code to be generated.
+In the event where the programmer allows for overhead and the compiler detects no need for synchronization, a warning will be emitted and the no overhead version will be generated.
