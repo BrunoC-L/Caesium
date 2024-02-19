@@ -99,6 +99,7 @@ Variable declarations are one example, but class member declarations are another
 
 Similarly to Rust, Caesium allows for references if the compiler can determine the lifetime of the referenced object to be greater than that of its reference.
 Unlike C++, types with reference member variables may be copied, these are also known as views in C++ terminology, which are typically passed by value.
+This will be done entirely without annotations, which are incredibly annoying when they can be entirely deduced by the compiler anyway.
 
 ## Long Term View on Parallelism
 
