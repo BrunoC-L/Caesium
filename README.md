@@ -29,7 +29,7 @@ The following examples apply only to branching code and in the event where these
 
 In C++, using optional patterns such as `std::optional<some_type> it = find_if(collection, predicate); if (it.has_value()) { ... } else { ... }` cause branching twice.
 This is due to a loss of information.
-At the time of returning the optional from `find_if`, the presence if known, but, once placed in an optional, the knowledge of presence is lost.
+At the time of returning the optional from `find_if`, the presence is known, but, once placed in an optional, the knowledge of presence is lost.
 Caesium inlines the call to `find_if` and transpiles the `if-else` branches directly in place of the return statements of the call to `find_if`.
 
 The same can be done with functions returning a boolean, such as `bool exists = find_if(collection, predicate); if (exists) { ... } else { ... }`.
