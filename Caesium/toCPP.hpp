@@ -7,7 +7,6 @@
 #include "expected.hpp"
 #include <ranges>
 
-#include "no_copy.hpp"
 #include "node_structs.hpp"
 
 using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>>;
@@ -39,6 +38,7 @@ struct transpilation_state {
 	Named named;
 	std::vector<std::pair<std::string, std::string>> transpile_in_reverse_order;
 
+	transpilation_state(const transpilation_state& other) = delete;
 	transpilation_state(
 		variables_t&& variables,
 		Named&& named
@@ -51,8 +51,6 @@ struct transpilation_state {
 	std::set<NodeStructs::Block> traversed_blocks;
 	std::set<NodeStructs::Alias> traversed_type_aliases;
 	std::map<NodeStructs::Typename, std::vector<NodeStructs::UniversalType>> interface_symbol_to_members;
-private:
-	no_copy _;
 };
 
 struct transpilation_state_with_indent {
@@ -106,36 +104,25 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 	);
 }
 
-struct cpp_std {
+struct builtins {
 	NodeStructs::Template builtin_set = { "Set" , { { "T", {} } }, "BUILTIN" };
 	NodeStructs::Template builtin_vector = { "Vector" , { { "T", std::nullopt}}, "BUILTIN"};
 	NodeStructs::Template builtin_map = { "Map" , { { "K", {} }, { "V", {} } }, "BUILTIN" };
 	NodeStructs::Template builtin_push = { "push" , { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // vec
 	NodeStructs::Template builtin_insert = { "insert" , { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // map or set
+
+	NodeStructs::Template builtin_print = { "print" , { { "T", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_println = { "println" , { { "T", {} } }, "BUILTIN" };
+
 	NodeStructs::Type builtin_int = { "Int" };
 	NodeStructs::Type builtin_bool = { "Bool" };
 	NodeStructs::Type builtin_string = { "String" };
 	NodeStructs::Type builtin_void = { "Void" };
-
-	NodeStructs::Function println{
-		.name = std::string{ "println" },
-		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
-		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>{
-			{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } }, NodeStructs::ParameterCategory{ NodeStructs::Reference{} }, "t" }
-		},
-	};
-
-	NodeStructs::Function size{
-		.name = std::string{ "size" },
-		.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Int" } },
-		.parameters = std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>{
-			{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "T" } }, NodeStructs::ParameterCategory{ NodeStructs::Reference{} }, "t" }
-		},
-	};
 };
 
 static constexpr auto default_includes = 
 	"#include <utility>\n"
+	"#include <iostream>\n"
 
 	"using Int = int;\n"
 	"using Bool = bool;\n"
@@ -162,6 +149,10 @@ static constexpr auto default_includes =
 
 	"static constexpr bool True = true;\n"
 	"static constexpr bool False = false;\n"
+
+	"template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };\n"
+	//"template<typename... Ts> overload(Ts...) -> overload<Ts...>;"
+	"Void push(auto&& vec, auto&& e) { vec.push_back(e); }\n"
 
 	"\n";
 
@@ -271,4 +262,31 @@ bool is_assignable_to(
 	transpilation_state_with_indent state,
 	const NodeStructs::UniversalType& expected_union_or_interface,
 	const NodeStructs::UniversalType& observed_type
+);
+
+transpile_t expr_to_printable(
+	transpilation_state_with_indent state,
+	const NodeStructs::Expression& expr
+);
+
+transpile_t transpile_type(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& type
+);
+
+std::optional<error> traverse_type(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& type
+);
+
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::FunctionArgument>& arguments,
+	const NodeStructs::UniversalType& type
+);
+
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
+	transpilation_state_with_indent state,
+	const std::string& property_name,
+	const NodeStructs::UniversalType& type
 );

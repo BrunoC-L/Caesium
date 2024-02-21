@@ -1,4 +1,5 @@
 #include <utility>
+#include <iostream>
 using Int = int;
 using Bool = bool;
 using Void = void;
@@ -17,6 +18,8 @@ template <typename T> using TreeSet = std::set<T>;
 template <typename K, typename V> using Map = std::unordered_map<K, V>;
 static constexpr bool True = true;
 static constexpr bool False = false;
+template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
+Void push(auto&& vec, auto&& e) { vec.push_back(e); }
 
 Int _redirect_main(const Vector<String>& s);
 struct A;

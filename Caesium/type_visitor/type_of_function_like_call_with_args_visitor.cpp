@@ -1,6 +1,6 @@
 #include "type_of_function_like_call_with_args_visitor.hpp"
-#include "type_of_typename_visitor.hpp"
-#include "type_of_expression_visitor.hpp"
+#include "../type_of_typename_visitor.hpp"
+#include "../type_of_expression_visitor.hpp"
 
 using T = type_of_function_like_call_with_args_visitor;
 using R = T::R;
@@ -66,8 +66,12 @@ R T::operator()(const NodeStructs::MapType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Template& t) {
-	throw;
+R T::operator()(const NodeStructs::Template& tmpl) {
+	if (tmpl.templated == "BUILTIN") {
+		if (tmpl.name == "println") {
+			return std::pair{ NodeStructs::Value{}, NodeStructs::UniversalType{ *state.state.named.types.at("Void").back() } };
+		}
+	}
 }
 
 R T::operator()(const NodeStructs::BuiltInType& t) {

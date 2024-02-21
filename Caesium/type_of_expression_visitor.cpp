@@ -1,10 +1,8 @@
 #include "type_of_expression_visitor.hpp"
 #include "transpile_expression_visitor.hpp"
-#include "type_of_postfix_member_visitor.hpp"
 #include "structurizer.hpp"
 #include "vec_of_expected_to_expected_of_vec.hpp"
 #include "replace_all.hpp"
-#include "traverse_type_visitor.hpp"
 #include "expression_for_template_visitor.hpp"
 
 using T = type_of_expression_visitor;
@@ -78,9 +76,6 @@ bool is_redundant_wrt_to(const NodeStructs::Template& tmpl, const NodeStructs::T
 }
 
 auto eliminate_underspecified(const std::vector<NodeStructs::Expression>& args, std::vector<NodeStructs::Template const*>&& templates) {
-	if (templates.at(0)->name == "problematic") {
-		int a = 0;
-	}
 	auto mask = std::vector<bool>(templates.size(), false);
 	for (int i = 0; i < templates.size(); ++i)
 		for (int j = 0; j < templates.size(); ++j)
@@ -239,7 +234,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<Type>()) };
 			structured_t->name = tmpl_name;
 			state.state.named.types[structured_t->name].push_back(structured_t);
-			auto opt_error = traverse_type_visitor{ {}, state }(*structured_t);
+			auto opt_error = traverse_type(state, { *structured_t });
 			if (opt_error.has_value())
 				return opt_error.value();
 			return std::pair{ NodeStructs::Reference{}, NodeStructs::UniversalType{ std::reference_wrapper{*structured_t}} };
@@ -270,7 +265,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	auto operand_t = operator()(expr.operand);
 	return_if_error(operand_t);
-	auto t = type_of_postfix_member_visitor{ {}, state, expr.property_name }(operand_t.value().second);
+	auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
 	return_if_error(t);
 	return std::pair{ operand_t.value().first, std::move(t).value().second };
 }

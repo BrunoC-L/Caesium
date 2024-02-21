@@ -1,7 +1,6 @@
 #include "type_of_function_like_call_with_args_visitor.hpp"
 #include "type_of_postfix_member_visitor.hpp"
-#include "type_of_typename_visitor.hpp"
-#include "transpile_type_visitor.hpp"
+#include "../type_of_typename_visitor.hpp"
 
 using T = type_of_postfix_member_visitor;
 using R = T::R;
@@ -10,11 +9,7 @@ R T::operator()(const NodeStructs::Type& t) {
 	const auto& v = t.memberVariables;
 	auto pos = std::find_if(v.begin(), v.end(), [&](const NodeStructs::MemberVariable& m) { return m.name == property_name; });
 	if (pos == v.end()) {
-		auto u = transpile_type_visitor{ {}, state }(t);
-		if (u.has_value())
-			return error{ "user error","Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"};
-		else
-			return std::move(u).error();
+		return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n"};
 	}
 	else
 		return type_of_typename_visitor{ {}, state }(pos->type).transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
@@ -44,7 +39,14 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 }
 
 R T::operator()(const NodeStructs::InterfaceType& t) {
-	throw;
+	if (auto it = std::find_if(
+		t.interface.get().memberVariables.begin(),
+		t.interface.get().memberVariables.end(),
+		[&](const auto& member) { return member.name == property_name; }
+	); it != t.interface.get().memberVariables.end())
+		return type_of_typename_visitor{ {}, state }(it->type).transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });
+	else
+		return error{ "user error", "Error: object of type `" + t.interface.get().name + "` has no member `" + property_name + "`\n" };
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {

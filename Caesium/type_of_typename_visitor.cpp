@@ -1,6 +1,5 @@
 #include "type_of_typename_visitor.hpp"
 #include "type_template_of_typename_visitor.hpp"
-#include "traverse_type_visitor.hpp"
 
 using T = type_of_typename_visitor;
 using R = T::R;
@@ -8,12 +7,12 @@ using R = T::R;
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.named.types.find(t.type); it != state.state.named.types.end()) {
 		const auto& type = *it->second.back();
-		traverse_type_visitor{ {}, state }(type);
+		traverse_type(state, { type });
 		return NodeStructs::UniversalType{ type };
 	}
 	if (auto it = state.state.named.type_aliases.find(t.type); it != state.state.named.type_aliases.end()) {
 		const auto& type = it->second;
-		traverse_type_visitor{ {}, state }(type);
+		traverse_type(state, type);
 		return it->second;
 	}
 	if (auto it = state.state.named.interfaces.find(t.type); it != state.state.named.interfaces.end()) {

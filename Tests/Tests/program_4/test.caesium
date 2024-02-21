@@ -12,4 +12,5 @@ Int main(Vector<String> ref s):
     vec.push(Dog{ "doggo" })
     vec.push(Cat{ "gato"  })
     for e in vec:
+        println(e)
     return 0

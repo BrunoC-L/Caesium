@@ -1,7 +1,7 @@
 #include "header.h"
 Int _redirect_main(const Vector<String>& cli_args) {
 	for (auto&& arg : cli_args) {
-		println(arg);
+		(Void)(std::cout << std::string("\"") + arg + std::string("\"") << "\n");
 	}
 };
 

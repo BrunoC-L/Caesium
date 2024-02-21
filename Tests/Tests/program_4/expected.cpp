@@ -12,6 +12,7 @@ Int _redirect_main(const Vector<String>& s) {
 	push(vec, Dog{"doggo"});
 	push(vec, Cat{"gato"});
 	for (auto&& e : vec) {
+		(Void)(std::cout << "Named{name = " << std::string("\"") + std::visit(overload([&](auto&& XX){ return XX.name; }), e) + std::string("\"") << "}" << "\n");
 	}
 	return 0;
 };

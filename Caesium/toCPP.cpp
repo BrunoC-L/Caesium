@@ -3,22 +3,21 @@
 #include <source_location>
 #include <format>
 #include <stacktrace>
+#include <numeric>
 
 #include "toCPP.hpp"
-#include "type_of_expression_visitor.hpp"
+
 #include "ranges_fold_left_pipe.hpp"
 #include "overload.hpp"
+#include "vec_of_expected_to_expected_of_vec.hpp"
 
-#include "type_of_function_like_call_with_args_visitor.hpp"
-#include "transpile_type_visitor.hpp"
+#include "type_of_expression_visitor.hpp"
+
 #include "type_of_typename_visitor.hpp"
-#include "type_of_postfix_member_visitor.hpp"
 #include "transpile_expression_visitor.hpp"
 #include "transpile_statement_visitor.hpp"
 #include "transpile_typename_visitor.hpp"
 #include "expression_for_template_visitor.hpp"
-#include "vec_of_expected_to_expected_of_vec.hpp"
-#include <numeric>
 
 void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
@@ -87,11 +86,11 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 	for (const auto& file : project)
 		for (const auto& fn : file.functions)
 			if (fn.name == "main") {
-				cpp_std stuff_from_cpp{};
+				builtins _builtins{};
 				variables_t variables;
 				{
-					variables["True"].push_back({ NodeStructs::Value{}, { stuff_from_cpp.builtin_bool } });
-					variables["False"].push_back({ NodeStructs::Value{}, { stuff_from_cpp.builtin_bool } });
+					variables["True"].push_back({ NodeStructs::Value{}, { _builtins.builtin_bool } });
+					variables["False"].push_back({ NodeStructs::Value{}, { _builtins.builtin_bool } });
 				}
 
 				std::map<std::string, Named> named_by_file;
@@ -99,19 +98,19 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 				for (const auto& file2 : project) {
 					Named named_of_file;
 					{
-						named_of_file.templates["Set"].push_back(&stuff_from_cpp.builtin_set);
-						named_of_file.templates["Vector"].push_back(&stuff_from_cpp.builtin_vector);
-						named_of_file.templates["Map"].push_back(&stuff_from_cpp.builtin_map);
-						named_of_file.templates["push"].push_back(&stuff_from_cpp.builtin_push);
-						named_of_file.templates["insert"].push_back(&stuff_from_cpp.builtin_insert);
-						
-						named_of_file.types["Int"].push_back(&stuff_from_cpp.builtin_int);
-						named_of_file.types["Bool"].push_back(&stuff_from_cpp.builtin_bool);
-						named_of_file.types["String"].push_back(&stuff_from_cpp.builtin_string);
-						named_of_file.types["Void"].push_back(&stuff_from_cpp.builtin_void);
+						named_of_file.templates["Set"].push_back(&_builtins.builtin_set);
+						named_of_file.templates["Vector"].push_back(&_builtins.builtin_vector);
+						named_of_file.templates["Map"].push_back(&_builtins.builtin_map);
+						named_of_file.templates["push"].push_back(&_builtins.builtin_push);
+						named_of_file.templates["insert"].push_back(&_builtins.builtin_insert);
 
-						named_of_file.functions["println"].push_back(&stuff_from_cpp.println);
-						named_of_file.functions["size"].push_back(&stuff_from_cpp.size);
+						named_of_file.templates["print"].push_back(&_builtins.builtin_print);
+						named_of_file.templates["println"].push_back(&_builtins.builtin_println);
+						
+						named_of_file.types["Int"].push_back(&_builtins.builtin_int);
+						named_of_file.types["Bool"].push_back(&_builtins.builtin_bool);
+						named_of_file.types["String"].push_back(&_builtins.builtin_string);
+						named_of_file.types["Void"].push_back(&_builtins.builtin_void);
 					}
 					named_by_file[file2.filename] = named_of_file;
 					insert_all_named_recursive_with_imports(project, named_by_file, file2.filename);
@@ -123,12 +122,10 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 				}
 
 				transpilation_state state{ std::move(variables), Named(named_by_file[file.filename]) };
-				state.traversed_functions.insert(stuff_from_cpp.println);
-				state.traversed_functions.insert(stuff_from_cpp.size);
-				state.traversed_types.insert(stuff_from_cpp.builtin_int);
-				state.traversed_types.insert(stuff_from_cpp.builtin_bool);
-				state.traversed_types.insert(stuff_from_cpp.builtin_string);
-				state.traversed_types.insert(stuff_from_cpp.builtin_void);
+				state.traversed_types.insert(_builtins.builtin_int);
+				state.traversed_types.insert(_builtins.builtin_bool);
+				state.traversed_types.insert(_builtins.builtin_string);
+				state.traversed_types.insert(_builtins.builtin_void);
 
 				transpile_header_cpp_t k = transpile_main(transpilation_state_with_indent{ state, 0 }, fn);
 				if (k.has_error())
@@ -630,7 +627,7 @@ transpile_t transpile_expressions(transpilation_state_with_indent state, const s
 }
 
 transpile_t transpile_types(transpilation_state_with_indent state, const std::vector<NodeStructs::UniversalType>& args) {
-	auto vec = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM(transpile_type_visitor{ {}, state }) | to_vec());
+	auto vec = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM_X(T, transpile_type(state, T)) | to_vec());
 	return_if_error(vec);
 	return std::accumulate(
 		std::next(vec.value().begin()),
@@ -648,7 +645,7 @@ expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> 
 	const auto& v = t.memberVariables;
 	auto pos = std::find_if(v.begin(), v.end(), [&](const NodeStructs::MemberVariable& m) { return m.name == property_name; });
 	if (pos == v.end()) {
-		auto u = transpile_type_visitor{ {}, state }(t);
+		auto u = transpile_type(state, { t });
 		if (u.has_value())
 			return error{ "user error","Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"};
 		else
@@ -706,4 +703,84 @@ bool is_assignable_to(
 		),
 		target.value, source.value
 	);
+}
+
+transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeStructs::Expression& expr) {
+	auto t = type_of_expression_visitor{ {}, state }(expr);
+	return_if_error(t);
+
+	if (std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(t.value().second.value)) {
+		std::stringstream ss;
+		const NodeStructs::Type& t_ref = std::get<std::reference_wrapper<const NodeStructs::Type>>(t.value().second.value).get();
+		if (t_ref.name == "String") {
+			auto expr_repr = transpile_expression_visitor{ {}, state }(expr);
+			return_if_error(expr_repr);
+			ss << "std::string(\"\\\"\") + " << expr_repr.value() << " + std::string(\"\\\"\")";
+		}
+		else {
+			throw;
+			/*ss << t_ref.name << "{";
+			for (const auto& [member_typename, member_name] : t_ref.memberVariables) {
+				auto typename_t = type_of_typename_visitor{ {}, state }(member_typename);
+				return_if_error(typename_t);
+				auto member = NodeStructs::PropertyAccessExpression{ .operand = expr, .property_name = member_name };
+				auto member_repr = expr_to_printable(state, { member });
+				return_if_error(member_repr);
+				ss << member_name << " = \" << " << member_repr.value();
+			}*/
+		}
+		return ss.str();
+	}
+	else if (std::holds_alternative<NodeStructs::InterfaceType>(t.value().second.value)) {
+		std::stringstream ss;
+		const auto& t_ref = std::get<NodeStructs::InterfaceType>(t.value().second.value).interface.get();
+		ss << "\"" << t_ref.name << "{";
+		for (const auto& [member_typename, member_name] : t_ref.memberVariables) {
+			auto typename_t = type_of_typename_visitor{ {}, state }(member_typename);
+			return_if_error(typename_t);
+			auto member = NodeStructs::PropertyAccessExpression{ .operand = expr, .property_name = member_name };
+			auto member_repr = expr_to_printable(state, { member });
+			return_if_error(member_repr);
+			ss << member_name << " = \" << " << member_repr.value();
+		}
+		ss << " << \"}\"";
+		return ss.str();
+	}
+	else {
+		throw;
+	}
+}
+
+#include "type_visitor/transpile_type_visitor.hpp";
+transpile_t transpile_type(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& type
+) {
+	return transpile_type_visitor{ {}, state }(type);
+}
+
+#include "type_visitor/traverse_type_visitor.hpp";
+std::optional<error> traverse_type(
+	transpilation_state_with_indent state,
+	const NodeStructs::UniversalType& type
+) {
+	return traverse_type_visitor{ {}, state }(type);
+}
+
+#include "type_visitor/type_of_function_like_call_with_args_visitor.hpp";
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::FunctionArgument>& arguments,
+	const NodeStructs::UniversalType& type
+) {
+	return type_of_function_like_call_with_args_visitor{ {}, state, arguments }(type);
+}
+
+#include "type_visitor/type_of_postfix_member_visitor.hpp";
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
+	transpilation_state_with_indent state,
+	const std::string& property_name,
+	const NodeStructs::UniversalType& type
+) {
+	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
 }

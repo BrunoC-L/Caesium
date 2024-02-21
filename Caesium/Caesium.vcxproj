@@ -152,13 +152,12 @@
     <ClCompile Include="transpile_expression_visitor.cpp" />
     <ClCompile Include="transpile_statement_visitor.cpp" />
     <ClCompile Include="transpile_typename_visitor.cpp" />
-    <ClCompile Include="traverse_type_visitor.cpp" />
-    <ClCompile Include="type_of_postfix_member_visitor.cpp" />
+    <ClCompile Include="type_visitor\traverse_type_visitor.cpp" />
+    <ClCompile Include="type_visitor\type_of_postfix_member_visitor.cpp" />
     <ClCompile Include="toCPP.cpp" />
-    <ClCompile Include="transpile_type_visitor.cpp" />
+    <ClCompile Include="type_visitor\transpile_type_visitor.cpp" />
     <ClCompile Include="type_of_expression_visitor.cpp" />
-    <ClCompile Include="type_of_function_like_call_with_args_visitor.cpp" />
-    <ClCompile Include="type_of_template_instantiation_with_args_visitor.cpp" />
+    <ClCompile Include="type_visitor\type_of_function_like_call_with_args_visitor.cpp" />
     <ClCompile Include="type_of_typename_visitor.cpp" />
     <ClCompile Include="type_template_of_typename_visitor.cpp" />
   </ItemGroup>
@@ -174,7 +173,6 @@
     <ClInclude Include="no_copy.hpp" />
     <ClInclude Include="overload.hpp" />
     <ClInclude Include="ranges_fold_left_pipe.hpp" />
-    <ClInclude Include="grammarizer.hpp" />
     <ClInclude Include="node_structs.hpp" />
     <ClInclude Include="grammar.hpp" />
     <ClInclude Include="primitives.hpp" />
@@ -185,18 +183,17 @@
     <ClInclude Include="transpile_expression_visitor.hpp" />
     <ClInclude Include="transpile_statement_visitor.hpp" />
     <ClInclude Include="transpile_typename_visitor.hpp" />
-    <ClInclude Include="traverse_type_visitor.hpp" />
+    <ClInclude Include="type_visitor\traverse_type_visitor.hpp" />
     <ClInclude Include="type_of_expression_visitor.hpp" />
-    <ClInclude Include="type_of_postfix_member_visitor.hpp" />
-    <ClInclude Include="type_of_template_instantiation_with_args_visitor.hpp" />
+    <ClInclude Include="type_visitor\type_of_postfix_member_visitor.hpp" />
     <ClInclude Include="type_template_of_typename_visitor.hpp" />
     <ClInclude Include="toCPP.hpp" />
     <ClInclude Include="tokenizer.hpp" />
-    <ClInclude Include="transpile_type_visitor.hpp" />
+    <ClInclude Include="type_visitor\transpile_type_visitor.hpp" />
     <ClInclude Include="typename_visitor.hpp" />
-    <ClInclude Include="type_of_function_like_call_with_args_visitor.hpp" />
+    <ClInclude Include="type_visitor\type_of_function_like_call_with_args_visitor.hpp" />
     <ClInclude Include="type_of_typename_visitor.hpp" />
-    <ClInclude Include="type_category_visitor.hpp" />
+    <ClInclude Include="type_visitor\type_category_visitor.hpp" />
     <ClInclude Include="vec_of_expected_to_expected_of_vec.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

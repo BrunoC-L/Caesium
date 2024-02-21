@@ -1,10 +1,8 @@
 #include "toCPP.hpp"
 #include "transpile_call_expression_with_args.hpp"
-#include "type_of_postfix_member_visitor.hpp"
 #include "type_of_expression_visitor.hpp"
-#include "transpile_type_visitor.hpp"
-#include "type_of_function_like_call_with_args_visitor.hpp"
 #include "transpile_expression_visitor.hpp"
+#include "vec_of_expected_to_expected_of_vec.hpp"
 
 using T = transpile_call_expression_with_args;
 using R = T::R;
@@ -16,6 +14,35 @@ R base(
 ) {
 	auto operand_t = type_of_expression_visitor{ {}, state }(expr);
 	return_if_error(operand_t);
+
+	if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
+		/*auto with_args = NodeStructs::TemplateExpression{ .operand = { expr }, .arguments = { arguments | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | to_vec() }};
+		return base(state, arguments, with_args);
+		throw;*/
+		//auto arg_ts = vec_of_expected_to_expected_of_vec(arguments | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | type_of_expression_visitor{ {}, state });
+		const auto& tmpl = std::get<NodeStructs::Template>(operand_t.value().second.value);
+		if (tmpl.templated == "BUILTIN") {
+			if (tmpl.name == "print" || tmpl.name == "println") {
+				if (arguments.size() == 0)
+					return "";
+				std::stringstream ss;
+
+				ss << "(Void)(std::cout";
+				for (const auto& [_, arg] : arguments) {
+					auto expr_s = expr_to_printable(state, arg);
+					return_if_error(expr_s);
+					ss << " << " << expr_s.value();
+				}
+				bool newline = tmpl.name == "println";
+				if (newline)
+					ss << " << \"\\n\"";
+				ss << ")";
+				return ss.str();
+			}
+			throw;
+		}
+		throw;
+	}
 
 	if (std::holds_alternative<NodeStructs::BuiltInType>(operand_t.value().second.value)) {
 		std::visit(
@@ -29,7 +56,7 @@ R base(
 		throw;
 	}
 
-	auto t = type_of_function_like_call_with_args_visitor{ {}, state, arguments }(operand_t.value().second);
+	auto t = type_of_function_like_call_with_args(state, arguments, operand_t.value().second);
 	return_if_error(t);
 	auto args_or_error = transpile_args(state, arguments);
 	return_if_error(args_or_error);
@@ -89,7 +116,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
 	return_if_error(operand_t);
-	auto t = type_of_postfix_member_visitor{ {}, state, expr.property_name }(operand_t.value().second);
+	auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
 	return_if_error(t);
 
 	if (std::holds_alternative<NodeStructs::BuiltInType>(t.value().second.value)) {
@@ -123,7 +150,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 
 	return error{
 		"user error",
-		"Use of type like a function is prohibited. Type was `" + transpile_type_visitor{ {}, state }(t.value().second).value() + "`"
+		"Use of type like a function is prohibited. Type was `" + transpile_type(state, t.value().second).value() + "`"
 	};
 }
 

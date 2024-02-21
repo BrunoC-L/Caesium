@@ -1,10 +1,6 @@
 #include "transpile_expression_visitor.hpp"
 #include "type_of_expression_visitor.hpp"
-#include "type_of_postfix_member_visitor.hpp"
-#include "type_of_function_like_call_with_args_visitor.hpp"
-#include "type_of_template_instantiation_with_args_visitor.hpp"
 #include "cursor_vector_view.hpp"
-#include "traverse_type_visitor.hpp"
 #include "transpile_typename_visitor.hpp"
 #include <algorithm>
 #include "replace_all.hpp"
@@ -163,10 +159,18 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
+	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
+	return_if_error(operand_t);
 	auto t = type_of_expression_visitor{ {}, state }(expr);
 	return_if_error(t);
-
-	throw;
+	auto expr_repr = transpile_expression_visitor{ {}, state }(expr.operand);
+	return_if_error(expr_repr);
+	if (std::holds_alternative<NodeStructs::InterfaceType>(operand_t.value().second.value)) {
+		return "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + expr_repr.value() + ")";
+	}
+	else {
+		return expr_repr.value() + "." + expr.property_name;
+	}
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
@@ -198,12 +202,12 @@ R T::operator()(const std::string& expr) {
 	}
 	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end()) {
 		const auto& e = *it->second.back();
-		if (auto t = traverse_type_visitor{ {}, state }(e); t.has_value())
+		if (auto t = traverse_type(state, { e }); t.has_value())
 			return t.value();
 		return expr;
 	}
 	if (auto it = state.state.named.type_aliases.find(expr); it != state.state.named.type_aliases.end()) {
-		if (std::optional<error> t = traverse_type_visitor{ {}, state }(it->second); t.has_value())
+		if (std::optional<error> t = traverse_type(state, it->second); t.has_value())
 			return t.value();
 		return transpile_typename_visitor{ {}, state }(state.state.named.type_aliases_typenames.at(expr));
 	}
