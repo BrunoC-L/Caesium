@@ -1,11 +1,7 @@
 #include "transpile_expression_visitor.hpp"
-#include "type_of_expression_visitor.hpp"
-#include "cursor_vector_view.hpp"
-#include "transpile_typename_visitor.hpp"
+#include "../utility/replace_all.hpp"
+
 #include <algorithm>
-#include "replace_all.hpp"
-#include "expression_for_template_visitor.hpp"
-#include "transpile_call_expression_with_args.hpp"
 
 using T = transpile_expression_visitor;
 using R = T::R;
@@ -124,11 +120,11 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	return transpile_call_expression_with_args{ {}, state, expr.arguments.args }(expr.operand);
+	return transpile_call_expression_with_args(state, expr.arguments.args, expr.operand);
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
-	auto t_or_e = type_of_expression_visitor{ {}, state }(expr.operand);
+	auto t_or_e = type_of_expression(state, expr.operand);
 	return_if_error(t_or_e);
 	if (std::holds_alternative<NodeStructs::Template>(t_or_e.value().second.value)) {
 		const auto& tmpl = std::get<NodeStructs::Template>(t_or_e.value().second.value);
@@ -159,11 +155,11 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
-	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
+	auto operand_t = type_of_expression(state, expr.operand);
 	return_if_error(operand_t);
-	auto t = type_of_expression_visitor{ {}, state }(expr);
+	auto t = type_of_expression(state, { expr });
 	return_if_error(t);
-	auto expr_repr = transpile_expression_visitor{ {}, state }(expr.operand);
+	auto expr_repr = transpile_expression(state, expr.operand);
 	return_if_error(expr_repr);
 	if (std::holds_alternative<NodeStructs::InterfaceType>(operand_t.value().second.value)) {
 		return "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + expr_repr.value() + ")";
@@ -209,7 +205,7 @@ R T::operator()(const std::string& expr) {
 	if (auto it = state.state.named.type_aliases.find(expr); it != state.state.named.type_aliases.end()) {
 		if (std::optional<error> t = traverse_type(state, it->second); t.has_value())
 			return t.value();
-		return transpile_typename_visitor{ {}, state }(state.state.named.type_aliases_typenames.at(expr));
+		return  transpile_typename(state, state.state.named.type_aliases_typenames.at(expr));
 	}
 	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end()) {
 		return expr;

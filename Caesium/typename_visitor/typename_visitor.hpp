@@ -1,5 +1,5 @@
 #pragma once
-#include "node_structs.hpp"
+#include "../core/node_structs.hpp"
 
 template <typename T>
 concept TypenameVisitorConcept = requires(T && t, const NodeStructs::Typename & v) {

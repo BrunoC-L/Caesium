@@ -6,8 +6,8 @@
 #include <compare>
 
 #include "primitives.hpp"
-#include "box.hpp"
-#include "overload.hpp"
+#include "../utility/box.hpp"
+#include "../utility/overload.hpp"
 
 struct NodeStructs {
 	struct TemplatedTypename;

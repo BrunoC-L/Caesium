@@ -1,7 +1,5 @@
 #include "type_template_of_typename_visitor.hpp"
-#include "type_of_typename_visitor.hpp"
-#include "transpile_typename_visitor.hpp"
-#include "structurizer.hpp"
+#include "../core/structurizer.hpp"
 
 using T = type_template_of_typename_visitor;
 using R = T::R;
@@ -35,18 +33,18 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 
 		if (tmpl.templated == "BUILTIN") {
 			if (tmpl.name == "Vector") {
-				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
+				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
 				return NodeStructs::UniversalType{ NodeStructs::VectorType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Set") {
-				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
+				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
 				return NodeStructs::UniversalType{ NodeStructs::SetType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Map") {
-				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
-				auto y = type_of_typename_visitor{ {}, state }(templated_with.at(1));
+				auto x = type_of_typename(state, templated_with.at(0));
+				auto y = type_of_typename(state, templated_with.at(1));
 				return_if_error(x);
 				return_if_error(y);
 				return NodeStructs::UniversalType{ NodeStructs::MapType{
@@ -61,7 +59,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 
 		std::string replaced = tmpl.templated;
 		for (int i = 0; i < tmpl.parameters.size(); ++i) {
-			auto e = transpile_typename_visitor{ {}, state }(templated_with.at(i));
+			auto e = transpile_typename(state, templated_with.at(i));
 			return_if_error(e);
 			replaced = ReplaceAll(std::move(replaced), tmpl.parameters.at(i).first, e.value());
 		}
@@ -87,7 +85,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 	/*return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstanceType{
 		::template_type_of_typename_visitor{ {}, state }(type.type.get()),
 		type.templated_with
-			| std::views::transform([&](const auto& e) { return type_of_typename_visitor{ {}, state }(e); })
+			| std::views::transform([&](const auto& e) { return type_of_typename(state, e); })
 			| to_vec()
 	} };*/
 }

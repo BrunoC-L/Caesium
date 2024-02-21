@@ -1,24 +1,14 @@
 #pragma once
-#include "node_structs.hpp"
+#include "../core/toCPP.hpp"
+#include "statement_visitor.hpp"
 
-template <typename T>
-concept StatementVisitorConcept = requires(T && t, const NodeStructs::Statement & v) {
-	t(v);
-	std::visit(t, v);
-};
+struct transpile_statement_visitor : StatementVisitor<transpile_statement_visitor> {
+	using StatementVisitor<transpile_statement_visitor>::operator();
 
-template <typename T>
-struct StatementVisitor {
-	template <typename Self>
-	auto operator()(this Self&& self, const NodeStructs::Statement& t) {
-		return std::visit(
-			[&](const auto& t) {
-				return self(t);
-			},
-			t.statement
-		);
-	}
-	/*
+	transpilation_state_with_indent state;
+
+	using R = transpile_t;
+
 	R operator()(const NodeStructs::Expression& statement);
 	R operator()(const NodeStructs::VariableDeclarationStatement& statement);
 	R operator()(const NodeStructs::IfStatement& statement);
@@ -28,5 +18,4 @@ struct StatementVisitor {
 	R operator()(const NodeStructs::BreakStatement& statement);
 	R operator()(const NodeStructs::ReturnStatement& statement);
 	R operator()(const NodeStructs::BlockStatement& statement);
-	*/
 };

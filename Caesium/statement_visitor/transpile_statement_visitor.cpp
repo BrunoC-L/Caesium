@@ -1,23 +1,19 @@
 #include "transpile_statement_visitor.hpp"
-#include "type_of_typename_visitor.hpp"
-#include "transpile_expression_visitor.hpp"
-#include "type_of_expression_visitor.hpp"
-#include "transpile_typename_visitor.hpp"
 
 using T = transpile_statement_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::Expression& statement) {
-	return transpile_expression_visitor{ {}, state }(statement).transform([](auto s) { return std::move(s) + ";\n"; });
+	return transpile_expression(state, statement).transform([](auto s) { return std::move(s) + ";\n"; });
 }
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
-	auto t = type_of_typename_visitor{ {}, state }(statement.type);
+	auto t = type_of_typename(state, statement.type);
 	return_if_error(t);
 	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, t.value() });
-	auto type = transpile_typename_visitor{ {}, state }(statement.type);
+	auto type = transpile_typename(state, statement.type);
 	return_if_error(type);
-	auto variable_name = transpile_expression_visitor{ {}, state }(statement.expr);
+	auto variable_name = transpile_expression(state, statement.expr);
 	return_if_error(variable_name);
 	return type.value() + " " + statement.name + " = " + variable_name.value() + ";\n";
 }
@@ -27,7 +23,7 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 	return_if_error(if_statements);
 	if (statement.elseExprStatements.has_value())
 		return "if (" +
-		transpile_expression_visitor{ {}, state }(statement.ifExpr).value() +
+		transpile_expression(state, statement.ifExpr).value() +
 		") {\n" +
 		if_statements.value() +
 		"} else " +
@@ -44,7 +40,7 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 		);
 	else
 		return "if (" +
-			transpile_expression_visitor{ {}, state }(statement.ifExpr).value() +
+		transpile_expression(state, statement.ifExpr).value() +
 			") {\n" +
 			if_statements.value() +
 			indent(state.indent) +
@@ -52,7 +48,7 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::ForStatement& statement) {
-	auto coll_type_or_e = type_of_expression_visitor{ {}, state }(statement.collection);
+	auto coll_type_or_e = type_of_expression(state, statement.collection);
 	return_if_error(coll_type_or_e);
 	auto it_type = iterator_type(state, coll_type_or_e.value().second);
 
@@ -103,7 +99,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 		), statement.iterators.at(0));
 	}
 	
-	auto s1 = transpile_expression_visitor{ {}, state }(statement.collection);
+	auto s1 = transpile_expression(state, statement.collection);
 	return_if_error(s1);
 	auto s2 = transpile(state.indented(), statement.statements);
 	return_if_error(s2);
@@ -123,12 +119,12 @@ R T::operator()(const NodeStructs::IForStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::WhileStatement& statement) {
-	return "while (" + transpile_expression_visitor{ {}, state }(statement.whileExpr).value() + ") {\n" + transpile(state, statement.statements).value() + "}";
+	return "while (" + transpile_expression(state, statement.whileExpr).value() + ") {\n" + transpile(state, statement.statements).value() + "}";
 }
 
 R T::operator()(const NodeStructs::BreakStatement& statement) {
 	if (statement.ifExpr.has_value())
-		return "if (" + transpile_expression_visitor{ {}, state }(statement.ifExpr.value()).value() + ") break;\n";
+		return "if (" + transpile_expression(state, statement.ifExpr.value()).value() + ") break;\n";
 	else
 		return "break;\n";
 }
@@ -146,7 +142,7 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 	}();
 	return_if_error(return_expression);
 	if (statement.ifExpr.has_value()) {
-		auto cnd = transpile_expression_visitor{ {}, state }(statement.ifExpr.value());
+		auto cnd = transpile_expression(state, statement.ifExpr.value());
 		return_if_error(cnd);
 		return "if (" + cnd.value() + ") return " + return_expression.value() + ";\n";
 	}

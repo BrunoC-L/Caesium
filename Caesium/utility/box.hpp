@@ -60,32 +60,6 @@ public:
 	template <typename U>
 	Box(Box<U>&& other) : Box(std::move(other).get()) {};
 
-	/*// operator= same type&
-	Box& operator=(const Box& other) noexcept {
-		ptr = std::make_unique<T>(other.get());
-		return *this;
-	}
-
-	// operator= template&
-	template <typename U>
-	Box& operator=(const Box<U>& other) noexcept {
-		ptr = std::make_unique<T>(other.get());
-		return *this;
-	}
-
-	// operator= same type&&
-	Box& operator=(Box&& other) noexcept {
-		ptr = std::move(other.ptr);
-		return *this;
-	}
-
-	// operator= template&&
-	template <typename U>
-	Box& operator=(Box<U>&& other) noexcept {
-		ptr = std::make_unique<T>(std::move(other).get());
-		return *this;
-	}*/
-
 	std::weak_ordering operator<=>(const Box& other) const noexcept {
 		return (*ptr) <=> (*other.ptr);
 	};

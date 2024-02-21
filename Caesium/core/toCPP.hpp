@@ -4,7 +4,7 @@
 #include <sstream>
 #include <map>
 #include <set>
-#include "expected.hpp"
+#include "../utility/expected.hpp"
 #include <ranges>
 
 #include "node_structs.hpp"
@@ -151,8 +151,10 @@ static constexpr auto default_includes =
 	"static constexpr bool False = false;\n"
 
 	"template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };\n"
-	//"template<typename... Ts> overload(Ts...) -> overload<Ts...>;"
+
 	"Void push(auto&& vec, auto&& e) { vec.push_back(e); }\n"
+	/*"Void insert(auto&& set, auto&& e) { set.insert(e); }\n"
+	"Void insert(auto&& map, auto&& k, auto&& v) { map.insert(k, v); }\n"*/
 
 	"\n";
 
@@ -289,4 +291,45 @@ expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> 
 	transpilation_state_with_indent state,
 	const std::string& property_name,
 	const NodeStructs::UniversalType& type
+);
+
+std::string expression_for_template(
+	const NodeStructs::Expression& expr
+);
+
+transpile_t transpile_call_expression_with_args(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::FunctionArgument>& arguments,
+const NodeStructs::Expression& expr
+);
+
+transpile_t transpile_expression(
+	transpilation_state_with_indent state,
+	const NodeStructs::Expression& expr
+);
+
+expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>> type_of_expression(
+	transpilation_state_with_indent state,
+	const NodeStructs::Expression& expr
+);
+
+transpile_t transpile_statement(
+	transpilation_state_with_indent state,
+	const NodeStructs::Statement& statement
+);
+
+transpile_t transpile_typename(
+	transpilation_state_with_indent state,
+	const NodeStructs::Typename& tn
+);
+
+expected<NodeStructs::UniversalType> type_of_typename(
+	transpilation_state_with_indent state,
+	const NodeStructs::Typename& tn
+);
+
+expected<NodeStructs::UniversalType> type_template_of_typename(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::Typename>& templated_with,
+	const NodeStructs::Typename& tn
 );

@@ -1,10 +1,7 @@
-#include "toCPP.hpp"
 #include "transpile_call_expression_with_args.hpp"
-#include "type_of_expression_visitor.hpp"
-#include "transpile_expression_visitor.hpp"
-#include "vec_of_expected_to_expected_of_vec.hpp"
+#include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 
-using T = transpile_call_expression_with_args;
+using T = transpile_call_expression_with_args_visitor;
 using R = T::R;
 
 R base(
@@ -12,14 +9,19 @@ R base(
 	const std::vector<NodeStructs::FunctionArgument>& arguments,
 	const auto& expr
 ) {
-	auto operand_t = type_of_expression_visitor{ {}, state }(expr);
+	auto operand_t = type_of_expression(state, { expr });
 	return_if_error(operand_t);
 
 	if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
 		/*auto with_args = NodeStructs::TemplateExpression{ .operand = { expr }, .arguments = { arguments | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | to_vec() }};
 		return base(state, arguments, with_args);
 		throw;*/
-		//auto arg_ts = vec_of_expected_to_expected_of_vec(arguments | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | type_of_expression_visitor{ {}, state });
+		auto arg_ts = vec_of_expected_to_expected_of_vec(
+			arguments
+			| LIFT_TRANSFORM(std::get<NodeStructs::Expression>)
+			| LIFT_TRANSFORM_X(X, type_of_expression(state, X))
+			| to_vec()
+		);
 		const auto& tmpl = std::get<NodeStructs::Template>(operand_t.value().second.value);
 		if (tmpl.templated == "BUILTIN") {
 			if (tmpl.name == "print" || tmpl.name == "println") {
@@ -60,7 +62,7 @@ R base(
 	return_if_error(t);
 	auto args_or_error = transpile_args(state, arguments);
 	return_if_error(args_or_error);
-	auto operand_repr = transpile_expression_visitor{ {}, state }(expr);
+	auto operand_repr = transpile_expression(state, { expr });
 	return_if_error(operand_repr);
 	return std::move(operand_repr).value() + "(" + std::move(args_or_error).value() + ")";
 }
@@ -114,7 +116,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
-	auto operand_t = type_of_expression_visitor{ {}, state }(expr.operand);
+	auto operand_t = type_of_expression(state, expr.operand);
 	return_if_error(operand_t);
 	auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
 	return_if_error(t);
@@ -126,13 +128,13 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 				[&](const NodeStructs::BuiltInType::push_t& e) -> R {
 					if (arguments.size() != 1)
 						throw;
-					auto arg_t = type_of_expression_visitor{ {}, state }(std::get<NodeStructs::Expression>(arguments.at(0)));
+					auto arg_t = type_of_expression(state, std::get<NodeStructs::Expression>(arguments.at(0)));
 					return_if_error(arg_t);
 					if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
 						throw;
 					}
 
-					auto operand_repr = transpile_expression_visitor{ {}, state }(expr.operand);
+					auto operand_repr = transpile_expression(state, expr.operand);
 					return_if_error(operand_repr);
 					auto args_repr = transpile_args(state, arguments);
 					return_if_error(args_repr);

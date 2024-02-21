@@ -1,9 +1,7 @@
 #include "type_of_expression_visitor.hpp"
-#include "transpile_expression_visitor.hpp"
-#include "structurizer.hpp"
-#include "vec_of_expected_to_expected_of_vec.hpp"
-#include "replace_all.hpp"
-#include "expression_for_template_visitor.hpp"
+#include "../core/structurizer.hpp"
+#include "../utility/vec_of_expected_to_expected_of_vec.hpp"
+#include "../utility/replace_all.hpp"
 
 using T = type_of_expression_visitor;
 using R = T::R;
@@ -118,7 +116,7 @@ expected<std::reference_wrapper<const NodeStructs::Template>> find_best_template
 			if (has_prev_args)
 				args_ss << ", ";
 			has_prev_args = true;
-			args_ss << expression_for_template_visitor{ {} }(arg);
+			args_ss << expression_for_template(arg);
 		}
 		std::stringstream templates_ss;
 		bool has_prev_templates = false;
@@ -134,7 +132,7 @@ expected<std::reference_wrapper<const NodeStructs::Template>> find_best_template
 				has_prev_parameters = true;
 				parameters_ss << parameter.first;
 				if (parameter.second.has_value())
-					parameters_ss << " = " << expression_for_template_visitor{ {} }(parameter.second.value());
+					parameters_ss << " = " << expression_for_template(parameter.second.value());
 			}
 			templates_ss << "template " + templates.at(0)->name + "<" + parameters_ss.str() + ">";
 		}
@@ -155,7 +153,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		auto t = find_best_template(it->second, expr.arguments.args);
 		return_if_error(t);
 		const auto& tmpl = t.value().get();
-		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template_visitor{ {} }) | to_vec();
+		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template) | to_vec();
 		std::string tmpl_name = template_name(it->first, args);
 
 		size_t max_params = it->second.at(0)->parameters.size();
@@ -176,18 +174,18 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 
 		if (tmpl.templated == "BUILTIN") {
 			/*if (tmpl.name == "Vector") {
-				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
+				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
 				return NodeStructs::UniversalType{ NodeStructs::VectorType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Set") {
-				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
+				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
 				return NodeStructs::UniversalType{ NodeStructs::SetType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Map") {
-				auto x = type_of_typename_visitor{ {}, state }(templated_with.at(0));
-				auto y = type_of_typename_visitor{ {}, state }(templated_with.at(1));
+				auto x = type_of_typename(state, templated_with.at(0));
+				auto y = type_of_typename(state, templated_with.at(1));
 				return_if_error(x);
 				return_if_error(y);
 				return NodeStructs::UniversalType{ NodeStructs::MapType{

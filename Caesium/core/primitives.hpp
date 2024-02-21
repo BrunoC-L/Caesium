@@ -5,9 +5,9 @@
 #include <ranges>
 
 #include "tokenizer.hpp"
-#include "fn_util.hpp"
-#include "is_specialization.hpp"
-#include "box.hpp"
+#include "../utility/fn_util.hpp"
+#include "../utility/is_specialization.hpp"
+#include "../utility/box.hpp"
 
 template <typename...> struct And;
 template <typename...> struct Or;

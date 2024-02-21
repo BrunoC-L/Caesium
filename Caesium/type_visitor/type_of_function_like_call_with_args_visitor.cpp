@@ -1,6 +1,4 @@
 #include "type_of_function_like_call_with_args_visitor.hpp"
-#include "../type_of_typename_visitor.hpp"
-#include "../type_of_expression_visitor.hpp"
 
 using T = type_of_function_like_call_with_args_visitor;
 using R = T::R;
@@ -41,7 +39,7 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 	}
 	else {
 		// if args apply... TODO
-		return std::pair{ NodeStructs::Value{}, type_of_typename_visitor{ {}, state }(t.function.get().returnType).value() };
+		return std::pair{ NodeStructs::Value{}, type_of_typename(state, t.function.get().returnType).value() };
 	}
 	throw;
 }
@@ -83,7 +81,7 @@ R T::operator()(const NodeStructs::BuiltInType& t) {
 			[&](const NodeStructs::BuiltInType::push_t& e) -> R {
 				if (this->args.size() != 1)
 					throw;
-				auto arg_t = type_of_expression_visitor{ {}, state }(std::get<NodeStructs::Expression>(args.at(0)));
+				auto arg_t = type_of_expression(state, std::get<NodeStructs::Expression>(args.at(0)));
 				return_if_error(arg_t);
 				if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
 					throw;

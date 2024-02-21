@@ -4,9 +4,9 @@
 #include <filesystem>
 #include <sstream>
 
-#include "structurizer.hpp"
-#include "grammar.hpp"
-#include "toCpp.hpp"
+#include "core/structurizer.hpp"
+#include "core/grammar.hpp"
+#include "core/toCpp.hpp"
 #include "first_diff.hpp"
 
 std::optional<expected<std::pair<std::string, std::string>>> create_file(const std::string& folder_name, std::string_view caesiumProgram) {

@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <filesystem>
 
-#include "grammar.hpp"
-#include "structurizer.hpp"
-#include "toCpp.hpp"
+#include "core/grammar.hpp"
+#include "core/structurizer.hpp"
+#include "core/toCpp.hpp"
 
 static NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 	std::ifstream caesium(fileName);

@@ -1,15 +1,13 @@
 #pragma once
-#include "toCPP.hpp"
+#include "../core/toCPP.hpp"
 #include "expression_visitor.hpp"
 
-struct transpile_call_expression_with_args : ExpressionVisitor<transpile_call_expression_with_args> {
-	using ExpressionVisitor<transpile_call_expression_with_args>::operator();
+struct type_of_expression_visitor : ExpressionVisitor<type_of_expression_visitor> {
+	using ExpressionVisitor<type_of_expression_visitor>::operator();
 
 	transpilation_state_with_indent state;
 
-	const std::vector<NodeStructs::FunctionArgument>& arguments;
-
-	using R = transpile_t;
+	using R = expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>;
 
 	//R operator()(const NodeStructs::AssignmentExpression& expr);
 	R operator()(const NodeStructs::ConditionalExpression& expr);

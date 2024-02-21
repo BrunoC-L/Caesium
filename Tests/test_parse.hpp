@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
-#include "toCpp.hpp"
-#include "structurizer.hpp"
-#include "colored_text.hpp"
+#include "core/toCpp.hpp"
+#include "core/structurizer.hpp"
+#include "utility/colored_text.hpp"
 
 template <bool expected_to_built, typename... Ts>
 bool test_parse(int line, int n_indent, std::string program) {

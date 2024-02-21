@@ -17,7 +17,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
 	std::stringstream ss;
-	auto tmpl = type_template_of_typename_visitor{ {}, state, type.templated_with }(type.type.get());
+	auto tmpl = type_template_of_typename(state, type.templated_with, type.type.get());
 	return_if_error(tmpl);
 	auto t = operator()(type.type.get());
 	return_if_error(t);

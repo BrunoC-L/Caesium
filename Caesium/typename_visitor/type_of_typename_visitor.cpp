@@ -1,5 +1,4 @@
 #include "type_of_typename_visitor.hpp"
-#include "type_template_of_typename_visitor.hpp"
 
 using T = type_of_typename_visitor;
 using R = T::R;
@@ -33,7 +32,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
-	return type_template_of_typename_visitor{ {}, state, t.templated_with }(t.type.get());
+	return type_template_of_typename(state, t.templated_with, t.type.get());
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {

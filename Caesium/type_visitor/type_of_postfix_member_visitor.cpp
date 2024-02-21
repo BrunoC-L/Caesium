@@ -1,6 +1,4 @@
-#include "type_of_function_like_call_with_args_visitor.hpp"
 #include "type_of_postfix_member_visitor.hpp"
-#include "../type_of_typename_visitor.hpp"
 
 using T = type_of_postfix_member_visitor;
 using R = T::R;
@@ -12,7 +10,8 @@ R T::operator()(const NodeStructs::Type& t) {
 		return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n"};
 	}
 	else
-		return type_of_typename_visitor{ {}, state }(pos->type).transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
+		return type_of_typename(state, pos->type)
+			.transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 }
 //
 //R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
@@ -44,7 +43,8 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 		t.interface.get().memberVariables.end(),
 		[&](const auto& member) { return member.name == property_name; }
 	); it != t.interface.get().memberVariables.end())
-		return type_of_typename_visitor{ {}, state }(it->type).transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });
+		return type_of_typename(state, it->type)
+			.transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });
 	else
 		return error{ "user error", "Error: object of type `" + t.interface.get().name + "` has no member `" + property_name + "`\n" };
 }
