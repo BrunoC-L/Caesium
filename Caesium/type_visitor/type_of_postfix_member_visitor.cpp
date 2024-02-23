@@ -13,17 +13,6 @@ R T::operator()(const NodeStructs::Type& t) {
 		return type_of_typename(state, pos->type)
 			.transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 }
-//
-//R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
-//	// basically trying to implement transpilation of Vector<T>{}.size()
-//	// Vector<T> is the type template instance and `size` is `property_name`
-//	if (auto it = state.state.named.function_templates.find(property_name); it != state.state.named.function_templates.end()) {
-//		return std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>{ NodeStructs::Value{}, NodeStructs::FunctionTemplateType{
-//			.function_template = *it->second.back()
-//		} };
-//	}
-//	throw;
-//}
 
 R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;

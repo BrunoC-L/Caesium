@@ -11,12 +11,19 @@
 
 using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>>;
 using transpile_header_cpp_t = expected<std::pair<std::string, std::string>>;
-using transpile_t = expected<std::string>;
 struct type_and_representation {
 	NodeStructs::UniversalType type;
 	std::string representation;
 };
 using transpile_type_repr = expected<type_and_representation>;
+struct whole_expression_information {
+	NodeStructs::Expression expression;
+	NodeStructs::ValueCategory value_category;
+	NodeStructs::UniversalType type;
+	std::string representation;
+};
+using transpile_t = expected<std::string>;
+using transpile_t2 = expected<whole_expression_information>;
 
 struct Named {
 	template <typename T> using map_to_vec = std::map<std::string, std::vector<T const*>>;
@@ -28,9 +35,6 @@ struct Named {
 	map_to_vec<NodeStructs::Template> templates;
 	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
 	std::map<std::string, NodeStructs::UniversalType> type_aliases;
-	//map_to_vec<NodeStructs::Template<NodeStructs::Function>> function_templates;
-	//map_to_vec<NodeStructs::Template<NodeStructs::Type>> type_templates;
-	//map_to_vec<NodeStructs::Template<NodeStructs::Block>> block_templates;
 };
 
 struct transpilation_state {
@@ -187,7 +191,7 @@ static NodeStructs::ValueCategory argument_category_optional_to_value_category(c
 	if (cat.has_value())
 		return argument_category_to_value_category(cat.value());
 	else
-		throw;
+		return NodeStructs::Value{};
 }
 
 transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project);
@@ -327,15 +331,15 @@ transpile_t transpile_call_expression_with_args(
 	const NodeStructs::Expression& expr
 );
 
-transpile_t transpile_expression(
+transpile_t2 transpile_expression(
 	transpilation_state_with_indent state,
 	const NodeStructs::Expression& expr
 );
 
-expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>> type_of_expression(
-	transpilation_state_with_indent state,
-	const NodeStructs::Expression& expr
-);
+//expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>> type_of_expression(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::Expression& expr
+//);
 
 transpile_t transpile_statement(
 	transpilation_state_with_indent state,

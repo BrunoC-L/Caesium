@@ -1,8 +1,0 @@
-import base
-
-Vector<Cat> cats():
-Vector<Dog> dogs():
-
-Int main(Vector<String> args):
-    println(1)
-    return 7

@@ -39,7 +39,11 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
-	throw;
+	auto type_of_first_term = operator()(expr.expr);
+	return_if_error(type_of_first_term);
+	return std::pair{
+		NodeStructs::Value{}, type_of_first_term.value().second
+	};
 }
 
 R T::operator()(const NodeStructs::UnaryExpression& expr) {
@@ -47,7 +51,8 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	auto operand_t = type_of_expression(state, expr.operand);
+	auto operand_t = transpile_expression(state, expr.operand).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+	//auto operand_t = type_of_expression(state, expr.operand);
 	return_if_error(operand_t);
 	if (std::holds_alternative<NodeStructs::FunctionType>(operand_t.value().second.value)) {
 		throw;
@@ -206,11 +211,11 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i).first, args.at(i));
 
 		if (auto it = state.state.named.functions.find(tmpl_name); it != state.state.named.functions.end()) {
-			throw;
+			return std::pair{ NodeStructs::Reference{}, NodeStructs::UniversalType{ NodeStructs::FunctionType{ *it->second.back() } } };
 		}
 
 		if (auto it = state.state.named.types.find(tmpl_name); it != state.state.named.types.end()) {
-			throw;
+			return std::pair{ NodeStructs::Reference{}, NodeStructs::UniversalType{ NodeStructs::TypeType{ *it->second.back() } } };
 		}
 
 		{
@@ -277,7 +282,8 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 	if (expr.args.size() == 0)
 		throw;
 	if (expr.args.size() == 1)
-		return type_of_expression(state, std::get<NodeStructs::Expression>(expr.args.at(0)))
+		return transpile_expression(state, std::get<NodeStructs::Expression>(expr.args.at(0)))
+			.transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; })
 			.transform([&](auto&& t) -> R::value_type { return R::value_type{
 				argument_category_optional_to_value_category(std::get<0>(expr.args.at(0))), std::move(t).second.value };
 			});

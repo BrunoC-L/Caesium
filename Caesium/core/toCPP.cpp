@@ -578,7 +578,7 @@ transpile_t transpile_arg(
 	transpilation_state_with_indent state,
 	const NodeStructs::FunctionArgument& arg
 ) {
-	return transpile_expression(state, std::get<NodeStructs::Expression>(arg));
+	return transpile_expression(state, std::get<NodeStructs::Expression>(arg)).transform([](auto&& x) { return x.representation; });
 }
 
 transpile_t transpile_args(
@@ -611,7 +611,7 @@ transpile_t transpile_expressions(transpilation_state_with_indent state, const s
 
 		auto repr = transpile_expression(state, arg);
 		return_if_error(repr);
-		ss << repr.value();
+		ss << repr.value().representation;
 	}
 	return ss.str();
 }
@@ -682,9 +682,14 @@ bool is_assignable_to(
 								return false;
 						}
 				}
-				state.state.interface_symbol_to_members[
+				auto& interface_members = state.state.interface_symbol_to_members[
 					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name} }
-				].push_back(NodeStructs::UniversalType{ u });
+				];
+				auto new_member = NodeStructs::UniversalType{ u };
+				for (const auto& member : interface_members)
+					if (member <=> new_member == std::weak_ordering::equivalent)
+						return true;
+				interface_members.push_back(std::move(new_member));
 				return true;
 			},
 			[&](const NodeStructs::InterfaceType& e, const NodeStructs::TypeType& u) {
@@ -696,7 +701,7 @@ bool is_assignable_to(
 }
 
 transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeStructs::Expression& expr) {
-	auto t = type_of_expression(state, expr);
+	auto t = transpile_expression(state, expr).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
 	return_if_error(t);
 
 	if (std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(t.value().second.value)) {
@@ -705,7 +710,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 		if (t_ref.name == "String") {
 			auto expr_repr = transpile_expression(state, expr);
 			return_if_error(expr_repr);
-			ss << "std::string(\"\\\"\") + " << expr_repr.value() << " + std::string(\"\\\"\")";
+			ss << "std::string(\"\\\"\") + " << expr_repr.value().representation << " + std::string(\"\\\"\")";
 		}
 		else {
 			throw;
@@ -792,20 +797,20 @@ transpile_t transpile_call_expression_with_args(
 }
 
 #include "../expression_visitor/transpile_expression_visitor.hpp"
-transpile_t transpile_expression(
+transpile_t2 transpile_expression(
 	transpilation_state_with_indent state,
 	const NodeStructs::Expression& expr
 ) {
 	return transpile_expression_visitor{ {}, state }(expr);
 }
 
-#include "../expression_visitor/type_of_expression_visitor.hpp"
-expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>> type_of_expression(
-	transpilation_state_with_indent state,
-	const NodeStructs::Expression& expr
-) {
-	return type_of_expression_visitor{ {}, state }(expr);
-}
+//#include "../expression_visitor/type_of_expression_visitor.hpp"
+//expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>> type_of_expression(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::Expression& expr
+//) {
+//	return type_of_expression_visitor{ {}, state }(expr);
+//}
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
 transpile_t transpile_statement(

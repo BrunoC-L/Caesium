@@ -327,15 +327,6 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 			//auto res = getExpressionStruct(e);
 			//return NodeStructs::Expression{ std::move(res) };
 		},
-		[](const And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>& e) -> NodeStructs::Expression {
-			const auto& args = e.get<CommaStar<Expression>>().get<Expression>();
-			return { NodeStructs::ParenArguments{
-					args
-					| LIFT_TRANSFORM(getExpressionStruct)
-					| LIFT_TRANSFORM_X(e, NodeStructs::FunctionArgument{ std::nullopt, e })
-					| to_vec()
-				} };
-		},
 		[](const Word& e) {
 			return NodeStructs::Expression{ e.value };
 		},

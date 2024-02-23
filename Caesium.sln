@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Caesium", "Caesium\Caesium.vcxproj", "{DF22B687-7D98-4035-8C21-EB5123514ECC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CaesiumLib", "Caesium\Caesium.vcxproj", "{DF22B687-7D98-4035-8C21-EB5123514ECC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{7E9D27BE-68E7-4931-AE43-26C00CAECEDF}"
 EndProject

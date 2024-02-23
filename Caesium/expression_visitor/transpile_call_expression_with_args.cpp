@@ -9,7 +9,7 @@ R base(
 	const std::vector<NodeStructs::FunctionArgument>& arguments,
 	const auto& expr
 ) {
-	auto operand_t = type_of_expression(state, { expr });
+	auto operand_t = transpile_expression(state, { expr }).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
 	return_if_error(operand_t);
 
 	if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
@@ -19,7 +19,7 @@ R base(
 		auto arg_ts = vec_of_expected_to_expected_of_vec(
 			arguments
 			| LIFT_TRANSFORM(std::get<NodeStructs::Expression>)
-			| LIFT_TRANSFORM_X(X, type_of_expression(state, X))
+			| LIFT_TRANSFORM_X(X, transpile_expression(state, X).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; }))
 			| to_vec()
 		);
 		const auto& tmpl = std::get<NodeStructs::Template>(operand_t.value().second.value);
@@ -64,7 +64,7 @@ R base(
 	return_if_error(args_or_error);
 	auto operand_repr = transpile_expression(state, { expr });
 	return_if_error(operand_repr);
-	return std::move(operand_repr).value() + "(" + std::move(args_or_error).value() + ")";
+	return std::move(operand_repr).value().representation + "(" + std::move(args_or_error).value() + ")";
 }
 
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
@@ -116,7 +116,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
-	auto operand_t = type_of_expression(state, expr.operand);
+	auto operand_t = transpile_expression(state, expr.operand).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
 	return_if_error(operand_t);
 	auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
 	return_if_error(t);
@@ -128,7 +128,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 				[&](const NodeStructs::BuiltInType::push_t& e) -> R {
 					if (arguments.size() != 1)
 						throw;
-					auto arg_t = type_of_expression(state, std::get<NodeStructs::Expression>(arguments.at(0)));
+					auto arg_t = transpile_expression(state, std::get<NodeStructs::Expression>(arguments.at(0))).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
 					return_if_error(arg_t);
 					if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
 						throw;
@@ -138,7 +138,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 					return_if_error(operand_repr);
 					auto args_repr = transpile_args(state, arguments);
 					return_if_error(args_repr);
-					return "push(" + operand_repr.value() + ", " + args_repr.value() + ")";
+					return "push(" + operand_repr.value().representation + ", " + args_repr.value() + ")";
 				}
 			),
 			builtin.builtin

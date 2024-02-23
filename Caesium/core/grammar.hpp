@@ -41,7 +41,6 @@ using ParenExpression = Or<
 	Token<FLOATING_POINT_NUMBER>,
 	Token<INTEGER_NUMBER>,
 	Token<STRING>,
-	And<Token<PARENOPEN>, CommaStar<Expression>, Token<PARENCLOSE>>,
 	ParenArguments,
 	BracketArguments,
 	BraceArguments
