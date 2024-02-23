@@ -47,6 +47,11 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
+	auto operand_t = type_of_expression(state, expr.operand);
+	return_if_error(operand_t);
+	if (std::holds_alternative<NodeStructs::FunctionType>(operand_t.value().second.value)) {
+		throw;
+	}
 	throw;
 }
 
@@ -269,6 +274,13 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
+	if (expr.args.size() == 0)
+		throw;
+	if (expr.args.size() == 1)
+		return type_of_expression(state, std::get<NodeStructs::Expression>(expr.args.at(0)))
+			.transform([&](auto&& t) -> R::value_type { return R::value_type{
+				argument_category_optional_to_value_category(std::get<0>(expr.args.at(0))), std::move(t).second.value };
+			});
 	throw;
 }
 

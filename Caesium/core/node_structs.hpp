@@ -108,9 +108,6 @@ struct NodeStructs {
 	struct Value {
 		std::weak_ordering operator<=>(const Value&) const = default;
 	};
-	struct Temporary {
-		std::weak_ordering operator<=>(const Temporary&) const = default;
-	};
 	/*struct Key {
 		std::weak_ordering operator<=>(const Key&) const = default;
 	};*/
@@ -121,7 +118,7 @@ struct NodeStructs {
 	move->value
 	key->key
 	*/
-	using ArgumentCategory  = std::variant<Reference, MutableReference, Copy, Move, Temporary/*, Key*/>;
+	using ArgumentCategory  = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
 	using ParameterCategory = std::variant<Reference, MutableReference, Value/*, Key*/>;
 	using ValueCategory = std::variant<Reference, MutableReference, Value>;
 	using FunctionArgument = std::tuple<std::optional<ArgumentCategory>, Expression>;

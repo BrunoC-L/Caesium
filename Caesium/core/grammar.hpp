@@ -30,7 +30,7 @@ using NamespaceTypenameExtension = And<Token<NS>, Alloc<Typename>>;
 using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>, Opt<NamespaceTypenameExtension>>;
 using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
 
-struct Typename : public And<Word, Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>> {};
+struct Typename : public And<Or<Token<AUTO>, Word>, Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>> {};
 
 using MemberVariable = And<Typename, Word, Newline>;
 //using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;

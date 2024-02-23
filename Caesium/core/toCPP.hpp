@@ -158,6 +158,38 @@ static constexpr auto default_includes =
 
 	"\n";
 
+static std::string indent(size_t n) {
+	std::string res;
+	res.reserve(n);
+	for (size_t i = 0; i < n; ++i)
+		res += '\t';
+	return res;
+};
+
+static NodeStructs::ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory cat) {
+	return std::visit(overload(
+		[](const NodeStructs::Reference&) -> NodeStructs::ValueCategory {
+			return NodeStructs::Reference{};
+		},
+		[](const NodeStructs::MutableReference&) -> NodeStructs::ValueCategory {
+			return NodeStructs::MutableReference{};
+		},
+		[](const NodeStructs::Copy&) -> NodeStructs::ValueCategory {
+			return NodeStructs::Value{};
+		},
+		[](const NodeStructs::Move&) -> NodeStructs::ValueCategory {
+			return NodeStructs::Value{};
+		}
+	), cat);
+}
+
+static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory> cat) {
+	if (cat.has_value())
+		return argument_category_to_value_category(cat.value());
+	else
+		throw;
+}
+
 transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project);
 
 transpile_header_cpp_t transpile_main(
@@ -189,14 +221,6 @@ transpile_t transpile(
 	transpilation_state_with_indent state,
 	const std::vector<NodeStructs::Statement>& statements
 );
-
-static std::string indent(size_t n) {
-	std::string res;
-	res.reserve(n);
-	for (size_t i = 0; i < n; ++i)
-		res += '\t';
-	return res;
-};
 
 std::vector<NodeStructs::UniversalType> decomposed_type(
 	transpilation_state_with_indent state,
@@ -300,7 +324,7 @@ std::string expression_for_template(
 transpile_t transpile_call_expression_with_args(
 	transpilation_state_with_indent state,
 	const std::vector<NodeStructs::FunctionArgument>& arguments,
-const NodeStructs::Expression& expr
+	const NodeStructs::Expression& expr
 );
 
 transpile_t transpile_expression(

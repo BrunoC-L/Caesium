@@ -1,6 +1,19 @@
 #pragma once
 #include "structurizer.hpp"
 
+static std::string word_or_auto(const Or<Token<AUTO>, Word>& tk) {
+	return std::visit(
+		overload(
+			[](const Token<AUTO>& _auto) -> std::string {
+				return "auto";
+			},
+			[](const Word& w) -> std::string {
+				return w.value;
+			}
+		), tk.value()
+	);
+}
+
 NodeStructs::Import getStruct(const Import& f) {
 	return { std::visit(
 		overload(overload_default_error,
@@ -33,9 +46,14 @@ NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std:
 
 NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypenameExtension& tt) {
 	if (tt.get<Opt<NamespaceTypenameExtension>>().has_value())
-		return extend(NodeStructs::Typename{ extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()) }, tt.get<Opt<NamespaceTypenameExtension>>().value());
+		return extend(NodeStructs::Typename{
+			extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()) },
+			tt.get<Opt<NamespaceTypenameExtension>>().value()
+		);
 	else
-		return NodeStructs::Typename{ extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()) };
+		return NodeStructs::Typename{
+			extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>())
+		};
 }
 
 NodeStructs::Typename extend(NodeStructs::Typename&& t, const UnionTypenameExtension& ut) {
@@ -62,11 +80,11 @@ NodeStructs::Typename extend(NodeStructs::Typename&& t, const UnionTypenameExten
 
 NodeStructs::Typename getStruct(const Typename& t) {
 	if (!t.get<Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>().has_value())
-		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.get<Word>().value } };
+		return NodeStructs::Typename{ NodeStructs::BaseTypename{ word_or_auto(t.get<Or<Token<AUTO>, Word>>()) } };
 	else
 		return std::visit(
 			[&](const auto& u) {
-				return extend(NodeStructs::Typename{ NodeStructs::BaseTypename{ t.get<Word>().value } }, u);
+				return extend(NodeStructs::Typename{ NodeStructs::BaseTypename{ word_or_auto(t.get<Or<Token<AUTO>, Word>>()) } }, u);
 			},
 			t.get<Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>().value().value()
 		);
@@ -288,12 +306,10 @@ NodeStructs::Expression getExpressionStruct(const BraceArguments&) {
 
 NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 	return std::visit(overload(overload_default_error,
-		[](const ParenArguments& /*e*/) -> NodeStructs::Expression {
-			//const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
-			throw;
-			/*auto res = NodeStructs::ParenArguments{};
-			res.args.push_back(getExpressionStruct(e.get<Alloc<FunctionArgument>>().get()));
-			return NodeStructs::FunctionArgument{ std::move(res) };*/
+		[](const ParenArguments& e) -> NodeStructs::Expression {
+			return { NodeStructs::ParenArguments{
+				.args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>() | LIFT_TRANSFORM(getStruct) | to_vec()
+			} };
 		},
 		[](const BracketArguments& /*e*/) -> NodeStructs::Expression {
 			//const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();

@@ -627,23 +627,23 @@ transpile_t transpile_types(transpilation_state_with_indent state, const std::ve
 	);
 }
 
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
-	transpilation_state_with_indent state,
-	const NodeStructs::Type& t,
-	const std::string& property_name
-) {
-	const auto& v = t.memberVariables;
-	auto pos = std::find_if(v.begin(), v.end(), [&](const NodeStructs::MemberVariable& m) { return m.name == property_name; });
-	if (pos == v.end()) {
-		auto u = transpile_type(state, { t });
-		if (u.has_value())
-			return error{ "user error","Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"};
-		else
-			return std::move(u).error();
-	}
-	else
-		return std::pair{ NodeStructs::Value{}, type_of_typename(state, pos->type).value() };
-}
+//expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::Type& t,
+//	const std::string& property_name
+//) {
+//	const auto& v = t.memberVariables;
+//	auto pos = std::find_if(v.begin(), v.end(), [&](const NodeStructs::MemberVariable& m) { return m.name == property_name; });
+//	if (pos == v.end()) {
+//		auto u = transpile_type(state, { t });
+//		if (u.has_value())
+//			return error{ "user error","Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"};
+//		else
+//			return std::move(u).error();
+//	}
+//	else
+//		return std::pair{ NodeStructs::Value{}, type_of_typename(state, pos->type).value() };
+//}
 
 std::string template_name(std::string original_name, const std::vector<std::string>& args) {
 	std::stringstream ss;

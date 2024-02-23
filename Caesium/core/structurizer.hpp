@@ -4,10 +4,6 @@
 #include "grammar.hpp"
 #include "../utility/overload.hpp"
 
-NodeStructs::Expression getExpressionStruct(const Expression& statement);
-NodeStructs::Statement getStatementStruct(const Statement& statement);
-std::vector<NodeStructs::Statement> getStatements(const ColonIndentCodeBlock& code);
-
 NodeStructs::Import getStruct(const Import& f);
 
 NodeStructs::Typename getStruct(const Typename& t);
@@ -48,6 +44,8 @@ NodeStructs::BraceArguments getStruct(const BraceArguments& args);
 
 NodeStructs::TemplateArguments getStruct(const TemplateArguments& args);
 
+NodeStructs::Expression getExpressionStruct(const ConditionalExpression& statement);
+
 NodeStructs::Expression getExpressionStruct(const BraceArguments&);
 
 NodeStructs::Expression getExpressionStruct(const ParenExpression& statement);
@@ -71,6 +69,8 @@ NodeStructs::Expression getExpressionStruct(const OrExpression& statement);
 NodeStructs::Expression getExpressionStruct(const ConditionalExpression& statement);
 
 NodeStructs::Expression getExpressionStruct(const ExpressionStatement& statement);
+
+NodeStructs::Statement getStatementStruct(const Statement& statement);
 
 NodeStructs::Expression getStatementStruct(const ExpressionStatement& statement);
 

@@ -8,14 +8,19 @@ R T::operator()(const NodeStructs::Expression& statement) {
 }
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
-	auto t = type_of_typename(state, statement.type);
-	return_if_error(t);
-	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, t.value() });
-	auto type = transpile_typename(state, statement.type);
+	auto type = [&]() -> expected<NodeStructs::UniversalType> {
+		if (statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent)
+			return type_of_expression(state, statement.expr).transform([](auto&& pair) { return std::move(pair).second; });
+		else
+			return type_of_typename(state, statement.type);
+	}();
 	return_if_error(type);
-	auto variable_name = transpile_expression(state, statement.expr);
-	return_if_error(variable_name);
-	return type.value() + " " + statement.name + " = " + variable_name.value() + ";\n";
+	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, type.value() });
+	auto type_repr = transpile_typename(state, statement.type);
+	return_if_error(type_repr);
+	auto assigned_expression = transpile_expression(state, statement.expr);
+	return_if_error(assigned_expression);
+	return type_repr.value() + " " + statement.name + " = " + assigned_expression.value() + ";\n";
 }
 
 R T::operator()(const NodeStructs::IfStatement& statement) {
