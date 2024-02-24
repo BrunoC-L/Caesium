@@ -6,7 +6,7 @@ using R = T::R;
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.named.types.find(t.type); it != state.state.named.types.end()) {
 		const auto& type = *it->second.back();
-		traverse_type(state, { type });
+		traverse_type(state, type);
 		return NodeStructs::UniversalType{ type };
 	}
 	if (auto it = state.state.named.type_aliases.find(t.type); it != state.state.named.type_aliases.end()) {

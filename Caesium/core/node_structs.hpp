@@ -63,6 +63,7 @@ struct NodeStructs {
 	struct TemplateExpression;
 	struct ConstructExpression;
 	struct BracketAccessExpression;
+	struct PropertyAccessAndCallExpression;
 	struct PropertyAccessExpression;
 	struct ParenArguments;
 	struct BraceArguments;
@@ -81,6 +82,7 @@ struct NodeStructs {
 			TemplateExpression,
 			ConstructExpression,
 			BracketAccessExpression,
+			PropertyAccessAndCallExpression,
 			PropertyAccessExpression,
 			ParenArguments,
 			BraceArguments,
@@ -165,6 +167,13 @@ struct NodeStructs {
 		Expression operand;
 		BracketArguments arguments;
 		std::weak_ordering operator<=>(const BracketAccessExpression&) const = default;
+	};
+
+	struct PropertyAccessAndCallExpression {
+		Expression operand;
+		std::string property_name;
+		ParenArguments arguments;
+		std::weak_ordering operator<=>(const PropertyAccessAndCallExpression&) const = default;
 	};
 
 	struct PropertyAccessExpression {

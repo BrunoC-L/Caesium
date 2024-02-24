@@ -48,6 +48,11 @@ using ParenExpression = Or<
 using Postfix = Or<
 	And<
 		Token<DOT>,
+		Word,
+		ParenArguments
+	>,
+	And<
+		Token<DOT>,
 		Word
 	>,
 	ParenArguments,

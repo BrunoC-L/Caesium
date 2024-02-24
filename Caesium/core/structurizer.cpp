@@ -347,6 +347,9 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& expr, const Postfix& postfix) {
 	return std::visit(
 		overload(overload_default_error,
+			[&](const And<Token<DOT>, Word, ParenArguments>& e) {
+				return NodeStructs::Expression{ NodeStructs::PropertyAccessAndCallExpression{ std::move(expr), e.get<Word>().value, getStruct(e.get<ParenArguments>()) } };
+			},
 			[&](const And<Token<DOT>, Word>& e) {
 				return NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ std::move(expr), e.get<Word>().value } };
 			},

@@ -1,4 +1,5 @@
-#include "transpile_expression_visitor.hpp"
+#include "../core/toCPP.hpp"
+//#include "transpile_expression_visitor.hpp"
 #include "../utility/replace_all.hpp"
 #include "../core/structurizer.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
@@ -178,7 +179,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	return whole_expression_information{
 		.expression = expr,
 		.value_category = temp2.value().first,
-		.type = std::move(temp2).value().second,// type_of_expression(state, { expr }).value().second.value,
+		.type = std::move(temp2).value().second,
 		.representation = transpile_call_expression_with_args(state, expr.arguments.args, expr.operand).value()
 	};
 }
@@ -380,7 +381,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<Type>()) };
 			structured_t->name = tmpl_name;
 			state.state.named.types[structured_t->name].push_back(structured_t);
-			auto opt_error = traverse_type(state, { *structured_t });
+			auto opt_error = traverse_type(state, *structured_t);
 			if (opt_error.has_value())
 				return opt_error.value();
 			return whole_expression_information{
@@ -417,6 +418,10 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 	throw;
 }
 
@@ -466,7 +471,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 		.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = NodeStructs::AggregateType{ x },
-		.representation = "{" + transpile_args(state, expr.args).value() + "}"
+		.representation = "(" + transpile_args(state, expr.args).value() + ")"
 	};
 }
 
@@ -521,7 +526,7 @@ R T::operator()(const std::string& expr) {
 	}
 	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end()) {
 		const auto& T = *it->second.back();
-		if (std::optional<error> err = traverse_type(state, { T }); err.has_value())
+		if (std::optional<error> err = traverse_type(state, T); err.has_value())
 			return err.value();
 		return whole_expression_information{
 			.expression = expr,

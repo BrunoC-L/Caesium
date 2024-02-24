@@ -1,4 +1,5 @@
-#include "expression_for_template_visitor.hpp"
+#include "../core/toCPP.hpp"
+//#include "expression_for_template_visitor.hpp"
 #include "../utility/replace_all.hpp"
 
 using T = expression_for_template_visitor;
@@ -86,6 +87,10 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 	throw;
 }
 

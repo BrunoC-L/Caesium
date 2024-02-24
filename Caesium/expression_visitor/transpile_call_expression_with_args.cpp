@@ -1,4 +1,5 @@
-#include "transpile_call_expression_with_args.hpp"
+#include "../core/toCPP.hpp"
+//#include "transpile_call_expression_with_args.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 
 using T = transpile_call_expression_with_args_visitor;
@@ -9,13 +10,10 @@ R base(
 	const std::vector<NodeStructs::FunctionArgument>& arguments,
 	const auto& expr
 ) {
-	auto operand_t = transpile_expression(state, { expr }).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+	auto operand_t = transpile_expression(state, expr).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
 	return_if_error(operand_t);
 
 	if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
-		/*auto with_args = NodeStructs::TemplateExpression{ .operand = { expr }, .arguments = { arguments | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | to_vec() }};
-		return base(state, arguments, with_args);
-		throw;*/
 		auto arg_ts = vec_of_expected_to_expected_of_vec(
 			arguments
 			| LIFT_TRANSFORM(std::get<NodeStructs::Expression>)
@@ -62,7 +60,7 @@ R base(
 	return_if_error(t);
 	auto args_or_error = transpile_args(state, arguments);
 	return_if_error(args_or_error);
-	auto operand_repr = transpile_expression(state, { expr });
+	auto operand_repr = transpile_expression(state, expr);
 	return_if_error(operand_repr);
 	return std::move(operand_repr).value().representation + "(" + std::move(args_or_error).value() + ")";
 }
@@ -113,6 +111,10 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 	return base(state, arguments, expr);
+}
+
+R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
+	throw;
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {

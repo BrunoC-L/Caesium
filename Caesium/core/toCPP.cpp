@@ -627,24 +627,6 @@ transpile_t transpile_types(transpilation_state_with_indent state, const std::ve
 	);
 }
 
-//expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::Type& t,
-//	const std::string& property_name
-//) {
-//	const auto& v = t.memberVariables;
-//	auto pos = std::find_if(v.begin(), v.end(), [&](const NodeStructs::MemberVariable& m) { return m.name == property_name; });
-//	if (pos == v.end()) {
-//		auto u = transpile_type(state, { t });
-//		if (u.has_value())
-//			return error{ "user error","Error: object of type `" + std::move(u).value() + "` has no member `" + property_name + "`\n"};
-//		else
-//			return std::move(u).error();
-//	}
-//	else
-//		return std::pair{ NodeStructs::Value{}, type_of_typename(state, pos->type).value() };
-//}
-
 std::string template_name(std::string original_name, const std::vector<std::string>& args) {
 	std::stringstream ss;
 	ss << original_name;
@@ -746,70 +728,62 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 	}
 }
 
-#include "../type_visitor/transpile_type_visitor.hpp";
-transpile_t transpile_type(
-	transpilation_state_with_indent state,
-	const NodeStructs::UniversalType& type
-) {
-	return transpile_type_visitor{ {}, state }(type);
-}
+//#include "../type_visitor/transpile_type_visitor.hpp";
+//transpile_t transpile_type(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::UniversalType& type
+//) {
+//	return transpile_type_visitor{ {}, state }(type);
+//}
+//
+//#include "../type_visitor/traverse_type_visitor.hpp";
+//std::optional<error> traverse_type(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::UniversalType& type
+//) {
+//	return traverse_type_visitor{ {}, state }(type);
+//}
+//
+//#include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp";
+//expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
+//	transpilation_state_with_indent state,
+//	const std::vector<NodeStructs::FunctionArgument>& arguments,
+//	const NodeStructs::UniversalType& type
+//) {
+//	return type_of_function_like_call_with_args_visitor{ {}, state, arguments }(type);
+//}
+//
+//#include "../type_visitor/type_of_postfix_member_visitor.hpp";
+//expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
+//	transpilation_state_with_indent state,
+//	const std::string& property_name,
+//	const NodeStructs::UniversalType& type
+//) {
+//	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
+//}
 
-#include "../type_visitor/traverse_type_visitor.hpp";
-std::optional<error> traverse_type(
-	transpilation_state_with_indent state,
-	const NodeStructs::UniversalType& type
-) {
-	return traverse_type_visitor{ {}, state }(type);
-}
-
-#include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp";
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::FunctionArgument>& arguments,
-	const NodeStructs::UniversalType& type
-) {
-	return type_of_function_like_call_with_args_visitor{ {}, state, arguments }(type);
-}
-
-#include "../type_visitor/type_of_postfix_member_visitor.hpp";
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
-	transpilation_state_with_indent state,
-	const std::string& property_name,
-	const NodeStructs::UniversalType& type
-) {
-	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
-}
-
-#include "../expression_visitor/expression_for_template_visitor.hpp"
-std::string expression_for_template(
-	const NodeStructs::Expression& expr
-) {
-	return expression_for_template_visitor{ {} }(expr);
-}
-
-#include "../expression_visitor/transpile_call_expression_with_args.hpp"
-transpile_t transpile_call_expression_with_args(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::FunctionArgument>& arguments,
-	const NodeStructs::Expression& expr
-) {
-	return transpile_call_expression_with_args_visitor{ {}, state, arguments }(expr);
-}
-
-#include "../expression_visitor/transpile_expression_visitor.hpp"
-transpile_t2 transpile_expression(
-	transpilation_state_with_indent state,
-	const NodeStructs::Expression& expr
-) {
-	return transpile_expression_visitor{ {}, state }(expr);
-}
-
-//#include "../expression_visitor/type_of_expression_visitor.hpp"
-//expected<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>> type_of_expression(
+//#include "../expression_visitor/expression_for_template_visitor.hpp"
+//std::string expression_for_template(
+//	const NodeStructs::Expression& expr
+//) {
+//	return expression_for_template_visitor{ {} }(expr);
+//}
+//
+//#include "../expression_visitor/transpile_call_expression_with_args.hpp"
+//transpile_t transpile_call_expression_with_args(
+//	transpilation_state_with_indent state,
+//	const std::vector<NodeStructs::FunctionArgument>& arguments,
+//	const NodeStructs::Expression& expr
+//) {
+//	return transpile_call_expression_with_args_visitor{ {}, state, arguments }(expr);
+//}
+//
+//#include "../expression_visitor/transpile_expression_visitor.hpp"
+//transpile_t2 transpile_expression(
 //	transpilation_state_with_indent state,
 //	const NodeStructs::Expression& expr
 //) {
-//	return type_of_expression_visitor{ {}, state }(expr);
+//	return transpile_expression_visitor{ {}, state }(expr);
 //}
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
