@@ -13,3 +13,11 @@ struct transpile_call_expression_with_args_visitor : ExpressionVisitor<transpile
 
 	ExpressionVisitorDeclarations
 };
+
+transpile_t transpile_call_expression_with_args(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::FunctionArgument>& arguments,
+	const auto& expr
+) {
+	return transpile_call_expression_with_args_visitor{ {}, state, arguments }(expr);
+}

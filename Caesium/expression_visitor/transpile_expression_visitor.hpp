@@ -1,6 +1,4 @@
 #pragma once
-#include "../core/toCPP.hpp"
-#include "expression_visitor.hpp"
 
 struct transpile_expression_visitor : ExpressionVisitor<transpile_expression_visitor> {
 	using ExpressionVisitor<transpile_expression_visitor>::operator();
@@ -11,3 +9,10 @@ struct transpile_expression_visitor : ExpressionVisitor<transpile_expression_vis
 
 	ExpressionVisitorDeclarations
 };
+
+transpile_t2 transpile_expression(
+	transpilation_state_with_indent state,
+	const auto& expr
+) {
+	return transpile_expression_visitor{ {}, state }(expr);
+}

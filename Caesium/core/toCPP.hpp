@@ -335,31 +335,15 @@ expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> 
 	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
 }
 
+
+
 #include "../expression_visitor/expression_visitor.hpp"
 
 #include "../expression_visitor/expression_for_template_visitor.hpp"
-std::string expression_for_template(
-	const auto& expr
-) {
-	return expression_for_template_visitor{ {} }(expr);
-}
 
 #include "../expression_visitor/transpile_call_expression_with_args.hpp"
-transpile_t transpile_call_expression_with_args(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::FunctionArgument>& arguments,
-	const auto& expr
-) {
-	return transpile_call_expression_with_args_visitor{ {}, state, arguments }(expr);
-}
 
 #include "../expression_visitor/transpile_expression_visitor.hpp"
-transpile_t2 transpile_expression(
-	transpilation_state_with_indent state,
-	const auto& expr
-) {
-	return transpile_expression_visitor{ {}, state }(expr);
-}
 
 transpile_t transpile_statement(
 	transpilation_state_with_indent state,
