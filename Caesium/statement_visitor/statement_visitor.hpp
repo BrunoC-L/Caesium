@@ -18,15 +18,18 @@ struct StatementVisitor {
 			t.statement
 		);
 	}
-	/*
-	R operator()(const NodeStructs::Expression& statement);
-	R operator()(const NodeStructs::VariableDeclarationStatement& statement);
-	R operator()(const NodeStructs::IfStatement& statement);
-	R operator()(const NodeStructs::ForStatement& statement);
-	R operator()(const NodeStructs::IForStatement& statement);
-	R operator()(const NodeStructs::WhileStatement& statement);
-	R operator()(const NodeStructs::BreakStatement& statement);
-	R operator()(const NodeStructs::ReturnStatement& statement);
-	R operator()(const NodeStructs::BlockStatement& statement);
-	*/
 };
+
+#define StatementExpands_(Expand) \
+	Expand(NodeStructs::Expression)\
+	Expand(NodeStructs::VariableDeclarationStatement)\
+	Expand(NodeStructs::IfStatement)\
+	Expand(NodeStructs::IForStatement)\
+	Expand(NodeStructs::ForStatement)\
+	Expand(NodeStructs::WhileStatement)\
+	Expand(NodeStructs::BreakStatement)\
+	Expand(NodeStructs::ReturnStatement)\
+	Expand(NodeStructs::BlockStatement)
+
+#define statement_decl(T) R operator()(const T&);
+#define StatementVisitorDeclarations StatementExpands_(statement_decl)

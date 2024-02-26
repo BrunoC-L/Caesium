@@ -6,11 +6,10 @@ struct expression_for_template_visitor : ExpressionVisitor<expression_for_templa
 	using ExpressionVisitor<expression_for_template_visitor>::operator();
 
 	using R = std::string;
-
 	ExpressionVisitorDeclarations
 };
 
-std::string expression_for_template(
+expression_for_template_visitor::R expression_for_template(
 	const auto& expr
 ) {
 	return expression_for_template_visitor{ {} }(expr);

@@ -14,3 +14,10 @@ struct type_of_typename_visitor : TypenameVisitor<type_of_typename_visitor> {
 	R operator()(const NodeStructs::TemplatedTypename& t);
 	R operator()(const NodeStructs::UnionTypename& t);
 };
+
+expected<NodeStructs::UniversalType> type_of_typename(
+	transpilation_state_with_indent state,
+	const auto& tn
+) {
+	return type_of_typename_visitor{ {}, state }(tn);
+}

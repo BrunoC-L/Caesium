@@ -18,26 +18,31 @@ struct ExpressionVisitor {
 			t.expression.get()
 		);
 	}
-	
-#define ExpressionVisitorDeclarations \
-	R operator()(const NodeStructs::ConditionalExpression& expr);\
-	R operator()(const NodeStructs::OrExpression& expr);\
-	R operator()(const NodeStructs::AndExpression& expr);\
-	R operator()(const NodeStructs::EqualityExpression& expr);\
-	R operator()(const NodeStructs::CompareExpression& expr);\
-	R operator()(const NodeStructs::AdditiveExpression& expr);\
-	R operator()(const NodeStructs::MultiplicativeExpression& expr);\
-	R operator()(const NodeStructs::UnaryExpression& expr);\
-	R operator()(const NodeStructs::CallExpression& expr);\
-	R operator()(const NodeStructs::TemplateExpression& expr);\
-	R operator()(const NodeStructs::ConstructExpression& expr);\
-	R operator()(const NodeStructs::BracketAccessExpression& expr);\
-	R operator()(const NodeStructs::PropertyAccessAndCallExpression& expr);\
-	R operator()(const NodeStructs::PropertyAccessExpression& expr);\
-	R operator()(const NodeStructs::ParenArguments& expr);\
-	R operator()(const NodeStructs::BraceArguments& expr);\
-	R operator()(const std::string& expr);\
-	R operator()(const Token<FLOATING_POINT_NUMBER>& expr);\
-	R operator()(const Token<INTEGER_NUMBER>& expr);\
-	R operator()(const Token<STRING>& expr);
 };
+#define ExpressionExpands_(Expand) \
+	Expand(NodeStructs::ConditionalExpression)\
+	Expand(NodeStructs::OrExpression)\
+	Expand(NodeStructs::AndExpression)\
+	Expand(NodeStructs::EqualityExpression)\
+	Expand(NodeStructs::CompareExpression)\
+	Expand(NodeStructs::AdditiveExpression)\
+	Expand(NodeStructs::MultiplicativeExpression)\
+	Expand(NodeStructs::UnaryExpression)\
+	Expand(NodeStructs::CallExpression)\
+	Expand(NodeStructs::TemplateExpression)\
+	Expand(NodeStructs::ConstructExpression)\
+	Expand(NodeStructs::BracketAccessExpression)\
+	Expand(NodeStructs::PropertyAccessAndCallExpression)\
+	Expand(NodeStructs::PropertyAccessExpression)\
+	Expand(NodeStructs::ParenArguments)\
+	Expand(NodeStructs::BraceArguments)\
+	Expand(std::string)\
+	Expand(Token<FLOATING_POINT_NUMBER>)\
+	Expand(Token<INTEGER_NUMBER>)\
+	Expand(Token<STRING>)
+
+#define expr_decl(T) R operator()(const T& expr);
+#define ExpressionVisitorDeclarations ExpressionExpands_(expr_decl)
+
+#define ExpressionExpands(Expand) Expand(NodeStructs::Expression) ExpressionExpands_(Expand)
+

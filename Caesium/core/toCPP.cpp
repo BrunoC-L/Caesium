@@ -78,7 +78,7 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 		for (const auto& fn : file.functions)
 			if (fn.name == "main") {
 				builtins _builtins{};
-				variables_t variables;
+				variables_t variables{};
 				{
 					variables["True"].push_back({ NodeStructs::Value{}, { _builtins.builtin_bool } });
 					variables["False"].push_back({ NodeStructs::Value{}, { _builtins.builtin_bool } });
@@ -240,7 +240,7 @@ transpile_header_cpp_t transpile(
 
 transpile_t transpile(
 	transpilation_state_with_indent state,
-	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>& parameters
+	const std::vector<NodeStructs::FunctionParameter>& parameters
 ) {
 	std::stringstream ss;
 	bool first = true;
@@ -578,7 +578,7 @@ transpile_t transpile_arg(
 	transpilation_state_with_indent state,
 	const NodeStructs::FunctionArgument& arg
 ) {
-	return transpile_expression(state, std::get<NodeStructs::Expression>(arg)).transform([](auto&& x) { return x.representation; });
+	return transpile_expression(state, arg.expr).transform([](auto&& x) { return x.representation; });
 }
 
 transpile_t transpile_args(
@@ -639,15 +639,15 @@ std::string template_name(std::string original_name, const std::vector<NodeStruc
 	return template_name(original_name, arguments | LIFT_TRANSFORM(expression_for_template) | to_vec());
 }
 
-// return source is assignable to target
 bool is_assignable_to(
 	transpilation_state_with_indent state,
-	const NodeStructs::UniversalType& target,
-	const NodeStructs::UniversalType& source
+	const NodeStructs::UniversalType& parameter,
+	const NodeStructs::UniversalType& argument
 ) {
 	return std::visit(
 		overload(
 			[&](const auto& e, const auto& u) {
+				throw;
 				return false;
 			},
 			[&](const NodeStructs::InterfaceType& e, std::reference_wrapper<const NodeStructs::Type> u) {
@@ -676,9 +676,12 @@ bool is_assignable_to(
 			},
 			[&](const NodeStructs::InterfaceType& e, const NodeStructs::TypeType& u) {
 				return false;
+			},
+			[&](std::reference_wrapper<const NodeStructs::Type> e, std::reference_wrapper<const NodeStructs::Type> u) {
+				return e.get() <=> u.get() == std::weak_ordering::equivalent;
 			}
 		),
-		target.value, source.value
+		parameter.value, argument.value
 	);
 }
 
@@ -785,36 +788,3 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 //) {
 //	return transpile_expression_visitor{ {}, state }(expr);
 //}
-
-#include "../statement_visitor/transpile_statement_visitor.hpp"
-transpile_t transpile_statement(
-	transpilation_state_with_indent state,
-	const NodeStructs::Statement& statement
-) {
-	return transpile_statement_visitor{ {}, state }(statement);
-}
-
-#include "../typename_visitor/transpile_typename_visitor.hpp"
-transpile_t transpile_typename(
-	transpilation_state_with_indent state,
-	const NodeStructs::Typename& tn
-) {
-	return transpile_typename_visitor{ {}, state }(tn);
-}
-
-#include "../typename_visitor/type_of_typename_visitor.hpp"
-expected<NodeStructs::UniversalType> type_of_typename(
-	transpilation_state_with_indent state,
-	const NodeStructs::Typename& tn
-) {
-	return type_of_typename_visitor{ {}, state }(tn);
-}
-
-#include "../typename_visitor/type_template_of_typename_visitor.hpp"
-expected<NodeStructs::UniversalType> type_template_of_typename(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Typename>& templated_with,
-	const NodeStructs::Typename& tn
-) {
-	return type_template_of_typename_visitor{ {}, state, templated_with }(tn);
-}

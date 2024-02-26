@@ -1,5 +1,4 @@
 #include "../core/toCPP.hpp"
-//#include "transpile_call_expression_with_args.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 
 using T = transpile_call_expression_with_args_visitor;
@@ -16,7 +15,7 @@ R base(
 	if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
 		auto arg_ts = vec_of_expected_to_expected_of_vec(
 			arguments
-			| LIFT_TRANSFORM(std::get<NodeStructs::Expression>)
+			| LIFT_TRANSFORM_TRAIL(.expr)
 			| LIFT_TRANSFORM_X(X, transpile_expression(state, X).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; }))
 			| to_vec()
 		);
@@ -130,7 +129,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 				[&](const NodeStructs::BuiltInType::push_t& e) -> R {
 					if (arguments.size() != 1)
 						throw;
-					auto arg_t = transpile_expression(state, std::get<NodeStructs::Expression>(arguments.at(0))).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+					auto arg_t = transpile_expression(state, arguments.at(0).expr).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
 					return_if_error(arg_t);
 					if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
 						throw;

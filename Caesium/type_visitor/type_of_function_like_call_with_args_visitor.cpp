@@ -81,7 +81,7 @@ R T::operator()(const NodeStructs::BuiltInType& t) {
 			[&](const NodeStructs::BuiltInType::push_t& e) -> R {
 				if (this->args.size() != 1)
 					throw;
-				auto arg_t = transpile_expression(state, std::get<NodeStructs::Expression>(args.at(0)));
+				auto arg_t = transpile_expression(state, args.at(0).expr);
 				return_if_error(arg_t);
 				if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().type)) {
 					throw;

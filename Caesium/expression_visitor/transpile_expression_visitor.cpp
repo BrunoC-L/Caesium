@@ -1,5 +1,4 @@
 #include "../core/toCPP.hpp"
-//#include "transpile_expression_visitor.hpp"
 #include "../utility/replace_all.hpp"
 #include "../core/structurizer.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
@@ -32,7 +31,7 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 		return_if_error(else_expr_info);
 
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = if_expr_info.value().value_category,
 			.type = if_expr_info.value().type,
 			.representation= std::string("([&] () { if (") +
@@ -59,7 +58,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 		ss << " || " << repr.value().representation;
 	}
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Bool").back(),
 		.representation = ss.str()
@@ -77,7 +76,7 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 		ss << " && " << repr.value().representation;
 	}
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Bool").back(),
 		.representation = ss.str()
@@ -95,7 +94,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
 	}
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Bool").back(),
 		.representation = ss.str()
@@ -113,7 +112,7 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
 	}
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Bool").back(),
 		.representation = ss.str()
@@ -131,7 +130,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
 	}
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Int").back(),
 		.representation = ss.str()
@@ -149,7 +148,7 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
 	}
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Int").back(),
 		.representation = ss.str()
@@ -164,7 +163,7 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 	return_if_error(repr);
 	ss << repr.value().representation;
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Int").back(),
 		.representation = ss.str()
@@ -177,7 +176,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	auto temp2 = type_of_function_like_call_with_args(state, expr.arguments.args, temp1.value().type);
 	return_if_error(temp2);
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = temp2.value().first,
 		.type = std::move(temp2).value().second,
 		.representation = transpile_call_expression_with_args(state, expr.arguments.args, expr.operand).value()
@@ -336,7 +335,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 
 		if (auto it = state.state.named.functions.find(tmpl_name); it != state.state.named.functions.end()) {
 			return whole_expression_information{
-				.expression = expr,
+				//.expression = expr,
 				.value_category = NodeStructs::Value{},
 				.type = NodeStructs::FunctionType{ *it->second.back() },
 				.representation = template_name(tmpl.name, expr.arguments.args)
@@ -345,7 +344,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 
 		if (auto it = state.state.named.types.find(tmpl_name); it != state.state.named.types.end()) {
 			return whole_expression_information{
-				.expression = expr,
+				//.expression = expr,
 				.value_category = NodeStructs::Value{},
 				.type = NodeStructs::TypeType{ *it->second.back() },
 				.representation = template_name(tmpl.name, expr.arguments.args)
@@ -366,7 +365,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			return_if_error(transpiled_or_e);
 			state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
 			return whole_expression_information{
-				.expression = expr,
+				//.expression = expr,
 				.value_category = NodeStructs::Value{},
 				.type = NodeStructs::FunctionType{ *structured_f },
 				.representation = template_name(tmpl.name, expr.arguments.args)
@@ -385,7 +384,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			if (opt_error.has_value())
 				return opt_error.value();
 			return whole_expression_information{
-				.expression = expr,
+				//.expression = expr,
 				.value_category = NodeStructs::Value{},
 				.type = NodeStructs::UniversalType{ std::reference_wrapper{*structured_t}},
 				.representation = template_name(tmpl.name, expr.arguments.args)
@@ -408,7 +407,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 		return_if_error(args_repr);
 
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = NodeStructs::Value{},
 			.type = e.type,
 			.representation = operand_info.value().representation + "{" + args_repr.value() + "}"
@@ -422,7 +421,53 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
-	throw;
+	auto operand_t = transpile_expression(state, expr.operand).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+	return_if_error(operand_t);
+
+	return transpile_member_call(state, expr.operand, expr.property_name, expr.arguments.args, operand_t.value().second);
+
+	//auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
+	//return_if_error(t);
+
+	//if (std::holds_alternative<NodeStructs::BuiltInType>(t.value().second.value)) {
+	//	const auto& builtin = std::get<NodeStructs::BuiltInType>(t.value().second.value);
+	//	const auto& arguments = expr.arguments.args;
+	//	return std::visit(
+	//		overload(
+	//			[&](const NodeStructs::BuiltInType::push_t& e) -> R {
+	//				if (arguments.size() != 1)
+	//					throw;
+	//				auto arg_t = transpile_expression(state, std::get<NodeStructs::Expression>(arguments.at(0))).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+	//				return_if_error(arg_t);
+	//				if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
+	//					throw;
+	//				}
+
+	//				auto operand_repr = transpile_expression(state, expr.operand);
+	//				return_if_error(operand_repr);
+	//				auto args_repr = transpile_args(state, arguments);
+	//				return_if_error(args_repr);
+	//				return whole_expression_information{
+	//					.expression = expr,
+	//					.value_category = NodeStructs::Value{},
+	//					.type = *state.state.named.types.at("Void").back(),
+	//					.representation = "push(" + operand_repr.value().representation + ", " + args_repr.value() + ")"
+	//				};
+	//			}
+	//		),
+	//		builtin.builtin
+	//	);
+	//}
+
+	//if (std::holds_alternative<NodeStructs::FunctionType>(t.value().second.value)) {
+	//	const auto& fn = std::get<NodeStructs::FunctionType>(t.value().second.value);
+	//	const auto& unwrapped_fn = fn.function.get();
+	//}
+
+	//return error{
+	//	"user error",
+	//	"Use of type like a function is prohibited. Type was `" + transpile_type(state, t.value().second).value() + "`"
+	//};
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
@@ -434,7 +479,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 
 	if (std::holds_alternative<NodeStructs::InterfaceType>(operand_info.value().type.value)) {
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = operand_info.value().value_category,
 			.type = t.value().second,
 			.representation = "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + operand_info.value().representation + ")"
@@ -442,7 +487,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	}
 	else {
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = operand_info.value().value_category,
 			.type = t.value().second,
 			.representation = operand_info.value().representation + "." + expr.property_name
@@ -453,9 +498,9 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 R T::operator()(const NodeStructs::ParenArguments& expr) {
 	auto transpiled_args = expr.args
 		| LIFT_TRANSFORM_X(arg, std::pair{
-			std::get<0>(arg),
-			operator()(std::get<1>(arg))
-			};)
+			arg.category,
+			operator()(arg.expr)
+		})
 		| to_vec();
 	for (const auto& arg : transpiled_args)
 		return_if_error(arg.second);
@@ -468,7 +513,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 		| to_vec();
 
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = NodeStructs::AggregateType{ x },
 		.representation = "(" + transpile_args(state, expr.args).value() + ")"
@@ -478,9 +523,9 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 R T::operator()(const NodeStructs::BraceArguments& expr) {
 	auto transpiled_args = expr.args
 		| LIFT_TRANSFORM_X(arg, std::pair{
-			std::get<0>(arg),
-			operator()(std::get<1>(arg))
-		};)
+			arg.category,
+			operator()(arg.expr)
+		})
 		| to_vec();
 	for (const auto& arg : transpiled_args)
 		return_if_error(arg.second);
@@ -493,7 +538,7 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 		| to_vec();
 
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = NodeStructs::AggregateType{ x },
 		.representation = "{" + transpile_args(state, expr.args).value() + "}"
@@ -503,7 +548,7 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 R T::operator()(const std::string& expr) {
 	if (auto it = state.state.variables.find(expr); it != state.state.variables.end()) {
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = it->second.back().first,
 			.type = it->second.back().second,
 			.representation = expr
@@ -518,7 +563,7 @@ R T::operator()(const std::string& expr) {
 			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
 		}
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = NodeStructs::Value{},
 			.type = NodeStructs::FunctionType{ fn },
 			.representation = expr
@@ -529,7 +574,7 @@ R T::operator()(const std::string& expr) {
 		if (std::optional<error> err = traverse_type(state, T); err.has_value())
 			return err.value();
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = NodeStructs::Value{},
 			.type = NodeStructs::TypeType{ T },
 			.representation = expr
@@ -540,7 +585,7 @@ R T::operator()(const std::string& expr) {
 		if (std::optional<error> err = traverse_type(state, alias); err.has_value())
 			return err.value();
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = NodeStructs::Value{},
 			.type = alias,
 			.representation = transpile_typename(state, state.state.named.type_aliases_typenames.at(expr)).value()
@@ -549,7 +594,7 @@ R T::operator()(const std::string& expr) {
 	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end()) {
 		const auto& tmpl = *it->second.back();
 		return whole_expression_information{
-			.expression = expr,
+			//.expression = expr,
 			.value_category = NodeStructs::Value{},
 			.type = NodeStructs::Template{ tmpl },
 			.representation = expr
@@ -560,7 +605,7 @@ R T::operator()(const std::string& expr) {
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Int").back(),
 		.representation = expr.value
@@ -569,7 +614,7 @@ R T::operator()(const Token<INTEGER_NUMBER>& expr) {
 
 R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("Float").back(),
 		.representation = expr.value
@@ -578,7 +623,7 @@ R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 
 R T::operator()(const Token<STRING>& expr) {
 	return whole_expression_information{
-		.expression = expr,
+		//.expression = expr,
 		.value_category = NodeStructs::Value{},
 		.type = *state.state.named.types.at("String").back(),
 		.representation = expr.value

@@ -12,3 +12,11 @@ struct type_of_postfix_member_visitor : TypeCategoryVisitor<type_of_postfix_memb
 
 	TypeCategoryVisitorDeclarations
 };
+
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
+	transpilation_state_with_indent state,
+	const std::string& property_name,
+	const auto& type
+) {
+	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
+}

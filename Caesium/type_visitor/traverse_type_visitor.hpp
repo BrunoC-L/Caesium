@@ -11,3 +11,10 @@ struct traverse_type_visitor : TypeCategoryVisitor<traverse_type_visitor> {
 
 	TypeCategoryVisitorDeclarations
 };
+
+std::optional<error> traverse_type(
+	transpilation_state_with_indent state,
+	const auto& type
+) {
+	return traverse_type_visitor{ {}, state }(type);
+}

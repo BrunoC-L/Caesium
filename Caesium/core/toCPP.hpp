@@ -17,7 +17,7 @@ struct type_and_representation {
 };
 using transpile_type_repr = expected<type_and_representation>;
 struct whole_expression_information {
-	NodeStructs::Expression expression;
+	//NodeStructs::Expression expression;
 	NodeStructs::ValueCategory value_category;
 	NodeStructs::UniversalType type;
 	std::string representation;
@@ -218,7 +218,7 @@ transpile_header_cpp_t transpile(
 
 transpile_t transpile(
 	transpilation_state_with_indent state,
-	const std::vector<std::tuple<NodeStructs::Typename, NodeStructs::ParameterCategory, std::string>>& parameters
+	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
 transpile_t transpile(
@@ -290,8 +290,8 @@ std::string template_name(
 
 bool is_assignable_to(
 	transpilation_state_with_indent state,
-	const NodeStructs::UniversalType& expected_union_or_interface,
-	const NodeStructs::UniversalType& observed_type
+	const NodeStructs::UniversalType& parameter,
+	const NodeStructs::UniversalType& argument
 );
 
 transpile_t expr_to_printable(
@@ -299,69 +299,18 @@ transpile_t expr_to_printable(
 	const NodeStructs::Expression& expr
 );
 
-#include "../type_visitor/type_category_visitor.hpp"
-
 #include "../type_visitor/transpile_type_visitor.hpp"
-transpile_t transpile_type(
-	transpilation_state_with_indent state,
-	const auto& type
-) {
-	return transpile_type_visitor{ {}, state }(type);
-}
-
 #include "../type_visitor/traverse_type_visitor.hpp"
-std::optional<error> traverse_type(
-	transpilation_state_with_indent state,
-	const auto& type
-) {
-	return traverse_type_visitor{ {}, state }(type);
-}
-
 #include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp"
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::FunctionArgument>& arguments,
-	const auto& type
-) {
-	return type_of_function_like_call_with_args_visitor{ {}, state, arguments }(type);
-}
-
 #include "../type_visitor/type_of_postfix_member_visitor.hpp"
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
-	transpilation_state_with_indent state,
-	const std::string& property_name,
-	const auto& type
-) {
-	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
-}
-
-
-
-#include "../expression_visitor/expression_visitor.hpp"
+#include "../type_visitor/transpile_member_call_visitor.hpp"
 
 #include "../expression_visitor/expression_for_template_visitor.hpp"
-
 #include "../expression_visitor/transpile_call_expression_with_args.hpp"
-
 #include "../expression_visitor/transpile_expression_visitor.hpp"
 
-transpile_t transpile_statement(
-	transpilation_state_with_indent state,
-	const NodeStructs::Statement& statement
-);
+#include "../statement_visitor/transpile_statement_visitor.hpp"
 
-transpile_t transpile_typename(
-	transpilation_state_with_indent state,
-	const NodeStructs::Typename& tn
-);
-
-expected<NodeStructs::UniversalType> type_of_typename(
-	transpilation_state_with_indent state,
-	const NodeStructs::Typename& tn
-);
-
-expected<NodeStructs::UniversalType> type_template_of_typename(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Typename>& templated_with,
-	const NodeStructs::Typename& tn
-);
+#include "../typename_visitor/transpile_typename_visitor.hpp"
+#include "../typename_visitor/type_of_typename_visitor.hpp"
+#include "../typename_visitor/type_template_of_typename_visitor.hpp"

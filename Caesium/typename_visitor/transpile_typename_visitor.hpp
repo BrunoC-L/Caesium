@@ -14,3 +14,10 @@ struct transpile_typename_visitor : TypenameVisitor<transpile_typename_visitor> 
 	R operator()(const NodeStructs::TemplatedTypename& t);
 	R operator()(const NodeStructs::UnionTypename& t);
 };
+
+transpile_t transpile_typename(
+	transpilation_state_with_indent state,
+	const auto& tn
+) {
+	return transpile_typename_visitor{ {}, state }(tn);
+}

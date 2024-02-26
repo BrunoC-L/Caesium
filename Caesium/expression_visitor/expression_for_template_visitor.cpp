@@ -1,5 +1,5 @@
 #include "../core/toCPP.hpp"
-//#include "expression_for_template_visitor.hpp"
+#include "expression_for_template_visitor.hpp"
 #include "../utility/replace_all.hpp"
 
 using T = expression_for_template_visitor;
@@ -14,6 +14,7 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 			"_";
 	}
 	else
+
 		return operator()(expr.expr);
 }
 
@@ -70,7 +71,7 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	auto args = expr.arguments.args | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | LIFT_TRANSFORM(operator());
+	auto args = expr.arguments.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;
@@ -99,7 +100,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
-	auto args = expr.args | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | LIFT_TRANSFORM(operator());
+	auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;
@@ -107,7 +108,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
-	auto args = expr.args | LIFT_TRANSFORM(std::get<NodeStructs::Expression>) | LIFT_TRANSFORM(operator());
+	auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;

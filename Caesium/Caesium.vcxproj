@@ -150,7 +150,7 @@
     <ClCompile Include="core\structurizer.cpp" />
     <ClCompile Include="expression_visitor\transpile_call_expression_with_args.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
-    <ClCompile Include="expression_visitor\transpile_property_call_visitor.cpp" />
+    <ClCompile Include="type_visitor\transpile_member_call_visitor.cpp" />
     <ClCompile Include="statement_visitor\transpile_statement_visitor.cpp" />
     <ClCompile Include="typename_visitor\transpile_typename_visitor.cpp" />
     <ClCompile Include="type_visitor\traverse_type_visitor.cpp" />
@@ -162,7 +162,7 @@
     <ClCompile Include="typename_visitor\type_template_of_typename_visitor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="expression_visitor\transpile_property_call_visitor.hpp" />
+    <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
     <ClInclude Include="utility\box.hpp" />
     <ClInclude Include="utility\colored_text.hpp" />
     <ClInclude Include="utility\expected.hpp" />

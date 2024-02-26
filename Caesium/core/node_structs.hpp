@@ -123,7 +123,11 @@ struct NodeStructs {
 	using ArgumentCategory  = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
 	using ParameterCategory = std::variant<Reference, MutableReference, Value/*, Key*/>;
 	using ValueCategory = std::variant<Reference, MutableReference, Value>;
-	using FunctionArgument = std::tuple<std::optional<ArgumentCategory>, Expression>;
+	struct FunctionArgument {
+		std::optional<ArgumentCategory> category;
+		Expression expr;
+		std::weak_ordering operator<=>(const FunctionArgument&) const = default;
+	};
 
 	struct BracketArguments {
 		std::vector<FunctionArgument> args;
@@ -336,10 +340,17 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const Import&) const = default;
 	};
 
+	struct FunctionParameter {
+		Typename typename_;
+		ParameterCategory category;
+		std::string name;
+		std::weak_ordering operator<=>(const FunctionParameter&) const = default;
+	};
+
 	struct Function {
 		std::string name;
 		Typename returnType;
-		std::vector<std::tuple<Typename, ParameterCategory, std::string>> parameters;
+		std::vector<FunctionParameter> parameters;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Function&) const = default;
 		bool operator==(const Function&) const;
@@ -573,11 +584,11 @@ inline bool NodeStructs::Function::operator==(const Function& other) const {
 	if (name != other.name || parameters.size() != other.parameters.size())
 		return false;
 	for (int i = 0; i < parameters.size(); ++i) {
-		bool same_type = std::get<Typename>(parameters.at(i)) <=> std::get<Typename>(other.parameters.at(i)) == std::weak_ordering::equivalent;
+		bool same_type = parameters.at(i).typename_ <=> other.parameters.at(i).typename_ == std::weak_ordering::equivalent;
 		if (!same_type)
 			return false;
 
-		bool same_cat = std::get<ParameterCategory>(parameters.at(i)) <=> std::get<ParameterCategory>(other.parameters.at(i)) == std::weak_ordering::equivalent;
+		bool same_cat = parameters.at(i).category <=> other.parameters.at(i).category == std::weak_ordering::equivalent;
 		if (!same_cat)
 			return false;
 	}

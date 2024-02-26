@@ -115,7 +115,7 @@ NodeStructs::Function getStruct(const Function& f) {
 		.name = f.get<Word>().value,
 		.returnType = getStruct(f.get<Typename>()),
 		.parameters = f.get<FunctionParameters>().get<And<Typename, ParameterCategory, Word>>()
-			| LIFT_TRANSFORM_X(type_and_name, std::tuple{ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ParameterCategory>()), type_and_name.get<Word>().value })
+			| LIFT_TRANSFORM_X(type_and_name, NodeStructs::FunctionParameter{ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ParameterCategory>()), type_and_name.get<Word>().value })
 			| to_vec(),
 		.statements = getStatements(f.get<ColonIndentCodeBlock>())
 	};

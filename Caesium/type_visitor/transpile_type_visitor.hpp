@@ -11,3 +11,10 @@ struct transpile_type_visitor : TypeCategoryVisitor<transpile_type_visitor> {
 
 	TypeCategoryVisitorDeclarations
 };
+
+transpile_t transpile_type(
+	transpilation_state_with_indent state,
+	const auto& type
+) {
+	return transpile_type_visitor{ {}, state }(type);
+}

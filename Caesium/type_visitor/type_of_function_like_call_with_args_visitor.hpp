@@ -12,3 +12,11 @@ struct type_of_function_like_call_with_args_visitor : TypeCategoryVisitor<type_o
 
 	TypeCategoryVisitorDeclarations
 };
+
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::FunctionArgument>& arguments,
+	const auto& type
+) {
+	return type_of_function_like_call_with_args_visitor{ {}, state, arguments }(type);
+}
