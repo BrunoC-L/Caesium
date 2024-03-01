@@ -12,10 +12,12 @@ type CatsAndDogs:
     Vector<Dog> dogs
 
 auto add(CatsAndDogs val cats_and_dogs, Cat val cat):
-    cats_and_dogs.cats.push(cat)
+    cats_and_dogs.cats.push(move cat)
     return cats_and_dogs
 
 Int main(Vector<String> ref s):
-    auto c = CatsAndDogs{}
-    auto d = (move c).add(Cat{})
+    auto a = CatsAndDogs{}
+    auto b = add(move a, Cat{})
+    auto c = (move b).add(Cat{})
+    auto d = (move c, Cat{}).add()
     return 0

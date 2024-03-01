@@ -14,10 +14,10 @@ R T::operator()(const NodeStructs::Type& type) {
 	return std::nullopt;
 }
 
-R T::operator()(const NodeStructs::AggregateType& t) {
-	throw;
-	return std::nullopt;
-}
+//R T::operator()(const NodeStructs::AggregateType& t) {
+//	throw;
+//	return std::nullopt;
+//}
 
 R T::operator()(const NodeStructs::TypeType& t) {
 	throw;

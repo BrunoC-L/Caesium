@@ -8,19 +8,63 @@ R T::operator()(const NodeStructs::Expression& statement) {
 }
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
-	auto type = [&]() -> expected<NodeStructs::UniversalType> {
-		if (statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent)
-			return transpile_expression(state, statement.expr).transform([](auto x) { return std::move(x).type; });
-		else
-			return type_of_typename(state, statement.type);
-	}();
-	return_if_error(type);
-	state.state.variables[statement.name].push_back({ NodeStructs::Value{}, type.value() });
-	auto type_repr = transpile_typename(state, statement.type);
-	return_if_error(type_repr);
-	auto assigned_expression = transpile_expression(state, statement.expr);
-	return_if_error(assigned_expression);
-	return type_repr.value() + " " + statement.name + " = " + assigned_expression.value().representation + ";\n";
+	bool is_aggregate = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get());
+	if (statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent) {
+
+		if (is_aggregate)
+			return error{
+				"user error",
+				"cannot use aggregate initialization for auto variables"
+			};
+
+		auto assigned_expression = transpile_expression(state, statement.expr);
+		return_if_error(assigned_expression);
+
+		auto deduced_typename = typename_of_type(state, assigned_expression.value().type);
+		return_if_error(deduced_typename);
+
+		auto deduced_typename_repr = transpile_typename(state, deduced_typename.value());
+		return_if_error(deduced_typename);
+
+		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, assigned_expression.value().type });
+
+		return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression.value().representation + ";\n";
+	}
+	else if (is_aggregate) {
+		auto type = type_of_typename(state, statement.type);
+		return_if_error(type);
+
+		auto type_repr = transpile_typename(state, statement.type);
+		return_if_error(type_repr);
+
+		const auto& aggregate = std::get<NodeStructs::BraceArguments>(statement.expr.expression.get());
+
+		auto as_construct = NodeStructs::ConstructExpression{
+			.operand = statement.type,
+			.arguments = aggregate.args
+		};
+
+		auto assigned_expression = transpile_expression(state, as_construct);
+		return_if_error(assigned_expression);
+
+		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, type.value() });
+
+		return type_repr.value() + " " + statement.name + " = " + assigned_expression.value().representation + ";\n";
+	}
+	else {
+		auto assigned_expression = transpile_expression(state, statement.expr);
+		return_if_error(assigned_expression);
+
+		auto type = type_of_typename(state, statement.type);
+		return_if_error(type);
+
+		auto type_repr = transpile_typename(state, statement.type);
+		return_if_error(type_repr);
+
+		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, type.value() });
+
+		return type_repr.value() + " " + statement.name + " = " + assigned_expression.value().representation + ";\n";
+	}
 }
 
 R T::operator()(const NodeStructs::IfStatement& statement) {

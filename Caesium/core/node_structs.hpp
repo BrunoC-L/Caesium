@@ -9,6 +9,11 @@
 #include "../utility/box.hpp"
 #include "../utility/overload.hpp"
 
+template <typename T>
+bool operator==(const std::reference_wrapper<T>& w1, const std::reference_wrapper<T>& w2) {
+	return w1.get() == w2.get();
+}
+
 struct NodeStructs {
 	struct TemplatedTypename;
 	struct NamespacedTypename;
@@ -162,7 +167,7 @@ struct NodeStructs {
 	};
 
 	struct ConstructExpression {
-		Expression operand;
+		Typename operand;
 		BraceArguments arguments;
 		std::weak_ordering operator<=>(const ConstructExpression&) const = default;
 	};
@@ -396,10 +401,10 @@ struct NodeStructs {
 
 	struct UniversalType;
 
-	struct AggregateType {
+	/*struct AggregateType {
 		std::vector<std::pair<ArgumentCategory, UniversalType>> arguments;
 		std::weak_ordering operator<=>(const AggregateType&) const = default;
-	};
+	};*/
 
 	struct UnionType {
 		std::vector<UniversalType> arguments;
@@ -434,7 +439,7 @@ struct NodeStructs {
 	struct UniversalType {
 		std::variant<
 			std::reference_wrapper<const Type>,
-			AggregateType,
+			//AggregateType,
 			TypeType,
 			FunctionType,
 			InterfaceType,

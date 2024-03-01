@@ -6,7 +6,7 @@ struct A {
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	Variant<A, B> var = {};
+	Variant<A, B> var = Variant<A, B>{A{}};
 };
 
 int main(int argc, char** argv) {

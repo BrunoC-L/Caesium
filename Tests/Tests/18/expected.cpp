@@ -1,4 +1,8 @@
 #include "expected.hpp"
+CatsAndDogs add(CatsAndDogs&& cats_and_dogs, Cat&& cat) {
+	push(cats_and_dogs.cats, std::move(cat));
+	return cats_and_dogs;
+};
 struct CatsAndDogs {
 Vector<Cat> cats;
 Vector<Dog> dogs;
@@ -13,7 +17,10 @@ String name;
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	CatsAndDogs c = {};
+	CatsAndDogs a = CatsAndDogs{};
+	CatsAndDogs b = add(std::move(a), Cat{});
+	CatsAndDogs c = add(std::move(b), Cat{});
+	CatsAndDogs d = add(std::move(c), Cat{});
 	return 0;
 };
 

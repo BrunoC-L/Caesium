@@ -29,6 +29,7 @@ struct Named {
 	template <typename T> using map_to_vec = std::map<std::string, std::vector<T const*>>;
 
 	map_to_vec<NodeStructs::Function> functions;
+	map_to_vec<NodeStructs::Function> functions_using_auto;
 	map_to_vec<NodeStructs::Type> types;
 	map_to_vec<NodeStructs::Interface> interfaces;
 	map_to_vec<NodeStructs::Block> blocks;
@@ -299,11 +300,24 @@ transpile_t expr_to_printable(
 	const NodeStructs::Expression& expr
 );
 
+bool uses_auto(const NodeStructs::Function& fn);
+bool uses_auto(const NodeStructs::FunctionParameter& param);
+bool uses_auto(const NodeStructs::Statement& param);
+bool uses_auto(const NodeStructs::Typename& t);
+
+//expected<NodeStructs::Function> realise_function_using_auto_hack(
+//	transpilation_state_with_indent state,
+//	const NodeStructs::Function& fn_using_auto,
+//	const NodeStructs::Type& first_arg_t,
+//	const std::vector<NodeStructs::FunctionArgument>& args
+//);
+
 #include "../type_visitor/transpile_type_visitor.hpp"
 #include "../type_visitor/traverse_type_visitor.hpp"
 #include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp"
 #include "../type_visitor/type_of_postfix_member_visitor.hpp"
 #include "../type_visitor/transpile_member_call_visitor.hpp"
+#include "../type_visitor/typename_of_type_visitor.hpp"
 
 #include "../expression_visitor/expression_for_template_visitor.hpp"
 #include "../expression_visitor/transpile_call_expression_with_args.hpp"
@@ -314,3 +328,81 @@ transpile_t expr_to_printable(
 #include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
+
+
+expected<NodeStructs::Function> realise_function_using_auto(
+	transpilation_state_with_indent state,
+	const NodeStructs::Function& fn_using_auto,
+	const std::ranges::range auto& args
+) {
+	/*if (fn_using_auto.parameters.size() != args.size())
+		throw;*/
+
+	for (auto&& p : fn_using_auto.parameters)
+		if (uses_auto(p))
+			throw;
+
+	for (auto&& statement : fn_using_auto.statements)
+		if (uses_auto(statement))
+			throw;
+
+	bool at_least_one = false;
+	bool only_one = false;
+	for (const auto& statement : fn_using_auto.statements)
+		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
+			only_one = at_least_one ? false : true;
+			at_least_one = true;
+		}
+	if (at_least_one == false) {
+		return NodeStructs::Function{
+			.name = fn_using_auto.name,
+			.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
+			.parameters = fn_using_auto.parameters,
+			.statements = fn_using_auto.statements
+		};
+	}
+	else if (only_one == false)
+		throw;
+
+	for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+		if (std::holds_alternative<NodeStructs::Value>(value_cat))
+			state.state.variables[name].push_back(std::pair{ NodeStructs::MutableReference{}, type_of_typename(state, type_name).value() });
+		else
+			state.state.variables[name].push_back(std::pair{ value_cat, type_of_typename(state, type_name).value() });
+
+	for (int i = 0; i < fn_using_auto.statements.size(); ++i) {
+		const auto& statement = fn_using_auto.statements.at(i);
+		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
+			const auto& return_expr = std::get<NodeStructs::ReturnStatement>(statement.statement).returnExpr;
+			if (return_expr.size() != 1)
+				throw;
+
+			auto deduced_t = transpile_expression(state, return_expr.at(0).expr);
+
+			if (deduced_t.has_error()) {
+				for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+					state.state.variables[name].pop_back();
+				for (int j = 0; j < fn_using_auto.statements.size(); ++j)
+					remove_added_variables(state, fn_using_auto.statements.at(i));
+			}
+			return_if_error(deduced_t);
+
+			auto return_tn = typename_of_type(state, deduced_t.value().type);
+
+			for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+				state.state.variables[name].pop_back();
+			for (int j = 0; j < fn_using_auto.statements.size(); ++j)
+				remove_added_variables(state, fn_using_auto.statements.at(i));
+
+			return_if_error(return_tn);
+
+			return NodeStructs::Function{
+				.name = fn_using_auto.name,
+				.returnType = return_tn.value(),
+				.parameters = fn_using_auto.parameters,
+				.statements = fn_using_auto.statements
+			};
+		}
+	}
+	throw;
+}

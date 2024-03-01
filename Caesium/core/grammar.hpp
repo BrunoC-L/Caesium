@@ -36,7 +36,10 @@ using MemberVariable = And<Typename, Word, Newline>;
 //using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 using ClassElement = Or<Alias/*, Function*/, MemberVariable/*, Constructor*/>;
 
+using Construct = And<Typename, BraceArguments>;
+
 using ParenExpression = Or<
+	Construct,
 	Word,
 	Token<FLOATING_POINT_NUMBER>,
 	Token<INTEGER_NUMBER>,
@@ -57,7 +60,7 @@ using Postfix = Or<
 	>,
 	ParenArguments,
 	BracketArguments,
-	BraceArguments,
+	//BraceArguments,
 	TemplateArguments
 	/*,
 	Token<PLUSPLUS>,

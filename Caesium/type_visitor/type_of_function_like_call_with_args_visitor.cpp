@@ -17,12 +17,12 @@ R T::operator()(const NodeStructs::Type& t) {
 //	};
 //}
 
-R T::operator()(const NodeStructs::AggregateType& t) {
-	return error{
-		"user error",
-		"Use of an aggregate like a function is prohibited. Aggregate was"
-	};
-}
+//R T::operator()(const NodeStructs::AggregateType& t) {
+//	return error{
+//		"user error",
+//		"Use of an aggregate like a function is prohibited. Aggregate was"
+//	};
+//}
 
 R T::operator()(const NodeStructs::TypeType& t) {
 	return error{

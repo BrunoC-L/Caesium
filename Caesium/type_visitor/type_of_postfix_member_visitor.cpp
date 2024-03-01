@@ -19,15 +19,15 @@ R T::operator()(const NodeStructs::Type& t) {
 		return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
 }
 
-R T::operator()(const NodeStructs::AggregateType& t) {
-	if (t.arguments.size() == 0)
-		throw;
-	if (t.arguments.size() == 1)
-		return operator()(t.arguments.at(0).second);
-	if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
-		throw;
-	}
-}
+//R T::operator()(const NodeStructs::AggregateType& t) {
+//	if (t.arguments.size() == 0)
+//		throw;
+//	if (t.arguments.size() == 1)
+//		return operator()(t.arguments.at(0).second);
+//	if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
+//		throw;
+//	}
+//}
 
 R T::operator()(const NodeStructs::TypeType& t) {
 	throw;

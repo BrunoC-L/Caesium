@@ -22,6 +22,7 @@ template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
 Void push(auto&& vec, auto&& e) { vec.push_back(e); }
 
 Int _redirect_main(const Vector<String>& s);
+CatsAndDogs add(CatsAndDogs&& cats_and_dogs, Cat&& cat);
 struct CatsAndDogs;
 struct Dog;
 struct Cat;

@@ -24,7 +24,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		}
 		return NodeStructs::UniversalType{ NodeStructs::InterfaceType{ interface } };
 	}
-	return error{ "user error" , "Missing type " + t.type };
+	return error{ "user error" , "Missing type `" + t.type + "`"};
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& t) {

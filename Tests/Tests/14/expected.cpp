@@ -9,7 +9,7 @@ struct Dog {
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	Vector<Variant<Cat, Dog>> animals = {};
+	Vector<Variant<Cat, Dog>> animals = Vector<Variant<Cat, Dog>>{};
 	return f_Animal(animals);
 };
 

@@ -306,6 +306,12 @@ NodeStructs::Expression getExpressionStruct(const BraceArguments&) {
 
 NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 	return std::visit(overload(overload_default_error,
+		[](const Construct& e) -> NodeStructs::Expression {
+			return { NodeStructs::ConstructExpression{
+				.operand = getStruct(e.get<Typename>()),
+				.arguments = e.get<BraceArguments>().get<CommaStar<FunctionArgument>>().get<FunctionArgument>() | LIFT_TRANSFORM(getStruct) | to_vec()
+			} };
+		},
 		[](const ParenArguments& e) -> NodeStructs::Expression {
 			return { NodeStructs::ParenArguments{
 				.args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>() | LIFT_TRANSFORM(getStruct) | to_vec()
@@ -359,9 +365,9 @@ NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& exp
 			[&](const BracketArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::BracketAccessExpression{ std::move(expr), getStruct(args) } };
 			},
-			[&](const BraceArguments& args) {
+			/*[&](const BraceArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::ConstructExpression{ std::move(expr), getStruct(args) } };
-			},
+			},*/
 			[&](const TemplateArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::TemplateExpression{ std::move(expr), getStruct(args) } };
 			}

@@ -2,6 +2,7 @@
 #include "test_transpile_files.hpp"
 
 int main(int argc, char** argv) {
+
 	constexpr auto bad_exit = 1;
 
 	if (argc == 1) {

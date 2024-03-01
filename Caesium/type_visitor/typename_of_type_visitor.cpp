@@ -1,26 +1,11 @@
 #include "../core/toCPP.hpp"
 
-using T = transpile_type_visitor;
+using T = typename_of_type_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::Type& t) {
-	return t.name;
+	return R::value_type{ NodeStructs::BaseTypename{ t.name } };
 }
-
-//R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
-//	std::stringstream ss;
-//	ss << t.type_template.get().templated.name << "<";
-//	bool has_previous = false;
-//	for (const auto& e : t.template_arguments) {
-//		if (has_previous)
-//			ss << ", ";
-//		else
-//			has_previous = true;
-//		ss << operator()(e).value();
-//	}
-//	ss << ">";
-//	return ss.str();
-//}
 
 //R T::operator()(const NodeStructs::AggregateType& t) {
 //	throw;
@@ -28,7 +13,6 @@ R T::operator()(const NodeStructs::Type& t) {
 
 R T::operator()(const NodeStructs::TypeType& t) {
 	throw;
-	//return operator()(t.type).transform([](std::string&& rep) { return "Type " + rep; });
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {

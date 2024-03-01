@@ -2,7 +2,7 @@
 #include "../utility/replace_all.hpp"
 #include "../core/structurizer.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
-
+#include "../utility/range_join.hpp"
 #include <algorithm>
 
 using T = transpile_expression_visitor;
@@ -171,6 +171,16 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
+	if (std::holds_alternative<std::string>(expr.operand.expression.get())) {
+		const std::string& operand = std::get<std::string>(expr.operand.expression.get());
+		if (auto it = state.state.named.functions_using_auto.find(operand); it != state.state.named.functions_using_auto.end()) {
+			std::vector<NodeStructs::FunctionArgument> args;
+			auto fn = realise_function_using_auto(state, *it->second.back(), expr.arguments.args);
+			return_if_error(fn);
+			auto& vec = state.state.named.functions[fn.value().name];
+			vec.push_back(new NodeStructs::Function(std::move(fn).value()));
+		}
+	}
 	auto temp1 = transpile_expression(state, expr.operand);
 	return_if_error(temp1);
 	auto temp2 = type_of_function_like_call_with_args(state, expr.arguments.args, temp1.value().type);
@@ -397,23 +407,65 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ConstructExpression& expr) {
-	auto operand_info = operator()(expr.operand);
-	return_if_error(operand_info);
+	auto t = type_of_typename(state, expr.operand);
+	return_if_error(t);
+	auto typename_repr = transpile_typename(state, expr.operand);
+	return_if_error(typename_repr);
+	return std::visit(overload(
+		[&](const auto&) -> R {
+			throw;
+		},
+		[&](const std::reference_wrapper<const NodeStructs::Type>& t_wrapper) -> R {
+			auto args_repr = transpile_args(state, expr.arguments.args);
+			return_if_error(args_repr);
 
-	if (std::holds_alternative<NodeStructs::TypeType>(operand_info.value().type.value)) {
-		const auto& e = std::get<NodeStructs::TypeType>(operand_info.value().type.value);
-
-		auto args_repr = transpile_args(state, expr.arguments.args);
-		return_if_error(args_repr);
-
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = NodeStructs::Value{},
-			.type = e.type,
-			.representation = operand_info.value().representation + "{" + args_repr.value() + "}"
-		};
-	}
-	throw;
+			return whole_expression_information{
+				.value_category = NodeStructs::Value{},
+				.type = t_wrapper,
+				.representation = typename_repr.value() + "{" + args_repr.value() + "}"
+			};
+		},
+		[&](const NodeStructs::SetType& set_t) -> R {
+			if (expr.arguments.args.size() != 0)
+				throw;
+			return whole_expression_information{
+				.value_category = NodeStructs::Value{},
+				.type = set_t,
+				.representation = typename_repr.value() + "{}"
+			};
+		},
+		[&](const NodeStructs::VectorType& vec_t) -> R {
+			if (expr.arguments.args.size() != 0)
+				throw;
+			return whole_expression_information{
+				.value_category = NodeStructs::Value{},
+				.type = vec_t,
+				.representation = typename_repr.value() + "{}"
+			};
+		},
+		[&](const NodeStructs::UnionType& union_t) -> R {
+			if (expr.arguments.args.size() < 1)
+				return error{
+					"user error",
+					"unions require at least one argument"
+				};
+			if (expr.arguments.args.size() > 1)
+				return error{
+					"user error",
+					"unions require at most one argument"
+				};
+			auto expr_info = operator()(expr.arguments.args.at(0).expr);
+			return_if_error(expr_info);
+			for (const auto& T : union_t.arguments)
+				if (T <=> expr_info.value().type == std::weak_ordering::equivalent)
+					return whole_expression_information{
+						.value_category = NodeStructs::Value{},
+						.type = union_t,
+						.representation = typename_repr.value() + "{" + expr_info.value().representation + "}"
+					};
+			throw;
+		}
+	), t.value().value);
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
@@ -421,6 +473,26 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
+	if (std::holds_alternative<NodeStructs::ParenArguments>(expr.operand.expression.get())) {
+		const auto& operand = std::get<NodeStructs::ParenArguments>(expr.operand.expression.get());
+		auto view = range_join(operand.args, expr.arguments.args);
+		std::vector<NodeStructs::FunctionArgument> vec = view | to_vec();
+		auto rewired = NodeStructs::CallExpression{
+			.operand = NodeStructs::Expression{ expr.property_name },
+			.arguments = std::move(vec)
+		};
+		return operator()(rewired);
+	}
+	if (std::holds_alternative<NodeStructs::BraceArguments>(expr.operand.expression.get())) {
+		const auto& operand = std::get<NodeStructs::BraceArguments>(expr.operand.expression.get());
+		auto view = range_join(operand.args, expr.arguments.args);
+		auto vec = view | to_vec();
+		auto rewired = NodeStructs::CallExpression{
+			.operand = NodeStructs::Expression{ expr.property_name },
+			.arguments = std::move(vec)
+		};
+		return operator()(rewired);
+	}
 	auto operand_t = transpile_expression(state, expr.operand).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
 	return_if_error(operand_t);
 
@@ -496,57 +568,75 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
-	auto transpiled_args = expr.args
-		| LIFT_TRANSFORM_X(arg, std::pair{
-			arg.category,
-			operator()(arg.expr)
-		})
-		| to_vec();
-	for (const auto& arg : transpiled_args)
-		return_if_error(arg.second);
-
-	auto x = transpiled_args
-		| LIFT_TRANSFORM_X(cat_and_info, std::pair{
-			cat_and_info.first.has_value() ? cat_and_info.first.value() : NodeStructs::ArgumentCategory{ NodeStructs::Move{} },
-			cat_and_info.second.value().type
-			})
-		| to_vec();
-
+	if (expr.args.size() != 1)
+		throw;
+	auto inner = operator()(expr.args.at(0).expr);
+	return_if_error(inner);
 	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
-		.type = NodeStructs::AggregateType{ x },
-		.representation = "(" + transpile_args(state, expr.args).value() + ")"
+		.value_category = argument_category_optional_to_value_category(expr.args.at(0).category),
+		.type = inner.value().type,
+		.representation = "(" + inner.value().representation + ")"
 	};
+	 
+	//throw;
+	//auto transpiled_args = expr.args
+	//	| LIFT_TRANSFORM_X(arg, std::pair{
+	//		arg.category,
+	//		operator()(arg.expr)
+	//	})
+	//	| to_vec();
+	//for (const auto& arg : transpiled_args)
+	//	return_if_error(arg.second);
+
+	//auto x = transpiled_args
+	//	| LIFT_TRANSFORM_X(cat_and_info, std::pair{
+	//		cat_and_info.first.has_value() ? cat_and_info.first.value() : NodeStructs::ArgumentCategory{ NodeStructs::Move{} },
+	//		cat_and_info.second.value().type
+	//		})
+	//	| to_vec();
+
+	//auto args_repr = transpile_args(state, expr.args);
+	//return_if_error(args_repr);
+
+	//return whole_expression_information{
+	//	//.expression = expr,
+	//	.value_category = NodeStructs::Value{},
+	//	.type = NodeStructs::AggregateType{ x },
+	//	.representation = "(" + args_repr.value() + ")"
+	//};
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
-	auto transpiled_args = expr.args
-		| LIFT_TRANSFORM_X(arg, std::pair{
-			arg.category,
-			operator()(arg.expr)
-		})
-		| to_vec();
-	for (const auto& arg : transpiled_args)
-		return_if_error(arg.second);
+	throw;
+	//auto transpiled_args = expr.args
+	//	| LIFT_TRANSFORM_X(arg, std::pair{
+	//		arg.category,
+	//		operator()(arg.expr)
+	//	})
+	//	| to_vec();
+	//for (const auto& arg : transpiled_args)
+	//	return_if_error(arg.second);
 
-	auto x = transpiled_args
-		| LIFT_TRANSFORM_X(cat_and_info, std::pair{
-			cat_and_info.first.has_value() ? cat_and_info.first.value() : NodeStructs::ArgumentCategory{ NodeStructs::Move{} },
-			cat_and_info.second.value().type
-		})
-		| to_vec();
+	//auto x = transpiled_args
+	//	| LIFT_TRANSFORM_X(cat_and_info, std::pair{
+	//		cat_and_info.first.has_value() ? cat_and_info.first.value() : NodeStructs::ArgumentCategory{ NodeStructs::Move{} },
+	//		cat_and_info.second.value().type
+	//	})
+	//	| to_vec();
 
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
-		.type = NodeStructs::AggregateType{ x },
-		.representation = "{" + transpile_args(state, expr.args).value() + "}"
-	};
+	//auto args_repr = transpile_args(state, expr.args);
+	//return_if_error(args_repr);
+
+	//return whole_expression_information{
+	//	//.expression = expr,
+	//	.value_category = NodeStructs::Value{},
+	//	.type = NodeStructs::AggregateType{ x },
+	//	.representation = "{" + args_repr.value() + "}"
+	//};
 }
 
 R T::operator()(const std::string& expr) {
-	if (auto it = state.state.variables.find(expr); it != state.state.variables.end()) {
+	if (auto it = state.state.variables.find(expr); it != state.state.variables.end() && it->second.size() > 0) {
 		return whole_expression_information{
 			//.expression = expr,
 			.value_category = it->second.back().first,

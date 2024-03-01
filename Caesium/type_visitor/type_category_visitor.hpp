@@ -20,7 +20,6 @@ struct TypeCategoryVisitor {
 	}
 #define TypeCategoryVisitorDeclarations \
 	R operator()(const NodeStructs::Type& t);\
-	R operator()(const NodeStructs::AggregateType& t);\
 	R operator()(const NodeStructs::TypeType& t);\
 	R operator()(const NodeStructs::FunctionType& t);\
 	R operator()(const NodeStructs::UnionType& t);\

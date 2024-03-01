@@ -3,7 +3,7 @@ struct A {
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	A a1 = {};
+	A a1 = A{};
 	A a2 = a1;
 };
 

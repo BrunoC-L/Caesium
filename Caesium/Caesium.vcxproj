@@ -154,6 +154,7 @@
     <ClCompile Include="statement_visitor\transpile_statement_visitor.cpp" />
     <ClCompile Include="typename_visitor\transpile_typename_visitor.cpp" />
     <ClCompile Include="type_visitor\traverse_type_visitor.cpp" />
+    <ClCompile Include="type_visitor\typename_of_type_visitor.cpp" />
     <ClCompile Include="type_visitor\type_of_postfix_member_visitor.cpp" />
     <ClCompile Include="core\toCPP.cpp" />
     <ClCompile Include="type_visitor\transpile_type_visitor.cpp" />
@@ -163,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
+    <ClInclude Include="type_visitor\typename_of_type_visitor.hpp" />
     <ClInclude Include="utility\box.hpp" />
     <ClInclude Include="utility\colored_text.hpp" />
     <ClInclude Include="utility\expected.hpp" />
@@ -170,6 +172,7 @@
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />
     <ClInclude Include="utility\fn_util.hpp" />
     <ClInclude Include="utility\is_specialization.hpp" />
+    <ClInclude Include="utility\range_join.hpp" />
     <ClInclude Include="utility\overload.hpp" />
     <ClInclude Include="utility\ranges_fold_left_pipe.hpp" />
     <ClInclude Include="core\node_structs.hpp" />

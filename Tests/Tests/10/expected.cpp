@@ -6,8 +6,8 @@ struct A {
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	Variant<A, B> v1 = {};
-	Variant<A, B> v2 = {};
+	Variant<A, B> v1 = Variant<A, B>{A{}};
+	Variant<A, B> v2 = Variant<A, B>{B{}};
 };
 
 int main(int argc, char** argv) {

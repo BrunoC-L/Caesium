@@ -1,5 +1,6 @@
 #include "../core/toCPP.hpp"
 #include "../utility/replace_all.hpp"
+#include "../utility/range_join.hpp"
 
 using T = transpile_member_call_visitor;
 using R = T::R;
@@ -18,6 +19,12 @@ R T::operator()(const NodeStructs::Type& t) {
 	}
 	else if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
 		const auto& fn = *it->second.back();
+		if (!state.state.traversed_functions.contains(fn)) {
+			state.state.traversed_functions.insert(fn);
+			auto t = transpile(state.unindented(), fn);
+			return_if_error(t);
+			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
+		}
 		auto first_param_str = transpile_typename(state, fn.parameters.at(0).typename_);
 		return_if_error(first_param_str);
 		auto first_param = type_of_typename(state, fn.parameters.at(0).typename_);
@@ -53,18 +60,95 @@ R T::operator()(const NodeStructs::Type& t) {
 			.representation = ss.str()
 		};
 	}
+	else if (auto it = state.state.named.functions_using_auto.find(property_name); it != state.state.named.functions_using_auto.end()) {
+		auto fn = realise_function_using_auto(state, *it->second.back()/*, t*/, arguments);
+		return_if_error(fn);
+		auto& vec = state.state.named.functions[fn.value().name];
+		vec.push_back(new NodeStructs::Function(std::move(fn).value()));
+		return operator()(t);
+	}
 	else
 		return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
 	throw;
 }
-
-R T::operator()(const NodeStructs::AggregateType& t) {
-	if (t.arguments.size() == 0)
-		throw;
-	if (t.arguments.size() == 1)
-		return operator()(t.arguments.at(0).second);
-	throw;
-}
+//
+//R T::operator()(const NodeStructs::AggregateType& t) {
+//	if (t.arguments.size() == 0)
+//		throw;
+//
+//	/*auto category_info_pairs = arguments
+//		| LIFT_TRANSFORM_X(fn_arg, std::pair{
+//			fn_arg.category,
+//			transpile_expression(state, fn_arg.expr)
+//		})
+//		| to_vec();
+//
+//	for (const auto& category_info : category_info_pairs)
+//		if (category_info.second.has_error())
+//			return category_info.second.error();
+//
+//	auto cat_type_pairs = category_info_pairs
+//		| LIFT_TRANSFORM_X(fn_arg, std::pair{
+//			fn_arg.first.has_value() ? fn_arg.first.value() : NodeStructs::ArgumentCategory{ NodeStructs::Move{} },
+//			fn_arg.second.value().type
+//		})
+//		| to_vec();
+//	;
+//
+//	auto args = range_join(cat_type_pairs, t.arguments);*/
+//
+//	//if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
+//	//	const auto& fn = *it->second.back();
+//	//	if (!state.state.traversed_functions.contains(fn)) {
+//	//		state.state.traversed_functions.insert(fn);
+//	//		auto t = transpile(state.unindented(), fn);
+//	//		return_if_error(t);
+//	//		state.state.transpile_in_reverse_order.push_back(std::move(t).value());
+//	//	}
+//	//	if (fn.parameters.size() != this->arguments.size() + t.arguments.size())
+//	//		throw;
+//
+//	//	std::stringstream ss;
+//	//	ss << fn.name << "(";
+//
+//	//	int i = 0;
+//	//	for (const auto& arg : args) {
+//	//		auto nth_param = type_of_typename(state, fn.parameters.at(i).typename_);
+//	//		return_if_error(nth_param);
+//	//		auto nth_argument = transpile_expression(state, arg.expr);
+//	//		return_if_error(nth_argument);
+//	//		if (!is_assignable_to(state, nth_param.value(), nth_argument.value().type))
+//	//			throw;
+//	//		ss << ", " << nth_argument.value().representation;
+//	//		i += 1;
+//	//	}
+//	//	ss << ")";
+//
+//	//	auto return_t = type_of_typename(state, fn.returnType);
+//	//	return_if_error(return_t);
+//
+//	//	return whole_expression_information{
+//	//		.value_category = NodeStructs::Value{},
+//	//		.type = return_t.value(),
+//	//		.representation = ss.str()
+//	//	};
+//	//}
+//	//else if (auto it = state.state.named.functions_using_auto.find(property_name); it != state.state.named.functions_using_auto.end()) {
+//	//	auto fn = realise_function_using_auto(state, *it->second.back()/*, t*/, args);
+//	//	return_if_error(fn);
+//	//	auto& vec = state.state.named.functions[fn.value().name];
+//	//	vec.push_back(new NodeStructs::Function(std::move(fn).value()));
+//	//	return operator()(t);
+//	//}
+//	//else {
+//	//	auto k1 = typename_of_type(state, t);
+//	//	return_if_error(k1);
+//	//	auto k2 = transpile_typename(state, k1);
+//	//	return_if_error(k2);
+//	//	return error{ "user error","Error: object of type `" + k2.value() + "` has no member `" + property_name + "`\n"};
+//	//}
+//	throw;
+//}
 
 R T::operator()(const NodeStructs::TypeType& t) {
 	throw;

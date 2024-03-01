@@ -44,7 +44,7 @@ public:
 	// construct from T&& or U&&
 	Box(T&& t) : ptr(std::make_unique<T>(std::move(t))) {}
 	template <typename U>
-	Box(U&& u) : ptr(std::make_unique<T>(std::move(u))) {}
+	Box(U&& u) : ptr(std::make_unique<T>(std::forward<U>(u))) {}
 
 	// copy constructor
 	Box(const Box& other) : Box(other.get()) {};
@@ -54,7 +54,7 @@ public:
 	Box(const Box<U>& other) : Box(other.get()) {};
 
 	// move constructor
-	Box(Box&& other) : Box(std::move(other).get()) {};
+	Box(Box&& other) : ptr(std::move(other).ptr) {};
 
 	// template move constructor
 	template <typename U>
@@ -62,6 +62,10 @@ public:
 
 	std::weak_ordering operator<=>(const Box& other) const noexcept {
 		return (*ptr) <=> (*other.ptr);
+	};
+
+	bool operator==(const Box& other) const noexcept {
+		return (*ptr) == (*other.ptr);
 	};
 
 	~Box() = default;

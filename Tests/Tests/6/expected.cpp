@@ -1,6 +1,6 @@
 #include "expected.hpp"
 Int _redirect_main(const Vector<String>& s) {
-	Int a = {};
+	Int a = Int{};
 };
 
 int main(int argc, char** argv) {

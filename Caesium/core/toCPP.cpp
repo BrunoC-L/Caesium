@@ -19,7 +19,10 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 				named.types[e.name].push_back(&e);
 
 			for (const auto& e : file.functions)
-				named.functions[e.name].push_back(&e);
+				if (uses_auto(e))
+					named.functions_using_auto[e.name].push_back(&e);
+				else
+					named.functions[e.name].push_back(&e);
 
 			for (const auto& e : file.interfaces)
 				named.interfaces[e.name].push_back(&e);
@@ -188,7 +191,10 @@ transpile_header_cpp_t transpile(
 	auto parameters = transpile(state, fn.parameters);
 	return_if_error(parameters);
 	for (auto&& [type_name, value_cat, name] : fn.parameters)
-		state.state.variables[name].push_back(std::pair{ value_cat, type_of_typename(state, type_name).value() });
+		if (std::holds_alternative<NodeStructs::Value>(value_cat))
+			state.state.variables[name].push_back(std::pair{ NodeStructs::MutableReference{}, type_of_typename(state, type_name).value() });
+		else
+			state.state.variables[name].push_back(std::pair{ value_cat, type_of_typename(state, type_name).value() });
 	auto statements = transpile(state.indented(), fn.statements);
 	return_if_error(statements);
 	for (auto&& [type_name, value_cat, name] : fn.parameters)
@@ -342,9 +348,9 @@ NodeStructs::UniversalType iterator_type(
 						else
 							throw;
 			},*/
-			[&](const NodeStructs::AggregateType&) -> NodeStructs::UniversalType {
+			/*[&](const NodeStructs::AggregateType&) -> NodeStructs::UniversalType {
 				throw;
-			},
+			},*/
 			[&](const NodeStructs::TypeType&) -> NodeStructs::UniversalType {
 				throw;
 			},
@@ -430,9 +436,9 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 									throw;
 				throw;
 			},*/
-			[&](const NodeStructs::AggregateType&) -> std::vector<NodeStructs::UniversalType> {
+			/*[&](const NodeStructs::AggregateType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
-			},
+			},*/
 			[&](const NodeStructs::TypeType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
@@ -578,7 +584,72 @@ transpile_t transpile_arg(
 	transpilation_state_with_indent state,
 	const NodeStructs::FunctionArgument& arg
 ) {
-	return transpile_expression(state, arg.expr).transform([](auto&& x) { return x.representation; });
+	auto expr_info = transpile_expression(state, arg.expr);
+	return_if_error(expr_info);
+
+	if (!arg.category.has_value()) {
+		return std::visit(overload(
+			[&](const NodeStructs::Reference& e) -> transpile_t {
+				return expr_info.value().representation;
+			},
+			[&](const NodeStructs::Value& e) -> transpile_t {
+				return expr_info.value().representation;
+			},
+			[&](const NodeStructs::MutableReference& e) -> transpile_t {
+				return expr_info.value().representation;
+			}
+		), expr_info.value().value_category);
+	}
+	else {
+		return std::visit(overload(
+			[&](const NodeStructs::Reference& expr_cat, const NodeStructs::Reference& arg_cat) -> transpile_t {
+				return expr_info.value().representation;
+			},
+			[&](const NodeStructs::Value& expr_cat, const NodeStructs::Reference& arg_cat) -> transpile_t {
+				return error{ "user error", "can't reference a temporary value" };
+			},
+			[&](const NodeStructs::MutableReference& expr_cat, const NodeStructs::Reference& arg_cat) -> transpile_t {
+				return expr_info.value().representation;
+			},
+			[&](const NodeStructs::Reference& expr_cat, const NodeStructs::MutableReference& arg_cat) -> transpile_t {
+				return error{ "user error", "can't mutably reference a reference" };
+			},
+			[&](const NodeStructs::Value& expr_cat, const NodeStructs::MutableReference& arg_cat) -> transpile_t {
+				return error{ "user error", "can't mutably reference a temporary value" };
+			},
+			[&](const NodeStructs::MutableReference& expr_cat, const NodeStructs::MutableReference& arg_cat) -> transpile_t {
+				return expr_info.value().representation;
+			},
+			[&](const NodeStructs::Reference& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
+				// todo check if copyable
+				auto tn = typename_of_type(state, expr_info.value().type);
+				return_if_error(tn);
+				auto tn_repr = transpile_typename(state, tn.value());
+				return_if_error(tn_repr);
+				return tn_repr.value() + "{ " + expr_info.value().representation + " }";
+			},
+			[&](const NodeStructs::Value& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
+				return error{ "user error", "do not copy temporary values" };
+			},
+			[&](const NodeStructs::MutableReference& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
+				// todo check if copyable
+				auto tn = typename_of_type(state, expr_info.value().type);
+				return_if_error(tn);
+				auto tn_repr = transpile_typename(state, tn.value());
+				return_if_error(tn_repr);
+				return tn_repr.value() + "{ " + expr_info.value().representation + " }";
+			},
+			[&](const NodeStructs::Reference& expr_cat, const NodeStructs::Move& arg_cat) -> transpile_t {
+				return error{ "user error", "do not move from a non mutable reference" };
+			},
+			[&](const NodeStructs::Value& expr_cat, const NodeStructs::Move& arg_cat) -> transpile_t {
+				return error{ "user error", "do not move temporary values" };
+			},
+			[&](const NodeStructs::MutableReference& expr_cat, const NodeStructs::Move& arg_cat) -> transpile_t {
+				return "std::move(" + expr_info.value().representation + ")";
+			}
+		), expr_info.value().value_category, arg.category.value());
+	}
 }
 
 transpile_t transpile_args(
@@ -731,60 +802,134 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 	}
 }
 
-//#include "../type_visitor/transpile_type_visitor.hpp";
-//transpile_t transpile_type(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::UniversalType& type
-//) {
-//	return transpile_type_visitor{ {}, state }(type);
-//}
-//
-//#include "../type_visitor/traverse_type_visitor.hpp";
-//std::optional<error> traverse_type(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::UniversalType& type
-//) {
-//	return traverse_type_visitor{ {}, state }(type);
-//}
-//
-//#include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp";
-//expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
-//	transpilation_state_with_indent state,
-//	const std::vector<NodeStructs::FunctionArgument>& arguments,
-//	const NodeStructs::UniversalType& type
-//) {
-//	return type_of_function_like_call_with_args_visitor{ {}, state, arguments }(type);
-//}
-//
-//#include "../type_visitor/type_of_postfix_member_visitor.hpp";
-//expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_postfix_member(
-//	transpilation_state_with_indent state,
-//	const std::string& property_name,
-//	const NodeStructs::UniversalType& type
-//) {
-//	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
-//}
+bool uses_auto(const NodeStructs::Function& fn) {
+	if (fn.returnType <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent)
+		return true;
+	for (const auto& param : fn.parameters)
+		if (uses_auto(param))
+			return true;
+	for (const auto& statement : fn.statements)
+		if (uses_auto(statement))
+			return true;
+	return false;
+}
 
-//#include "../expression_visitor/expression_for_template_visitor.hpp"
-//std::string expression_for_template(
-//	const NodeStructs::Expression& expr
-//) {
-//	return expression_for_template_visitor{ {} }(expr);
-//}
+bool uses_auto(const NodeStructs::FunctionParameter& param) {
+	return uses_auto(param.typename_);
+}
+
+bool uses_auto(const NodeStructs::Statement& statement) {
+	if (std::holds_alternative<NodeStructs::VariableDeclarationStatement>(statement.statement)) {
+		const auto& var_decl = std::get<NodeStructs::VariableDeclarationStatement>(statement.statement);
+		return uses_auto(var_decl.type);
+	}
+	else
+		return false;
+}
+
+static bool uses_auto(const NodeStructs::BaseTypename& t) {
+	return t <=> NodeStructs::BaseTypename{ "auto" } == std::weak_ordering::equivalent;
+}
+
+static bool uses_auto(const NodeStructs::NamespacedTypename& t) {
+	return uses_auto(t.name_in_name_space.get()) || uses_auto(t.name_space.get());
+}
+
+static bool uses_auto(const NodeStructs::TemplatedTypename& t) {
+	if (uses_auto(t.type.get()))
+		return true;
+	for (const auto& param : t.templated_with)
+		if (uses_auto(param))
+			return true;
+	return false;
+}
+
+static bool uses_auto(const NodeStructs::UnionTypename& t) {
+	for (const auto& param : t.ors)
+		if (uses_auto(param))
+			return true;
+	return false;
+}
+
+bool uses_auto(const NodeStructs::Typename& t) {
+	return std::visit([](const auto& t_) { return uses_auto(t_); }, t.value);
+}
+
 //
-//#include "../expression_visitor/transpile_call_expression_with_args.hpp"
-//transpile_t transpile_call_expression_with_args(
+//expected<NodeStructs::Function> realise_function_using_auto_hack(
 //	transpilation_state_with_indent state,
-//	const std::vector<NodeStructs::FunctionArgument>& arguments,
-//	const NodeStructs::Expression& expr
+//	const NodeStructs::Function& fn_using_auto,
+//	const NodeStructs::Type& first_arg_t,
+//	const std::ranges::range auto& args
 //) {
-//	return transpile_call_expression_with_args_visitor{ {}, state, arguments }(expr);
-//}
+//	/*if (fn_using_auto.parameters.size() != args.size() + 1)
+//		throw;*/
 //
-//#include "../expression_visitor/transpile_expression_visitor.hpp"
-//transpile_t2 transpile_expression(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::Expression& expr
-//) {
-//	return transpile_expression_visitor{ {}, state }(expr);
+//	for (auto&& p : fn_using_auto.parameters)
+//		if (uses_auto(p))
+//			throw;
+//
+//	for (auto&& statement : fn_using_auto.statements)
+//		if (uses_auto(statement))
+//			throw;
+//
+//	bool at_least_one = false;
+//	bool only_one = false;
+//	for (const auto& statement : fn_using_auto.statements)
+//		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
+//			only_one = at_least_one ? false : true;
+//			at_least_one = true;
+//		}
+//	if (at_least_one == false) {
+//		return NodeStructs::Function{
+//			.name = fn_using_auto.name,
+//			.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
+//			.parameters = fn_using_auto.parameters,
+//			.statements = fn_using_auto.statements
+//		};
+//	}
+//	else if (only_one == false)
+//		throw;
+//
+//	for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+//		if (std::holds_alternative<NodeStructs::Value>(value_cat))
+//			state.state.variables[name].push_back(std::pair{ NodeStructs::MutableReference{}, type_of_typename(state, type_name).value() });
+//		else
+//			state.state.variables[name].push_back(std::pair{ value_cat, type_of_typename(state, type_name).value() });
+//
+//	for (int i = 0; i < fn_using_auto.statements.size(); ++i) {
+//		const auto& statement = fn_using_auto.statements.at(i);
+//		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
+//			const auto& return_expr = std::get<NodeStructs::ReturnStatement>(statement.statement).returnExpr;
+//			if (return_expr.size() != 1)
+//				throw;
+//
+//			auto deduced_t = transpile_expression(state, return_expr.at(0).expr);
+//
+//			if (deduced_t.has_error()) {
+//				for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+//					state.state.variables[name].pop_back();
+//				for (int j = 0; j < fn_using_auto.statements.size(); ++j)
+//					remove_added_variables(state, fn_using_auto.statements.at(i));
+//			}
+//			return_if_error(deduced_t);
+//
+//			auto return_tn = typename_of_type(state, deduced_t.value().type);
+//
+//			for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+//				state.state.variables[name].pop_back();
+//			for (int j = 0; j < fn_using_auto.statements.size(); ++j)
+//				remove_added_variables(state, fn_using_auto.statements.at(i));
+//
+//			return_if_error(return_tn);
+//
+//			return NodeStructs::Function{
+//				.name = fn_using_auto.name,
+//				.returnType = return_tn.value(),
+//				.parameters = fn_using_auto.parameters,
+//				.statements = fn_using_auto.statements
+//			};
+//		}
+//	}
+//	throw;
 //}

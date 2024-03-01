@@ -8,7 +8,7 @@ String name;
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	Vector<Named> vec = {};
+	Vector<Named> vec = Vector<Named>{};
 	push(vec, Dog{"doggo"});
 	push(vec, Cat{"gato"});
 	for (auto&& e : vec) {
