@@ -1,6 +1,5 @@
 #include "../core/toCPP.hpp"
 #include "../utility/replace_all.hpp"
-#include "../utility/range_join.hpp"
 
 using T = transpile_member_call_visitor;
 using R = T::R;
@@ -162,6 +161,10 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::NamespaceType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
@@ -173,22 +176,31 @@ R T::operator()(const NodeStructs::VectorType& t) {
 	auto args_repr = transpile_args(state, arguments);
 	return_if_error(args_repr);
 
-	if (arguments.size() == 0)
-		throw;
-	if (arguments.size() > 1)
-		throw;
-
-	auto arg_t = transpile_expression(state, arguments.at(0).expr);
-	return_if_error(arg_t);
-
-	if (!is_assignable_to(state, t.value_type, arg_t.value().type))
-		throw;
-
 	if (property_name == "push") {
+		if (arguments.size() == 0)
+			throw;
+		if (arguments.size() > 1)
+			throw;
+
+
+		auto arg_t = transpile_expression(state, arguments.at(0).expr);
+		return_if_error(arg_t);
+
+		if (!is_assignable_to(state, t.value_type, arg_t.value().type))
+			throw;
 		return whole_expression_information{
 			.value_category = NodeStructs::Value{},
 			.type = *state.state.named.types.at("Void").back(),
 			.representation = "push(" + operand_info.value().representation + ", " + args_repr.value() + ")"
+		};
+	}
+	if (property_name == "size") {
+		if (arguments.size() != 0)
+			throw;
+		return whole_expression_information{
+			.value_category = NodeStructs::Value{},
+			.type = *state.state.named.types.at("Int").back(),
+			.representation = operand_info.value().representation + ".size()"
 		};
 	}
 	throw;

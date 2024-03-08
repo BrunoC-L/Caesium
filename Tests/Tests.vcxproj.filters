@@ -29,5 +29,8 @@
     <ClInclude Include="test_transpile_files.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="test_structurize.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

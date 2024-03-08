@@ -161,12 +161,15 @@
     <ClCompile Include="type_visitor\type_of_function_like_call_with_args_visitor.cpp" />
     <ClCompile Include="typename_visitor\type_of_typename_visitor.cpp" />
     <ClCompile Include="typename_visitor\type_template_of_typename_visitor.cpp" />
+    <ClCompile Include="type_visitor\type_of_resolution_operator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
     <ClInclude Include="type_visitor\typename_of_type_visitor.hpp" />
+    <ClInclude Include="type_visitor\type_of_resolution_operator.hpp" />
     <ClInclude Include="utility\box.hpp" />
     <ClInclude Include="utility\colored_text.hpp" />
+    <ClInclude Include="utility\enumerate.hpp" />
     <ClInclude Include="utility\expected.hpp" />
     <ClInclude Include="expression_visitor\expression_for_template_visitor.hpp" />
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />

@@ -2,7 +2,6 @@
 #include "../utility/replace_all.hpp"
 #include "../core/structurizer.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
-#include "../utility/range_join.hpp"
 #include <algorithm>
 
 using T = transpile_expression_visitor;
@@ -362,12 +361,12 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		}
 
 		{
-			And<IndentToken, Function, Token<END>> f{ 1 };
+			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (!f.build(g.it))
 				throw;
-			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<Function>()) };
+			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>()) };
 			structured_f->name = tmpl_name;
 			state.state.named.functions[structured_f->name].push_back(structured_f);
 			state.state.traversed_functions.insert(*structured_f);
@@ -382,12 +381,12 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			};
 		}
 		{
-			And<IndentToken, Type, Token<END>> t{ 1 };
+			And<IndentToken, grammar::Type, Token<END>> t{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (!t.build(g.it))
 				throw;
-			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<Type>()) };
+			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>()) };
 			structured_t->name = tmpl_name;
 			state.state.named.types[structured_t->name].push_back(structured_t);
 			auto opt_error = traverse_type(state, *structured_t);
@@ -469,27 +468,48 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
-	throw;
+	auto operand_info = transpile_expression(state, expr.operand);
+	return_if_error(operand_info);
+	if (std::holds_alternative<NodeStructs::VectorType>(operand_info.value().type.value)) {
+		const auto& vt = std::get<NodeStructs::VectorType>(operand_info.value().type.value);
+		if (expr.arguments.args.size() != 1)
+			throw;
+		auto arg_info = transpile_expression(state, expr.arguments.args.at(0).expr);
+		return_if_error(arg_info);
+		if (arg_info.value().type <=> NodeStructs::UniversalType{ *state.state.named.types.at("Int").back() } != std::weak_ordering::equivalent)
+			throw;
+		return whole_expression_information{
+			.value_category = operand_info.value().value_category,
+			.type = vt.value_type,
+			.representation = operand_info.value().representation + "[" + arg_info.value().representation + "]"
+		};
+	}
+	return error{
+		"user error",
+		"bracket access is reserved for vector, set and map types"
+	};
 }
 
 R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 	if (std::holds_alternative<NodeStructs::ParenArguments>(expr.operand.expression.get())) {
 		const auto& operand = std::get<NodeStructs::ParenArguments>(expr.operand.expression.get());
-		auto view = range_join(operand.args, expr.arguments.args);
-		std::vector<NodeStructs::FunctionArgument> vec = view | to_vec();
+		auto joined = operand.args;
+		for (const auto& arg : expr.arguments.args)
+			joined.push_back(arg);
 		auto rewired = NodeStructs::CallExpression{
 			.operand = NodeStructs::Expression{ expr.property_name },
-			.arguments = std::move(vec)
+			.arguments = std::move(joined)
 		};
 		return operator()(rewired);
 	}
 	if (std::holds_alternative<NodeStructs::BraceArguments>(expr.operand.expression.get())) {
 		const auto& operand = std::get<NodeStructs::BraceArguments>(expr.operand.expression.get());
-		auto view = range_join(operand.args, expr.arguments.args);
-		auto vec = view | to_vec();
+		auto joined = operand.args;
+		for (const auto& arg : expr.arguments.args)
+			joined.push_back(arg);
 		auto rewired = NodeStructs::CallExpression{
 			.operand = NodeStructs::Expression{ expr.property_name },
-			.arguments = std::move(vec)
+			.arguments = std::move(joined)
 		};
 		return operator()(rewired);
 	}

@@ -1,18 +1,9 @@
 #include "../core/toCPP.hpp"
 #include "../core/structurizer.hpp"
+#include "../utility/replace_all.hpp"
 
 using T = type_template_of_typename_visitor;
 using R = T::R;
-
-// https://stackoverflow.com/a/24315631/10945691
-static std::string ReplaceAll(std::string str, const std::string& from, const std::string& to) {
-	size_t start_pos = 0;
-	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-		str.replace(start_pos, from.length(), to);
-		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
-	}
-	return str;
-}
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
@@ -61,10 +52,10 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		for (int i = 0; i < tmpl.parameters.size(); ++i) {
 			auto e = transpile_typename(state, templated_with.at(i));
 			return_if_error(e);
-			replaced = ReplaceAll(std::move(replaced), tmpl.parameters.at(i).first, e.value());
+			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i).first, e.value());
 		}
 
-		Type t{ 1 };
+		grammar::Type t{ 1 };
 		auto tokens = Tokenizer(replaced).read();
 		tokens_and_iterator g{ tokens, tokens.begin() };
 		bool ok = t.build(g.it) && g.it == g.tokens.end();

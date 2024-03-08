@@ -29,7 +29,7 @@ struct NodeStructs {
 
 	struct NamespacedTypename {
 		Box<Typename> name_space;
-		Box<Typename> name_in_name_space;
+		std::string name_in_name_space;
 		std::weak_ordering operator<=>(const NamespacedTypename&) const = default;
 	};
 
@@ -49,8 +49,8 @@ struct NodeStructs {
 	};
 
 	struct Alias {
-		Typename aliasFrom;
-		std::string aliasTo;
+		std::string aliasFrom;
+		Typename aliasTo;
 		std::weak_ordering operator<=>(const Alias&) const = default;
 	};
 
@@ -194,7 +194,7 @@ struct NodeStructs {
 	struct UnaryExpression {
 		using op_types = std::variant<
 			Token<DASH>,
-			Token<TILDE>
+			Token<NOT>
 		>;
 		std::vector<op_types> unary_operators;
 		Expression expr;
@@ -392,6 +392,12 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const InterfaceType&) const;
 	};
 
+	struct NameSpace;
+	struct NamespaceType {
+		std::reference_wrapper<const NameSpace> name_space;
+		std::weak_ordering operator<=>(const NamespaceType&) const;
+	};
+
 	struct Template {
 		std::string name;
 		std::vector<std::pair<std::string, std::optional<NodeStructs::Expression>>> parameters;
@@ -443,6 +449,7 @@ struct NodeStructs {
 			TypeType,
 			FunctionType,
 			InterfaceType,
+			NamespaceType,
 			UnionType,
 			VectorType,
 			SetType,
@@ -464,6 +471,18 @@ struct NodeStructs {
 		bool operator==(const Block&) const;
 	};
 
+	struct NameSpace {
+		std::string name;
+		std::vector<Type> types;
+		std::vector<Function> functions;
+		std::vector<Interface> interfaces;
+		std::vector<Template> templates;
+		std::vector<Block> blocks;
+		std::vector<Alias> aliases;
+		std::vector<NameSpace> namespaces;
+		std::weak_ordering operator<=>(const NameSpace&) const;
+	};
+
 	struct File {
 		std::string filename;
 		std::vector<Import> imports;
@@ -473,6 +492,7 @@ struct NodeStructs {
 		std::vector<Template> templates;
 		std::vector<Block> blocks;
 		std::vector<Alias> aliases;
+		std::vector<NameSpace> namespaces;
 		std::weak_ordering operator<=>(const File&) const = default;
 	};
 };
@@ -577,6 +597,10 @@ inline std::weak_ordering NodeStructs::InterfaceType::operator<=>(const Interfac
 	return cmp(interface.get(), other.interface.get());
 }
 
+inline std::weak_ordering NodeStructs::NamespaceType::operator<=>(const NamespaceType& other) const {
+	return cmp(name_space.get(), other.name_space.get());
+}
+
 inline std::weak_ordering NodeStructs::BuiltInType::operator<=>(const BuiltInType& other) const {
 	return cmp(builtin, other.builtin);
 }
@@ -606,4 +630,11 @@ inline bool NodeStructs::Type::operator==(const Type& other) const {
 
 inline bool NodeStructs::Block::operator==(const Block& other) const {
 	return name == other.name;
+}
+
+inline std::weak_ordering NodeStructs::NameSpace::operator<=>(const NameSpace& other) const {
+	if (auto c = cmp(name, other.name); c != 0)
+		return c;
+	throw;
+	return std::weak_ordering::equivalent;
 }

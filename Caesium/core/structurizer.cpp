@@ -1,96 +1,74 @@
 #pragma once
 #include "structurizer.hpp"
 
-static std::string word_or_auto(const Or<Token<AUTO>, Word>& tk) {
+static std::string word_or_auto(const Or<Token<AUTO>, grammar::Word>& tk) {
 	return std::visit(
 		overload(
 			[](const Token<AUTO>& _auto) -> std::string {
 				return "auto";
 			},
-			[](const Word& w) -> std::string {
+			[](const grammar::Word& w) -> std::string {
 				return w.value;
 			}
 		), tk.value()
 	);
 }
 
-NodeStructs::Import getStruct(const Import& f) {
+NodeStructs::Import getStruct(const grammar::Import& f) {
 	return { std::visit(
 		overload(overload_default_error,
-			[](const Word& word) {
+			[](const grammar::Word& word) {
 				return word.value + ".caesium";
 			},
-			[](const String& string) {
+			[](const grammar::String& string) {
 				return string.value;
 		}),
-		f.get<Or<Word, String>>().value()
+		f.get<Or<grammar::Word, grammar::String>>().value()
 	) };
 }
 
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const NamespaceTypenameExtension& nst) {
-	return { NodeStructs::NamespacedTypename{
-		std::move(t),
-		getStruct(nst.get<Alloc<Typename>>().get())
-	} };
-}
-
-NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std::vector<Alloc<Typename>>& templates) {
-	return {
-		std::move(t),
-		templates
-			| LIFT_TRANSFORM_TRAIL(.get())
-			| LIFT_TRANSFORM(getStruct)
-			| to_vec()
-	};
-}
-
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const TemplateTypenameExtension& tt) {
-	if (tt.get<Opt<NamespaceTypenameExtension>>().has_value())
-		return extend(NodeStructs::Typename{
-			extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>()) },
-			tt.get<Opt<NamespaceTypenameExtension>>().value()
-		);
-	else
-		return NodeStructs::Typename{
-			extend_tmpl(std::move(t), tt.get<CommaStar<Alloc<Typename>>>().get<Alloc<Typename>>())
-		};
-}
-
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const UnionTypenameExtension& ut) {
-	std::vector<NodeStructs::Typename> v{ std::move(t) };
-	auto other_or_others = getStruct(ut.get<Alloc<Typename>>().get()).value;
-	return std::visit(
-		overload(
-			[&](auto&& arg) -> NodeStructs::Typename {
-				v.push_back(NodeStructs::Typename{ std::move(arg) });
-				return NodeStructs::Typename{ NodeStructs::UnionTypename{
-					std::move(v)
+NodeStructs::Typename getStruct(const grammar::Typename& t) {
+	NodeStructs::Typename res = { NodeStructs::BaseTypename{ word_or_auto(t.get<Or<Token<AUTO>, grammar::Word>>()) } };
+	using opts = Or<grammar::NamespaceTypenameExtension, grammar::TemplateTypenameExtension, grammar::UnionTypenameExtension>;
+	for (const auto& ext : t.get<Star<opts>>().get_view<opts>()) {
+		res = std::visit(overload(overload_default_error,
+			[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
+				return { NodeStructs::NamespacedTypename { std::move(res), word_or_auto(e.get<Or<Token<AUTO>, grammar::Word>>()) } };
+			},
+			[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
+				return { NodeStructs::TemplatedTypename {
+					std::move(res),
+					e.get<CommaStar<Alloc<grammar::Typename>>>().get<Alloc<grammar::Typename>>()
+					| LIFT_TRANSFORM_TRAIL(.get())
+					| LIFT_TRANSFORM(getStruct)
+					| to_vec()
 				} };
 			},
-			[&](NodeStructs::UnionTypename&& arg) -> NodeStructs::Typename {
-				v.insert(v.end(), std::make_move_iterator(begin(arg.ors)), std::make_move_iterator(end(arg.ors)));
-				return NodeStructs::Typename{ NodeStructs::UnionTypename{
-					std::move(v)
+			[&](const grammar::UnionTypenameExtension& ext) -> NodeStructs::Typename {
+				auto temp = getStruct(ext.get<Alloc<grammar::Typename>>().get());
+				if (std::holds_alternative<NodeStructs::UnionTypename>(res.value)) {
+					if (std::holds_alternative<NodeStructs::UnionTypename>(temp.value))
+						throw;
+					std::get<NodeStructs::UnionTypename>(res.value).ors.push_back(std::move(temp));
+					return res;
+				}
+				if (std::holds_alternative<NodeStructs::UnionTypename>(temp.value)) {
+					auto& ut = std::get<NodeStructs::UnionTypename>(temp.value);
+					ut.ors.push_back(std::move(res));
+					std::rotate(ut.ors.rbegin(), ut.ors.rbegin() + 1, ut.ors.rend());
+					return temp;
+				}
+				return { NodeStructs::UnionTypename{
+					std::vector{ std::move(res), std::move(temp) }
 				} };
 			}
-		),
-		std::move(other_or_others)
-	);
+		), ext.value());
+		continue;
+	}
+	return res;
 }
 
-NodeStructs::Typename getStruct(const Typename& t) {
-	if (!t.get<Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>().has_value())
-		return NodeStructs::Typename{ NodeStructs::BaseTypename{ word_or_auto(t.get<Or<Token<AUTO>, Word>>()) } };
-	else
-		return std::visit(
-			[&](const auto& u) {
-				return extend(NodeStructs::Typename{ NodeStructs::BaseTypename{ word_or_auto(t.get<Or<Token<AUTO>, Word>>()) } }, u);
-			},
-			t.get<Opt<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>().value().value()
-		);
-}
-
-NodeStructs::ParameterCategory getStruct(const ParameterCategory& vc) {
+NodeStructs::ParameterCategory getStruct(const grammar::ParameterCategory& vc) {
 	return std::visit(
 		overload(overload_default_error,
 			/*[](const Token<KEY>&) -> NodeStructs::ValueCategory {
@@ -110,61 +88,68 @@ NodeStructs::ParameterCategory getStruct(const ParameterCategory& vc) {
 	);
 }
 
-NodeStructs::Function getStruct(const Function& f) {
+NodeStructs::Function getStruct(const grammar::Function& f) {
 	return NodeStructs::Function{
-		.name = f.get<Word>().value,
-		.returnType = getStruct(f.get<Typename>()),
-		.parameters = f.get<FunctionParameters>().get<And<Typename, ParameterCategory, Word>>()
-			| LIFT_TRANSFORM_X(type_and_name, NodeStructs::FunctionParameter{ getStruct(type_and_name.get<Typename>()), getStruct(type_and_name.get<ParameterCategory>()), type_and_name.get<Word>().value })
+		.name = f.get<grammar::Word>().value,
+		.returnType = getStruct(f.get<grammar::Typename>()),
+		.parameters = f.get<grammar::FunctionParameters>().get<And<grammar::Typename, grammar::ParameterCategory, grammar::Word>>()
+			| LIFT_TRANSFORM_X(
+				type_and_name,
+				NodeStructs::FunctionParameter{
+					getStruct(type_and_name.get<grammar::Typename>()),
+					getStruct(type_and_name.get<grammar::ParameterCategory>()),
+					type_and_name.get<grammar::Word>().value
+				}
+			)
 			| to_vec(),
-		.statements = getStatements(f.get<ColonIndentCodeBlock>())
+		.statements = getStatements(f.get<grammar::ColonIndentCodeBlock>())
 	};
 }
 
-std::pair<std::string, std::optional<NodeStructs::Expression>> getTemplateParameter(const And<Word, Opt<And<Token<EQUAL>, Expression>>>& parameter_and_optional_value) {
-	if (parameter_and_optional_value.get<Opt<And<Token<EQUAL>, Expression>>>().has_value())
+std::pair<std::string, std::optional<NodeStructs::Expression>> getTemplateParameter(const And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>& parameter_and_optional_value) {
+	if (parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::Expression>>>().has_value())
 		return {
-			parameter_and_optional_value.get<Word>().value,
-			getExpressionStruct(parameter_and_optional_value.get<Opt<And<Token<EQUAL>, Expression>>>().value().get<Expression>())
+			parameter_and_optional_value.get<grammar::Word>().value,
+			getExpressionStruct(parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::Expression>>>().value().get<grammar::Expression>())
 		};
 	else
 		return {
-			parameter_and_optional_value.get<Word>().value,
+			parameter_and_optional_value.get<grammar::Word>().value,
 			std::nullopt
 		};
 }
 
-NodeStructs::Template getStruct(const Template& t) {
+NodeStructs::Template getStruct(const grammar::Template& t) {
 	return {
-		.name = t.get<Word>().value,
-		.parameters = t.get<CommaStar<And<Word, Opt<And<Token<EQUAL>, Expression>>>>>().get<And<Word, Opt<And<Token<EQUAL>, Expression>>>>()
+		.name = t.get<grammar::Word>().value,
+		.parameters = t.get<CommaStar<And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>>>().get<And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>>()
 			| LIFT_TRANSFORM(getTemplateParameter)
 			| to_vec(),
 		.templated = t.get<TemplateBody>().value
 	};
 }
 
-NodeStructs::MemberVariable getStruct(const MemberVariable& f) {
+NodeStructs::MemberVariable getStruct(const grammar::MemberVariable& f) {
 	return NodeStructs::MemberVariable{
-		.type = getStruct(f.get<Typename>()),
-		.name = f.get<Word>().value,
+		.type = getStruct(f.get<grammar::Typename>()),
+		.name = f.get<grammar::Word>().value,
 	};
 }
 
-NodeStructs::Alias getStruct(const Alias& f) {
+NodeStructs::Alias getStruct(const grammar::Alias& f) {
 	return NodeStructs::Alias{
-		.aliasFrom = getStruct(f.get<Typename>()),
-		.aliasTo = f.get<Word>().value,
+		.aliasFrom = f.get<grammar::Word>().value,
+		.aliasTo = getStruct(f.get<grammar::Typename>()),
 	};
 }
 
-NodeStructs::Type getStruct(const Type& cl) {
-	auto elems = cl.get<Indent<Star<And<IndentToken, ClassElement>>>>().get_view<ClassElement>() | LIFT_TRANSFORM_TRAIL(.value());
+NodeStructs::Type getStruct(const grammar::Type& cl) {
+	auto elems = cl.get<Indent<Star<And<IndentToken, grammar::ClassElement>>>>().get_view<grammar::ClassElement>() | LIFT_TRANSFORM_TRAIL(.value());
 	return {
-		.name = cl.get<Word>().value,
+		.name = cl.get<grammar::Word>().value,
 		.aliases = elems
-			| filter_variant_type_eq<Alias>
-			| tranform_variant_type_eq<Alias>
+			| filter_variant_type_eq<grammar::Alias>
+			| tranform_variant_type_eq<grammar::Alias>
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
 		/*.methods = elems
@@ -173,62 +158,114 @@ NodeStructs::Type getStruct(const Type& cl) {
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),*/
 		.memberVariables = elems
-			| filter_transform_variant_type_eq(MemberVariable)
+			| filter_transform_variant_type_eq(grammar::MemberVariable)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec()
 	};
 }
 
-NodeStructs::Interface getStruct(const Interface& interface) {
+NodeStructs::Interface getStruct(const grammar::Interface& interface) {
 	using Member = Or<
-		Alias,
-		MemberVariable
+		grammar::Alias,
+		grammar::MemberVariable
 	>;
 	using Members = Indent<Star<And<IndentToken, Member>>>;
 	auto elems = interface.get<Members>().get_view<Member>() | LIFT_TRANSFORM_TRAIL(.value());
 	return {
-		.name = interface.get<Word>().value,
+		.name = interface.get<grammar::Word>().value,
 		.aliases = elems
-			| filter_variant_type_eq<Alias>
-			| tranform_variant_type_eq<Alias>
+			| filter_variant_type_eq<grammar::Alias>
+			| tranform_variant_type_eq<grammar::Alias>
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
 		.memberVariables = elems
-			| filter_transform_variant_type_eq(MemberVariable)
+			| filter_transform_variant_type_eq(grammar::MemberVariable)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec()
 	};
 }
 
-NodeStructs::File getStruct(const File& f, std::string fileName) {
-	using T = Star<Or<Token<NEWLINE>, Type, Function, Interface, Template/*, Template<Type>, Template<Function>, Template<BlockDeclaration>*/, Alias>>;
+NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns) {
+	std::vector<NodeStructs::Type> types;
+	std::vector<NodeStructs::Function> functions;
+	std::vector<NodeStructs::Interface> interfaces;
+	std::vector<NodeStructs::Template> templates;
+	std::vector<NodeStructs::Alias> aliases;
+	std::vector<NodeStructs::NameSpace> namespaces;
+	for (const And<IndentToken, grammar::Named>& named : ns.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get_view<And<IndentToken, grammar::Named>>()) {
+		std::visit(
+			overload(
+				[&](const grammar::Type& e) {
+					types.push_back(getStruct(e));
+				},
+				[&](const grammar::Function& e) {
+					functions.push_back(getStruct(e));
+				},
+				[&](const grammar::Interface& e) {
+					interfaces.push_back(getStruct(e));
+				},
+				[&](const grammar::Template& e) {
+					templates.push_back(getStruct(e));
+				},
+				[&](const grammar::Alias& e) {
+					aliases.push_back(getStruct(e));
+				},
+				[&](const grammar::NameSpace& e) {
+					namespaces.push_back(getStruct(e));
+				}
+			), named.get<grammar::Named>().value()
+		);
+	}
+	return {
+		.name = ns.get<grammar::Word>().value,
+		.types = std::move(types),
+		.functions = std::move(functions),
+		.interfaces = std::move(interfaces),
+		.templates = std::move(templates),
+		.aliases = std::move(aliases),
+		.namespaces = std::move(namespaces)
+	};
+}
+
+NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
+	using T = Star<Or<Token<NEWLINE>, grammar::Named>>;
+	const auto& t = f.get<T>().get<grammar::Named>();
 
 	return NodeStructs::File{
-		.filename = fileName,
-		.imports = f.get<Star<Import>>().get<Import>()
+		.filename = std::string{ fileName },
+		.imports = f.get<Star<grammar::Import>>().get<grammar::Import>()
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.types = f.get<T>().get<Type>()
+		.types = t
+			| LIFT_TRANSFORM_TRAIL(.value())
+			| filter_transform_variant_type_eq(grammar::Type)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.functions = f.get<T>().get<Function>()
+		.functions = t
+			| LIFT_TRANSFORM_TRAIL(.value())
+			| filter_transform_variant_type_eq(grammar::Function)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.interfaces = f.get<T>().get<Interface>()
+		.interfaces = t
+			| LIFT_TRANSFORM_TRAIL(.value())
+			| filter_transform_variant_type_eq(grammar::Interface)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.templates = f.get<T>().get<Template>()
+		.templates = t
+			| LIFT_TRANSFORM_TRAIL(.value())
+			| filter_transform_variant_type_eq(grammar::Template)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		/*.type_templates = f.get<T>().get<Template<Type>>()
+		.aliases = t
+			| LIFT_TRANSFORM_TRAIL(.value())
+			| filter_transform_variant_type_eq(grammar::Alias)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.function_templates = f.get<T>().get<Template<Function>>()
+		.namespaces = t
+			| LIFT_TRANSFORM_TRAIL(.value())
+			| filter_transform_variant_type_eq(grammar::NameSpace)
 			| LIFT_TRANSFORM(getStruct)
-			| to_vec(),*/
-		.aliases = f.get<T>().get<Alias>()
-			| LIFT_TRANSFORM(getStruct)
-			| to_vec(),
+			| to_vec()
 	};
 }
 
@@ -250,53 +287,53 @@ NodeStructs::ArgumentCategory getStruct(const Or<Token<COPY>, Token<MOVE>, And<T
 	);
 }
 
-NodeStructs::FunctionArgument getStruct(const FunctionArgument& arg) {
+NodeStructs::FunctionArgument getStruct(const grammar::FunctionArgument& arg) {
 	using call_t = Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	if (arg.get<Opt<call_t>>().has_value())
 		return NodeStructs::FunctionArgument{
 			getStruct(arg.get<Opt<call_t>>().value()),
-			getExpressionStruct(arg.get<Expression>())
+			getExpressionStruct(arg.get<grammar::Expression>())
 	};
 	else
 		return NodeStructs::FunctionArgument{
 			{},
-			getExpressionStruct(arg.get<Expression>())
+			getExpressionStruct(arg.get<grammar::Expression>())
 	};
 }
 
-NodeStructs::ParenArguments getStruct(const ParenArguments& args) {
+NodeStructs::ParenArguments getStruct(const grammar::ParenArguments& args) {
 	return {
-		args.get<CommaStar<FunctionArgument>>().get<FunctionArgument>()
+		args.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec()
 	};
 }
 
-NodeStructs::BracketArguments getStruct(const BracketArguments& args) {
+NodeStructs::BracketArguments getStruct(const grammar::BracketArguments& args) {
 	return {
-		args.get<CommaStar<FunctionArgument>>().get<FunctionArgument>()
+		args.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec()
 	};
 }
 
-NodeStructs::BraceArguments getStruct(const BraceArguments& args) {
+NodeStructs::BraceArguments getStruct(const grammar::BraceArguments& args) {
 	return {
-		args.get<CommaStar<FunctionArgument>>().get<FunctionArgument>()
+		args.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec()
 	};
 }
 
-NodeStructs::TemplateArguments getStruct(const TemplateArguments& args) {
+NodeStructs::TemplateArguments getStruct(const grammar::TemplateArguments& args) {
 	return {
-		args.get<CommaStar<Expression>>().get<Expression>()
+		args.get<CommaStar<grammar::Expression>>().get<grammar::Expression>()
 			| LIFT_TRANSFORM(getExpressionStruct)
 			| to_vec()
 	};
 }
 
-NodeStructs::Expression getExpressionStruct(const BraceArguments&) {
+NodeStructs::Expression getExpressionStruct(const grammar::BraceArguments&) {
 	throw;
 	/*NodeStructs::BraceArguments res;
 	for (const auto& arg : statement.get<CommaStar<FunctionArgument>>().get<FunctionArgument>())
@@ -304,27 +341,27 @@ NodeStructs::Expression getExpressionStruct(const BraceArguments&) {
 	return res;*/
 }
 
-NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
+NodeStructs::Expression getExpressionStruct(const grammar::ParenExpression& statement) {
 	return std::visit(overload(overload_default_error,
-		[](const Construct& e) -> NodeStructs::Expression {
+		[](const grammar::Construct& e) -> NodeStructs::Expression {
 			return { NodeStructs::ConstructExpression{
-				.operand = getStruct(e.get<Typename>()),
-				.arguments = e.get<BraceArguments>().get<CommaStar<FunctionArgument>>().get<FunctionArgument>() | LIFT_TRANSFORM(getStruct) | to_vec()
+				.operand = getStruct(e.get<grammar::Typename>()),
+				.arguments = e.get<grammar::BraceArguments>().get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>() | LIFT_TRANSFORM(getStruct) | to_vec()
 			} };
 		},
-		[](const ParenArguments& e) -> NodeStructs::Expression {
+		[](const grammar::ParenArguments& e) -> NodeStructs::Expression {
 			return { NodeStructs::ParenArguments{
-				.args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>() | LIFT_TRANSFORM(getStruct) | to_vec()
+				.args = e.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>() | LIFT_TRANSFORM(getStruct) | to_vec()
 			} };
 		},
-		[](const BracketArguments& /*e*/) -> NodeStructs::Expression {
+		[](const grammar::BracketArguments& /*e*/) -> NodeStructs::Expression {
 			//const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
 			throw;
 			//auto res = getExpressionStruct(e);
 			//return NodeStructs::Expression{ std::move(res) };
 		},
-		[](const BraceArguments& e) -> NodeStructs::Expression {
-			const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
+		[](const grammar::BraceArguments& e) -> NodeStructs::Expression {
+			const auto& args = e.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>();
 			return { NodeStructs::BraceArguments{
 				args
 				| LIFT_TRANSFORM(getStruct)
@@ -333,7 +370,7 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 			//auto res = getExpressionStruct(e);
 			//return NodeStructs::Expression{ std::move(res) };
 		},
-		[](const Word& e) {
+		[](const grammar::Word& e) {
 			return NodeStructs::Expression{ e.value };
 		},
 		[](const Token<INTEGER_NUMBER>& e) {
@@ -350,25 +387,25 @@ NodeStructs::Expression getExpressionStruct(const ParenExpression& statement) {
 	);
 }
 
-NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& expr, const Postfix& postfix) {
+NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& expr, const grammar::Postfix& postfix) {
 	return std::visit(
 		overload(overload_default_error,
-			[&](const And<Token<DOT>, Word, ParenArguments>& e) {
-				return NodeStructs::Expression{ NodeStructs::PropertyAccessAndCallExpression{ std::move(expr), e.get<Word>().value, getStruct(e.get<ParenArguments>()) } };
+			[&](const And<Token<DOT>, grammar::Word, grammar::ParenArguments>& e) {
+				return NodeStructs::Expression{ NodeStructs::PropertyAccessAndCallExpression{ std::move(expr), e.get<grammar::Word>().value, getStruct(e.get<grammar::ParenArguments>()) } };
 			},
-			[&](const And<Token<DOT>, Word>& e) {
-				return NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ std::move(expr), e.get<Word>().value } };
+			[&](const And<Token<DOT>, grammar::Word>& e) {
+				return NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ std::move(expr), e.get<grammar::Word>().value } };
 			},
-			[&](const ParenArguments& args) {
+			[&](const grammar::ParenArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::CallExpression{ std::move(expr), getStruct(args) } };
 			},
-			[&](const BracketArguments& args) {
+			[&](const grammar::BracketArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::BracketAccessExpression{ std::move(expr), getStruct(args) } };
 			},
 			/*[&](const BraceArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::ConstructExpression{ std::move(expr), getStruct(args) } };
 			},*/
-			[&](const TemplateArguments& args) {
+			[&](const grammar::TemplateArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::TemplateExpression{ std::move(expr), getStruct(args) } };
 			}
 		),
@@ -376,9 +413,9 @@ NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& exp
 	);
 }
 
-NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) {
-	const auto& postfixes = statement.get<Star<Postfix>>().get<Postfix>();
-	auto expr = getExpressionStruct(statement.get<ParenExpression>());
+NodeStructs::Expression getExpressionStruct(const grammar::PostfixExpression& statement) {
+	const auto& postfixes = statement.get<Star<grammar::Postfix>>().get<grammar::Postfix>();
+	auto expr = getExpressionStruct(statement.get<grammar::ParenExpression>());
 	if (postfixes.size() == 0)
 		return expr;
 	for (const auto& postfix : postfixes)
@@ -391,8 +428,8 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 			[](const auto& e) {
 				return std::visit(
 					overload(overload_default_error,
-						[](const And<Token<DOT>, Word>& e) {
-							return nodestruct_opts{ e.get<Word>().value };
+						[](const And<Token<DOT>, grammar::Word>& e) {
+							return nodestruct_opts{ e.get<grammar::Word>().value };
 						},
 						[](const ParenArguments& args) {
 							return nodestruct_opts{ getStruct(args) };
@@ -403,7 +440,7 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 						[](const BraceArguments& args) {
 							return nodestruct_opts{ getStruct(args) };
 						},
-						[](const TemplateArguments& args) -> nodestruct_opts {
+						[](const grammar::TemplateArguments& args) -> nodestruct_opts {
 							return nodestruct_opts{ getStruct(args) };
 						},
 						[](const Token<PLUSPLUS>& token) {
@@ -420,10 +457,10 @@ NodeStructs::Expression getExpressionStruct(const PostfixExpression& statement) 
 	} };*/
 }
 
-NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
-	const auto& prefixes = statement.get().get<Star<unary_operators>>().get<unary_operators>();
+NodeStructs::Expression getExpressionStruct(const grammar::UnaryExpression& statement) {
+	const auto& prefixes = statement.get().get<Star<grammar::unary_operators>>().get<grammar::unary_operators>();
 	if (prefixes.size() == 0)
-		return getExpressionStruct(statement.get().get<PostfixExpression>());
+		return getExpressionStruct(statement.get().get<grammar::PostfixExpression>());
 	else {
 		return NodeStructs::Expression{ NodeStructs::UnaryExpression {
 			.unary_operators = prefixes | std::views::transform(
@@ -436,121 +473,122 @@ NodeStructs::Expression getExpressionStruct(const UnaryExpression& statement) {
 					);
 				})
 			| to_vec(),
-			.expr = getExpressionStruct(statement.get().get<PostfixExpression>())
+			.expr = getExpressionStruct(statement.get().get<grammar::PostfixExpression>())
 		} };
 	}
 }
 
-NodeStructs::Expression getExpressionStruct(const MultiplicativeExpression& statement) {
+NodeStructs::Expression getExpressionStruct(const grammar::MultiplicativeExpression& statement) {
 	using operators = Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>;
-	const auto& multiplications = statement.get<Star<And<operators, UnaryExpression>>>().get<And<operators, UnaryExpression>>();
+	const auto& multiplications = statement.get<Star<And<operators, grammar::UnaryExpression>>>().get<And<operators, grammar::UnaryExpression>>();
 	if (multiplications.size() == 0)
-		return getExpressionStruct(statement.get<UnaryExpression>());
+		return getExpressionStruct(statement.get<grammar::UnaryExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::MultiplicativeExpression{
-			getExpressionStruct(statement.get<UnaryExpression>()),
+			getExpressionStruct(statement.get<grammar::UnaryExpression>()),
 			multiplications
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
 						operators::variant_t{ op_exp.get<operators>().value() },
-						getExpressionStruct(op_exp.get<UnaryExpression>())
+						getExpressionStruct(op_exp.get<grammar::UnaryExpression>())
 					})
 				| to_vec()
 		} };
 }
 
-NodeStructs::Expression getExpressionStruct(const AdditiveExpression& statement) {
+NodeStructs::Expression getExpressionStruct(const grammar::AdditiveExpression& statement) {
 	using operators = Or<Token<PLUS>, Token<DASH>>;
-	const auto& additions = statement.get<Star<And<operators, MultiplicativeExpression>>>().get<And<operators, MultiplicativeExpression>>();
+	const auto& additions = statement.get<Star<And<operators, grammar::MultiplicativeExpression>>>().get<And<operators, grammar::MultiplicativeExpression>>();
 	if (additions.size() == 0)
-		return getExpressionStruct(statement.get<MultiplicativeExpression>());
+		return getExpressionStruct(statement.get<grammar::MultiplicativeExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::AdditiveExpression{
-			getExpressionStruct(statement.get<MultiplicativeExpression>()),
+			getExpressionStruct(statement.get<grammar::MultiplicativeExpression>()),
 			additions
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
 						operators::variant_t{ op_exp.get<operators>().value() },
-						getExpressionStruct(op_exp.get<MultiplicativeExpression>())
+						getExpressionStruct(op_exp.get<grammar::MultiplicativeExpression>())
 					})
 				| to_vec()
 		} };
 }
 
-NodeStructs::Expression getExpressionStruct(const CompareExpression& statement) {
-	const auto& comparisons = statement.get<Star<And<CompareOperator, AdditiveExpression>>>().get<And<CompareOperator, AdditiveExpression>>();
+NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& statement) {
+	using op_add = And<grammar::CompareOperator, grammar::AdditiveExpression>;
+	const auto& comparisons = statement.get<Star<op_add>>().get<op_add>();
 	if (comparisons.size() == 0)
-		return getExpressionStruct(statement.get<AdditiveExpression>());
+		return getExpressionStruct(statement.get<grammar::AdditiveExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::CompareExpression{
-			getExpressionStruct(statement.get<AdditiveExpression>()),
+			getExpressionStruct(statement.get<grammar::AdditiveExpression>()),
 			comparisons
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
-						CompareOperator::variant_t{ op_exp.get<CompareOperator>().value() },
-						getExpressionStruct(op_exp.get<AdditiveExpression>())
+						grammar::CompareOperator::variant_t{ op_exp.get<grammar::CompareOperator>().value() },
+						getExpressionStruct(op_exp.get<grammar::AdditiveExpression>())
 					})
 				| to_vec()
 		} };
 }
 
-NodeStructs::Expression getExpressionStruct(const EqualityExpression& statement) {
+NodeStructs::Expression getExpressionStruct(const grammar::EqualityExpression& statement) {
 	using operators = Or<Token<EQUALEQUAL>, Token<NEQUAL>>;
-	const auto& equals = statement.get<Star<And<operators, CompareExpression>>>().get<And<operators, CompareExpression>>();
+	const auto& equals = statement.get<Star<And<operators, grammar::CompareExpression>>>().get<And<operators, grammar::CompareExpression>>();
 	if (equals.size() == 0)
-		return getExpressionStruct(statement.get<CompareExpression>());
+		return getExpressionStruct(statement.get<grammar::CompareExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::EqualityExpression{
-			getExpressionStruct(statement.get<CompareExpression>()),
+			getExpressionStruct(statement.get<grammar::CompareExpression>()),
 			equals
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
 						operators::variant_t{ op_exp.get<operators>().value() },
-						getExpressionStruct(op_exp.get<CompareExpression>())
+						getExpressionStruct(op_exp.get<grammar::CompareExpression>())
 					})
 				| to_vec()
 		} };
 }
 
-NodeStructs::Expression getExpressionStruct(const AndExpression& statement) {
-	const auto& ands = statement.get<Star<And<Token<AND>, EqualityExpression>>>().get<EqualityExpression>();
+NodeStructs::Expression getExpressionStruct(const grammar::AndExpression& statement) {
+	const auto& ands = statement.get<Star<And<Token<AND>, grammar::EqualityExpression>>>().get<grammar::EqualityExpression>();
 	if (ands.size() == 0)
-		return getExpressionStruct(statement.get<EqualityExpression>());
+		return getExpressionStruct(statement.get<grammar::EqualityExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::AndExpression{
-			getExpressionStruct(statement.get<EqualityExpression>()),
+			getExpressionStruct(statement.get<grammar::EqualityExpression>()),
 			ands
 				| LIFT_TRANSFORM(getExpressionStruct)
 				| to_vec()
 		} };
 }
 
-NodeStructs::Expression getExpressionStruct(const OrExpression& statement) {
-	const auto& ors = statement.get<Star<And<Token<OR>, AndExpression>>>().get<AndExpression>();
+NodeStructs::Expression getExpressionStruct(const grammar::OrExpression& statement) {
+	const auto& ors = statement.get<Star<And<Token<OR>, grammar::AndExpression>>>().get<grammar::AndExpression>();
 	if (ors.size() == 0)
-		return getExpressionStruct(statement.get<AndExpression>());
+		return getExpressionStruct(statement.get<grammar::AndExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::OrExpression{
-			getExpressionStruct(statement.get<AndExpression>()),
+			getExpressionStruct(statement.get<grammar::AndExpression>()),
 			ors
 				| LIFT_TRANSFORM(getExpressionStruct)
 				| to_vec()
 		} };
 }
 
-NodeStructs::Expression getExpressionStruct(const ConditionalExpression& statement) {
+NodeStructs::Expression getExpressionStruct(const grammar::ConditionalExpression& statement) {
 	const auto& ifElseExpr = statement.get<Opt<And<
 		Token<IF>,
-		OrExpression,
+		grammar::OrExpression,
 		Token<ELSE>,
-		OrExpression
+		grammar::OrExpression
 		>>>();
 	if (ifElseExpr.has_value())
 		return NodeStructs::Expression{ NodeStructs::ConditionalExpression{
-			getExpressionStruct(statement.get<OrExpression>()),
+			getExpressionStruct(statement.get<grammar::OrExpression>()),
 			std::pair{
-				getExpressionStruct(ifElseExpr.value().get<OrExpression, 0>()),
-				getExpressionStruct(ifElseExpr.value().get<OrExpression, 1>())
+				getExpressionStruct(ifElseExpr.value().get<grammar::OrExpression, 0>()),
+				getExpressionStruct(ifElseExpr.value().get<grammar::OrExpression, 1>())
 			}
 		} };
 	else
-		return getExpressionStruct(statement.get<OrExpression>());
+		return getExpressionStruct(statement.get<grammar::OrExpression>());
 }
 //
 //NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement) {
@@ -581,134 +619,134 @@ NodeStructs::Expression getExpressionStruct(const ConditionalExpression& stateme
 //		} };
 //}
 
-NodeStructs::Expression getExpressionStruct(const ExpressionStatement& statement) {
-	return getExpressionStruct(statement.get<Expression>());
+NodeStructs::Expression getExpressionStruct(const grammar::ExpressionStatement& statement) {
+	return getExpressionStruct(statement.get<grammar::Expression>());
 }
 
-NodeStructs::Expression getStatementStruct(const ExpressionStatement& statement) {
+NodeStructs::Expression getStatementStruct(const grammar::ExpressionStatement& statement) {
 	return getExpressionStruct(statement);
 }
 
-NodeStructs::VariableDeclarationStatement getStatementStruct(const VariableDeclarationStatement& statement) {
-	return { getStruct(statement.get<Typename>()), statement.get<Word>().value, getExpressionStruct(statement.get<Expression>()) };
+NodeStructs::VariableDeclarationStatement getStatementStruct(const grammar::VariableDeclarationStatement& statement) {
+	return { getStruct(statement.get<grammar::Typename>()), statement.get<grammar::Word>().value, getExpressionStruct(statement.get<grammar::Expression>()) };
 }
 
-std::vector<NodeStructs::Statement> getStatements(const ColonIndentCodeBlock& code) {
-	return code.get<Indent<Star<Or<Token<NEWLINE>, Statement>>>>().get<Or<Token<NEWLINE>, Statement>>()
+std::vector<NodeStructs::Statement> getStatements(const grammar::ColonIndentCodeBlock& code) {
+	return code.get<Indent<Star<Or<Token<NEWLINE>, grammar::Statement>>>>().get<Or<Token<NEWLINE>, grammar::Statement>>()
 		| LIFT_TRANSFORM_TRAIL(.value())
-		| filter_transform_variant_type_eq(Statement)
+		| filter_transform_variant_type_eq(grammar::Statement)
 		| LIFT_TRANSFORM(getStatementStruct)
 		| to_vec();
 }
 
-NodeStructs::BlockStatement getStatementStruct(const BlockStatement& statement) {
-	return { getStruct(statement.get<Typename>()) };
+NodeStructs::BlockStatement getStatementStruct(const grammar::BlockStatement& statement) {
+	return { getStruct(statement.get<grammar::Typename>()) };
 }
 
-NodeStructs::IfStatement getStatementStruct(const IfStatement& statement) {
+NodeStructs::IfStatement getStatementStruct(const grammar::IfStatement& statement) {
 	using T = std::variant<Box<NodeStructs::IfStatement>, std::vector<NodeStructs::Statement>>;
 	return {
-		getExpressionStruct(statement.get<Expression>()),
-		getStatements(statement.get<ColonIndentCodeBlock>()),
-		statement.get<Opt<Alloc<ElseStatement>>>().node.transform([](const auto& e) -> T {
+		getExpressionStruct(statement.get<grammar::Expression>()),
+		getStatements(statement.get<grammar::ColonIndentCodeBlock>()),
+		statement.get<Opt<Alloc<grammar::ElseStatement>>>().node.transform([](const auto& e) -> T {
 			return std::visit(
 				overload(overload_default_error,
-					[&](const Alloc<IfStatement>& e) -> T {
+					[&](const Alloc<grammar::IfStatement>& e) -> T {
 						return getStatementStruct(e.get());
 					},
-					[&](const ColonIndentCodeBlock& e) -> T {
+					[&](const grammar::ColonIndentCodeBlock& e) -> T {
 						return getStatements(e);
 					}
 				),
 				e.get()
-				.get<Or<Alloc<IfStatement>, ColonIndentCodeBlock>>()
+				.get<Or<Alloc<grammar::IfStatement>, grammar::ColonIndentCodeBlock>>()
 				.value()
 			);
 		})
 	};
 }
 
-NodeStructs::ForStatement getStatementStruct(const ForStatement& statement) {
+NodeStructs::ForStatement getStatementStruct(const grammar::ForStatement& statement) {
 	return {
-		.collection = getExpressionStruct(statement.get<Expression>()),
-		.iterators = statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<Or<VariableDeclaration, Word>>()
-			| std::views::transform([](const Or<VariableDeclaration, Word>& or_node) {
+		.collection = getExpressionStruct(statement.get<grammar::Expression>()),
+		.iterators = statement.get<CommaPlus<Or<grammar::VariableDeclaration, grammar::Word>>>().get<Or<grammar::VariableDeclaration, grammar::Word>>()
+			| std::views::transform([](const Or<grammar::VariableDeclaration, grammar::Word>& or_node) {
 				return std::visit(overload(
-					[](const Word& e) -> std::variant<NodeStructs::VariableDeclaration, std::string> {
+					[](const grammar::Word& e) -> std::variant<NodeStructs::VariableDeclaration, std::string> {
 						return { e.value };
 					},
-					[](const VariableDeclaration& e) -> std::variant<NodeStructs::VariableDeclaration, std::string> {
-						return NodeStructs::VariableDeclaration{ getStruct(e.get<Typename>()), e.get<Word>().value };
+					[](const grammar::VariableDeclaration& e) -> std::variant<NodeStructs::VariableDeclaration, std::string> {
+						return NodeStructs::VariableDeclaration{ getStruct(e.get<grammar::Typename>()), e.get<grammar::Word>().value };
 					}
 				), or_node.value());
 			})
 			| to_vec(),
-		.statements = getStatements(statement.get<ColonIndentCodeBlock>())
+		.statements = getStatements(statement.get<grammar::ColonIndentCodeBlock>())
 	};
 }
 
-NodeStructs::IForStatement getStatementStruct(const IForStatement&) {
+NodeStructs::IForStatement getStatementStruct(const grammar::IForStatement&) {
 	throw;
 	/*NodeStructs::IForStatement res {
-		statement.get<Word>().value,
+		statement.get<grammar::Word>().value,
 		getExpressionStruct(statement.get<Expression>())
 	};
-	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<Word>())
+	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, grammar::Word>>>().get<grammar::Word>())
 		res.iterators.push_back({ it.value });
-	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, Word>>>().get<VariableDeclaration>())
-		res.iterators.push_back(NodeStructs::VariableDeclaration{ getStruct(it.get<Typename>()), it.get<Word>().value });
+	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, grammar::Word>>>().get<VariableDeclaration>())
+		res.iterators.push_back(NodeStructs::VariableDeclaration{ getStruct(it.get<Typename>()), it.get<grammar::Word>().value });
 	for (const auto& statement : statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
 		res.statements.push_back(getStatementStruct(statement));
 	return res;*/
 }
 
-NodeStructs::WhileStatement getStatementStruct(const WhileStatement& statement) {
+NodeStructs::WhileStatement getStatementStruct(const grammar::WhileStatement& statement) {
 	return {
-		getExpressionStruct(statement.get<Expression>()),
-		getStatements(statement.get<ColonIndentCodeBlock>())
+		getExpressionStruct(statement.get<grammar::Expression>()),
+		getStatements(statement.get<grammar::ColonIndentCodeBlock>())
 	};
 }
 
-NodeStructs::BreakStatement getStatementStruct(const BreakStatement& statement) {
+NodeStructs::BreakStatement getStatementStruct(const grammar::BreakStatement& statement) {
 	return {
-		statement.get<Opt<And<Token<IF>, Expression>>>().has_value()
-			? getExpressionStruct(statement.get<Opt<And<Token<IF>, Expression>>>().value().get<Expression>())
+		statement.get<Opt<And<Token<IF>, grammar::Expression>>>().has_value()
+			? getExpressionStruct(statement.get<Opt<And<Token<IF>, grammar::Expression>>>().value().get<grammar::Expression>())
 			: std::optional<NodeStructs::Expression>{}
 	};
 }
 
-std::vector<NodeStructs::Expression> getExpressions(const std::vector<Expression>& vec) {
+std::vector<NodeStructs::Expression> getExpressions(const std::vector<grammar::Expression>& vec) {
 	return vec
 		| LIFT_TRANSFORM(getExpressionStruct)
 		| to_vec();
 }
 
-NodeStructs::ReturnStatement getStatementStruct(const ReturnStatement& statement) {
-	std::vector<NodeStructs::FunctionArgument> returns = statement.get<CommaStar<FunctionArgument>>().get<FunctionArgument>()
+NodeStructs::ReturnStatement getStatementStruct(const grammar::ReturnStatement& statement) {
+	std::vector<NodeStructs::FunctionArgument> returns = statement.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
 		| LIFT_TRANSFORM(getStruct)
 		| to_vec();
 	return {
 		std::move(returns),
-		statement.get<Opt<And<Token<IF>, Expression>>>().has_value()
-			? getExpressionStruct(statement.get<Opt<And<Token<IF>, Expression>>>().value().get<Expression>())
+		statement.get<Opt<And<Token<IF>, grammar::Expression>>>().has_value()
+			? getExpressionStruct(statement.get<Opt<And<Token<IF>, grammar::Expression>>>().value().get<grammar::Expression>())
 			: std::optional<NodeStructs::Expression>{}
 	};
 }
 
-NodeStructs::Statement getStatementStruct(const Statement& statement) {
+NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 	return NodeStructs::Statement{ std::visit(
 		[](const auto& statement) -> NodeStructs::Statement {
 			return { getStatementStruct(statement) };
 		},
 		statement.get<Alloc<Or<
-			VariableDeclarationStatement,
-			ExpressionStatement,
-			IfStatement,
-			ForStatement,
-			IForStatement,
-			WhileStatement,
-			BreakStatement,
-			ReturnStatement,
-			BlockStatement
+			grammar::VariableDeclarationStatement,
+			grammar::ExpressionStatement,
+			grammar::IfStatement,
+			grammar::ForStatement,
+			grammar::IForStatement,
+			grammar::WhileStatement,
+			grammar::BreakStatement,
+			grammar::ReturnStatement,
+			grammar::BlockStatement
 		>>>().get().value()) };
 }

@@ -1,4 +1,3 @@
-#include <ranges>
 #include <algorithm>
 #include <source_location>
 #include <format>
@@ -10,7 +9,7 @@
 #include "../utility/overload.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 
-void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
+std::optional<error> insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
 	for (const NodeStructs::File& file : project)
 		if (file.filename == filename) {
 			Named& named = named_by_file[filename];
@@ -33,21 +32,30 @@ void insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File
 			for (const auto& e : file.templates)
 				named.templates[e.name].push_back(&e);
 
+			for (const auto& e : file.namespaces)
+				named.namespaces[e.name].push_back(&e);
+
 			for (const auto& i : file.imports) {
-				insert_all_named_recursive_with_imports(project, named_by_file, i.imported);
+				auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, i.imported);
+				if (opt_error.has_value())
+					return opt_error;
 				Named& imported_named = named_by_file[i.imported];
 
 				named.types.insert(imported_named.types.begin(), imported_named.types.end());
 				named.functions.insert(imported_named.functions.begin(), imported_named.functions.end());
+				named.functions_using_auto.insert(imported_named.functions_using_auto.begin(), imported_named.functions_using_auto.end());
 				named.interfaces.insert(imported_named.interfaces.begin(), imported_named.interfaces.end());
 				named.blocks.insert(imported_named.blocks.begin(), imported_named.blocks.end());
 				named.templates.insert(imported_named.templates.begin(), imported_named.templates.end());
+				named.namespaces.insert(imported_named.namespaces.begin(), imported_named.namespaces.end());
 			}
 
-			return;
+			return std::nullopt;
 		}
-	auto err = std::string("Invalid import \"") + filename + "\"";
-	throw std::runtime_error(err);
+	return error{
+		"user error",
+		std::string("Invalid import \"") + filename + "\""
+	};
 }
 
 void insert_aliases_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
@@ -57,11 +65,11 @@ void insert_aliases_recursive_with_imports(const std::vector<NodeStructs::File>&
 
 			auto state = transpilation_state{ {}, Named(named) };
 			for (const auto& alias : file.aliases) {
-				auto t = type_of_typename({ state, 0 }, alias.aliasFrom);
+				auto t = type_of_typename({ state, 0 }, alias.aliasTo);
 				if (t.has_error())
 					throw;
-				named.type_aliases_typenames.emplace(alias.aliasTo, alias.aliasFrom);
-				named.type_aliases.emplace(alias.aliasTo, std::move(t).value());
+				named.type_aliases_typenames.emplace(alias.aliasFrom, alias.aliasTo);
+				named.type_aliases.emplace(alias.aliasFrom, std::move(t).value());
 			}
 			for (const auto& i : file.imports) {
 				insert_aliases_recursive_with_imports(project, named_by_file, i.imported);
@@ -107,7 +115,9 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 						named_of_file.types["Void"].push_back(&_builtins.builtin_void);
 					}
 					named_by_file[file2.filename] = named_of_file;
-					insert_all_named_recursive_with_imports(project, named_by_file, file2.filename);
+					auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.filename);
+					if (opt_error.has_value())
+						return opt_error.value();
 				}
 
 				for (const auto& file2 : project) {
@@ -360,6 +370,9 @@ NodeStructs::UniversalType iterator_type(
 			[&](const NodeStructs::InterfaceType&) -> NodeStructs::UniversalType {
 				throw;
 			},
+			[&](const NodeStructs::NamespaceType&) -> NodeStructs::UniversalType {
+				throw;
+			},
 			[&](const NodeStructs::UnionType&) -> NodeStructs::UniversalType {
 				throw;
 			},
@@ -446,6 +459,9 @@ std::vector<NodeStructs::UniversalType> decomposed_type(
 				throw;
 			},
 			[&](const NodeStructs::InterfaceType&) -> std::vector<NodeStructs::UniversalType> {
+				throw;
+			},
+			[&](const NodeStructs::NamespaceType&) -> std::vector<NodeStructs::UniversalType> {
 				throw;
 			},
 			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::UniversalType> {
@@ -832,7 +848,9 @@ static bool uses_auto(const NodeStructs::BaseTypename& t) {
 }
 
 static bool uses_auto(const NodeStructs::NamespacedTypename& t) {
-	return uses_auto(t.name_in_name_space.get()) || uses_auto(t.name_space.get());
+	if (t.name_in_name_space == "auto")
+		throw;
+	return uses_auto(t.name_space.get());
 }
 
 static bool uses_auto(const NodeStructs::TemplatedTypename& t) {
@@ -855,81 +873,99 @@ bool uses_auto(const NodeStructs::Typename& t) {
 	return std::visit([](const auto& t_) { return uses_auto(t_); }, t.value);
 }
 
-//
-//expected<NodeStructs::Function> realise_function_using_auto_hack(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::Function& fn_using_auto,
-//	const NodeStructs::Type& first_arg_t,
-//	const std::ranges::range auto& args
-//) {
-//	/*if (fn_using_auto.parameters.size() != args.size() + 1)
-//		throw;*/
-//
-//	for (auto&& p : fn_using_auto.parameters)
-//		if (uses_auto(p))
-//			throw;
-//
-//	for (auto&& statement : fn_using_auto.statements)
-//		if (uses_auto(statement))
-//			throw;
-//
-//	bool at_least_one = false;
-//	bool only_one = false;
-//	for (const auto& statement : fn_using_auto.statements)
-//		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
-//			only_one = at_least_one ? false : true;
-//			at_least_one = true;
-//		}
-//	if (at_least_one == false) {
-//		return NodeStructs::Function{
-//			.name = fn_using_auto.name,
-//			.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
-//			.parameters = fn_using_auto.parameters,
-//			.statements = fn_using_auto.statements
-//		};
-//	}
-//	else if (only_one == false)
-//		throw;
-//
-//	for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
-//		if (std::holds_alternative<NodeStructs::Value>(value_cat))
-//			state.state.variables[name].push_back(std::pair{ NodeStructs::MutableReference{}, type_of_typename(state, type_name).value() });
-//		else
-//			state.state.variables[name].push_back(std::pair{ value_cat, type_of_typename(state, type_name).value() });
-//
-//	for (int i = 0; i < fn_using_auto.statements.size(); ++i) {
-//		const auto& statement = fn_using_auto.statements.at(i);
-//		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
-//			const auto& return_expr = std::get<NodeStructs::ReturnStatement>(statement.statement).returnExpr;
-//			if (return_expr.size() != 1)
-//				throw;
-//
-//			auto deduced_t = transpile_expression(state, return_expr.at(0).expr);
-//
-//			if (deduced_t.has_error()) {
-//				for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
-//					state.state.variables[name].pop_back();
-//				for (int j = 0; j < fn_using_auto.statements.size(); ++j)
-//					remove_added_variables(state, fn_using_auto.statements.at(i));
-//			}
-//			return_if_error(deduced_t);
-//
-//			auto return_tn = typename_of_type(state, deduced_t.value().type);
-//
-//			for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
-//				state.state.variables[name].pop_back();
-//			for (int j = 0; j < fn_using_auto.statements.size(); ++j)
-//				remove_added_variables(state, fn_using_auto.statements.at(i));
-//
-//			return_if_error(return_tn);
-//
-//			return NodeStructs::Function{
-//				.name = fn_using_auto.name,
-//				.returnType = return_tn.value(),
-//				.parameters = fn_using_auto.parameters,
-//				.statements = fn_using_auto.statements
-//			};
-//		}
-//	}
-//	throw;
-//}
+expected<NodeStructs::Function> realise_function_using_auto(
+	transpilation_state_with_indent state,
+	const NodeStructs::Function& fn_using_auto,
+	const std::vector<NodeStructs::FunctionArgument>& args
+) {
+	/*if (fn_using_auto.parameters.size() != args.size())
+		throw;*/
+
+	NodeStructs::Function realised = fn_using_auto;
+
+	bool uses_auto_param = false;
+
+	for (const auto& [index, param] : enumerate(fn_using_auto.parameters))
+		if (uses_auto(param)) {
+			uses_auto_param = true;
+			if (param.typename_ <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent) {
+				auto info = transpile_expression(state, args.at(index).expr);
+				return_if_error(info);
+				auto tn = typename_of_type(state, info.value().type);
+				return_if_error(tn);
+				auto& p = realised.parameters.at(index);
+				auto name = p.name;
+				auto cat = p.category;
+				auto temp = NodeStructs::FunctionParameter{ .typename_ = tn.value(), .category = cat, .name = name };
+				std::swap(p, temp);
+			}
+			else
+				throw;
+		}
+	if (uses_auto_param)
+		return realise_function_using_auto(state, realised, args);
+
+	for (auto&& statement : fn_using_auto.statements)
+		if (uses_auto(statement))
+			throw;
+
+	bool at_least_one = false;
+	bool only_one = false;
+	for (const auto& statement : fn_using_auto.statements)
+		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
+			only_one = at_least_one ? false : true;
+			at_least_one = true;
+		}
+	if (at_least_one == false) {
+		return NodeStructs::Function{
+			.name = fn_using_auto.name,
+			.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
+			.parameters = fn_using_auto.parameters,
+			.statements = fn_using_auto.statements
+		};
+	}
+	else if (only_one == false)
+		throw;
+
+	for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+		if (std::holds_alternative<NodeStructs::Value>(value_cat))
+			state.state.variables[name].push_back(std::pair{ NodeStructs::MutableReference{}, type_of_typename(state, type_name).value() });
+		else
+			state.state.variables[name].push_back(std::pair{ value_cat, type_of_typename(state, type_name).value() });
+
+	for (int i = 0; i < fn_using_auto.statements.size(); ++i) {
+		const auto& statement = fn_using_auto.statements.at(i);
+		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement)) {
+			const auto& return_expr = std::get<NodeStructs::ReturnStatement>(statement.statement).returnExpr;
+			if (return_expr.size() != 1)
+				throw;
+
+			auto deduced_t = transpile_expression(state, return_expr.at(0).expr);
+
+			if (deduced_t.has_error()) {
+				for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+					state.state.variables[name].pop_back();
+				for (int j = 0; j < fn_using_auto.statements.size(); ++j)
+					remove_added_variables(state, fn_using_auto.statements.at(i));
+			}
+			return_if_error(deduced_t);
+
+			auto return_tn = typename_of_type(state, deduced_t.value().type);
+
+			for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
+				state.state.variables[name].pop_back();
+			for (int j = 0; j < fn_using_auto.statements.size(); ++j)
+				remove_added_variables(state, fn_using_auto.statements.at(i));
+
+			return_if_error(return_tn);
+
+			return NodeStructs::Function{
+				.name = fn_using_auto.name,
+				.returnType = return_tn.value(),
+				.parameters = fn_using_auto.parameters,
+				.statements = fn_using_auto.statements
+			};
+		}
+	}
+	throw;
+}

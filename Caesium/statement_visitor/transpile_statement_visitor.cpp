@@ -87,13 +87,16 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 			),
 			statement.elseExprStatements.value()
 		);
-	else
+	else {
+		auto k = transpile_expression(state, statement.ifExpr);
+		return_if_error(k);
 		return "if (" +
-		transpile_expression(state, statement.ifExpr).value().representation +
+			k.value().representation +
 			") {\n" +
 			if_statements.value() +
 			indent(state.indent) +
 			"}\n";
+	}
 }
 
 R T::operator()(const NodeStructs::ForStatement& statement) {

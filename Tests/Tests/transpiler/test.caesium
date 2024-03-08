@@ -1,0 +1,28 @@
+import test_parse
+import test_transpile_files
+
+std:
+    filesystem:
+        type directory_iterator:
+
+Int main(Vector<String> ref args):
+	auto argc = args.size()
+	auto bad_exit = 1
+
+	if argc == 1:
+        println("Expected a test folder")
+		return bad_exit
+
+	if argc >? 2:
+        println("Expected a single argument")
+		return bad_exit
+
+	if !test_parse():
+		return bad_exit
+    println("All parse tests passed")
+
+	if !test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }):
+		return bad_exit
+    println("All transpile tests passed")
+
+	return 0

@@ -40,16 +40,17 @@ bool test_parse(int line, int n_indent, std::string program) {
 }
 
 template <typename... Ts>
-auto test_parse_correct(auto&&... es) {
+bool test_parse_correct(auto&&... es) {
 	return test_parse<true, Ts...>(std::forward<decltype(es)>(es)...);
 }
 
 template <typename... Ts>
-auto test_parse_incorrect(auto&&... es) {
+bool test_parse_incorrect(auto&&... es) {
 	return test_parse<false, Ts...>(std::forward<decltype(es)>(es)...);
 }
 
-bool testParse() {
+bool test_parse() {
+	using namespace grammar;
 	bool ok = true;
 
 	ok &= test_parse_correct<Token<END>>(__LINE__, 0, "");

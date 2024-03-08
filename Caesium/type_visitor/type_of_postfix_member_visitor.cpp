@@ -49,6 +49,10 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 		return error{ "user error", "Error: object of type `" + t.interface.get().name + "` has no member `" + property_name + "`\n" };
 }
 
+R T::operator()(const NodeStructs::NamespaceType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }

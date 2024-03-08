@@ -13,7 +13,7 @@ static NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
 		throw std::exception();
 	std::string program;
 	std::getline(caesium, program, '\0');
-	File file(0);
+	grammar::File file(0);
 	auto tokens = Tokenizer(program).read();
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	if (file.build(g.it)) {

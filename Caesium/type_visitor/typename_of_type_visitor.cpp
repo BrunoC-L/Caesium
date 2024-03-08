@@ -23,6 +23,10 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::NamespaceType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }

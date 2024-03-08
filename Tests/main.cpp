@@ -1,4 +1,5 @@
 #include "test_parse.hpp"
+#include "test_structurize.hpp"
 #include "test_transpile_files.hpp"
 
 int main(int argc, char** argv) {
@@ -17,9 +18,13 @@ int main(int argc, char** argv) {
 
 	std::cout << std::boolalpha;
 
-	if (!testParse())
+	if (!test_parse())
 		return bad_exit;
 	std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
+
+	if (!test_structurize_equals())
+		return bad_exit;
+	std::cout << colored_text("All structurize tests passed\n", output_stream_colors::green);
 
 	if (!test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }))
 		return bad_exit;
