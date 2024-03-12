@@ -3,11 +3,15 @@
 using T = type_of_function_like_call_with_args_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::Type& t) {
+R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
 	return error{
 		"user error",
-		"Use of type like a function is prohibited. Type was `" + t.name + "`"
+		"Use of type like a function is prohibited. Type was `" + t.get().name + "`"
 	};
+}
+
+R T::operator()(const NodeStructs::PrimitiveType& t) {
+	throw;
 }
 
 //R T::operator()(const NodeStructs::TypeTemplateInstanceType& t) {
@@ -23,13 +27,13 @@ R T::operator()(const NodeStructs::Type& t) {
 //		"Use of an aggregate like a function is prohibited. Aggregate was"
 //	};
 //}
-
-R T::operator()(const NodeStructs::TypeType& t) {
-	return error{
-		"user error",
-		"Use of a 'type' type like a function is prohibited, a 'type' type results from typeof(<some type>)"
-	};
-}
+//
+//R T::operator()(const NodeStructs::TypeType& t) {
+//	return error{
+//		"user error",
+//		"Use of a 'type' type like a function is prohibited, a 'type' type results from typeof(<some type>)"
+//	};
+//}
 
 R T::operator()(const NodeStructs::FunctionType& t) {
 	if (args.size() != t.function.get().parameters.size()) {
@@ -56,7 +60,19 @@ R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Template& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Vector& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::VectorType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Set& t) {
 	throw;
 }
 
@@ -64,59 +80,10 @@ R T::operator()(const NodeStructs::SetType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Map& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::MapType& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::Template& tmpl) {
-	if (tmpl.templated == "BUILTIN") {
-		if (tmpl.name == "println") {
-			return std::pair{ NodeStructs::Value{}, NodeStructs::UniversalType{ *state.state.named.types.at("Void").back() } };
-		}
-	}
-}
-
-R T::operator()(const NodeStructs::BuiltInType& t) {
-	return std::visit(
-		overload(
-			[&](const auto& e) -> R {
-				throw;
-			},
-			[&](const NodeStructs::BuiltInType::push_t& e) -> R {
-				if (this->args.size() != 1)
-					throw;
-				auto arg_t = transpile_expression(state, args.at(0).expr);
-				return_if_error(arg_t);
-				if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().type)) {
-					throw;
-				}
-				return std::pair{
-					NodeStructs::Value{},
-					NodeStructs::UniversalType{
-						std::reference_wrapper<const NodeStructs::Type>{
-							*state.state.named.types.at("Void").back()
-						}
-					}
-				};
-			}
-		),
-		t.builtin
-	);
-	throw;
-}
-
-R T::operator()(const std::string&) {
-	throw;
-}
-
-R T::operator()(const double&) {
-	throw;
-}
-
-R T::operator()(const int&) {
-	throw;
-}
-
-R T::operator()(const bool&) {
 	throw;
 }

@@ -8,7 +8,7 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 	transpilation_state_with_indent state;
 	const std::vector<NodeStructs::Typename>& templated_with;
 
-	using R = expected<NodeStructs::UniversalType>;
+	using R = expected<NodeStructs::MetaType>;
 
 	R operator()(const NodeStructs::BaseTypename& t);
 	R operator()(const NodeStructs::NamespacedTypename& t);
@@ -16,7 +16,7 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 	R operator()(const NodeStructs::UnionTypename& t);
 };
 
-expected<NodeStructs::UniversalType> type_template_of_typename(
+expected<NodeStructs::MetaType> type_template_of_typename(
 	transpilation_state_with_indent state,
 	const std::vector<NodeStructs::Typename>& templated_with,
 	const auto& tn

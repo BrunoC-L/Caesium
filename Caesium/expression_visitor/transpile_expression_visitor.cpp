@@ -7,14 +7,6 @@
 using T = transpile_expression_visitor;
 using R = T::R;
 
-//R T::operator()(const NodeStructs::AssignmentExpression& expr) {
-//	std::stringstream ss;
-//	ss << operator()(expr.expr).value();
-//	for (const auto& e : expr.assignments)
-//		ss << " " << symbol_variant_as_text(e.first) << " " << operator()(e.second).value();
-//	return ss.str();
-//}
-
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 	if (expr.ifElseExprs.has_value()) {
 		// x if first else second
@@ -22,25 +14,33 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 
 		auto condition_expr_info = operator()(expr.ifElseExprs.value().first);
 		return_if_error(condition_expr_info);
+		if (!std::holds_alternative<non_primitive_information>(condition_expr_info.value()))
+			throw;
+		const non_primitive_information& condition_expr_info_ok = std::get<non_primitive_information>(condition_expr_info.value());
 
 		auto if_expr_info = operator()(expr.expr);
 		return_if_error(if_expr_info);
+		if (!std::holds_alternative<non_primitive_information>(if_expr_info.value()))
+			throw;
+		const non_primitive_information& if_expr_info_ok = std::get<non_primitive_information>(condition_expr_info.value());
 
 		auto else_expr_info = operator()(expr.ifElseExprs.value().second);
 		return_if_error(else_expr_info);
+		if (!std::holds_alternative<non_primitive_information>(else_expr_info.value()))
+			throw;
+		const non_primitive_information& else_expr_info_ok = std::get<non_primitive_information>(condition_expr_info.value());
 
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = if_expr_info.value().value_category,
-			.type = if_expr_info.value().type,
-			.representation= std::string("([&] () { if (") +
-			condition_expr_info.value().representation +
+		return expression_information{ non_primitive_information {
+			.type = if_expr_info_ok.type,
+			.representation = std::string("([&] () { if (") +
+			condition_expr_info_ok.representation +
 			") return " +
-			if_expr_info.value().representation +
+			if_expr_info_ok.representation +
 			"; else return " +
-			else_expr_info.value().representation +
-			"; }())"
-		};
+			else_expr_info_ok.representation +
+			"; }())",
+			.value_category = if_expr_info_ok.value_category,
+		} };
 	}
 	else
 		return operator()(expr.expr);
@@ -50,127 +50,159 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	ss << base.value().representation;
+	if (!std::holds_alternative<non_primitive_information>(base.value()))
+		throw;
+	const non_primitive_information& base_ok = std::get<non_primitive_information>(base.value());
+	ss << base_ok.representation;
 	for (const auto& e : expr.ors) {
-		auto repr = operator()(e);
-		return_if_error(repr);
-		ss << " || " << repr.value().representation;
+		auto or_expr = operator()(e);
+		return_if_error(or_expr);
+		if (!std::holds_alternative<non_primitive_information>(or_expr.value()))
+			throw;
+		const non_primitive_information& or_expr_ok = std::get<non_primitive_information>(or_expr.value());
+		ss << " || " << or_expr_ok.representation;
 	}
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
+	return expression_information{ non_primitive_information {
 		.type = *state.state.named.types.at("Bool").back(),
-		.representation = ss.str()
-	};
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
 }
 
 R T::operator()(const NodeStructs::AndExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	ss << base.value().representation;
+	if (!std::holds_alternative<non_primitive_information>(base.value()))
+		throw;
+	const non_primitive_information& base_ok = std::get<non_primitive_information>(base.value());
+	ss << base_ok.representation;
 	for (const auto& e : expr.ands) {
-		auto repr = operator()(e);
-		return_if_error(repr);
-		ss << " && " << repr.value().representation;
+		auto and_ = operator()(e);
+		return_if_error(and_);
+		if (!std::holds_alternative<non_primitive_information>(and_.value()))
+			throw;
+		const non_primitive_information& and_ok = std::get<non_primitive_information>(and_.value());
+		ss << " || " << and_ok.representation;
 	}
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
+	return expression_information{ non_primitive_information {
 		.type = *state.state.named.types.at("Bool").back(),
-		.representation = ss.str()
-	};
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
 }
 
 R T::operator()(const NodeStructs::EqualityExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	ss << base.value().representation;
+	if (!std::holds_alternative<non_primitive_information>(base.value()))
+		throw;
+	const non_primitive_information& base_ok = std::get<non_primitive_information>(base.value());
+	ss << base_ok.representation;
 	for (const auto& [op, e] : expr.equals) {
-		auto repr = operator()(e);
-		return_if_error(repr);
-		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
+		auto eq = operator()(e);
+		return_if_error(eq);
+		if (!std::holds_alternative<non_primitive_information>(eq.value()))
+			throw;
+		const non_primitive_information& eq_ok = std::get<non_primitive_information>(eq.value());
+		ss << " " << symbol_variant_as_text(op) << " " << eq_ok.representation;
 	}
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
+	return expression_information{ non_primitive_information {
 		.type = *state.state.named.types.at("Bool").back(),
-		.representation = ss.str()
-	};
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
 }
 
 R T::operator()(const NodeStructs::CompareExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	ss << base.value().representation;
+	if (!std::holds_alternative<non_primitive_information>(base.value()))
+		throw;
+	const non_primitive_information& base_ok = std::get<non_primitive_information>(base.value());
+	ss << base_ok.representation;
 	for (const auto& [op, e] : expr.comparisons) {
-		auto repr = operator()(e);
-		return_if_error(repr);
-		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
+		auto cmp = operator()(e);
+		return_if_error(cmp);
+		if (!std::holds_alternative<non_primitive_information>(cmp.value()))
+			throw;
+		const non_primitive_information& cmp_ok = std::get<non_primitive_information>(cmp.value());
+		ss << " " << symbol_variant_as_text(op) << " " << cmp_ok.representation;
 	}
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
+	return expression_information{ non_primitive_information {
 		.type = *state.state.named.types.at("Bool").back(),
-		.representation = ss.str()
-	};
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
 }
 
 R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	ss << base.value().representation;
+	if (!std::holds_alternative<non_primitive_information>(base.value()))
+		throw;
+	const non_primitive_information& base_ok = std::get<non_primitive_information>(base.value());
+	ss << base_ok.representation;
 	for (const auto& [op, e] : expr.adds) {
-		auto repr = operator()(e);
-		return_if_error(repr);
-		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
+		auto add = operator()(e);
+		return_if_error(add);
+		if (!std::holds_alternative<non_primitive_information>(add.value()))
+			throw;
+		const non_primitive_information& add_ok = std::get<non_primitive_information>(add.value());
+		ss << " " << symbol_variant_as_text(op) << " " << add_ok.representation;
 	}
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
+	return expression_information{ non_primitive_information {
 		.type = *state.state.named.types.at("Int").back(),
-		.representation = ss.str()
-	};
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
 }
 
 R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	ss << base.value().representation;
+	if (!std::holds_alternative<non_primitive_information>(base.value()))
+		throw;
+	const non_primitive_information& base_ok = std::get<non_primitive_information>(base.value());
+	ss << base_ok.representation;
 	for (const auto& [op, e] : expr.muls) {
-		auto repr = operator()(e);
-		return_if_error(repr);
-		ss << " " << symbol_variant_as_text(op) << " " << repr.value().representation;
+		auto mul = operator()(e);
+		return_if_error(mul);
+		if (!std::holds_alternative<non_primitive_information>(mul.value()))
+			throw;
+		const non_primitive_information& mul_ok = std::get<non_primitive_information>(mul.value());
+		ss << " " << symbol_variant_as_text(op) << " " << mul_ok.representation;
 	}
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
+	return expression_information{ non_primitive_information {
 		.type = *state.state.named.types.at("Int").back(),
-		.representation = ss.str()
-	};
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
 }
 
 R T::operator()(const NodeStructs::UnaryExpression& expr) {
 	std::stringstream ss;
 	for (const auto& op : expr.unary_operators)
 		ss << std::visit([&](const auto& token_expr) { return symbol_as_text(token_expr); }, op);
-	auto repr = operator()(expr.expr);
-	return_if_error(repr);
-	ss << repr.value().representation;
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
+	auto base = operator()(expr.expr);
+	return_if_error(base);
+	if (!std::holds_alternative<non_primitive_information>(base.value()))
+		throw;
+	const non_primitive_information& base_ok = std::get<non_primitive_information>(base.value());
+	ss << base_ok.representation;
+	return expression_information{ non_primitive_information {
 		.type = *state.state.named.types.at("Int").back(),
-		.representation = ss.str()
-	};
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	if (std::holds_alternative<std::string>(expr.operand.expression.get())) {
+	/*if (std::holds_alternative<std::string>(expr.operand.expression.get())) {
 		const std::string& operand = std::get<std::string>(expr.operand.expression.get());
 		if (auto it = state.state.named.functions_using_auto.find(operand); it != state.state.named.functions_using_auto.end()) {
 			std::vector<NodeStructs::FunctionArgument> args;
@@ -179,17 +211,19 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			auto& vec = state.state.named.functions[fn.value().name];
 			vec.push_back(new NodeStructs::Function(std::move(fn).value()));
 		}
-	}
-	auto temp1 = transpile_expression(state, expr.operand);
-	return_if_error(temp1);
-	auto temp2 = type_of_function_like_call_with_args(state, expr.arguments.args, temp1.value().type);
+	}*/
+	throw;
+	/*auto base = operator()(expr.operand);
+	return_if_error(base);
+	const non_primitive_value_information& base_ok = std::get<non_primitive_value_information>(base.value());
+
+	auto temp2 = type_of_function_like_call_with_args(state, expr.arguments.args, base_ok.type);
 	return_if_error(temp2);
-	return whole_expression_information{
-		//.expression = expr,
+	return expression_information{ non_primitive_value_information {
 		.value_category = temp2.value().first,
 		.type = std::move(temp2).value().second,
 		.representation = transpile_call_expression_with_args(state, expr.arguments.args, expr.operand).value()
-	};
+	} };*/
 }
 
 bool has_argument_and_forced_parameter_mismatch(const std::vector<NodeStructs::Expression>& args, const NodeStructs::Template& tmpl) {
@@ -318,21 +352,21 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			/*if (tmpl.name == "Vector") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
-				return NodeStructs::UniversalType{ NodeStructs::VectorType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
+				return NodeStructs::MetaType{ NodeStructs::VectorType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Set") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
-				return NodeStructs::UniversalType{ NodeStructs::SetType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
+				return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Map") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				auto y = type_of_typename(state, templated_with.at(1));
 				return_if_error(x);
 				return_if_error(y);
-				return NodeStructs::UniversalType{ NodeStructs::MapType{
-					Box<NodeStructs::UniversalType>{ std::move(x).value() },
-					Box<NodeStructs::UniversalType>{ std::move(y).value() }
+				return NodeStructs::MetaType{ NodeStructs::MapType{
+					Box<NodeStructs::MetaType>{ std::move(x).value() },
+					Box<NodeStructs::MetaType>{ std::move(y).value() }
 				} };
 			}*/
 			throw;
@@ -343,21 +377,17 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i).first, args.at(i));
 
 		if (auto it = state.state.named.functions.find(tmpl_name); it != state.state.named.functions.end()) {
-			return whole_expression_information{
-				//.expression = expr,
-				.value_category = NodeStructs::Value{},
+			return expression_information{ type_information {
 				.type = NodeStructs::FunctionType{ *it->second.back() },
 				.representation = template_name(tmpl.name, expr.arguments.args)
-			};
+			} };
 		}
 
 		if (auto it = state.state.named.types.find(tmpl_name); it != state.state.named.types.end()) {
-			return whole_expression_information{
-				//.expression = expr,
-				.value_category = NodeStructs::Value{},
-				.type = NodeStructs::TypeType{ *it->second.back() },
+			return expression_information{ type_information {
+				.type = NodeStructs::MetaType{ *it->second.back() },
 				.representation = template_name(tmpl.name, expr.arguments.args)
-			};
+			} };
 		}
 
 		{
@@ -366,19 +396,17 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (!f.build(g.it))
 				throw;
-			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>()) };
+			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
 			structured_f->name = tmpl_name;
 			state.state.named.functions[structured_f->name].push_back(structured_f);
 			state.state.traversed_functions.insert(*structured_f);
 			auto transpiled_or_e = transpile(state, *structured_f);
 			return_if_error(transpiled_or_e);
 			state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
-			return whole_expression_information{
-				//.expression = expr,
-				.value_category = NodeStructs::Value{},
+			return expression_information{ type_information {
 				.type = NodeStructs::FunctionType{ *structured_f },
 				.representation = template_name(tmpl.name, expr.arguments.args)
-			};
+			} };
 		}
 		{
 			And<IndentToken, grammar::Type, Token<END>> t{ 1 };
@@ -386,22 +414,19 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (!t.build(g.it))
 				throw;
-			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>()) };
+			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
 			structured_t->name = tmpl_name;
 			state.state.named.types[structured_t->name].push_back(structured_t);
 			auto opt_error = traverse_type(state, *structured_t);
 			if (opt_error.has_value())
 				return opt_error.value();
-			return whole_expression_information{
-				//.expression = expr,
-				.value_category = NodeStructs::Value{},
-				.type = NodeStructs::UniversalType{ std::reference_wrapper{*structured_t}},
+			return expression_information{ type_information {
+				.type = NodeStructs::MetaType{ *structured_t },
 				.representation = template_name(tmpl.name, expr.arguments.args)
-			};
+			} };
 		}
 		throw;
 	}
-
 	throw;
 }
 
@@ -411,36 +436,38 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 	auto typename_repr = transpile_typename(state, expr.operand);
 	return_if_error(typename_repr);
 	return std::visit(overload(
-		[&](const auto&) -> R {
+		[&](const auto& e) -> R {
 			throw;
 		},
-		[&](const std::reference_wrapper<const NodeStructs::Type>& t_wrapper) -> R {
+		[&](const NodeStructs::Type& tt) -> R {
 			auto args_repr = transpile_args(state, expr.arguments.args);
 			return_if_error(args_repr);
 
-			return whole_expression_information{
+			return expression_information{ non_primitive_information {
+				.type = tt,
+				.representation = typename_repr.value() + "{" + args_repr.value() + "}",
 				.value_category = NodeStructs::Value{},
-				.type = t_wrapper,
-				.representation = typename_repr.value() + "{" + args_repr.value() + "}"
-			};
+			} };
 		},
 		[&](const NodeStructs::SetType& set_t) -> R {
 			if (expr.arguments.args.size() != 0)
 				throw;
-			return whole_expression_information{
+			throw;
+			/*return expression_information{ non_primitive_value_information {
 				.value_category = NodeStructs::Value{},
 				.type = set_t,
 				.representation = typename_repr.value() + "{}"
-			};
+			} };*/
 		},
 		[&](const NodeStructs::VectorType& vec_t) -> R {
 			if (expr.arguments.args.size() != 0)
 				throw;
-			return whole_expression_information{
+			throw;
+			/*return expression_information{ non_primitive_value_information {
 				.value_category = NodeStructs::Value{},
 				.type = vec_t,
 				.representation = typename_repr.value() + "{}"
-			};
+			} };*/
 		},
 		[&](const NodeStructs::UnionType& union_t) -> R {
 			if (expr.arguments.args.size() < 1)
@@ -455,35 +482,44 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				};
 			auto expr_info = operator()(expr.arguments.args.at(0).expr);
 			return_if_error(expr_info);
-			for (const auto& T : union_t.arguments)
-				if (T <=> expr_info.value().type == std::weak_ordering::equivalent)
-					return whole_expression_information{
+			if (std::holds_alternative<non_primitive_information>(expr_info.value()))
+				throw;
+			const non_primitive_information& expr_info_ok = std::get<non_primitive_information>(expr_info.value());
+			for (const auto& T : union_t.arguments) {
+				throw;
+				/*if (T <=> expr_info_ok.type == std::weak_ordering::equivalent)
+					return expression_information{
 						.value_category = NodeStructs::Value{},
 						.type = union_t,
-						.representation = typename_repr.value() + "{" + expr_info.value().representation + "}"
-					};
+						.representation = typename_repr.value() + "{" + expr_info_ok.representation + "}"
+					};*/
+			}
 			throw;
 		}
-	), t.value().value);
+	), t.value().type);
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 	auto operand_info = transpile_expression(state, expr.operand);
 	return_if_error(operand_info);
-	if (std::holds_alternative<NodeStructs::VectorType>(operand_info.value().type.value)) {
+	if (std::holds_alternative<non_primitive_information>(operand_info.value()))
+		throw;
+	const non_primitive_information& operand_info_ok = std::get<non_primitive_information>(operand_info.value());
+	/*if (std::holds_alternative<NodeStructs::VectorType>(operand_info_ok.type)) {
+		throw;
 		const auto& vt = std::get<NodeStructs::VectorType>(operand_info.value().type.value);
 		if (expr.arguments.args.size() != 1)
 			throw;
 		auto arg_info = transpile_expression(state, expr.arguments.args.at(0).expr);
 		return_if_error(arg_info);
-		if (arg_info.value().type <=> NodeStructs::UniversalType{ *state.state.named.types.at("Int").back() } != std::weak_ordering::equivalent)
+		if (arg_info.value().type <=> NodeStructs::MetaType{ *state.state.named.types.at("Int").back() } != std::weak_ordering::equivalent)
 			throw;
-		return whole_expression_information{
+		return expression_information{
 			.value_category = operand_info.value().value_category,
 			.type = vt.value_type,
 			.representation = operand_info.value().representation + "[" + arg_info.value().representation + "]"
 		};
-	}
+	}*/
 	return error{
 		"user error",
 		"bracket access is reserved for vector, set and map types"
@@ -513,10 +549,13 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 		};
 		return operator()(rewired);
 	}
-	auto operand_t = transpile_expression(state, expr.operand).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
-	return_if_error(operand_t);
-
-	return transpile_member_call(state, expr.operand, expr.property_name, expr.arguments.args, operand_t.value().second);
+	auto operand_info = transpile_expression(state, expr.operand);
+	return_if_error(operand_info);
+	if (std::holds_alternative<non_primitive_information>(operand_info.value()))
+		throw;
+	const non_primitive_information& operand_info_ok = std::get<non_primitive_information>(operand_info.value());
+	
+	return transpile_member_call(state, expr.operand, expr.property_name, expr.arguments.args, operand_info_ok.type.type.get());
 
 	//auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
 	//return_if_error(t);
@@ -539,7 +578,7 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 	//				return_if_error(operand_repr);
 	//				auto args_repr = transpile_args(state, arguments);
 	//				return_if_error(args_repr);
-	//				return whole_expression_information{
+	//				return expression_information{
 	//					.expression = expr,
 	//					.value_category = NodeStructs::Value{},
 	//					.type = *state.state.named.types.at("Void").back(),
@@ -565,26 +604,30 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	auto operand_info = transpile_expression(state, expr.operand);
 	return_if_error(operand_info);
+	if (std::holds_alternative<non_primitive_information>(operand_info.value()))
+		throw;
+	const non_primitive_information& operand_info_ok = std::get<non_primitive_information>(operand_info.value());
 
-	auto t = type_of_postfix_member(state, expr.property_name, operand_info.value().type);
+	auto t = type_of_postfix_member(state, expr.property_name, operand_info_ok.type.type.get());
 	return_if_error(t);
 
-	if (std::holds_alternative<NodeStructs::InterfaceType>(operand_info.value().type.value)) {
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = operand_info.value().value_category,
-			.type = t.value().second,
-			.representation = "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + operand_info.value().representation + ")"
-		};
-	}
-	else {
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = operand_info.value().value_category,
-			.type = t.value().second,
-			.representation = operand_info.value().representation + "." + expr.property_name
-		};
-	}
+	throw;
+	//if (std::holds_alternative<NodeStructs::InterfaceType>(operand_info_ok.type.value)) {
+	//	return expression_information{
+	//		//.expression = expr,
+	//		.value_category = operand_info_ok.value_category,
+	//		.type = t.value().second,
+	//		.representation = "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + operand_info_ok.representation + ")"
+	//	};
+	//}
+	//else {
+	//	return expression_information{
+	//		//.expression = expr,
+	//		.value_category = operand_info_ok.value_category,
+	//		.type = t.value().second,
+	//		.representation = operand_info_ok.representation + "." + expr.property_name
+	//	};
+	//}
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
@@ -592,11 +635,14 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 		throw;
 	auto inner = operator()(expr.args.at(0).expr);
 	return_if_error(inner);
-	return whole_expression_information{
-		.value_category = argument_category_optional_to_value_category(expr.args.at(0).category),
-		.type = inner.value().type,
-		.representation = "(" + inner.value().representation + ")"
-	};
+	if (std::holds_alternative<non_primitive_information>(inner.value()))
+		throw;
+	const non_primitive_information& inner_ok = std::get<non_primitive_information>(inner.value());
+	return expression_information{ non_primitive_information {
+		.type = inner_ok.type,
+		.representation = "(" + inner_ok.representation + ")",
+		.value_category = argument_category_optional_to_value_category(expr.args.at(0).category), // todo check conversion ok
+	} };
 	 
 	//throw;
 	//auto transpiled_args = expr.args
@@ -618,7 +664,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 	//auto args_repr = transpile_args(state, expr.args);
 	//return_if_error(args_repr);
 
-	//return whole_expression_information{
+	//return expression_information{
 	//	//.expression = expr,
 	//	.value_category = NodeStructs::Value{},
 	//	.type = NodeStructs::AggregateType{ x },
@@ -647,7 +693,7 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 	//auto args_repr = transpile_args(state, expr.args);
 	//return_if_error(args_repr);
 
-	//return whole_expression_information{
+	//return expression_information{
 	//	//.expression = expr,
 	//	.value_category = NodeStructs::Value{},
 	//	.type = NodeStructs::AggregateType{ x },
@@ -657,12 +703,15 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 
 R T::operator()(const std::string& expr) {
 	if (auto it = state.state.variables.find(expr); it != state.state.variables.end() && it->second.size() > 0) {
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = it->second.back().first,
-			.type = it->second.back().second,
-			.representation = expr
-		};
+		const auto& v = it->second.back();
+		if (!std::holds_alternative<NodeStructs::NonPrimitiveType>(v.type))
+			throw;
+		const auto& v_ok = std::get<NodeStructs::NonPrimitiveType>(v.type);
+		return expression_information{ non_primitive_information {
+			.type = v_ok,
+			.representation = expr,
+			.value_category = v.value_category,
+		} };
 	}
 	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end()) {
 		const auto& fn = *it->second.back();
@@ -672,70 +721,60 @@ R T::operator()(const std::string& expr) {
 			return_if_error(t);
 			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
 		}
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = NodeStructs::Value{},
+		return expression_information{ type_information {
 			.type = NodeStructs::FunctionType{ fn },
 			.representation = expr
-		};
+		} };
 	}
 	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end()) {
 		const auto& T = *it->second.back();
 		if (std::optional<error> err = traverse_type(state, T); err.has_value())
 			return err.value();
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = NodeStructs::Value{},
-			.type = NodeStructs::TypeType{ T },
+		return expression_information{ type_information {
+			.type = NodeStructs::MetaType{ T },
 			.representation = expr
-		};
+		} };
 	}
 	if (auto it = state.state.named.type_aliases.find(expr); it != state.state.named.type_aliases.end()) {
 		const auto& alias = it->second;
 		if (std::optional<error> err = traverse_type(state, alias); err.has_value())
 			return err.value();
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = NodeStructs::Value{},
+		return expression_information{ type_information {
 			.type = alias,
 			.representation = transpile_typename(state, state.state.named.type_aliases_typenames.at(expr)).value()
-		};
+		} };
 	}
 	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end()) {
 		const auto& tmpl = *it->second.back();
-		return whole_expression_information{
-			//.expression = expr,
-			.value_category = NodeStructs::Value{},
+		return expression_information{ type_information {
 			.type = NodeStructs::Template{ tmpl },
 			.representation = expr
-		};
+		} };
 	}
 	return error{ "user error", "Undeclared variable `" + expr + "`" };
 }
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
-		.type = *state.state.named.types.at("Int").back(),
+	return expression_information{ primitive_information {
+		.type = { -777 /*todo*/ },
 		.representation = expr.value
-	};
+	} };
 }
 
 R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
-		.type = *state.state.named.types.at("Float").back(),
+	return expression_information{ primitive_information {
+		.type = { -777 /*todo*/ },
 		.representation = expr.value
-	};
+	} };
 }
 
 R T::operator()(const Token<STRING>& expr) {
-	return whole_expression_information{
-		//.expression = expr,
-		.value_category = NodeStructs::Value{},
-		.type = *state.state.named.types.at("String").back(),
+
+	// todo check if we add quotes to `.representation = expr.value`
+	throw;
+
+	return expression_information{ primitive_information {
+		.type = { expr.value },
 		.representation = expr.value
-	};
+	} };
 }

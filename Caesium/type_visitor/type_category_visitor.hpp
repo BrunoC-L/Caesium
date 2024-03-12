@@ -2,37 +2,37 @@
 #include "../core/node_structs.hpp"
 
 template <typename T>
-concept TypeCategoryVisitorConcept = requires(T&& t, const NodeStructs::UniversalType& v) {
+concept TypeCategoryVisitorConcept = requires(T&& t, const NodeStructs::MetaType& v) {
 	t(v);
-	std::visit(t, v.value);
+	std::visit(t, v.type);
 };
 
 template <typename T>
 struct TypeCategoryVisitor {
 	template <typename Self>
-	auto operator()(this Self&& self, const NodeStructs::UniversalType& t) {
+	auto operator()(this Self&& self, const NodeStructs::MetaType& t) {
 		return std::visit(
 			[&](const auto& t) {
 				return self(t);
 			},
-			t.value
+			t.type
 		);
 	}
 #define TypeCategoryVisitorDeclarations \
-	R operator()(const NodeStructs::Type& t);\
-	R operator()(const NodeStructs::TypeType& t);\
+	R operator()(const NodeStructs::PrimitiveType& t);\
+	R operator()(const std::reference_wrapper<const NodeStructs::Type>& t);\
+\
 	R operator()(const NodeStructs::FunctionType& t);\
-	R operator()(const NodeStructs::UnionType& t);\
 	R operator()(const NodeStructs::InterfaceType& t);\
 	R operator()(const NodeStructs::NamespaceType& t);\
-	R operator()(const NodeStructs::VectorType& t);\
-	R operator()(const NodeStructs::SetType& t);\
-	R operator()(const NodeStructs::MapType& t);\
+	R operator()(const NodeStructs::UnionType& t);\
 	R operator()(const NodeStructs::Template& t);\
-	R operator()(const NodeStructs::BuiltInType& t);\
-	R operator()(const std::string& t);\
-	R operator()(const double& t);\
-	R operator()(const int& t);\
-	R operator()(const bool& t);
+\
+	R operator()(const NodeStructs::Vector& t);\
+	R operator()(const NodeStructs::VectorType& t);\
+	R operator()(const NodeStructs::Set& t);\
+	R operator()(const NodeStructs::SetType& t);\
+	R operator()(const NodeStructs::Map& t);\
+	R operator()(const NodeStructs::MapType& t);
 };
 

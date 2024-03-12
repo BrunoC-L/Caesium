@@ -11,7 +11,7 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& type) {
-	return operator()(type.name_space.get()).value() + "::" + type.name_in_name_space;
+	return operator()(type.name_space.get()).value() + "__" + type.name_in_name_space;
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {

@@ -3,11 +3,11 @@
 using T = type_of_resolution_operator_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::Type& t) {
+R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::TypeType& t) {
+R T::operator()(const NodeStructs::PrimitiveType& t) {
 	throw;
 }
 
@@ -26,7 +26,7 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
 			return opt_e.value();
-		return NodeStructs::UniversalType{ type };
+		return NodeStructs::MetaType{ type };
 	}
 	if (auto it = std::find_if(ns.aliases.begin(), ns.aliases.end(), [&](const auto& t) { return t.aliasFrom == accessed; }); it != ns.aliases.end()) {
 		const auto& e_t = type_of_typename(state, it->aliasTo);
@@ -44,11 +44,11 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 			return_if_error(t);
 			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
 		}
-		return NodeStructs::UniversalType{ NodeStructs::InterfaceType{ interface } };
+		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
 	}
 	if (auto it = std::find_if(ns.namespaces.begin(), ns.namespaces.end(), [&](const auto& t) { return t.name == accessed; }); it != ns.namespaces.end()) {
 		const auto& ns = *it;
-		return NodeStructs::UniversalType{ NodeStructs::NamespaceType{ ns } };
+		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ ns } };
 	}
 	return error{ "user error" , "Missing type `" + accessed + "` in namespace `" + ns.name + "`" };
 }
@@ -57,7 +57,19 @@ R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Template& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Vector& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::VectorType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Set& t) {
 	throw;
 }
 
@@ -65,30 +77,10 @@ R T::operator()(const NodeStructs::SetType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Map& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::MapType& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::Template& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::BuiltInType& t) {
-	throw;
-}
-
-R T::operator()(const std::string&) {
-	throw;
-}
-
-R T::operator()(const double&) {
-	throw;
-}
-
-R T::operator()(const int&) {
-	throw;
-}
-
-R T::operator()(const bool&) {
 	throw;
 }

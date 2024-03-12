@@ -21,7 +21,7 @@ Int main(Vector<String> ref args):
 		return bad_exit
     println("All parse tests passed")
 
-	if !test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }):
+	if !test_transpile_all_folders(std::filesystem::directory_iterator{ }):
 		return bad_exit
     println("All transpile tests passed")
 

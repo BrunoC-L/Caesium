@@ -17,15 +17,15 @@ NodeStructs::Typename extend(NodeStructs::Typename&& t, const grammar::UnionType
 
 NodeStructs::ParameterCategory getStruct(const grammar::ParameterCategory& vc);
 
-NodeStructs::Function getStruct(const grammar::Function& f);
+NodeStructs::Function getStruct(const grammar::Function& f, std::optional<NodeStructs::Typename> name_space);
 
-NodeStructs::Template getStruct(const grammar::Template& t);
+NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeStructs::Typename> name_space);
 
 NodeStructs::MemberVariable getStruct(const grammar::MemberVariable& f);
 
 NodeStructs::Alias getStruct(const grammar::Alias& f);
 
-NodeStructs::Type getStruct(const grammar::Type& cl);
+NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::Typename> name_space);
 
 NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName);
 

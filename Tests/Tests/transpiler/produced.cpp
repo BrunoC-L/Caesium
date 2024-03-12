@@ -2,7 +2,7 @@
 Bool test_transpile_all_folders(const std__filesystem__directory_iterator& folder) {
 	return False;
 };
-struct std__filesystem__directory_iterator {
+struct directory_iterator {
 };
 
 Bool test_parse() {

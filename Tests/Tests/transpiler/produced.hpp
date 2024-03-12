@@ -23,5 +23,5 @@ Void push(auto&& vec, auto&& e) { vec.push_back(e); }
 
 Int _redirect_main(const Vector<String>& args);
 Bool test_transpile_all_folders(const std__filesystem__directory_iterator& folder);
-struct std__filesystem__directory_iterator;
+struct directory_iterator;
 Bool test_parse();

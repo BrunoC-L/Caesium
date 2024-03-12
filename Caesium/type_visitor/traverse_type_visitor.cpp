@@ -4,8 +4,8 @@
 using T = traverse_type_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::Type& type) {
-	if (!state.state.traversed_types.contains(type)) {
+R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& type) {
+	if (!state.state.traversed_types.contains(type.get())) {
 		state.state.traversed_types.insert(type);
 		auto t = transpile(state, type);
 		return_if_error(t);
@@ -14,14 +14,8 @@ R T::operator()(const NodeStructs::Type& type) {
 	return std::nullopt;
 }
 
-//R T::operator()(const NodeStructs::AggregateType& t) {
-//	throw;
-//	return std::nullopt;
-//}
-
-R T::operator()(const NodeStructs::TypeType& t) {
+R T::operator()(const NodeStructs::PrimitiveType& t) {
 	throw;
-	return std::nullopt;
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {
@@ -44,7 +38,19 @@ R T::operator()(const NodeStructs::UnionType& t) {
 	return std::nullopt;
 }
 
+R T::operator()(const NodeStructs::Template& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Vector& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::VectorType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Set& t) {
 	throw;
 }
 
@@ -52,33 +58,10 @@ R T::operator()(const NodeStructs::SetType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Map& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::MapType& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::Template& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::BuiltInType& t) {
-	throw;
-}
-
-R T::operator()(const std::string&) {
-	throw;
-	return std::nullopt;
-}
-
-R T::operator()(const double&) {
-	throw;
-	return std::nullopt;
-}
-
-R T::operator()(const int&) {
-	throw;
-	return std::nullopt;
-}
-
-R T::operator()(const bool&) {
 	throw;
 }

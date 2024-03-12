@@ -9,7 +9,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
 			return opt_e.value();
-		return NodeStructs::UniversalType{ type };
+		return NodeStructs::MetaType{ NodeStructs::MetaType{ type } };
 	}
 	if (auto it = state.state.named.type_aliases.find(t.type); it != state.state.named.type_aliases.end()) {
 		const auto& type = it->second;
@@ -26,11 +26,11 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			return_if_error(t);
 			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
 		}
-		return NodeStructs::UniversalType{ NodeStructs::InterfaceType{ interface } };
+		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
 	}
 	if (auto it = state.state.named.namespaces.find(t.type); it != state.state.named.namespaces.end()) {
 		const auto& ns = *it->second.back();
-		return NodeStructs::UniversalType{ NodeStructs::NamespaceType{ ns } };
+		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ ns } };
 	}
 	return error{ "user error" , "Missing type `" + t.type + "`"};
 }
@@ -47,12 +47,12 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {
-	std::vector<NodeStructs::UniversalType> v;
+	std::vector<NodeStructs::MetaType> v;
 	v.reserve(t.ors.size());
 	for (const auto& e : t.ors) {
 		auto exp = operator()(e);
 		return_if_error(exp);
 		v.push_back(exp.value());
 	}
-	return NodeStructs::UniversalType{ NodeStructs::UnionType{ std::move(v) } };
+	return NodeStructs::MetaType{ NodeStructs::UnionType{ std::move(v) } };
 }

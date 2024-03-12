@@ -9,21 +9,32 @@
 
 #include "node_structs.hpp"
 
-using variables_t = std::map<std::string, std::vector<std::pair<NodeStructs::ValueCategory, NodeStructs::UniversalType>>>;
-using transpile_header_cpp_t = expected<std::pair<std::string, std::string>>;
-struct type_and_representation {
-	NodeStructs::UniversalType type;
-	std::string representation;
-};
-using transpile_type_repr = expected<type_and_representation>;
-struct whole_expression_information {
-	//NodeStructs::Expression expression;
+struct variable_info {
 	NodeStructs::ValueCategory value_category;
-	NodeStructs::UniversalType type;
+	NodeStructs::ValueType type;
+};
+using variables_t = std::map<std::string, std::vector<variable_info>>;
+using transpile_header_cpp_t = expected<std::pair<std::string, std::string>>;
+
+struct type_information {
+	NodeStructs::MetaType type;
 	std::string representation;
 };
+
+struct primitive_information {
+	NodeStructs::PrimitiveType type;
+	std::string representation;
+};
+
+struct non_primitive_information {
+	NodeStructs::NonPrimitiveType type;
+	std::string representation;
+	NodeStructs::ValueCategory value_category;
+};
+
+using expression_information = std::variant<type_information, primitive_information, non_primitive_information>;
 using transpile_t = expected<std::string>;
-using transpile_t2 = expected<whole_expression_information>;
+using transpile_t2 = expected<expression_information>;
 
 struct Named {
 	template <typename T> using map_to_vec = std::map<std::string, std::vector<T const*>>;
@@ -36,7 +47,7 @@ struct Named {
 	map_to_vec<NodeStructs::Template> templates;
 	map_to_vec<NodeStructs::NameSpace> namespaces;
 	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
-	std::map<std::string, NodeStructs::UniversalType> type_aliases;
+	std::map<std::string, NodeStructs::MetaType> type_aliases;
 };
 
 struct transpilation_state {
@@ -56,7 +67,7 @@ struct transpilation_state {
 	std::set<NodeStructs::Interface> traversed_interfaces;
 	std::set<NodeStructs::Block> traversed_blocks;
 	std::set<NodeStructs::Alias> traversed_type_aliases;
-	std::map<NodeStructs::Typename, std::vector<NodeStructs::UniversalType>> interface_symbol_to_members;
+	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
 };
 
 struct transpilation_state_with_indent {
@@ -111,19 +122,19 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 }
 
 struct builtins {
-	NodeStructs::Template builtin_set = { "Set" , { { "T", {} } }, "BUILTIN" };
-	NodeStructs::Template builtin_vector = { "Vector" , { { "T", std::nullopt}}, "BUILTIN"};
-	NodeStructs::Template builtin_map = { "Map" , { { "K", {} }, { "V", {} } }, "BUILTIN" };
-	NodeStructs::Template builtin_push = { "push" , { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // vec
-	NodeStructs::Template builtin_insert = { "insert" , { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // map or set
+	NodeStructs::Template builtin_set = { "Set", std::nullopt, { { "T", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_vector = { "Vector", std::nullopt, { { "T", std::nullopt}}, "BUILTIN"};
+	NodeStructs::Template builtin_map = { "Map", std::nullopt, { { "K", {} }, { "V", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_push = { "push", std::nullopt, { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // vec
+	NodeStructs::Template builtin_insert = { "insert", std::nullopt, { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // map or set
 
-	NodeStructs::Template builtin_print = { "print" , { { "T", {} } }, "BUILTIN" };
-	NodeStructs::Template builtin_println = { "println" , { { "T", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_print = { "print", std::nullopt, { { "T", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_println = { "println", std::nullopt, { { "T", {} } }, "BUILTIN" };
 
-	NodeStructs::Type builtin_int = { "Int" };
-	NodeStructs::Type builtin_bool = { "Bool" };
-	NodeStructs::Type builtin_string = { "String" };
-	NodeStructs::Type builtin_void = { "Void" };
+	NodeStructs::Type builtin_int = { "Int", std::nullopt };
+	NodeStructs::Type builtin_bool = { "Bool", std::nullopt };
+	NodeStructs::Type builtin_string = { "String", std::nullopt };
+	NodeStructs::Type builtin_void = { "Void", std::nullopt };
 };
 
 static constexpr auto default_includes = 
@@ -228,21 +239,21 @@ transpile_t transpile(
 	const std::vector<NodeStructs::Statement>& statements
 );
 
-std::vector<NodeStructs::UniversalType> decomposed_type(
+std::vector<NodeStructs::MetaType> decompose_type(
 	transpilation_state_with_indent state,
-	const NodeStructs::UniversalType& type
+	const NodeStructs::MetaType& type
 );
 
 std::optional<error> add_decomposed_for_iterator_variables(
 	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
-	const NodeStructs::UniversalType& it_type
+	const NodeStructs::MetaType& it_type
 );
 
 std::optional<error> add_for_iterator_variable(
 	transpilation_state_with_indent state,
 	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
-	const NodeStructs::UniversalType& it_type
+	const NodeStructs::MetaType& it_type
 );
 
 void remove_for_iterator_variables(
@@ -272,12 +283,12 @@ transpile_t transpile_expressions(
 
 transpile_t transpile_types(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::UniversalType>& args
+	const std::vector<NodeStructs::MetaType>& args
 );
 
-NodeStructs::UniversalType iterator_type(
+NodeStructs::MetaType iterator_type(
 	transpilation_state_with_indent state,
-	const NodeStructs::UniversalType& type
+	const NodeStructs::MetaType& type
 );
 
 std::string template_name(
@@ -292,8 +303,8 @@ std::string template_name(
 
 bool is_assignable_to(
 	transpilation_state_with_indent state,
-	const NodeStructs::UniversalType& parameter,
-	const NodeStructs::UniversalType& argument
+	const NodeStructs::MetaType& parameter,
+	const NodeStructs::MetaType& argument
 );
 
 transpile_t expr_to_printable(
@@ -306,7 +317,7 @@ bool uses_auto(const NodeStructs::FunctionParameter& param);
 bool uses_auto(const NodeStructs::Statement& param);
 bool uses_auto(const NodeStructs::Typename& t);
 
-#include "../type_visitor/transpile_type_visitor.hpp"
+//#include "../type_visitor/transpile_type_visitor.hpp"
 #include "../type_visitor/traverse_type_visitor.hpp"
 #include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp"
 #include "../type_visitor/type_of_postfix_member_visitor.hpp"

@@ -33,10 +33,10 @@ NodeStructs::Typename getStruct(const grammar::Typename& t) {
 	for (const auto& ext : t.get<Star<opts>>().get_view<opts>()) {
 		res = std::visit(overload(overload_default_error,
 			[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
-				return { NodeStructs::NamespacedTypename { std::move(res), word_or_auto(e.get<Or<Token<AUTO>, grammar::Word>>()) } };
+				return { NodeStructs::NamespacedTypename{ std::move(res), word_or_auto(e.get<Or<Token<AUTO>, grammar::Word>>()) } };
 			},
 			[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
-				return { NodeStructs::TemplatedTypename {
+				return { NodeStructs::TemplatedTypename{
 					std::move(res),
 					e.get<CommaStar<Alloc<grammar::Typename>>>().get<Alloc<grammar::Typename>>()
 					| LIFT_TRANSFORM_TRAIL(.get())
@@ -88,9 +88,10 @@ NodeStructs::ParameterCategory getStruct(const grammar::ParameterCategory& vc) {
 	);
 }
 
-NodeStructs::Function getStruct(const grammar::Function& f) {
+NodeStructs::Function getStruct(const grammar::Function& f, std::optional<NodeStructs::Typename> name_space) {
 	return NodeStructs::Function{
 		.name = f.get<grammar::Word>().value,
+		.name_space = name_space,
 		.returnType = getStruct(f.get<grammar::Typename>()),
 		.parameters = f.get<grammar::FunctionParameters>().get<And<grammar::Typename, grammar::ParameterCategory, grammar::Word>>()
 			| LIFT_TRANSFORM_X(
@@ -119,9 +120,10 @@ std::pair<std::string, std::optional<NodeStructs::Expression>> getTemplateParame
 		};
 }
 
-NodeStructs::Template getStruct(const grammar::Template& t) {
+NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeStructs::Typename> name_space) {
 	return {
 		.name = t.get<grammar::Word>().value,
+		.name_space = name_space,
 		.parameters = t.get<CommaStar<And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>>>().get<And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>>()
 			| LIFT_TRANSFORM(getTemplateParameter)
 			| to_vec(),
@@ -143,10 +145,11 @@ NodeStructs::Alias getStruct(const grammar::Alias& f) {
 	};
 }
 
-NodeStructs::Type getStruct(const grammar::Type& cl) {
+NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::Typename> name_space) {
 	auto elems = cl.get<Indent<Star<And<IndentToken, grammar::ClassElement>>>>().get_view<grammar::ClassElement>() | LIFT_TRANSFORM_TRAIL(.value());
 	return {
 		.name = cl.get<grammar::Word>().value,
+		.name_space = name_space,
 		.aliases = elems
 			| filter_variant_type_eq<grammar::Alias>
 			| tranform_variant_type_eq<grammar::Alias>
@@ -185,33 +188,36 @@ NodeStructs::Interface getStruct(const grammar::Interface& interface) {
 	};
 }
 
-NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns) {
+NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<NodeStructs::Typename> name_space) {
 	std::vector<NodeStructs::Type> types;
 	std::vector<NodeStructs::Function> functions;
 	std::vector<NodeStructs::Interface> interfaces;
 	std::vector<NodeStructs::Template> templates;
 	std::vector<NodeStructs::Alias> aliases;
 	std::vector<NodeStructs::NameSpace> namespaces;
+	NodeStructs::Typename this_ns = name_space.has_value() ?
+		NodeStructs::Typename{ NodeStructs::NamespacedTypename{ name_space.value(), ns.get<grammar::Word>().value } } :
+		NodeStructs::Typename{ NodeStructs::BaseTypename{ ns.get<grammar::Word>().value } };
 	for (const And<IndentToken, grammar::Named>& named : ns.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get_view<And<IndentToken, grammar::Named>>()) {
 		std::visit(
 			overload(
 				[&](const grammar::Type& e) {
-					types.push_back(getStruct(e));
+					types.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::Function& e) {
-					functions.push_back(getStruct(e));
+					functions.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::Interface& e) {
 					interfaces.push_back(getStruct(e));
 				},
 				[&](const grammar::Template& e) {
-					templates.push_back(getStruct(e));
+					templates.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::Alias& e) {
 					aliases.push_back(getStruct(e));
 				},
 				[&](const grammar::NameSpace& e) {
-					namespaces.push_back(getStruct(e));
+					namespaces.push_back(getStruct(e, this_ns));
 				}
 			), named.get<grammar::Named>().value()
 		);
@@ -239,12 +245,12 @@ NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
 		.types = t
 			| LIFT_TRANSFORM_TRAIL(.value())
 			| filter_transform_variant_type_eq(grammar::Type)
-			| LIFT_TRANSFORM(getStruct)
+			| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
 			| to_vec(),
 		.functions = t
 			| LIFT_TRANSFORM_TRAIL(.value())
 			| filter_transform_variant_type_eq(grammar::Function)
-			| LIFT_TRANSFORM(getStruct)
+			| LIFT_TRANSFORM_X(f, getStruct(f, std::nullopt))
 			| to_vec(),
 		.interfaces = t
 			| LIFT_TRANSFORM_TRAIL(.value())
@@ -254,7 +260,7 @@ NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
 		.templates = t
 			| LIFT_TRANSFORM_TRAIL(.value())
 			| filter_transform_variant_type_eq(grammar::Template)
-			| LIFT_TRANSFORM(getStruct)
+			| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
 			| to_vec(),
 		.aliases = t
 			| LIFT_TRANSFORM_TRAIL(.value())
@@ -264,7 +270,7 @@ NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
 		.namespaces = t
 			| LIFT_TRANSFORM_TRAIL(.value())
 			| filter_transform_variant_type_eq(grammar::NameSpace)
-			| LIFT_TRANSFORM(getStruct)
+			| LIFT_TRANSFORM_X(gns, getStruct(gns, std::nullopt))
 			| to_vec()
 	};
 }
@@ -590,34 +596,6 @@ NodeStructs::Expression getExpressionStruct(const grammar::ConditionalExpression
 	else
 		return getExpressionStruct(statement.get<grammar::OrExpression>());
 }
-//
-//NodeStructs::Expression getExpressionStruct(const AssignmentExpression& statement) {
-//	using operators = Or<
-//		Token<EQUAL>,
-//		Token<PLUSEQUAL>,
-//		Token<MINUSEQUAL>,
-//		Token<TIMESEQUAL>,
-//		Token<DIVEQUAL>,
-//		Token<MODEQUAL>,
-//		Token<ANDEQUAL>,
-//		Token<OREQUAL>,
-//		Token<XOREQUAL>
-//	>;
-//
-//	const auto& assignments = statement.get<Star<And<operators, ConditionalExpression>>>().get<And<operators, ConditionalExpression>>();
-//	if (assignments.size() == 0)
-//		return getExpressionStruct(statement.get<ConditionalExpression>());
-//	else
-//		return NodeStructs::Expression{ NodeStructs::AssignmentExpression{
-//			getExpressionStruct(statement.get<ConditionalExpression>()),
-//			assignments
-//				| LIFT_TRANSFORM_X(op_exp, std::pair{
-//						operators::variant_t{ op_exp.get<operators>().value() },
-//						getExpressionStruct(op_exp.get<ConditionalExpression>())
-//					})
-//				| to_vec()
-//		} };
-//}
 
 NodeStructs::Expression getExpressionStruct(const grammar::ExpressionStatement& statement) {
 	return getExpressionStruct(statement.get<grammar::Expression>());

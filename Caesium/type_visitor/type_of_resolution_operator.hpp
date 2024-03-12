@@ -8,12 +8,12 @@ struct type_of_resolution_operator_visitor : TypeCategoryVisitor<type_of_resolut
 	transpilation_state_with_indent state;
 	const std::string& accessed;
 
-	using R = expected<NodeStructs::UniversalType>;
+	using R = expected<NodeStructs::MetaType>;
 
 	TypeCategoryVisitorDeclarations
 };
 
-expected<NodeStructs::UniversalType> type_of_resolution_operator(
+expected<NodeStructs::MetaType> type_of_resolution_operator(
 	transpilation_state_with_indent state,
 	const auto& type,
 	const std::string& accessed

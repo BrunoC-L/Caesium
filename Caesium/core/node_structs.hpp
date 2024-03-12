@@ -8,11 +8,11 @@
 #include "primitives.hpp"
 #include "../utility/box.hpp"
 #include "../utility/overload.hpp"
-
-template <typename T>
-bool operator==(const std::reference_wrapper<T>& w1, const std::reference_wrapper<T>& w2) {
-	return w1.get() == w2.get();
-}
+//
+//template <typename T>
+//bool operator==(const std::reference_wrapper<T>& w1, const std::reference_wrapper<T>& w2) {
+//	return w1.get() == w2.get();
+//}
 
 struct NodeStructs {
 	struct TemplatedTypename;
@@ -74,7 +74,7 @@ struct NodeStructs {
 	struct BraceArguments;
 
 	struct Expression {
-		using vt = std::variant<
+		using vt = std::variant <
 			ConditionalExpression,
 			OrExpression,
 			AndExpression,
@@ -95,7 +95,7 @@ struct NodeStructs {
 			Token<FLOATING_POINT_NUMBER>,
 			Token<INTEGER_NUMBER>,
 			Token<STRING> // string token like "abc"
-		>;
+		> ;
 		Box<vt> expression;
 		std::weak_ordering operator<=>(const Expression& other) const;
 	};
@@ -125,7 +125,7 @@ struct NodeStructs {
 	move->value
 	key->key
 	*/
-	using ArgumentCategory  = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
+	using ArgumentCategory = std::variant<Reference, MutableReference, Copy, Move/*, Key*/>;
 	using ParameterCategory = std::variant<Reference, MutableReference, Value/*, Key*/>;
 	using ValueCategory = std::variant<Reference, MutableReference, Value>;
 	struct FunctionArgument {
@@ -354,32 +354,30 @@ struct NodeStructs {
 
 	struct Function {
 		std::string name;
+		std::optional<Typename> name_space;
 		Typename returnType;
 		std::vector<FunctionParameter> parameters;
 		std::vector<Statement> statements;
-		std::weak_ordering operator<=>(const Function&) const = default;
-		bool operator==(const Function&) const;
+		std::weak_ordering operator<=>(const Function&) const;
+		//bool operator==(const Function&) const;
 	};
 
 	struct Type {
 		std::string name;
+		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> memberVariables;
-		std::weak_ordering operator<=>(const Type&) const = default;
-		bool operator==(const Type&) const;
+		std::weak_ordering operator<=>(const Type&) const;
+		//bool operator==(const Type&) const;
 	};
 
 	struct Interface {
 		std::string name;
+		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> memberVariables;
-		std::weak_ordering operator<=>(const Interface&) const = default;
-		bool operator==(const Interface&) const;
-	};
-
-	struct TypeType {
-		std::reference_wrapper<const Type> type;
-		std::weak_ordering operator<=>(const TypeType&) const;
+		std::weak_ordering operator<=>(const Interface&) const;
+		//bool operator==(const Interface&) const;
 	};
 
 	struct FunctionType {
@@ -400,79 +398,109 @@ struct NodeStructs {
 
 	struct Template {
 		std::string name;
+		std::optional<Typename> name_space;
 		std::vector<std::pair<std::string, std::optional<NodeStructs::Expression>>> parameters;
 		std::string templated;
-		std::weak_ordering operator<=>(const Template&) const = default;
+		std::weak_ordering operator<=>(const Template&) const;
 	};
 
-	struct UniversalType;
+	struct MetaType;
 
 	/*struct AggregateType {
-		std::vector<std::pair<ArgumentCategory, UniversalType>> arguments;
+		std::vector<std::pair<ArgumentCategory, MetaType>> arguments;
 		std::weak_ordering operator<=>(const AggregateType&) const = default;
 	};*/
 
 	struct UnionType {
-		std::vector<UniversalType> arguments;
+		std::vector<MetaType> arguments;
 		std::weak_ordering operator<=>(const UnionType&) const = default;
 	};
 
+	struct Vector {
+		std::weak_ordering operator<=>(const Vector&) const = default;
+	};
+
 	struct VectorType {
-		Box<UniversalType> value_type;
+		Box<MetaType> value_type;
 		std::weak_ordering operator<=>(const VectorType&) const = default;
 	};
 
+	struct Set {
+		std::weak_ordering operator<=>(const Set&) const = default;
+	};
+
 	struct SetType {
-		Box<UniversalType> value_type;
+		Box<MetaType> value_type;
 		std::weak_ordering operator<=>(const SetType&) const = default;
 	};
 
+	struct Map {
+		std::weak_ordering operator<=>(const Map&) const = default;
+	};
+
 	struct MapType {
-		Box<UniversalType> key_type;
-		Box<UniversalType> value_type;
+		Box<MetaType> key_type;
+		Box<MetaType> value_type;
 		std::weak_ordering operator<=>(const MapType&) const = default;
 	};
 
-	struct BuiltInType {
+	/*struct BuiltInType {
 		struct push_t {
 			NodeStructs::VectorType container;
 			std::weak_ordering operator<=>(const push_t&) const;
 		};
 		std::variant<push_t> builtin;
 		std::weak_ordering operator<=>(const BuiltInType&) const;
-	};
+	};*/
 
-	struct UniversalType {
+	struct PrimitiveType {
 		std::variant<
-			std::reference_wrapper<const Type>,
-			//AggregateType,
-			TypeType,
-			FunctionType,
-			InterfaceType,
-			NamespaceType,
-			UnionType,
-			VectorType,
-			SetType,
-			MapType,
-			Template,
-			BuiltInType,
 			std::string,
 			double,
 			int,
 			bool
 		> value;
-		std::weak_ordering operator<=>(const UniversalType& other) const;
+		std::weak_ordering operator<=>(const PrimitiveType&) const;
 	};
+
+	struct MetaType {
+		std::variant<
+			PrimitiveType, // ex. type(1)
+			std::reference_wrapper<const Type>, // ex. type Dog -> type(Dog)
+
+			FunctionType, // ex. Bool has_bone(...) -> type(has_bone)
+			InterfaceType, // ex. interface Animal -> type(Animal)
+			NamespaceType, // ex. namespace std -> type(std)
+			UnionType, // ex. type A, type B -> type(A | B)
+			Template, // ex. template X -> type(X)
+
+			Vector, // type(Vector)
+			VectorType, // type(Vector<Int>), note that type(Vector<Int>{}) yields a NonPrimitiveType{VectorType}
+			Set, // type(Set)
+			SetType, // type(Set<Int>), note that type(Set<Int>{}) yields a NonPrimitiveType{SetType}
+			Map, // type(Map)
+			MapType // type(Map<Int, Int>), note that type(Map<Int,Int>{}) yields a NonPrimitiveType{MapType}
+		> type;
+		std::weak_ordering operator<=>(const MetaType& other) const;
+	};
+
+	struct NonPrimitiveType {
+		Box<MetaType> type;
+		std::weak_ordering operator<=>(const NonPrimitiveType&) const = default;
+	};
+	using ValueType = std::variant<PrimitiveType, NonPrimitiveType>;
+	using UniversalType = std::variant<PrimitiveType, NonPrimitiveType, MetaType>;
 
 	struct Block {
 		std::string name;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Block&) const = default;
-		bool operator==(const Block&) const;
+		//bool operator==(const Block&) const;
 	};
 
 	struct NameSpace {
 		std::string name;
+		std::optional<Typename> name_space;
 		std::vector<Type> types;
 		std::vector<Function> functions;
 		std::vector<Interface> interfaces;
@@ -581,13 +609,13 @@ inline std::weak_ordering NodeStructs::Typename::operator<=>(const NodeStructs::
 	return cmp(value, other.value);
 }
 
-inline std::weak_ordering NodeStructs::UniversalType::operator<=>(const NodeStructs::UniversalType& other) const {
-	return cmp(value, other.value);
+inline std::weak_ordering NodeStructs::MetaType::operator<=>(const NodeStructs::MetaType& other) const {
+	return cmp(type, other.type);
 }
 
-inline std::weak_ordering NodeStructs::TypeType::operator<=>(const TypeType& other) const {
-	return cmp(type.get(), other.type.get());
-}
+//inline std::weak_ordering NodeStructs::TypeType::operator<=>(const TypeType& other) const {
+//	return cmp(type.get(), other.type.get());
+//}
 
 inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionType& other) const {
 	return cmp(function.get(), other.function.get());
@@ -601,40 +629,95 @@ inline std::weak_ordering NodeStructs::NamespaceType::operator<=>(const Namespac
 	return cmp(name_space.get(), other.name_space.get());
 }
 
-inline std::weak_ordering NodeStructs::BuiltInType::operator<=>(const BuiltInType& other) const {
-	return cmp(builtin, other.builtin);
-}
-
-inline std::weak_ordering NodeStructs::BuiltInType::push_t::operator<=>(const BuiltInType::push_t& other) const {
-	return cmp(container, other.container);
-}
-
-inline bool NodeStructs::Function::operator==(const Function& other) const {
-	if (name != other.name || parameters.size() != other.parameters.size())
-		return false;
-	for (int i = 0; i < parameters.size(); ++i) {
-		bool same_type = parameters.at(i).typename_ <=> other.parameters.at(i).typename_ == std::weak_ordering::equivalent;
-		if (!same_type)
-			return false;
-
-		bool same_cat = parameters.at(i).category <=> other.parameters.at(i).category == std::weak_ordering::equivalent;
-		if (!same_cat)
-			return false;
-	}
-	return true;
-}
-
-inline bool NodeStructs::Type::operator==(const Type& other) const {
-	return name == other.name;
-}
-
-inline bool NodeStructs::Block::operator==(const Block& other) const {
-	return name == other.name;
-}
+//inline std::weak_ordering NodeStructs::BuiltInType::operator<=>(const BuiltInType& other) const {
+//	return cmp(builtin, other.builtin);
+//}
+//
+//inline std::weak_ordering NodeStructs::BuiltInType::push_t::operator<=>(const BuiltInType::push_t& other) const {
+//	return cmp(container, other.container);
+//}
+//
+//inline bool NodeStructs::Function::operator==(const Function& other) const {
+//	if (name != other.name || parameters.size() != other.parameters.size())
+//		return false;
+//	for (int i = 0; i < parameters.size(); ++i) {
+//		bool same_type = parameters.at(i).typename_ <=> other.parameters.at(i).typename_ == std::weak_ordering::equivalent;
+//		if (!same_type)
+//			return false;
+//
+//		bool same_cat = parameters.at(i).category <=> other.parameters.at(i).category == std::weak_ordering::equivalent;
+//		if (!same_cat)
+//			return false;
+//	}
+//	return true;
+//}
+//
+//inline bool NodeStructs::Type::operator==(const Type& other) const {
+//	return name == other.name;
+//}
+//
+//inline bool NodeStructs::Block::operator==(const Block& other) const {
+//	return name == other.name;
+//}
 
 inline std::weak_ordering NodeStructs::NameSpace::operator<=>(const NameSpace& other) const {
 	if (auto c = cmp(name, other.name); c != 0)
 		return c;
-	throw;
+	if (auto c = cmp(name_space, other.name_space); c != 0)
+		return c;
 	return std::weak_ordering::equivalent;
+}
+
+inline std::weak_ordering NodeStructs::Type::operator<=>(const Type& other) const {
+	if (auto c = cmp(name, other.name); c != 0)
+		return c;
+	if (auto c = cmp(name_space, other.name_space); c != 0)
+		return c;
+	if (auto c = cmp(aliases, other.aliases); c != 0)
+		return c;
+	if (auto c = cmp(memberVariables, other.memberVariables); c != 0)
+		return c;
+	return std::weak_ordering::equivalent;
+}
+
+inline std::weak_ordering NodeStructs::Function::operator<=>(const Function& other) const {
+	if (auto c = cmp(name, other.name); c != 0)
+		return c;
+	if (auto c = cmp(name_space, other.name_space); c != 0)
+		return c;
+	if (auto c = cmp(parameters, other.parameters); c != 0)
+		return c;
+	if (auto c = cmp(returnType, other.returnType); c != 0)
+		return c;
+	if (auto c = cmp(statements, other.statements); c != 0)
+		return c;
+	return std::weak_ordering::equivalent;
+}
+
+inline std::weak_ordering NodeStructs::Interface::operator<=>(const Interface& other) const {
+	if (auto c = cmp(name, other.name); c != 0)
+		return c;
+	if (auto c = cmp(name_space, other.name_space); c != 0)
+		return c;
+	if (auto c = cmp(aliases, other.aliases); c != 0)
+		return c;
+	if (auto c = cmp(memberVariables, other.memberVariables); c != 0)
+		return c;
+	return std::weak_ordering::equivalent;
+}
+
+inline std::weak_ordering NodeStructs::Template::operator<=>(const Template& other) const {
+	if (auto c = cmp(name, other.name); c != 0)
+		return c;
+	if (auto c = cmp(name_space, other.name_space); c != 0)
+		return c;
+	if (auto c = cmp(parameters, other.parameters); c != 0)
+		return c;
+	if (auto c = cmp(templated, other.templated); c != 0)
+		return c;
+	return std::weak_ordering::equivalent;
+}
+
+inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const PrimitiveType& other) const {
+	return cmp(*this, other);
 }

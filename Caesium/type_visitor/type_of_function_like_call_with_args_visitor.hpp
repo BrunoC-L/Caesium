@@ -8,12 +8,12 @@ struct type_of_function_like_call_with_args_visitor : TypeCategoryVisitor<type_o
 	transpilation_state_with_indent state;
 	const std::vector<NodeStructs::FunctionArgument>& args;
 
-	using R = expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>>;
+	using R = expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>>;
 
 	TypeCategoryVisitorDeclarations
 };
 
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::UniversalType>> type_of_function_like_call_with_args(
+expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>> type_of_function_like_call_with_args(
 	transpilation_state_with_indent state,
 	const std::vector<NodeStructs::FunctionArgument>& arguments,
 	const auto& type

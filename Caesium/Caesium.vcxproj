@@ -157,7 +157,6 @@
     <ClCompile Include="type_visitor\typename_of_type_visitor.cpp" />
     <ClCompile Include="type_visitor\type_of_postfix_member_visitor.cpp" />
     <ClCompile Include="core\toCPP.cpp" />
-    <ClCompile Include="type_visitor\transpile_type_visitor.cpp" />
     <ClCompile Include="type_visitor\type_of_function_like_call_with_args_visitor.cpp" />
     <ClCompile Include="typename_visitor\type_of_typename_visitor.cpp" />
     <ClCompile Include="typename_visitor\type_template_of_typename_visitor.cpp" />
@@ -193,7 +192,6 @@
     <ClInclude Include="typename_visitor\type_template_of_typename_visitor.hpp" />
     <ClInclude Include="core\toCPP.hpp" />
     <ClInclude Include="core\tokenizer.hpp" />
-    <ClInclude Include="type_visitor\transpile_type_visitor.hpp" />
     <ClInclude Include="typename_visitor\typename_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_function_like_call_with_args_visitor.hpp" />
     <ClInclude Include="typename_visitor\type_of_typename_visitor.hpp" />

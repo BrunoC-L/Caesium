@@ -26,21 +26,21 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			if (tmpl.name == "Vector") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
-				return NodeStructs::UniversalType{ NodeStructs::VectorType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
+				return NodeStructs::MetaType{ NodeStructs::VectorType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Set") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
-				return NodeStructs::UniversalType{ NodeStructs::SetType{ Box<NodeStructs::UniversalType>{ std::move(x).value() } } };
+				return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Map") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				auto y = type_of_typename(state, templated_with.at(1));
 				return_if_error(x);
 				return_if_error(y);
-				return NodeStructs::UniversalType{ NodeStructs::MapType{
-					Box<NodeStructs::UniversalType>{ std::move(x).value() },
-					Box<NodeStructs::UniversalType>{ std::move(y).value() }
+				return NodeStructs::MetaType{ NodeStructs::MapType{
+					Box<NodeStructs::MetaType>{ std::move(x).value() },
+					Box<NodeStructs::MetaType>{ std::move(y).value() }
 				} };
 			}
 			throw;

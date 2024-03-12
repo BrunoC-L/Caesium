@@ -9,10 +9,13 @@ R base(
 	const std::vector<NodeStructs::FunctionArgument>& arguments,
 	const auto& expr
 ) {
-	auto operand_t = transpile_expression(state, expr).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+	auto operand_t = transpile_expression(state, expr);
 	return_if_error(operand_t);
+	if (std::holds_alternative<non_primitive_information>(operand_t.value()))
+		throw;
+	const non_primitive_information& operand_t_ok = std::get<non_primitive_information>(operand_t.value());
 
-	if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
+	/*if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
 		auto arg_ts = vec_of_expected_to_expected_of_vec(
 			arguments
 			| LIFT_TRANSFORM_TRAIL(.expr)
@@ -41,9 +44,9 @@ R base(
 			throw;
 		}
 		throw;
-	}
+	}*/
 
-	if (std::holds_alternative<NodeStructs::BuiltInType>(operand_t.value().second.value)) {
+	/*if (std::holds_alternative<NodeStructs::BuiltInType>(operand_t.value().second.value)) {
 		std::visit(
 			overload(
 				[&](const NodeStructs::BuiltInType::push_t& e) {
@@ -53,15 +56,13 @@ R base(
 			std::get<NodeStructs::BuiltInType>(operand_t.value().second.value).builtin
 		);
 		throw;
-	}
+	}*/
 
-	auto t = type_of_function_like_call_with_args(state, arguments, operand_t.value().second);
+	auto t = type_of_function_like_call_with_args(state, arguments, operand_t_ok.type.type.get());
 	return_if_error(t);
 	auto args_or_error = transpile_args(state, arguments);
 	return_if_error(args_or_error);
-	auto operand_repr = transpile_expression(state, expr);
-	return_if_error(operand_repr);
-	return std::move(operand_repr).value().representation + "(" + std::move(args_or_error).value() + ")";
+	return std::move(operand_t_ok).representation + "(" + std::move(args_or_error).value() + ")";
 }
 
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
@@ -117,29 +118,40 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
-	auto operand_t = transpile_expression(state, expr.operand).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+	auto operand_t = transpile_expression(state, expr.operand);
 	return_if_error(operand_t);
-	auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
+	if (!std::holds_alternative<non_primitive_information>(operand_t.value()))
+		throw;
+	const auto& operand_t_ok = std::get<non_primitive_information>(operand_t.value());
+	auto t = type_of_postfix_member(state, expr.property_name, operand_t_ok.type.type.get());
 	return_if_error(t);
 
-	if (std::holds_alternative<NodeStructs::BuiltInType>(t.value().second.value)) {
+	throw;
+	/*if (std::holds_alternative<NodeStructs::BuiltInType>(t.value().second.value)) {
 		const auto& builtin = std::get<NodeStructs::BuiltInType>(t.value().second.value);
 		return std::visit(
 			overload(
 				[&](const NodeStructs::BuiltInType::push_t& e) -> R {
 					if (arguments.size() != 1)
 						throw;
-					auto arg_t = transpile_expression(state, arguments.at(0).expr).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
+					auto arg_t = transpile_expression(state, arguments.at(0).expr);
 					return_if_error(arg_t);
-					if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
+					if (!std::holds_alternative<non_primitive_information>(arg_t.value()))
+						throw;
+					const auto& arg_t_ok = std::get<non_primitive_information>(arg_t.value());
+					if (!is_assignable_to(state, e.container.value_type.get(), { NodeStructs::TypeType{ arg_t_ok.type } })) {
 						throw;
 					}
 
 					auto operand_repr = transpile_expression(state, expr.operand);
 					return_if_error(operand_repr);
+					if (!std::holds_alternative<non_primitive_information>(operand_repr.value()))
+						throw;
+					const auto& operand_repr_ok = std::get<non_primitive_information>(operand_repr.value());
+
 					auto args_repr = transpile_args(state, arguments);
 					return_if_error(args_repr);
-					return "push(" + operand_repr.value().representation + ", " + args_repr.value() + ")";
+					return "push(" + operand_repr_ok.representation + ", " + args_repr.value() + ")";
 				}
 			),
 			builtin.builtin
@@ -154,7 +166,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	return error{
 		"user error",
 		"Use of type like a function is prohibited. Type was `" + transpile_type(state, t.value().second).value() + "`"
-	};
+	};*/
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
