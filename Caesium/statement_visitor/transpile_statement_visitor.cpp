@@ -9,14 +9,14 @@ R T::operator()(const NodeStructs::Expression& statement) {
 	if (!std::holds_alternative<non_primitive_information>(repr.value()))
 		throw;
 	const auto& repr_ok = std::get<non_primitive_information>(repr.value());
-	return repr_ok.representation;
+	return repr_ok.representation + ";\n";
 }
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
-	bool is_aggregate = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get());
-	if (statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent) {
-
-		if (is_aggregate)
+	bool is_aggregate_init = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get());
+	bool is_auto = statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent;
+	if (is_auto) {
+		if (is_aggregate_init)
 			return error{
 				"user error",
 				"auto cannot deduce aggregate initialization"
@@ -24,26 +24,36 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 
 		auto assigned_expression = transpile_expression(state, statement.expr);
 		return_if_error(assigned_expression);
-		if (!std::holds_alternative<non_primitive_information>(assigned_expression.value()))
-			throw;
-		const auto& assigned_expression_ok = std::get<non_primitive_information>(assigned_expression.value());
+		if (std::holds_alternative<non_primitive_information>(assigned_expression.value())) {
+			const auto& assigned_expression_ok = std::get<non_primitive_information>(assigned_expression.value());
 
-		auto deduced_typename = typename_of_type(state, assigned_expression_ok.type.type.get());
-		return_if_error(deduced_typename);
+			auto deduced_typename = typename_of_type(state, assigned_expression_ok.type.type.get());
+			return_if_error(deduced_typename);
 
-		auto deduced_typename_repr = transpile_typename(state, deduced_typename.value());
-		return_if_error(deduced_typename);
+			auto deduced_typename_repr = transpile_typename(state, deduced_typename.value());
+			return_if_error(deduced_typename_repr);
 
-		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, assigned_expression_ok.type });
+			state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, assigned_expression_ok.type.type.get() });
 
-		return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
+			return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
+		}
+		if (std::holds_alternative<primitive_information>(assigned_expression.value())) {
+			const auto& assigned_expression_ok = std::get<primitive_information>(assigned_expression.value());
+
+			auto deduced_typename = typename_of_primitive(assigned_expression_ok.type);
+
+			auto deduced_typename_repr = transpile_typename(state, deduced_typename);
+			return_if_error(deduced_typename_repr);
+
+			state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, assigned_expression_ok.type });
+
+			return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
+		}
+		throw;
 	}
-	else if (is_aggregate) {
+	else if (is_aggregate_init) {
 		auto type = type_of_typename(state, statement.type);
 		return_if_error(type);
-		if (!std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(type.value().type))
-			throw;
-		const auto& type_ok = std::get<std::reference_wrapper<const NodeStructs::Type>>(type.value().type);
 
 		auto type_repr = transpile_typename(state, statement.type);
 		return_if_error(type_repr);
@@ -61,7 +71,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 			throw;
 		const auto& assigned_expression_ok = std::get<non_primitive_information>(assigned_expression.value());
 
-		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, NodeStructs::NonPrimitiveType{ type_ok.get() } });
+		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, type.value() });
 
 		return type_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 	}
@@ -71,9 +81,6 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 
 		auto type = type_of_typename(state, statement.type);
 		return_if_error(type);
-		if (!std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(type.value().type))
-			throw;
-		const auto& type_ok = std::get<std::reference_wrapper<const NodeStructs::Type>>(type.value().type);
 
 		auto type_repr = transpile_typename(state, statement.type);
 		return_if_error(type_repr);
@@ -81,7 +88,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 			throw;
 		const auto& assigned_expression_ok = std::get<non_primitive_information>(assigned_expression.value());
 
-		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, NodeStructs::NonPrimitiveType{ type_ok.get() } });
+		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, type.value() });
 
 		return type_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 	}

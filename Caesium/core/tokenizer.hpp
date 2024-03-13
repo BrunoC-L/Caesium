@@ -88,6 +88,7 @@ enum TOKENS {
 
 	TYPE,
 	TEMPLATE,
+	CLASS,
 	INTERFACE,
 	BLOCK,
 
@@ -467,6 +468,7 @@ private:
 			return_token(break, BREAK);
 			return_token(block, BLOCK);
 			return_token(case, CASE);
+			return_token(class, CLASS);
 			return_token(do, DO);
 			return_token(else, ELSE);
 			return_token(for, FOR);

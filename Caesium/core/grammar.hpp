@@ -36,7 +36,7 @@ namespace grammar {
 
 	using MemberVariable = And<Typename, Word, Newline>;
 	//using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
-	using ClassElement = Or<Alias/*, Function*/, MemberVariable/*, Constructor*/>;
+	using TypeElement = Or<Alias/*, Function*/, MemberVariable/*, Constructor*/>;
 
 	using Construct = And<Typename, BraceArguments>;
 
@@ -171,7 +171,7 @@ namespace grammar {
 		Newline,
 		Indent<Star<And<
 		IndentToken,
-		ClassElement
+		TypeElement
 		>>>
 		>;
 

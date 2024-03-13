@@ -11,18 +11,18 @@ R base(
 ) {
 	auto operand_t = transpile_expression(state, expr);
 	return_if_error(operand_t);
-	if (std::holds_alternative<non_primitive_information>(operand_t.value()))
+	if (!std::holds_alternative<type_information>(operand_t.value()))
 		throw;
-	const non_primitive_information& operand_t_ok = std::get<non_primitive_information>(operand_t.value());
+	const type_information& operand_t_ok = std::get<type_information>(operand_t.value());
 
-	/*if (std::holds_alternative<NodeStructs::Template>(operand_t.value().second.value)) {
+	if (std::holds_alternative<NodeStructs::Template>(operand_t_ok.type.type)) {
+		const auto& tmpl = std::get<NodeStructs::Template>(operand_t_ok.type.type);
 		auto arg_ts = vec_of_expected_to_expected_of_vec(
 			arguments
 			| LIFT_TRANSFORM_TRAIL(.expr)
-			| LIFT_TRANSFORM_X(X, transpile_expression(state, X).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; }))
+			| LIFT_TRANSFORM_X(X, transpile_expression(state, X))
 			| to_vec()
 		);
-		const auto& tmpl = std::get<NodeStructs::Template>(operand_t.value().second.value);
 		if (tmpl.templated == "BUILTIN") {
 			if (tmpl.name == "print" || tmpl.name == "println") {
 				if (arguments.size() == 0)
@@ -44,7 +44,7 @@ R base(
 			throw;
 		}
 		throw;
-	}*/
+	}
 
 	/*if (std::holds_alternative<NodeStructs::BuiltInType>(operand_t.value().second.value)) {
 		std::visit(
@@ -58,7 +58,7 @@ R base(
 		throw;
 	}*/
 
-	auto t = type_of_function_like_call_with_args(state, arguments, operand_t_ok.type.type.get());
+	auto t = type_of_function_like_call_with_args(state, arguments, operand_t_ok.type);
 	return_if_error(t);
 	auto args_or_error = transpile_args(state, arguments);
 	return_if_error(args_or_error);

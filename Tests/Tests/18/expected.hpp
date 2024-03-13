@@ -3,6 +3,7 @@
 using Int = int;
 using Bool = bool;
 using Void = void;
+using Floating = double;
 template <typename First, typename Second> using Pair = std::pair<First, Second>;
 #include <variant>
 template <typename... Ts> using Variant = std::variant<Ts...>;

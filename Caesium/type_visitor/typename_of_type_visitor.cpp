@@ -11,7 +11,7 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
-	throw;
+	return typename_of_primitive(t);
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {

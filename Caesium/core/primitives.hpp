@@ -368,7 +368,7 @@ struct TemplateBody {
 	}
 
 	bool parse_indented_line(Iterator& it) {
-		_ASSERT(n_indent == 0); // change code later to accomodate if needed but recursive templates or templates inside classes are not on the menu
+		_ASSERT(n_indent == 0); // change code later to accomodate if needed but recursive templates or templates inside interfaces are not on the menu
 		bool is_indented = it->first != END && it->first == TAB;
 		if (!is_indented)
 			return false;

@@ -146,7 +146,7 @@ NodeStructs::Alias getStruct(const grammar::Alias& f) {
 }
 
 NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::Typename> name_space) {
-	auto elems = cl.get<Indent<Star<And<IndentToken, grammar::ClassElement>>>>().get_view<grammar::ClassElement>() | LIFT_TRANSFORM_TRAIL(.value());
+	auto elems = cl.get<Indent<Star<And<IndentToken, grammar::TypeElement>>>>().get_view<grammar::TypeElement>() | LIFT_TRANSFORM_TRAIL(.value());
 	return {
 		.name = cl.get<grammar::Word>().value,
 		.name_space = name_space,

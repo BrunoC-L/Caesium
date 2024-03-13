@@ -11,7 +11,7 @@
 
 struct variable_info {
 	NodeStructs::ValueCategory value_category;
-	NodeStructs::ValueType type;
+	NodeStructs::MetaType type;
 };
 using variables_t = std::map<std::string, std::vector<variable_info>>;
 using transpile_header_cpp_t = expected<std::pair<std::string, std::string>>;
@@ -134,6 +134,7 @@ struct builtins {
 	NodeStructs::Type builtin_int = { "Int", std::nullopt };
 	NodeStructs::Type builtin_bool = { "Bool", std::nullopt };
 	NodeStructs::Type builtin_string = { "String", std::nullopt };
+	NodeStructs::Type builtin_double = { "Floating", std::nullopt };
 	NodeStructs::Type builtin_void = { "Void", std::nullopt };
 };
 
@@ -144,6 +145,7 @@ static constexpr auto default_includes =
 	"using Int = int;\n"
 	"using Bool = bool;\n"
 	"using Void = void;\n"
+	"using Floating = double;\n"
 	"template <typename First, typename Second> using Pair = std::pair<First, Second>;\n"
 
 	"#include <variant>\n"
@@ -281,9 +283,9 @@ transpile_t transpile_expressions(
 	const std::vector<NodeStructs::Expression>& args
 );
 
-transpile_t transpile_types(
+transpile_t transpile_typenames(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::MetaType>& args
+	const std::vector<NodeStructs::Typename>& args
 );
 
 NodeStructs::MetaType iterator_type(
@@ -341,3 +343,5 @@ expected<NodeStructs::Function> realise_function_using_auto(
 	const NodeStructs::Function& fn_using_auto,
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
+
+NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t);

@@ -8,11 +8,6 @@
 #include "primitives.hpp"
 #include "../utility/box.hpp"
 #include "../utility/overload.hpp"
-//
-//template <typename T>
-//bool operator==(const std::reference_wrapper<T>& w1, const std::reference_wrapper<T>& w2) {
-//	return w1.get() == w2.get();
-//}
 
 struct NodeStructs {
 	struct TemplatedTypename;
@@ -359,7 +354,6 @@ struct NodeStructs {
 		std::vector<FunctionParameter> parameters;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Function&) const;
-		//bool operator==(const Function&) const;
 	};
 
 	struct Type {
@@ -368,7 +362,6 @@ struct NodeStructs {
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> memberVariables;
 		std::weak_ordering operator<=>(const Type&) const;
-		//bool operator==(const Type&) const;
 	};
 
 	struct Interface {
@@ -377,7 +370,6 @@ struct NodeStructs {
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> memberVariables;
 		std::weak_ordering operator<=>(const Interface&) const;
-		//bool operator==(const Interface&) const;
 	};
 
 	struct FunctionType {
@@ -495,7 +487,6 @@ struct NodeStructs {
 		std::string name;
 		std::vector<Statement> statements;
 		std::weak_ordering operator<=>(const Block&) const = default;
-		//bool operator==(const Block&) const;
 	};
 
 	struct NameSpace {
@@ -628,37 +619,6 @@ inline std::weak_ordering NodeStructs::InterfaceType::operator<=>(const Interfac
 inline std::weak_ordering NodeStructs::NamespaceType::operator<=>(const NamespaceType& other) const {
 	return cmp(name_space.get(), other.name_space.get());
 }
-
-//inline std::weak_ordering NodeStructs::BuiltInType::operator<=>(const BuiltInType& other) const {
-//	return cmp(builtin, other.builtin);
-//}
-//
-//inline std::weak_ordering NodeStructs::BuiltInType::push_t::operator<=>(const BuiltInType::push_t& other) const {
-//	return cmp(container, other.container);
-//}
-//
-//inline bool NodeStructs::Function::operator==(const Function& other) const {
-//	if (name != other.name || parameters.size() != other.parameters.size())
-//		return false;
-//	for (int i = 0; i < parameters.size(); ++i) {
-//		bool same_type = parameters.at(i).typename_ <=> other.parameters.at(i).typename_ == std::weak_ordering::equivalent;
-//		if (!same_type)
-//			return false;
-//
-//		bool same_cat = parameters.at(i).category <=> other.parameters.at(i).category == std::weak_ordering::equivalent;
-//		if (!same_cat)
-//			return false;
-//	}
-//	return true;
-//}
-//
-//inline bool NodeStructs::Type::operator==(const Type& other) const {
-//	return name == other.name;
-//}
-//
-//inline bool NodeStructs::Block::operator==(const Block& other) const {
-//	return name == other.name;
-//}
 
 inline std::weak_ordering NodeStructs::NameSpace::operator<=>(const NameSpace& other) const {
 	if (auto c = cmp(name, other.name); c != 0)
