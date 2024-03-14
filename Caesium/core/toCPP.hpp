@@ -21,18 +21,13 @@ struct type_information {
 	std::string representation;
 };
 
-struct primitive_information {
-	NodeStructs::PrimitiveType type;
-	std::string representation;
-};
-
-struct non_primitive_information {
-	NodeStructs::NonPrimitiveType type;
+struct non_type_information {
+	NodeStructs::ExpressionType type;
 	std::string representation;
 	NodeStructs::ValueCategory value_category;
 };
 
-using expression_information = std::variant<type_information, primitive_information, non_primitive_information>;
+using expression_information = std::variant<type_information, non_type_information>;
 using transpile_t = expected<std::string>;
 using transpile_t2 = expected<expression_information>;
 

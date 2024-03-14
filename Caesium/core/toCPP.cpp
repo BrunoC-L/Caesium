@@ -237,8 +237,15 @@ transpile_header_cpp_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
 ) {
-	std::stringstream cpp;
-	cpp << "struct " << type.name << " {\n";
+	std::stringstream h, cpp;
+	if (type.name_space.has_value()) {
+		h << "struct " << transpile_typename(state, type.name_space.value()).value() << "__" << type.name << ";\n";
+		cpp << "struct " << transpile_typename(state, type.name_space.value()).value() << "__" << type.name << " {\n";
+	}
+	else {
+		h << "struct " << type.name << ";\n";
+		cpp << "struct " << type.name << " {\n";
+	}
 
 	for (const auto& alias : type.aliases) {
 		throw;
@@ -262,7 +269,7 @@ transpile_header_cpp_t transpile(
 	}
 
 	cpp << "};\n\n";
-	return std::pair{ "struct " + type.name + ";\n", cpp.str() };
+	return std::pair{ h.str(), cpp.str()};
 }
 
 transpile_header_cpp_t transpile(
@@ -550,13 +557,9 @@ transpile_t transpile_arg(
 ) {
 	auto expr_info = transpile_expression(state, arg.expr);
 	return_if_error(expr_info);
-	if (std::holds_alternative<primitive_information>(expr_info.value())) {
-		const auto& expr_info_ok = std::get<primitive_information>(expr_info.value());
-		return expr_info_ok.representation;
-	}
-	if (!std::holds_alternative<non_primitive_information>(expr_info.value()))
+	if (!std::holds_alternative<non_type_information>(expr_info.value()))
 		throw;
-	const auto& expr_info_ok = std::get<non_primitive_information>(expr_info.value());
+	const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
 
 	if (!arg.category.has_value()) {
 		return std::visit(overload(
@@ -593,7 +596,7 @@ transpile_t transpile_arg(
 			},
 			[&](const NodeStructs::Reference& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
 				// todo check if copyable
-				auto tn = typename_of_type(state, expr_info_ok.type.type.get());
+				auto tn = typename_of_type(state, expr_info_ok.type.type);
 				return_if_error(tn);
 				auto tn_repr = transpile_typename(state, tn.value());
 				return_if_error(tn_repr);
@@ -604,7 +607,7 @@ transpile_t transpile_arg(
 			},
 			[&](const NodeStructs::MutableReference& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
 				// todo check if copyable
-				auto tn = typename_of_type(state, expr_info_ok.type.type.get());
+				auto tn = typename_of_type(state, expr_info_ok.type.type);
 				return_if_error(tn);
 				auto tn_repr = transpile_typename(state, tn.value());
 				return_if_error(tn_repr);
@@ -653,9 +656,9 @@ transpile_t transpile_expressions(transpilation_state_with_indent state, const s
 
 		auto repr = transpile_expression(state, arg);
 		return_if_error(repr);
-		if (!std::holds_alternative<non_primitive_information>(repr.value()))
+		if (!std::holds_alternative<non_type_information>(repr.value()))
 			throw;
-		const auto& repr_ok = std::get<non_primitive_information>(repr.value());
+		const auto& repr_ok = std::get<non_type_information>(repr.value());
 		ss << repr_ok.representation;
 	}
 	return ss.str();
@@ -730,19 +733,19 @@ bool is_assignable_to(
 transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeStructs::Expression& expr) {
 	auto t = transpile_expression(state, expr);
 	return_if_error(t);
-	if (!std::holds_alternative<non_primitive_information>(t.value()))
+	if (!std::holds_alternative<non_type_information>(t.value()))
 		throw;
-	const auto& t_ok = std::get<non_primitive_information>(t.value());
+	const auto& t_ok = std::get<non_type_information>(t.value());
 
 	std::stringstream ss;
-	if (std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(t_ok.type.type.get().type)) {
-		const auto& t_ref = std::get<std::reference_wrapper<const NodeStructs::Type>>(t_ok.type.type.get().type).get();
+	if (std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(t_ok.type.type.type)) {
+		const auto& t_ref = std::get<std::reference_wrapper<const NodeStructs::Type>>(t_ok.type.type.type).get();
 		if (t_ref.name == "String") {
 			auto expr_repr = transpile_expression(state, expr);
 			return_if_error(expr_repr);
-			if (!std::holds_alternative<non_primitive_information>(expr_repr.value()))
+			if (!std::holds_alternative<non_type_information>(expr_repr.value()))
 				throw;
-			const auto& expr_repr_ok = std::get<non_primitive_information>(expr_repr.value());
+			const auto& expr_repr_ok = std::get<non_type_information>(expr_repr.value());
 			ss << "std::string(\"\\\"\") + " << expr_repr_ok.representation << " + std::string(\"\\\"\")";
 			return ss.str();
 		}
@@ -758,8 +761,8 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 			}
 		}
 	}
-	else if (std::holds_alternative<NodeStructs::InterfaceType>(t_ok.type.type.get().type)) {
-		const auto& t_ref = std::get<NodeStructs::InterfaceType>(t_ok.type.type.get().type).interface.get();
+	else if (std::holds_alternative<NodeStructs::InterfaceType>(t_ok.type.type.type)) {
+		const auto& t_ref = std::get<NodeStructs::InterfaceType>(t_ok.type.type.type).interface.get();
 		std::stringstream ss;
 		ss << "\"" << t_ref.name << "{";
 		for (const auto& [member_typename, member_name] : t_ref.memberVariables) {
@@ -851,10 +854,10 @@ expected<NodeStructs::Function> realise_function_using_auto(
 			if (param.typename_ <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent) {
 				auto info = transpile_expression(state, args.at(index).expr);
 				return_if_error(info);
-				if (!std::holds_alternative<non_primitive_information>(info.value()))
+				if (!std::holds_alternative<non_type_information>(info.value()))
 					throw;
-				const auto& info_ok = std::get<non_primitive_information>(info.value());
-				auto tn = typename_of_type(state, info_ok.type.type.get());
+				const auto& info_ok = std::get<non_type_information>(info.value());
+				auto tn = typename_of_type(state, info_ok.type.type);
 				return_if_error(tn);
 				auto& p = realised.parameters.at(index);
 				auto name = p.name;
@@ -918,11 +921,11 @@ expected<NodeStructs::Function> realise_function_using_auto(
 					remove_added_variables(state, fn_using_auto.statements.at(i));
 			}
 			return_if_error(deduced_t);
-			if (!std::holds_alternative<non_primitive_information>(deduced_t.value()))
+			if (!std::holds_alternative<non_type_information>(deduced_t.value()))
 				throw;
-			const auto& deduced_t_ok = std::get<non_primitive_information>(deduced_t.value());
+			const auto& deduced_t_ok = std::get<non_type_information>(deduced_t.value());
 
-			auto return_tn = typename_of_type(state, deduced_t_ok.type.type.get());
+			auto return_tn = typename_of_type(state, deduced_t_ok.type.type);
 
 			for (auto&& [type_name, value_cat, name] : fn_using_auto.parameters)
 				state.state.variables[name].pop_back();

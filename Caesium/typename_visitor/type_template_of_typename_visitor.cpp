@@ -74,7 +74,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 	const auto& templated = operator()(t.type);
 	throw;
 	/*return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstanceType{
-		::template_type_of_typename_visitor{ {}, state }(type.type.get()),
+		::template_type_of_typename_visitor{ {}, state }(type.type),
 		type.templated_with
 			| std::views::transform([&](const auto& e) { return type_of_typename(state, e); })
 			| to_vec()

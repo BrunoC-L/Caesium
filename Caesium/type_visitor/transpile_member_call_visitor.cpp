@@ -37,9 +37,9 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 
 		auto expr_info = transpile_expression(state, expr);
 		return_if_error(expr_info);
-		if (!std::holds_alternative<non_primitive_information>(expr_info.value()))
+		if (!std::holds_alternative<non_type_information>(expr_info.value()))
 			throw;
-		const non_primitive_information& expr_info_ok = std::get<non_primitive_information>(expr_info.value());
+		const non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
 		std::stringstream ss;
 		ss << fn.name << "(" << expr_info_ok.representation;
 
@@ -48,10 +48,10 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 			return_if_error(nth_param);
 			auto nth_argument = transpile_expression(state, arguments.at(i - 1).expr);
 			return_if_error(nth_argument);
-			if (!std::holds_alternative<non_primitive_information>(nth_argument.value()))
+			if (!std::holds_alternative<non_type_information>(nth_argument.value()))
 				throw;
-			const non_primitive_information& nth_argument_ok = std::get<non_primitive_information>(nth_argument.value());
-			if (!is_assignable_to(state, nth_param.value(), nth_argument_ok.type.type.get()))
+			const non_type_information& nth_argument_ok = std::get<non_type_information>(nth_argument.value());
+			if (!is_assignable_to(state, nth_param.value(), nth_argument_ok.type.type))
 				throw;
 			ss << ", " << nth_argument_ok.representation;
 		}
@@ -60,7 +60,7 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 		auto return_t = type_of_typename(state, fn.returnType);
 		return_if_error(return_t);
 
-		return expression_information{ non_primitive_information {
+		return expression_information{ non_type_information {
 			.type = return_t.value(),
 			.representation = ss.str(),
 			.value_category = NodeStructs::Value{},
@@ -187,9 +187,9 @@ R T::operator()(const NodeStructs::Vector& t) {
 R T::operator()(const NodeStructs::VectorType& t) {
 	auto operand_info = transpile_expression(state, expr);
 	return_if_error(operand_info);
-	if (!std::holds_alternative<non_primitive_information>(operand_info.value()))
+	if (!std::holds_alternative<non_type_information>(operand_info.value()))
 		throw;
-	const auto& operand_info_ok = std::get<non_primitive_information>(operand_info.value());
+	const auto& operand_info_ok = std::get<non_type_information>(operand_info.value());
 
 	auto args_repr = transpile_args(state, arguments);
 	return_if_error(args_repr);
@@ -202,13 +202,13 @@ R T::operator()(const NodeStructs::VectorType& t) {
 
 		auto arg_t = transpile_expression(state, arguments.at(0).expr);
 		return_if_error(arg_t);
-		if (!std::holds_alternative<non_primitive_information>(arg_t.value()))
+		if (!std::holds_alternative<non_type_information>(arg_t.value()))
 			throw; // primitive is ok if it fits, ex: `1` can be pushed to std::vector<int>
-		const auto& arg_t_ok = std::get<non_primitive_information>(arg_t.value());
+		const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
 
-		if (!is_assignable_to(state, t.value_type, arg_t_ok.type.type.get()))
+		if (!is_assignable_to(state, t.value_type, arg_t_ok.type.type))
 			throw;
-		return expression_information{ non_primitive_information{
+		return expression_information{ non_type_information{
 			.type = *state.state.named.types.at("Void").back(),
 			.representation = "push(" + operand_info_ok.representation + ", " + args_repr.value() + ")",
 			.value_category = NodeStructs::Value{},
@@ -217,7 +217,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 	if (property_name == "size") {
 		if (arguments.size() != 0)
 			throw;
-		return expression_information{ non_primitive_information{
+		return expression_information{ non_type_information{
 			.type = *state.state.named.types.at("Int").back(),
 			.representation = operand_info_ok.representation + ".size()",
 			.value_category = NodeStructs::Value{},

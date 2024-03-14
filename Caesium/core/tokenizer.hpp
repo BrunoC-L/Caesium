@@ -222,7 +222,7 @@ private:
 			while (true) {
 				index += 1;
 				if (index == program.length())
-					throw std::runtime_error("Hit end of program before end of string token, parsed so far: " + str);
+					throw std::runtime_error("Reached end of file before end of string, parsed so far: " + str);
 				if (program[index] == '\\' && index + 1 <= program.size() && program[index + 1] == c) {
 					// backslash with open string character means dont close the string
 					// but all our transpiled strings use " for strings so we just replace that

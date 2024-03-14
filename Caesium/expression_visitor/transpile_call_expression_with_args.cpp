@@ -120,10 +120,10 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	auto operand_t = transpile_expression(state, expr.operand);
 	return_if_error(operand_t);
-	if (!std::holds_alternative<non_primitive_information>(operand_t.value()))
+	if (!std::holds_alternative<non_type_information>(operand_t.value()))
 		throw;
-	const auto& operand_t_ok = std::get<non_primitive_information>(operand_t.value());
-	auto t = type_of_postfix_member(state, expr.property_name, operand_t_ok.type.type.get());
+	const auto& operand_t_ok = std::get<non_type_information>(operand_t.value());
+	auto t = type_of_postfix_member(state, expr.property_name, operand_t_ok.type.type);
 	return_if_error(t);
 
 	throw;

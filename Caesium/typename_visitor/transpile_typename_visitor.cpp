@@ -16,9 +16,9 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
 	std::stringstream ss;
-	auto tmpl = type_template_of_typename(state, type.templated_with, type.type.get());
+	auto tmpl = type_template_of_typename(state, type.templated_with, type.type);
 	return_if_error(tmpl);
-	auto t = operator()(type.type.get());
+	auto t = operator()(type.type);
 	return_if_error(t);
 	ss << t.value() << "<";
 	bool first = true;

@@ -445,6 +445,7 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const BuiltInType&) const;
 	};*/
 
+	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
 		std::variant<
 			std::string,
@@ -476,12 +477,12 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const MetaType& other) const;
 	};
 
-	struct NonPrimitiveType {
-		Box<MetaType> type;
-		std::weak_ordering operator<=>(const NonPrimitiveType&) const = default;
+	struct ExpressionType {
+		MetaType type;
+		std::weak_ordering operator<=>(const ExpressionType&) const = default;
 	};
-	using ValueType = std::variant<PrimitiveType, NonPrimitiveType>;
-	using UniversalType = std::variant<PrimitiveType, NonPrimitiveType, MetaType>;
+	using ValueType = std::variant<PrimitiveType, ExpressionType>;
+	using UniversalType = std::variant<PrimitiveType, ExpressionType, MetaType>;
 
 	struct Block {
 		std::string name;
