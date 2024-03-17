@@ -52,18 +52,19 @@ namespace grammar {
 	>;
 	using Postfix = Or<
 		And<
-		Token<DOT>,
-		Word,
-		ParenArguments
+			Token<DOT>,
+			Word,
+			ParenArguments
 		>,
 		And<
-		Token<DOT>,
-		Word
+			Token<DOT>,
+			Word
 		>,
 		ParenArguments,
 		BracketArguments,
+		TemplateArguments,
+		And<Token<NS>, Word>
 		//BraceArguments,
-		TemplateArguments
 		/*,
 		Token<PLUSPLUS>,
 		Token<MINUSMINUS>*/
@@ -130,25 +131,25 @@ namespace grammar {
 		Token<RETURN>,
 		CommaStar<FunctionArgument>,
 		Opt<And<
-		Token<IF>,
-		Expression
+			Token<IF>,
+			Expression
 		>>,
 		Newline
-		>;
+	>;
 	struct Statement : public And<
 		IndentToken,
 		Alloc<Or<
-		VariableDeclarationStatement,
-		ExpressionStatement,
-		IfStatement,
-		ForStatement,
-		IForStatement,
-		WhileStatement,
-		BreakStatement,
-		ReturnStatement,
-		BlockStatement
+			VariableDeclarationStatement,
+			ExpressionStatement,
+			IfStatement,
+			ForStatement,
+			IForStatement,
+			WhileStatement,
+			BreakStatement,
+			ReturnStatement,
+			BlockStatement
 		>>
-		> {};
+	> {};
 
 	using Interface = And<
 		Token<INTERFACE>,
@@ -156,13 +157,13 @@ namespace grammar {
 		Token<COLON>,
 		Newline,
 		Indent<Star<And<
-		IndentToken,
-		Or<
-		Alias,
-		MemberVariable
-		>
+			IndentToken,
+			Or<
+				Alias,
+				MemberVariable
+			>
 		>>>
-		>;
+	>;
 
 	using Type = And<
 		Token<TYPE>,
@@ -170,10 +171,10 @@ namespace grammar {
 		Token<COLON>,
 		Newline,
 		Indent<Star<And<
-		IndentToken,
-		TypeElement
+			IndentToken,
+			TypeElement
 		>>>
-		>;
+	>;
 
 	using Template = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<And<Word, Opt<And<Token<EQUAL>, Expression>>>>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>;
 

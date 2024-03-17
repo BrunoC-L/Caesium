@@ -16,12 +16,12 @@ struct variable_info {
 using variables_t = std::map<std::string, std::vector<variable_info>>;
 using transpile_header_cpp_t = expected<std::pair<std::string, std::string>>;
 
-struct type_information {
+struct type_information{
 	NodeStructs::MetaType type;
 	std::string representation;
 };
 
-struct non_type_information {
+struct non_type_information{
 	NodeStructs::ExpressionType type;
 	std::string representation;
 	NodeStructs::ValueCategory value_category;
@@ -117,60 +117,80 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 }
 
 struct builtins {
+	NodeStructs::Type builtin_void = { "Void", std::nullopt };
+	NodeStructs::Type builtin_bool = { "Bool", std::nullopt };
+	NodeStructs::Type builtin_int = { "Int", std::nullopt };
+	NodeStructs::Type builtin_double = { "Floating", std::nullopt };
+	NodeStructs::Type builtin_string = { "String", std::nullopt };
+
+	NodeStructs::Template builtin_vector = { "Vector", std::nullopt, { { "T", std::nullopt}}, "BUILTIN" };
 	NodeStructs::Template builtin_set = { "Set", std::nullopt, { { "T", {} } }, "BUILTIN" };
-	NodeStructs::Template builtin_vector = { "Vector", std::nullopt, { { "T", std::nullopt}}, "BUILTIN"};
 	NodeStructs::Template builtin_map = { "Map", std::nullopt, { { "K", {} }, { "V", {} } }, "BUILTIN" };
+
 	NodeStructs::Template builtin_push = { "push", std::nullopt, { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // vec
 	NodeStructs::Template builtin_insert = { "insert", std::nullopt, { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // map or set
 
 	NodeStructs::Template builtin_print = { "print", std::nullopt, { { "T", {} } }, "BUILTIN" };
 	NodeStructs::Template builtin_println = { "println", std::nullopt, { { "T", {} } }, "BUILTIN" };
 
-	NodeStructs::Type builtin_int = { "Int", std::nullopt };
-	NodeStructs::Type builtin_bool = { "Bool", std::nullopt };
-	NodeStructs::Type builtin_string = { "String", std::nullopt };
-	NodeStructs::Type builtin_double = { "Floating", std::nullopt };
-	NodeStructs::Type builtin_void = { "Void", std::nullopt };
+	NodeStructs::Typename filesystem = { NodeStructs::BaseTypename{ "filesystem" } };
+	NodeStructs::Type builtin_file = { "file", filesystem, {}, {} };
+	NodeStructs::Type builtin_directory = { "directory", filesystem, {}, {} };
+
+	NodeStructs::Function entries_dir = {
+		"entries",
+		filesystem,
+		NodeStructs::Typename{ NodeStructs::TemplatedTypename {
+			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
+			.templated_with = std::vector{
+				NodeStructs::Typename{ NodeStructs::UnionTypename{
+					std::vector<NodeStructs::Typename>{
+						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "file" } },
+						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "directory" } }
+					}
+				} }
+			}
+		} },
+		{
+			NodeStructs::FunctionParameter{
+				NodeStructs::Typename{ NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "directory" } } },
+				NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
+				std::string{ "dir" }
+			}
+		},
+		{}
+	};
+
+	NodeStructs::Function entries_str = {
+		"entries",
+		filesystem,
+		NodeStructs::Typename{ NodeStructs::TemplatedTypename {
+			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
+			.templated_with = std::vector{
+				NodeStructs::Typename{ NodeStructs::UnionTypename{
+					std::vector<NodeStructs::Typename>{
+						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "file" } },
+						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "directory" } }
+					}
+				} }
+			}
+		} },
+		{
+			NodeStructs::FunctionParameter{
+				NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } },
+				NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
+				std::string{ "dir" }
+			}
+		},
+		{}
+	};
+	NodeStructs::NameSpace filesystem_ns = {
+		.name = "filesystem",
+		.name_space = std::nullopt,
+		.types = { builtin_file, builtin_directory },
+		.functions = { entries_dir, entries_str }
+	};
 };
-
-static constexpr auto default_includes = 
-	"#include <utility>\n"
-	"#include <iostream>\n"
-
-	"using Int = int;\n"
-	"using Bool = bool;\n"
-	"using Void = void;\n"
-	"using Floating = double;\n"
-	"template <typename First, typename Second> using Pair = std::pair<First, Second>;\n"
-
-	"#include <variant>\n"
-	"template <typename... Ts> using Variant = std::variant<Ts...>;\n"
-
-	"#include <vector>\n"
-	"template <typename T> using Vector = std::vector<T>;\n"
-
-	"#include <string>\n"
-	"using String = std::string;\n"
-
-	"#include <unordered_set>\n"
-	"template <typename T> using Set = std::unordered_set<T>;\n"
-
-	"#include <set>\n"
-	"template <typename T> using TreeSet = std::set<T>;\n"
-
-	"#include <unordered_map>\n"
-	"template <typename K, typename V> using Map = std::unordered_map<K, V>;\n"
-
-	"static constexpr bool True = true;\n"
-	"static constexpr bool False = false;\n"
-
-	"template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };\n"
-
-	"Void push(auto&& vec, auto&& e) { vec.push_back(e); }\n"
-	/*"Void insert(auto&& set, auto&& e) { set.insert(e); }\n"
-	"Void insert(auto&& map, auto&& k, auto&& v) { map.insert(k, v); }\n"*/
-
-	"\n";
 
 static std::string indent(size_t n) {
 	std::string res;
@@ -323,7 +343,7 @@ bool uses_auto(const NodeStructs::Typename& t);
 #include "../type_visitor/type_of_resolution_operator.hpp"
 
 #include "../expression_visitor/expression_for_template_visitor.hpp"
-#include "../expression_visitor/transpile_call_expression_with_args.hpp"
+//#include "../expression_visitor/transpile_call_expression_with_args.hpp"
 #include "../expression_visitor/transpile_expression_visitor.hpp"
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
@@ -331,6 +351,12 @@ bool uses_auto(const NodeStructs::Typename& t);
 #include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
+
+//transpile_t2 transpile_call_expression_with_args(
+//	transpilation_state_with_indent state,
+//	const std::vector<NodeStructs::FunctionArgument>& arguments,
+//	const NodeStructs::Typename& type
+//);
 
 
 expected<NodeStructs::Function> realise_function_using_auto(

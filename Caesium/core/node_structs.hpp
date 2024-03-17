@@ -60,6 +60,7 @@ struct NodeStructs {
 	struct MultiplicativeExpression;
 	struct UnaryExpression;
 	struct CallExpression;
+	struct NamespaceExpression;
 	struct TemplateExpression;
 	struct ConstructExpression;
 	struct BracketAccessExpression;
@@ -79,6 +80,7 @@ struct NodeStructs {
 			MultiplicativeExpression,
 			UnaryExpression,
 			CallExpression,
+			NamespaceExpression,
 			TemplateExpression,
 			ConstructExpression,
 			BracketAccessExpression,
@@ -153,6 +155,12 @@ struct NodeStructs {
 		Expression operand;
 		ParenArguments arguments;
 		std::weak_ordering operator<=>(const CallExpression&) const = default;
+	};
+
+	struct NamespaceExpression {
+		Expression name_space;
+		std::string name_in_name_space;
+		std::weak_ordering operator<=>(const NamespaceExpression&) const = default;
 	};
 
 	struct TemplateExpression {

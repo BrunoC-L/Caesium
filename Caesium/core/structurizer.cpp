@@ -402,6 +402,9 @@ NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& exp
 			[&](const And<Token<DOT>, grammar::Word>& e) {
 				return NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ std::move(expr), e.get<grammar::Word>().value } };
 			},
+			[&](const And<Token<NS>, grammar::Word>& e) {
+				return NodeStructs::Expression{ NodeStructs::NamespaceExpression{ std::move(expr), e.get<grammar::Word>().value } };
+			},
 			[&](const grammar::ParenArguments& args) {
 				return NodeStructs::Expression{ NodeStructs::CallExpression{ std::move(expr), getStruct(args) } };
 			},

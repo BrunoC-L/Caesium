@@ -29,6 +29,7 @@ struct ExpressionVisitor {
 	Expand(NodeStructs::MultiplicativeExpression)\
 	Expand(NodeStructs::UnaryExpression)\
 	Expand(NodeStructs::CallExpression)\
+	Expand(NodeStructs::NamespaceExpression)\
 	Expand(NodeStructs::TemplateExpression)\
 	Expand(NodeStructs::ConstructExpression)\
 	Expand(NodeStructs::BracketAccessExpression)\

@@ -61,6 +61,14 @@ bool test_structurize_equals(auto&&... args) {
 	return test_structurize<true, T>(std::forward<decltype(args)>(args)...);
 }
 
+Token<STRING> str_parse(std::string s) {
+	auto tokens = Tokenizer(s).read();
+	tokens_and_iterator g{ tokens, tokens.begin() };
+	Token<STRING> res{ 0 };
+	res.build(g.it);
+	return res;
+}
+
 bool test_structurize_equals() {
 	using namespace grammar;
 	bool ok = true;
@@ -98,6 +106,19 @@ bool test_structurize_equals() {
 					"b"
 				} },
 				"c"
+			}
+		});
+
+	ok &= test_structurize_equals<Expression>(__LINE__, 0, "filesystem::entries(\"C:/\")",
+		NodeStructs::Expression{
+			NodeStructs::CallExpression{
+				.operand = NodeStructs::Expression{
+					NodeStructs::NamespaceExpression{
+						.name_space = NodeStructs::Expression{ std::string{ "filesystem" } },
+						.name_in_name_space = "entries"
+					}
+				},
+				.arguments = { std::vector{ NodeStructs::FunctionArgument{ std::nullopt, { str_parse("\"C:/\"") } } } }
 			}
 		});
 	return ok;

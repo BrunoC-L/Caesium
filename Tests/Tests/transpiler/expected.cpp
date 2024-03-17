@@ -1,10 +1,7 @@
 #include "expected.hpp"
-Bool test_transpile_all_folders(const std__filesystem__directory_iterator& folder) {
+Bool test_transpile_all_folders(const Vector<Variant<filesystem__directory, filesystem__file>>& folder) {
 	return False;
 };
-struct std__filesystem__directory_iterator {
-};
-
 Bool test_parse() {
 	return False;
 };
@@ -23,7 +20,7 @@ Int _redirect_main(const Vector<String>& args) {
 		return bad_exit;
 	}
 	(Void)(std::cout << std::string("\"") + "All parse tests passed" + std::string("\"") << "\n");
-	if (!test_transpile_all_folders(std__filesystem__directory_iterator{})) {
+	if (!test_transpile_all_folders(filesystem__entries("C:/"))) {
 		return bad_exit;
 	}
 	(Void)(std::cout << std::string("\"") + "All transpile tests passed" + std::string("\"") << "\n");

@@ -22,7 +22,9 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 	}
 	else {
 		// if args apply... TODO
-		return std::pair{ NodeStructs::Value{}, type_of_typename(state, t.function.get().returnType).value() };
+		auto ret = type_of_typename(state, t.function.get().returnType);
+		return_if_error(ret);
+		return std::pair{ NodeStructs::Value{}, ret.value() };
 	}
 	throw;
 }

@@ -79,6 +79,10 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	return std::move(operand_repr) + "_" + ss.str() + "_";
 }
 
+R T::operator()(const NodeStructs::NamespaceExpression& expr) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
 	throw;
 }

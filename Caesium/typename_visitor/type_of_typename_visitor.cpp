@@ -11,6 +11,18 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			return opt_e.value();
 		return NodeStructs::MetaType{ NodeStructs::MetaType{ type } };
 	}
+	if (auto it = state.state.named.functions.find(t.type); it != state.state.named.functions.end()) {
+		const auto& f = *it->second.back();
+		return NodeStructs::MetaType{ NodeStructs::FunctionType{ f } };
+	}
+	if (auto it = state.state.named.functions_using_auto.find(t.type); it != state.state.named.functions_using_auto.end()) {
+		const auto& f = *it->second.back();
+		return NodeStructs::MetaType{ NodeStructs::FunctionType{ f } };
+	}
+	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
+		const auto& t = *it->second.back();
+		return NodeStructs::MetaType{ t };
+	}
 	if (auto it = state.state.named.type_aliases.find(t.type); it != state.state.named.type_aliases.end()) {
 		const auto& type = it->second;
 		auto opt_e = traverse_type(state, type);

@@ -60,7 +60,7 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 		auto return_t = type_of_typename(state, fn.returnType);
 		return_if_error(return_t);
 
-		return expression_information{ non_type_information {
+		return expression_information{ non_type_information{
 			.type = return_t.value(),
 			.representation = ss.str(),
 			.value_category = NodeStructs::Value{},

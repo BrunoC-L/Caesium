@@ -8,7 +8,10 @@ using R = T::R;
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
 		if (it->second.size() != 1)
-			throw; // todo find the best match
+			return error{
+			"internal error",
+			"template specialization not implemented yet"
+		};
 		const auto& tmpl = *it->second.back();
 		if (tmpl.parameters.size() != templated_with.size()) {
 			std::stringstream ss;
@@ -54,16 +57,42 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			return_if_error(e);
 			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i).first, e.value());
 		}
-
-		grammar::Type t{ 1 };
-		auto tokens = Tokenizer(replaced).read();
-		tokens_and_iterator g{ tokens, tokens.begin() };
-		bool ok = t.build(g.it) && g.it == g.tokens.end();
-		if (!ok)
-			throw;
+		{
+			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
+			auto tokens = Tokenizer(replaced).read();
+			tokens_and_iterator g{ tokens, tokens.begin() };
+			if (f.build(g.it)) {
+				auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
+				structured_f->name = tmpl.name; // todo
+				state.state.named.functions[structured_f->name].push_back(structured_f);
+				state.state.traversed_functions.insert(*structured_f);
+				auto transpiled_or_e = transpile(state, *structured_f);
+				return_if_error(transpiled_or_e);
+				state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
+				return NodeStructs::MetaType{ NodeStructs::FunctionType{ *structured_f } };
+			}
+		}
+		{
+			And<IndentToken, grammar::Type, Token<END>> t{ 1 };
+			auto tokens = Tokenizer(replaced).read();
+			tokens_and_iterator g{ tokens, tokens.begin() };
+			if (t.build(g.it)) {
+				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
+				structured_t->name = tmpl.name; // todo
+				state.state.named.types[structured_t->name].push_back(structured_t);
+				auto opt_error = traverse_type(state, *structured_t);
+				if (opt_error.has_value())
+					return opt_error.value();
+				return NodeStructs::MetaType{ *structured_t };
+			}
+		}
+		throw;
 	}
-	auto err = "Template not found `" + t.type + "`";
-	throw std::runtime_error(err);
+	else
+		return error{
+			"user error",
+			"Template not found `" + t.type + "`"
+		};
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& t) {

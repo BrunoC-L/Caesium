@@ -8,8 +8,46 @@
 
 #include "../utility/overload.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
+#include "default_includes.hpp"
 
-std::optional<error> insert_all_named_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
+static void add_builtins(Named& named, const builtins& _builtins) {
+	named.types["Int"].push_back(&_builtins.builtin_int);
+	named.types["Bool"].push_back(&_builtins.builtin_bool);
+	named.types["String"].push_back(&_builtins.builtin_string);
+	named.types["Floating"].push_back(&_builtins.builtin_double);
+	named.types["Void"].push_back(&_builtins.builtin_void);
+
+	named.templates["Vector"].push_back(&_builtins.builtin_vector);
+	named.templates["Set"].push_back(&_builtins.builtin_set);
+	named.templates["Map"].push_back(&_builtins.builtin_map);
+
+	named.templates["push"].push_back(&_builtins.builtin_push);
+	named.templates["insert"].push_back(&_builtins.builtin_insert);
+
+	named.templates["print"].push_back(&_builtins.builtin_print);
+	named.templates["println"].push_back(&_builtins.builtin_println);
+
+	named.namespaces["filesystem"].push_back(&_builtins.filesystem_ns);
+}
+
+static void traverse_builtins(transpilation_state& state, const builtins& _builtins) {
+	state.traversed_types.insert(_builtins.builtin_int);
+	state.traversed_types.insert(_builtins.builtin_bool);
+	state.traversed_types.insert(_builtins.builtin_string);
+	state.traversed_types.insert(_builtins.builtin_double);
+	state.traversed_types.insert(_builtins.builtin_void);
+
+	state.traversed_functions.insert(_builtins.filesystem_ns.functions.at(0));
+	state.traversed_functions.insert(_builtins.filesystem_ns.functions.at(1));
+	state.traversed_types.insert(_builtins.filesystem_ns.types.at(0));
+	state.traversed_types.insert(_builtins.filesystem_ns.types.at(1));
+}
+
+std::optional<error> insert_all_named_recursive_with_imports(
+	const std::vector<NodeStructs::File>& project,
+	std::map<std::string, Named>& named_by_file,
+	const std::string& filename
+) {
 	for (const NodeStructs::File& file : project)
 		if (file.filename == filename) {
 			Named& named = named_by_file[filename];
@@ -109,22 +147,7 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 
 				for (const auto& file2 : project) {
 					Named named_of_file;
-					{
-						named_of_file.templates["Set"].push_back(&_builtins.builtin_set);
-						named_of_file.templates["Vector"].push_back(&_builtins.builtin_vector);
-						named_of_file.templates["Map"].push_back(&_builtins.builtin_map);
-						named_of_file.templates["push"].push_back(&_builtins.builtin_push);
-						named_of_file.templates["insert"].push_back(&_builtins.builtin_insert);
-
-						named_of_file.templates["print"].push_back(&_builtins.builtin_print);
-						named_of_file.templates["println"].push_back(&_builtins.builtin_println);
-						
-						named_of_file.types["Int"].push_back(&_builtins.builtin_int);
-						named_of_file.types["Bool"].push_back(&_builtins.builtin_bool);
-						named_of_file.types["String"].push_back(&_builtins.builtin_string);
-						named_of_file.types["Floating"].push_back(&_builtins.builtin_double);
-						named_of_file.types["Void"].push_back(&_builtins.builtin_void);
-					}
+					add_builtins(named_of_file, _builtins);
 					named_by_file[file2.filename] = named_of_file;
 					auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.filename);
 					if (opt_error.has_value())
@@ -137,17 +160,15 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 				}
 
 				transpilation_state state{ std::move(variables), Named(named_by_file[file.filename]) };
-				state.traversed_types.insert(_builtins.builtin_int);
-				state.traversed_types.insert(_builtins.builtin_bool);
-				state.traversed_types.insert(_builtins.builtin_string);
-				state.traversed_types.insert(_builtins.builtin_void);
+
+				traverse_builtins(state, _builtins);
 
 				transpile_header_cpp_t k = transpile_main({ state, 0 }, fn);
 				if (k.has_error())
 					return k;
 
 				std::stringstream h, cpp;
-				h << default_includes << k.value().first;
+				h << "#pragma once\n#include \"defaults.hpp\"\n\n" << k.value().first;
 				cpp << "#include \"expected.hpp\"\n";
 
 				auto reverse_iterator = state.transpile_in_reverse_order.rbegin();
@@ -227,10 +248,18 @@ transpile_header_cpp_t transpile(
 	return_if_error(statements);
 	for (auto&& [type_name, value_cat, name] : fn.parameters)
 		state.state.variables[name].pop_back();
-	auto common = return_type.value() + " " + fn.name + "(" + parameters.value() + ")";
-	auto h = common + ";\n";
-	auto cpp = common + " {\n" + statements.value() + "};\n";
-	return std::pair{ h, cpp };
+	if (fn.name_space.has_value()) {
+		auto common = return_type.value() + " " + transpile_typename(state, fn.name_space.value()).value() + "__" + fn.name + "(" + parameters.value() + ")";
+		auto h = common + ";\n";
+		auto cpp = common + " {\n" + statements.value() + "};\n";
+		return std::pair{ h, cpp };
+	}
+	else {
+		auto common = return_type.value() + " " + fn.name + "(" + parameters.value() + ")";
+		auto h = common + ";\n";
+		auto cpp = common + " {\n" + statements.value() + "};\n";
+		return std::pair{ h, cpp };
+	}
 }
 
 transpile_header_cpp_t transpile(
@@ -286,7 +315,9 @@ transpile_t transpile(
 	std::stringstream ss;
 	bool first = true;
 	for (const auto& [type, cat, name] : parameters) {
-		auto s = transpile_typename(state, type).value();
+		auto tn = transpile_typename(state, type);
+		return_if_error(tn);
+		auto s = tn.value();
 		if (std::holds_alternative<NodeStructs::Reference>(cat))
 			s = "const " + std::move(s) + "&";
 		else if (std::holds_alternative<NodeStructs::MutableReference>(cat))
@@ -841,8 +872,8 @@ expected<NodeStructs::Function> realise_function_using_auto(
 	const NodeStructs::Function& fn_using_auto,
 	const std::vector<NodeStructs::FunctionArgument>& args
 ) {
-	/*if (fn_using_auto.parameters.size() != args.size())
-		throw;*/
+	if (fn_using_auto.parameters.size() != args.size())
+		throw;
 
 	NodeStructs::Function realised = fn_using_auto;
 
