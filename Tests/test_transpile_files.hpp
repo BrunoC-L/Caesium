@@ -25,7 +25,7 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = grammar::File(0);
 	{
-		bool nodeBuilt = file.build(g.it);
+		bool nodeBuilt = build(file, g.it);
 		bool programReadEntirely = g.it == g.tokens.end();
 		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
 			programReadEntirely = ++g.it == g.tokens.end();

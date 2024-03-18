@@ -61,7 +61,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (f.build(g.it)) {
+			if (build(f,g.it)) {
 				auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
 				structured_f->name = tmpl.name; // todo
 				state.state.named.functions[structured_f->name].push_back(structured_f);
@@ -76,7 +76,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			And<IndentToken, grammar::Type, Token<END>> t{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (t.build(g.it)) {
+			if (build(t, g.it)) {
 				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
 				structured_t->name = tmpl.name; // todo
 				state.state.named.types[structured_t->name].push_back(structured_t);

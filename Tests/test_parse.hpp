@@ -16,7 +16,7 @@ bool test_parse(int line, int n_indent, std::string program) {
 			// otherwise they might succeed by skipping tokens at the end with Star or Opts
 			return And<Ts..., Token<END>>(n_indent);
 	}();
-	bool nodeBuilt = node.build(g.it);
+	bool nodeBuilt = build(node, g.it);
 
 	bool programReadEntirely = g.it == g.tokens.end();
 	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))

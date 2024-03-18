@@ -10,7 +10,7 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 	auto tokens = Tokenizer(program).read();
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	T node(n_indent);
-	bool nodeBuilt = node.build(g.it);
+	bool nodeBuilt = build(node, g.it);
 
 	bool programReadEntirely = g.it == g.tokens.end();
 	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
@@ -65,7 +65,7 @@ Token<STRING> str_parse(std::string s) {
 	auto tokens = Tokenizer(s).read();
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	Token<STRING> res{ 0 };
-	res.build(g.it);
+	build(res, g.it);
 	return res;
 }
 
