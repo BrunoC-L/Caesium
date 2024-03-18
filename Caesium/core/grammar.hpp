@@ -136,6 +136,17 @@ namespace grammar {
 		>>,
 		Newline
 	>;
+	using MatchStatement = And<
+		Token<MATCH>,
+		CommaPlus<Expression>,
+		Token<COLON>,
+		Newline,
+		Indent<Plus<And<
+			IndentToken,
+			CommaPlus<VariableDeclaration>,
+			ColonIndentCodeBlock
+		>>>
+	>;
 	struct Statement : public And<
 		IndentToken,
 		Alloc<Or<
@@ -147,7 +158,8 @@ namespace grammar {
 			WhileStatement,
 			BreakStatement,
 			ReturnStatement,
-			BlockStatement
+			BlockStatement,
+			MatchStatement
 		>>
 	> {};
 

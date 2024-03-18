@@ -1,0 +1,11 @@
+Bool test_transpile_all_folders(auto ref folders):
+    for dir in folders:
+        match dir:
+            filesystem::directory d:
+                return test_transpile_folder(d)
+            filesystem::file f:
+    return True
+
+
+Bool test_transpile_folder(filesystem::directory ref dir):
+    return False

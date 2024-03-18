@@ -306,6 +306,18 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const WhileStatement&) const = default;
 	};
 
+	struct MatchCase {
+		std::vector<std::pair<Typename, std::string>> variable_declarations;
+		std::vector<Statement> statements;
+		std::weak_ordering operator<=>(const MatchCase&) const = default;
+	};
+
+	struct MatchStatement {
+		std::vector<Expression> expressions;
+		std::vector<MatchCase> cases;
+		std::weak_ordering operator<=>(const MatchStatement&) const = default;
+	};
+
 	struct BreakStatement {
 		std::optional<Expression> ifExpr;
 		std::weak_ordering operator<=>(const BreakStatement&) const;
@@ -332,7 +344,8 @@ struct NodeStructs {
 			WhileStatement,
 			BreakStatement,
 			ReturnStatement,
-			BlockStatement
+			BlockStatement,
+			MatchStatement
 		> statement;
 		std::weak_ordering operator<=>(const Statement&) const;
 	};

@@ -81,6 +81,16 @@ struct filesystem__directory {
 	std::filesystem::directory_entry e;
 };
 
+Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(const filesystem__directory& dir) {
+	Vector<Variant<filesystem__file, filesystem__directory>> res{};
+	for (const auto& file_or_folder : std::filesystem::directory_iterator(dir.e.path()))
+		if (file_or_folder.is_directory())
+			res.push_back(filesystem__directory{ file_or_folder });
+		else
+			res.push_back(filesystem__directory{ file_or_folder });
+	return res;
+}
+
 Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(const std::string& folder_name) {
 	Vector<Variant<filesystem__file, filesystem__directory>> res{};
 	for (const auto& file_or_folder : std::filesystem::directory_iterator(folder_name))

@@ -135,36 +135,6 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 	std::stringstream ss;
 	if (statement.iterators.size() > 1) {
 		throw;
-		/*bool can_be_decomposed = [&]() {
-			if (std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(it_type.value)) {
-				const auto t = std::get<std::reference_wrapper<const NodeStructs::Type>>(it_type.value);
-				if (t.get().name == "Int")
-					return false;
-			}
-			return true;
-		}();
-		if (!can_be_decomposed)
-			return error{ "user error", "" };
-		auto opt_e = add_decomposed_for_iterator_variables(state, statement.iterators, it_type);
-		if (opt_e.has_value())
-			return opt_e.value();
-		ss << "for (auto&& [";
-		bool first = true;
-		for (const auto& iterator : statement.iterators) {
-			if (first)
-				first = false;
-			else
-				ss << ", ";
-			ss << std::visit(overload(overload_default_error,
-				[&](const NodeStructs::VariableDeclaration& iterator) {
-					return iterator.name;
-				},
-				[&](const std::string& iterator) {
-					return iterator;
-				}
-			), iterator);
-		}
-		ss << "]";*/
 	}
 	else {
 		auto opt_e = add_for_iterator_variable(state, statement.iterators, it_type);
@@ -261,4 +231,51 @@ R T::operator()(const NodeStructs::BlockStatement& statement) {
 	else {
 		throw std::runtime_error("bad block name" + s);
 	}
+}
+
+R T::operator()(const NodeStructs::MatchStatement& statement) {
+	std::stringstream ss;
+	if (statement.expressions.size() != 1)
+		throw;
+	if (statement.cases.size() == 0)
+		throw;
+	auto expr_info = transpile_expression(state, statement.expressions.at(0));
+	return_if_error(expr_info);
+	if (!std::holds_alternative<non_type_information>(expr_info.value()))
+		throw;
+	const auto& expr_ok = std::get<non_type_information>(expr_info.value());
+	auto tn = typename_of_type(state, expr_ok.type.type);
+	return_if_error(tn);
+	auto tn_repr = transpile_typename(state, tn.value());
+	return_if_error(tn_repr);
+	unsigned id = state.state.current_variable_unique_id++;
+	ss << "const " << tn_repr.value() << "& matchval" << id << " = " << expr_ok.representation << ";\n";
+	for (const NodeStructs::MatchCase& match_case : statement.cases) {
+		auto tn = transpile_typename(state, match_case.variable_declarations.at(0).first);
+		return_if_error(tn);
+		auto varname = match_case.variable_declarations.at(0).second;
+
+		state.state.variables[varname]
+			.push_back(variable_info{
+				.value_category = NodeStructs::Reference{},
+				.type = type_of_typename(state, match_case.variable_declarations.at(0).first).value() 
+			});
+		auto statements = transpile(state.indented(), match_case.statements);
+		state.state.variables[varname].pop_back();
+		return_if_error(statements);
+
+		ss  << indent(state.indent)
+			<< "if (std::holds_alternative<"
+			<< tn.value()
+			<< ">(matchval" << id << ")) {\n"
+			<< indent(state.indent + 1)
+			<< "const " << tn.value() << "& " << varname << " = std::get<"
+			<< tn.value()
+			<< ">(matchval" << id << ");\n"
+			<< statements.value()
+			<< indent(state.indent)<< "} else\n";
+	}
+	// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw if the code was complete
+	ss << indent(state.indent + 1) << "throw;\n";
+	return ss.str();
 }

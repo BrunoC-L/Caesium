@@ -688,6 +688,37 @@ NodeStructs::WhileStatement getStatementStruct(const grammar::WhileStatement& st
 	};
 }
 
+NodeStructs::MatchCase getCase(const auto& typenames, const auto& statements) {
+	return {
+		typenames | LIFT_TRANSFORM_X(vdec, std::pair{ getStruct(vdec.get<grammar::Typename>()), vdec.get<grammar::Word>().value }) | to_vec(),
+		statements | LIFT_TRANSFORM_TRAIL(.value()) | filter_transform_variant_type_eq(grammar::Statement) | LIFT_TRANSFORM(getStatementStruct) | to_vec()
+	};
+}
+
+std::vector<NodeStructs::MatchCase> getCases(const Indent<Plus<And<IndentToken, CommaPlus<grammar::VariableDeclaration>, grammar::ColonIndentCodeBlock>>>& cases) {
+	std::vector<NodeStructs::MatchCase> res;
+	res.reserve(cases.nodes.size());
+	for (const auto& and_node : cases.nodes) {
+		const auto& [_, typenames, statements] = and_node.value;
+		res.push_back(getCase(
+			typenames.nodes,
+			statements.get<Indent<Star<Or<Token<NEWLINE>, grammar::Statement>>>>().get_view<Or<Token<NEWLINE>, grammar::Statement>>()
+		));
+	}
+	return res;
+}
+
+NodeStructs::MatchStatement getStatementStruct(const grammar::MatchStatement& statement) {
+	return {
+		statement.get<CommaPlus<grammar::Expression>>().get_view<grammar::Expression>() | LIFT_TRANSFORM(getExpressionStruct) | to_vec(),
+		getCases(statement.get<Indent<Plus<And<
+			IndentToken,
+			CommaPlus<grammar::VariableDeclaration>,
+			grammar::ColonIndentCodeBlock
+		>>>>())
+	};
+}
+
 NodeStructs::BreakStatement getStatementStruct(const grammar::BreakStatement& statement) {
 	return {
 		statement.get<Opt<And<Token<IF>, grammar::Expression>>>().has_value()
@@ -728,6 +759,7 @@ NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 			grammar::WhileStatement,
 			grammar::BreakStatement,
 			grammar::ReturnStatement,
-			grammar::BlockStatement
+			grammar::BlockStatement,
+			grammar::MatchStatement
 		>>>().get().value()) };
 }

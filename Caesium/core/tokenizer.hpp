@@ -85,6 +85,7 @@ enum TOKENS {
 	SWITCH,
 	CASE,
 	BREAK,
+	MATCH,
 
 	TYPE,
 	TEMPLATE,
@@ -478,6 +479,7 @@ private:
 			return_token(import, IMPORT);
 			return_token(from, FROM);
 			return_token(in, IN);
+			return_token(match, MATCH);
 			return_token(or , OR);
 			return_token(return, RETURN);
 			return_token(static, STATIC);

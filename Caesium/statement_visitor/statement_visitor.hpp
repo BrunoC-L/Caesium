@@ -29,7 +29,8 @@ struct StatementVisitor {
 	Expand(NodeStructs::WhileStatement)\
 	Expand(NodeStructs::BreakStatement)\
 	Expand(NodeStructs::ReturnStatement)\
-	Expand(NodeStructs::BlockStatement)
+	Expand(NodeStructs::BlockStatement)\
+	Expand(NodeStructs::MatchStatement)
 
 #define statement_decl(T) R operator()(const T&);
 #define StatementVisitorDeclarations StatementExpands_(statement_decl)

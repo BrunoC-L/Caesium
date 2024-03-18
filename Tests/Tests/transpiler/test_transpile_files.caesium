@@ -1,2 +1,0 @@
-Bool test_transpile_all_folders(auto ref folder):
-    return False

@@ -214,14 +214,6 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			vec.push_back(new NodeStructs::Function(std::move(fn).value()));
 		}
 	}
-	/*auto base = operator()(expr.operand);
-	return_if_error(base);
-	if (!std::holds_alternative<type_information>(base.value()))
-		throw;
-	const type_information& base_ok = std::get<type_information>(base.value());
-
-	auto temp2 = type_of_function_like_call_with_args(state, expr.arguments.args, base_ok.type);
-	return_if_error(temp2);*/
 	auto t = transpile_expression(state, expr.operand);
 	return_if_error(t);
 	if (std::holds_alternative<type_information>(t.value())) {
@@ -275,20 +267,8 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			} };
 		}
 		throw;
-		/*auto t = type_of_function_like_call_with_args(state, expr.arguments.args, ti.type);
-		return_if_error(t);
-		auto args_or_error = transpile_args(state, expr.arguments.args);
-		return_if_error(args_or_error);
-		return expression_information{ non_type_information{
-			.type = t.value().second,
-			.representation = std::move(ti).representation + "(" + std::move(args_or_error).value() + ")",
-			.value_category = NodeStructs::Value{}
-		} };*/
 	}
 	throw;
-	/*auto r = transpile_call_expression_with_args(state, expr.arguments.args, expr.operand);
-	return_if_error(r);
-	return r.value();*/
 }
 
 R T::operator()(const NodeStructs::NamespaceExpression& expr) {
@@ -683,49 +663,6 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 	const non_type_information& operand_info_ok = std::get<non_type_information>(operand_info.value());
 	
 	return transpile_member_call(state, expr.operand, expr.property_name, expr.arguments.args, operand_info_ok.type.type);
-
-	//auto t = type_of_postfix_member(state, expr.property_name, operand_t.value().second);
-	//return_if_error(t);
-
-	//if (std::holds_alternative<NodeStructs::BuiltInType>(t.value().second.value)) {
-	//	const auto& builtin = std::get<NodeStructs::BuiltInType>(t.value().second.value);
-	//	const auto& arguments = expr.arguments.args;
-	//	return std::visit(
-	//		overload(
-	//			[&](const NodeStructs::BuiltInType::push_t& e) -> R {
-	//				if (arguments.size() != 1)
-	//					throw;
-	//				auto arg_t = transpile_expression(state, std::get<NodeStructs::Expression>(arguments.at(0))).transform([](auto&& x) { return std::pair{ std::move(x).value_category, std::move(x).type }; });
-	//				return_if_error(arg_t);
-	//				if (!is_assignable_to(state, e.container.value_type.get(), arg_t.value().second)) {
-	//					throw;
-	//				}
-
-	//				auto operand_repr = transpile_expression(state, expr.operand);
-	//				return_if_error(operand_repr);
-	//				auto args_repr = transpile_args(state, arguments);
-	//				return_if_error(args_repr);
-	//				return expression_information{
-	//					.expression = expr,
-	//					.value_category = NodeStructs::Value{},
-	//					.type = *state.state.named.types.at("Void").back(),
-	//					.representation = "push(" + operand_repr.value().representation + ", " + args_repr.value() + ")"
-	//				};
-	//			}
-	//		),
-	//		builtin.builtin
-	//	);
-	//}
-
-	//if (std::holds_alternative<NodeStructs::FunctionType>(t.value().second.value)) {
-	//	const auto& fn = std::get<NodeStructs::FunctionType>(t.value().second.value);
-	//	const auto& unwrapped_fn = fn.function.get();
-	//}
-
-	//return error{
-	//	"user error",
-	//	"Use of type like a function is prohibited. Type was `" + transpile_type(state, t.value().second).value() + "`"
-	//};
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {

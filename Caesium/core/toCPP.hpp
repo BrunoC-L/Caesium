@@ -49,8 +49,10 @@ struct transpilation_state {
 	variables_t variables;
 	Named named;
 	std::vector<std::pair<std::string, std::string>> transpile_in_reverse_order;
+	unsigned current_variable_unique_id = 1;
 
 	transpilation_state(const transpilation_state& other) = delete;
+	transpilation_state(transpilation_state&& other) = delete;
 	transpilation_state(
 		variables_t&& variables,
 		Named&& named
@@ -343,7 +345,6 @@ bool uses_auto(const NodeStructs::Typename& t);
 #include "../type_visitor/type_of_resolution_operator.hpp"
 
 #include "../expression_visitor/expression_for_template_visitor.hpp"
-//#include "../expression_visitor/transpile_call_expression_with_args.hpp"
 #include "../expression_visitor/transpile_expression_visitor.hpp"
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
@@ -351,12 +352,6 @@ bool uses_auto(const NodeStructs::Typename& t);
 #include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
-
-//transpile_t2 transpile_call_expression_with_args(
-//	transpilation_state_with_indent state,
-//	const std::vector<NodeStructs::FunctionArgument>& arguments,
-//	const NodeStructs::Typename& type
-//);
 
 
 expected<NodeStructs::Function> realise_function_using_auto(

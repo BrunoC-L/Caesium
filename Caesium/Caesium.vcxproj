@@ -148,7 +148,6 @@
   <ItemGroup>
     <ClCompile Include="expression_visitor\expression_for_template_visitor.cpp" />
     <ClCompile Include="core\structurizer.cpp" />
-    <ClCompile Include="expression_visitor\transpile_call_expression_with_args.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
     <ClCompile Include="type_visitor\transpile_member_call_visitor.cpp" />
     <ClCompile Include="statement_visitor\transpile_statement_visitor.cpp" />
@@ -184,7 +183,6 @@
     <ClInclude Include="utility\replace_all.hpp" />
     <ClInclude Include="statement_visitor\statement_visitor.hpp" />
     <ClInclude Include="core\structurizer.hpp" />
-    <ClInclude Include="expression_visitor\transpile_call_expression_with_args.hpp" />
     <ClInclude Include="expression_visitor\transpile_expression_visitor.hpp" />
     <ClInclude Include="statement_visitor\transpile_statement_visitor.hpp" />
     <ClInclude Include="typename_visitor\transpile_typename_visitor.hpp" />

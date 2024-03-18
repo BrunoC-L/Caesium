@@ -89,4 +89,6 @@ std::vector<NodeStructs::Expression> getExpressions(const std::vector<grammar::E
 
 NodeStructs::ReturnStatement getStatementStruct(const grammar::ReturnStatement& statement);
 
+NodeStructs::MatchStatement getStatementStruct(const grammar::MatchStatement& statement);
+
 NodeStructs::Statement getStatementStruct(const grammar::Statement& statement);
