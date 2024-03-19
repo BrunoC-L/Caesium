@@ -73,10 +73,12 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			}
 		}
 		{
-			And<IndentToken, grammar::Type, Token<END>> t{ 1 };
+			And<IndentToken, grammar::Type> t{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (build(t, g.it)) {
+			auto ok = build(t, g.it);
+			while (parse_empty_line(g.it));
+			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
 				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
 				structured_t->name = tmpl.name; // todo
 				state.state.named.types[structured_t->name].push_back(structured_t);
@@ -86,7 +88,17 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				return NodeStructs::MetaType{ *structured_t };
 			}
 		}
-		throw;
+		{
+			And<IndentToken, grammar::Type> t{ 1 };
+			auto tokens = Tokenizer(replaced).read();
+			tokens_and_iterator g{ tokens, tokens.begin() };
+			if (build(t, g.it))
+				throw;
+		}
+		return error{
+			"user error",
+			"Template expansion does not result in a type or function: |begin|\n" + replaced + "\n|end|"
+		};
 	}
 	else
 		return error{

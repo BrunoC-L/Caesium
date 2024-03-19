@@ -132,6 +132,7 @@ Bool test_transpile_folder(filesystem::directory ref dir):
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G member1");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type B:");
+	ok &= test_parse_correct<Type>(__LINE__, 0, "type Token:\n\tString value\n\tInt n_indent\n");
 
 	ok &= test_parse_correct<File>(__LINE__, 0, "type A:\n\nInt main(Vector<String> ref s):\n");
 	ok &= test_parse_correct<File>(__LINE__, 0, "\nint main():\n");

@@ -9,10 +9,10 @@ String name;
 
 Int _redirect_main(const Vector<String>& s) {
 	Vector<Named> vec = Vector<Named>{};
-	push(vec, Dog{"doggo"});
-	push(vec, Cat{"gato"});
+	push(vec, Dog{String{"doggo"}});
+	push(vec, Cat{String{"gato"}});
 	for (auto&& e : vec) {
-		(Void)(std::cout << "Named{name = " << std::string("\"") + std::visit(overload([&](auto&& XX){ return XX.name; }), e) + std::string("\"") << "}" << "\n");
+		(Void)(std::cout << "Named{name = " << String("\"") + std::visit(overload([&](auto&& XX){ return XX.name; }), e) + String("\"") << "}" << "\n");
 	}
 	return 0;
 };

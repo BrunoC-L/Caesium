@@ -27,7 +27,8 @@ template <typename K, typename V> using Map = std::unordered_map<K, V>;
 static constexpr bool True = true;
 static constexpr bool False = false;
 template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
-Void push(auto&& vec, auto&& e) { vec.push_back(e); }
+template <typename T>
+Void push(Vector<T>& vec, auto e) { vec.push_back(std::move(e)); }
 
 constexpr int size(const std::string& str) {
 	return (int)str.size();

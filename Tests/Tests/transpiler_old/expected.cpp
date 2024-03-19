@@ -23,21 +23,21 @@ Int _redirect_main(const Vector<String>& args) {
 	Int argc = args.size();
 	Int bad_exit = 1;
 	if (argc == 1) {
-		(Void)(std::cout << std::string("\"") + "Expected a test folder" + std::string("\"") << "\n");
+		(Void)(std::cout << String("\"") + String{"Expected a test folder"} + String("\"") << "\n");
 		return bad_exit;
 	}
 	if (argc > 2) {
-		(Void)(std::cout << std::string("\"") + "Expected a single argument" + std::string("\"") << "\n");
+		(Void)(std::cout << String("\"") + String{"Expected a single argument"} + String("\"") << "\n");
 		return bad_exit;
 	}
 	if (!test_parse()) {
 		return bad_exit;
 	}
-	(Void)(std::cout << std::string("\"") + "All parse tests passed" + std::string("\"") << "\n");
-	if (!test_transpile_all_folders(filesystem__entries("C:/"))) {
+	(Void)(std::cout << String("\"") + String{"All parse tests passed"} + String("\"") << "\n");
+	if (!test_transpile_all_folders(filesystem__entries(String{"C:/"}))) {
 		return bad_exit;
 	}
-	(Void)(std::cout << std::string("\"") + "All transpile tests passed" + std::string("\"") << "\n");
+	(Void)(std::cout << String("\"") + String{"All transpile tests passed"} + String("\"") << "\n");
 	return 0;
 };
 

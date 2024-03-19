@@ -837,7 +837,7 @@ R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 R T::operator()(const Token<STRING>& expr) {
 	return expression_information{ non_type_information{
 		.type = { *state.state.named.types.at("String").back() },
-		.representation = expr.value,
+		.representation = "String{" + expr.value + "}",
 		.value_category = NodeStructs::Value{}
 	} };
 }

@@ -1,5 +1,11 @@
 #include "expected.hpp"
 Int _redirect_main(const Vector<String>& args) {
+	Vector<String> x = Vector<String>{};
+	push(x, String{"Hello, "});
+	push(x, String{"World!\n"});
+	for (auto&& s : x) {
+		(Void)(std::cout << String("\"") + s + String("\""));
+	}
 	return 0;
 };
 

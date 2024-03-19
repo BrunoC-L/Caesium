@@ -96,7 +96,11 @@ std::optional<error> insert_all_named_recursive_with_imports(
 	};
 }
 
-void insert_aliases_recursive_with_imports(const std::vector<NodeStructs::File>& project, std::map<std::string, Named>& named_by_file, const std::string& filename) {
+std::optional<error> insert_aliases_recursive_with_imports(
+	const std::vector<NodeStructs::File>& project,
+	std::map<std::string, Named>& named_by_file,
+	const std::string& filename
+) {
 	for (const NodeStructs::File& file : project)
 		if (file.filename == filename) {
 			Named& named = named_by_file[filename];
@@ -104,22 +108,25 @@ void insert_aliases_recursive_with_imports(const std::vector<NodeStructs::File>&
 			auto state = transpilation_state{ {}, Named(named) };
 			for (const auto& alias : file.aliases) {
 				auto t = type_of_typename({ state, 0 }, alias.aliasTo);
-				if (t.has_error())
-					throw;
+				return_if_error(t);
 				named.type_aliases_typenames.emplace(alias.aliasFrom, alias.aliasTo);
 				named.type_aliases.emplace(alias.aliasFrom, std::move(t).value());
 			}
 			for (const auto& i : file.imports) {
-				insert_aliases_recursive_with_imports(project, named_by_file, i.imported);
+				auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, i.imported);
+				if (opt_e.has_value())
+					return opt_e;
 				Named& imported_named = named_by_file[i.imported];
 				named.type_aliases.insert(imported_named.type_aliases.begin(), imported_named.type_aliases.end());
 				named.type_aliases_typenames.insert(imported_named.type_aliases_typenames.begin(), imported_named.type_aliases_typenames.end());
 			}
 
-			return;
+			return std::nullopt;
 		}
-	auto err = std::string("Invalid import \"") + filename + "\"";
-	throw std::runtime_error(err);
+	return error{
+		"user error",
+		"invalid import `" + filename + "`"
+	};
 }
 
 transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) {
@@ -156,7 +163,9 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 
 				for (const auto& file2 : project) {
 					Named& named_of_file = named_by_file[file2.filename];
-					insert_aliases_recursive_with_imports(project, named_by_file, file2.filename);
+					auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.filename);
+					if (opt_e.has_value())
+						return opt_e.value();
 				}
 
 				transpilation_state state{ std::move(variables), Named(named_by_file[file.filename]) };
@@ -777,7 +786,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 			if (!std::holds_alternative<non_type_information>(expr_repr.value()))
 				throw;
 			const auto& expr_repr_ok = std::get<non_type_information>(expr_repr.value());
-			ss << "std::string(\"\\\"\") + " << expr_repr_ok.representation << " + std::string(\"\\\"\")";
+			ss << "String(\"\\\"\") + " << expr_repr_ok.representation << " + String(\"\\\"\")";
 			return ss.str();
 		}
 		else {

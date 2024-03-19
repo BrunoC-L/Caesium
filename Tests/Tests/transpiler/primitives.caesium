@@ -1,0 +1,40 @@
+template Token<_token>:
+    type Token:
+        String value
+        Int n_indent
+
+template Until<T>:
+    type Until:
+        Int n_indent
+
+type IndentToken:
+	Int n_indent
+
+template Indent<T>:
+    type Indent : public T:
+        Indent(Int n_indent) : T(n_indent + 1) {}
+
+template Alloc<T>:
+    type Alloc:
+        std::optional<Box<T>> value
+        Int n_indent
+
+template Opt<T>:
+    type Opt:
+        std::optional<T> node
+        Int n_indent
+
+//template And<Ands...>:
+//    type And:
+//        Int n_indent
+//        std::tuple<Ands...> value
+//
+//template Or<Ors...>:
+//    type Or:
+//        Int n_indent
+//        using variant_t = std::variant<Ors...>
+//        std::optional<variant_t> _value
+
+type TemplateBody:
+	Int n_indent
+	String value

@@ -1,3 +1,10 @@
+import grammar
+
 Int main(Vector<String> ref args):
+    auto x = Vector<String>{}
+    x.push("Hello, ")
+    x.push("World!\n")
+    for s in x:
+        print(s)
 	return 0
 
