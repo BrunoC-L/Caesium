@@ -1,6 +1,7 @@
 #include "../core/toCPP.hpp"
 #include "../core/structurizer.hpp"
 #include "../utility/replace_all.hpp"
+#include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 
 using T = type_template_of_typename_visitor;
 using R = T::R;
@@ -37,13 +38,13 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
 			}
 			if (tmpl.name == "Map") {
-				auto x = type_of_typename(state, templated_with.at(0));
-				auto y = type_of_typename(state, templated_with.at(1));
-				return_if_error(x);
-				return_if_error(y);
+				auto k = type_of_typename(state, templated_with.at(0));
+				return_if_error(k);
+				auto v = type_of_typename(state, templated_with.at(1));
+				return_if_error(v);
 				return NodeStructs::MetaType{ NodeStructs::MapType{
-					Box<NodeStructs::MetaType>{ std::move(x).value() },
-					Box<NodeStructs::MetaType>{ std::move(y).value() }
+					Box<NodeStructs::MetaType>{ std::move(k).value() },
+					Box<NodeStructs::MetaType>{ std::move(v).value() }
 				} };
 			}
 			throw;
@@ -80,7 +81,22 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			while (parse_empty_line(g.it));
 			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
 				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
-				structured_t->name = tmpl.name; // todo
+				auto templated_with_reprs= vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
+				return_if_error(templated_with_reprs);
+				structured_t->name = [&]() {
+					std::stringstream ss;
+					bool first = true;
+					ss << structured_t->name << "___";
+					for (const auto& tn : templated_with_reprs.value()) {
+						if (!first) {
+							ss << "__";
+							first = false;
+						}
+						ss << tn;
+					}
+					ss << "___";
+					return ss.str();
+				}();
 				state.state.named.types[structured_t->name].push_back(structured_t);
 				auto opt_error = traverse_type(state, *structured_t);
 				if (opt_error.has_value())

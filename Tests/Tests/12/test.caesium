@@ -3,4 +3,4 @@ type A:
     B b
 
 Int main(Vector<String> ref s):
-    A a = {}
+    A a = {B{}}

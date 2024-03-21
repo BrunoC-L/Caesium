@@ -41,16 +41,8 @@ R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Template& tmpl) {
-	if (tmpl.templated == "BUILTIN") {
-		if (tmpl.name == "println") {
-			return std::pair{ NodeStructs::Value{}, NodeStructs::MetaType{ *state.state.named.types.at("Void").back() } };
-		}
-		throw;
-	}
-	else {
-		throw;
-	}
+R T::operator()(const NodeStructs::TemplateType& tmpl) {
+	throw;
 }
 
 R T::operator()(const NodeStructs::Vector& t) {

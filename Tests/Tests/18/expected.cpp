@@ -17,10 +17,10 @@ String name;
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	CatsAndDogs a = CatsAndDogs{};
-	CatsAndDogs b = add(std::move(a), Cat{});
-	CatsAndDogs c = add(std::move(b), Cat{});
-	CatsAndDogs d = add(std::move(c), Cat{});
+	CatsAndDogs a = CatsAndDogs{Vector<Cat>{}, Vector<Dog>{}};
+	CatsAndDogs b = add(std::move(a), Cat{String{"cat1"}});
+	CatsAndDogs c = add(std::move(b), Cat{String{"cat2"}});
+	CatsAndDogs d = add(std::move(c), Cat{String{"cat3"}});
 	return 0;
 };
 

@@ -61,7 +61,7 @@ R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Template& t) {
+R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 

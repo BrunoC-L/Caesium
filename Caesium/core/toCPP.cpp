@@ -106,18 +106,13 @@ std::optional<error> insert_aliases_recursive_with_imports(
 			Named& named = named_by_file[filename];
 
 			auto state = transpilation_state{ {}, Named(named) };
-			for (const auto& alias : file.aliases) {
-				auto t = type_of_typename({ state, 0 }, alias.aliasTo);
-				return_if_error(t);
+			for (const auto& alias : file.aliases)
 				named.type_aliases_typenames.emplace(alias.aliasFrom, alias.aliasTo);
-				named.type_aliases.emplace(alias.aliasFrom, std::move(t).value());
-			}
 			for (const auto& i : file.imports) {
 				auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, i.imported);
 				if (opt_e.has_value())
 					return opt_e;
 				Named& imported_named = named_by_file[i.imported];
-				named.type_aliases.insert(imported_named.type_aliases.begin(), imported_named.type_aliases.end());
 				named.type_aliases_typenames.insert(imported_named.type_aliases_typenames.begin(), imported_named.type_aliases_typenames.end());
 			}
 
@@ -223,9 +218,9 @@ transpile_header_cpp_t transpile_main(
 		NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
 		{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } } }
 	} };
-	bool is_vec_str = type <=> vector_str == 0;
-	if (!is_vec_str)
+	if (type <=> vector_str != std::weak_ordering::equivalent)
 		return error{ "user error","\"main\" function using 1 argument must be of `Vector<String> ref` type" };
+
 	return transpile(
 		state,
 		NodeStructs::Function{
@@ -285,18 +280,8 @@ transpile_header_cpp_t transpile(
 		cpp << "struct " << type.name << " {\n";
 	}
 
-	for (const auto& alias : type.aliases) {
+	for (const auto& alias : type.aliases)
 		throw;
-		/*if (std::holds_alternative<NodeStructs::BaseTypename>(alias.aliasTo.value))
-			cpp << "using "
-			<< std::get<NodeStructs::BaseTypename>(alias.aliasTo.value).type
-			<< " = " <<  transpile_typename(state, alias.aliasFrom).value()
-			<< ";\n";
-		else {
-			auto err = "cannot alias to " + transpile_typename(state, alias.aliasTo).value();
-			throw std::runtime_error(err);
-		}*/
-	}
 
 	for (const auto& member : type.memberVariables) {
 		auto type = type_of_typename(state, member.type);
@@ -465,7 +450,7 @@ std::vector<NodeStructs::MetaType> decompose_type(
 			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::MetaType> {
 				throw;
 			},
-			[&](const NodeStructs::Template&) -> std::vector<NodeStructs::MetaType> {
+			[&](const NodeStructs::TemplateType&) -> std::vector<NodeStructs::MetaType> {
 				throw;
 			},
 			[&](const NodeStructs::Vector&) -> std::vector<NodeStructs::MetaType> {
@@ -738,6 +723,9 @@ bool is_assignable_to(
 				throw;
 				return false;
 			},
+			[&](const NodeStructs::VectorType& e, const NodeStructs::VectorType& u) {
+				return e.value_type <=> u.value_type == std::weak_ordering::equivalent;
+			},
 			[&](const NodeStructs::InterfaceType& e, std::reference_wrapper<const NodeStructs::Type> u) -> bool {
 				for (const auto& [type_name, name] : e.interface.get().memberVariables) {
 					auto t = type_of_typename(state, type_name);
@@ -987,17 +975,17 @@ expected<NodeStructs::Function> realise_function_using_auto(
 
 NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t) {
 	return std::visit(overload(overload_default_error,
-		[&](const std::string&) -> NodeStructs::Typename {
-			return { NodeStructs::BaseTypename{ "String" } };
+		[&](const std::string&) {
+			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } };
 		},
-		[&](const double&) -> NodeStructs::Typename {
-			return { NodeStructs::BaseTypename{ "Float" } };
+		[&](const double&) {
+			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Floating" } };
 		},
-		[&](const int&) -> NodeStructs::Typename {
-			return { NodeStructs::BaseTypename{ "Int" } };
+		[&](const int&) {
+			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Int" } };
 		},
-		[&](const bool&) -> NodeStructs::Typename {
-			return { NodeStructs::BaseTypename{ "Bool" } };
+		[&](const bool&) {
+			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Bool" } };
 		}
 	), primitive_t.value);
 }

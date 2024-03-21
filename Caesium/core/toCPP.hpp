@@ -42,7 +42,6 @@ struct Named {
 	map_to_vec<NodeStructs::Template> templates;
 	map_to_vec<NodeStructs::NameSpace> namespaces;
 	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
-	std::map<std::string, NodeStructs::MetaType> type_aliases;
 };
 
 struct transpilation_state {
@@ -63,7 +62,6 @@ struct transpilation_state {
 	std::set<NodeStructs::Type> traversed_types;
 	std::set<NodeStructs::Interface> traversed_interfaces;
 	std::set<NodeStructs::Block> traversed_blocks;
-	std::set<NodeStructs::Alias> traversed_type_aliases;
 	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
 };
 

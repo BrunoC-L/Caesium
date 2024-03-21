@@ -417,6 +417,12 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const Template&) const;
 	};
 
+	struct TemplateType {
+		std::string name;
+		std::vector<const Template*> options;
+		std::weak_ordering operator<=>(const TemplateType&) const = default;
+	};
+
 	struct MetaType;
 
 	/*struct AggregateType {
@@ -486,7 +492,7 @@ struct NodeStructs {
 			InterfaceType, // ex. interface Animal -> type(Animal)
 			NamespaceType, // ex. namespace std -> type(std)
 			UnionType, // ex. type A, type B -> type(A | B)
-			Template, // ex. template X -> type(X)
+			TemplateType, // ex. template X -> type(X)
 
 			Vector, // type(Vector)
 			VectorType, // type(Vector<Int>), note that type(Vector<Int>{}) yields a NonPrimitiveType{VectorType}

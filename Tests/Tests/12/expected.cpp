@@ -7,7 +7,7 @@ struct B {
 };
 
 Int _redirect_main(const Vector<String>& s) {
-	A a = A{};
+	A a = A{B{}};
 };
 
 int main(int argc, char** argv) {

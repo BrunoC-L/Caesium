@@ -6,6 +6,7 @@ using T = expression_for_template_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
+	throw;
 	if (expr.ifElseExprs.has_value()) {
 		return std::string("_") +
 			operator()(expr.ifElseExprs.value().first) +
@@ -19,6 +20,7 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::OrExpression& expr) {
+	throw;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& e : expr.ors)
@@ -27,6 +29,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::AndExpression& expr) {
+	throw;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& e : expr.ands)
@@ -35,6 +38,7 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::EqualityExpression& expr) {
+	throw;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.equals)
@@ -43,6 +47,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CompareExpression& expr) {
+	throw;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.comparisons)
@@ -51,6 +56,7 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::AdditiveExpression& expr) {
+	throw;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.adds)
@@ -59,6 +65,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
+	throw;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.muls)
@@ -67,10 +74,12 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::UnaryExpression& expr) {
+	throw;
 	return operator()(expr.expr);
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
+	throw;
 	auto args = expr.arguments.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
@@ -104,6 +113,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
+	throw;
 	auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
@@ -112,6 +122,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
+	throw;
 	auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
@@ -139,5 +150,7 @@ R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 }
 
 R T::operator()(const Token<STRING>& expr) {
+	throw;
+	// value has quotes i think
 	return "_" + operator()(expr.value) + "_";
 }

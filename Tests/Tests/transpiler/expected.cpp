@@ -1,11 +1,11 @@
 #include "expected.hpp"
+struct Token___WORD___ {
+String value;
+Int n_indent;
+};
+
 Int _redirect_main(const Vector<String>& args) {
-	Vector<String> x = Vector<String>{};
-	push(x, String{"Hello, "});
-	push(x, String{"World!\n"});
-	for (auto&& s : x) {
-		(Void)(std::cout << String("\"") + s + String("\""));
-	}
+	Token___WORD___ w = Token___WORD___{String{"hi"}, 0};
 	return 0;
 };
 

@@ -20,15 +20,15 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		return NodeStructs::MetaType{ NodeStructs::FunctionType{ f } };
 	}
 	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
-		const auto& t = *it->second.back();
-		return NodeStructs::MetaType{ t };
+		return NodeStructs::MetaType{ NodeStructs::TemplateType{ t.type, it->second } };
 	}
-	if (auto it = state.state.named.type_aliases.find(t.type); it != state.state.named.type_aliases.end()) {
-		const auto& type = it->second;
-		auto opt_e = traverse_type(state, type);
-		if (opt_e.has_value())
-			return opt_e.value();
-		return it->second;
+	if (auto it = state.state.named.type_aliases_typenames.find(t.type); it != state.state.named.type_aliases_typenames.end()) {
+		const auto& type_name = it->second;
+		auto type = type_of_typename(state, type_name);
+		return_if_error(type);
+		if (std::optional<error> err = traverse_type(state, type.value()); err.has_value())
+			return err.value();
+		return type.value();
 	}
 	if (auto it = state.state.named.interfaces.find(t.type); it != state.state.named.interfaces.end()) {
 		const auto& interface = *it->second.back();

@@ -16,8 +16,8 @@ auto add(CatsAndDogs val cats_and_dogs, Cat val cat):
     return cats_and_dogs
 
 Int main(Vector<String> ref s):
-    auto a = CatsAndDogs{}
-    auto b = add(move a, Cat{})
-    auto c = (move b).add(Cat{})
-    auto d = (move c, Cat{}).add()
+    auto a = CatsAndDogs{Vector<Cat>{}, Vector<Dog>{}}
+    auto b = add(move a, Cat{"cat1"})
+    auto c = (move b).add(Cat{"cat2"})
+    auto d = (move c, Cat{"cat3"}).add()
     return 0
