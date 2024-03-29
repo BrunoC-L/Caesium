@@ -10,7 +10,7 @@ struct A {
 
 Int _redirect_main(const Vector<String>& s) {
 	Variant<A, B> v1 = Variant<A, B>{A{}};
-	Variant<A, B, C> v2 = v1;
+	Variant<A, B, C> v2 = std::visit([](const auto& auto1) -> Variant<A, B, C> { return auto1; }, v1);
 };
 
 int main(int argc, char** argv) {

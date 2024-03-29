@@ -2,4 +2,5 @@
 #include "defaults.hpp"
 
 Int _redirect_main(const Vector<String>& args);
-struct Token___WORD___;
+struct Or__Token__WORD__Int;
+struct Token__WORD;

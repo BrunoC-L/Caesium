@@ -2,5 +2,6 @@ import grammar
 
 Int main(Vector<String> ref args):
     auto w = Word{0, "hi"}
+    auto t1 = Or<Word, Int>{ Word{ "t1", 1 } }
+    Or<Word, Int> t2 = Word{ 't2', 2 }
 	return 0
-

@@ -2,4 +2,4 @@
 #include "defaults.hpp"
 
 Int _redirect_main(const Vector<String>& args);
-Int f_Int();
+Int f__Int();

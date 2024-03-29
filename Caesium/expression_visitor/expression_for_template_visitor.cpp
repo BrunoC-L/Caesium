@@ -131,21 +131,16 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 }
 
 R T::operator()(const std::string& expr) {
-	return replace_all(
-		expr,
-		" ", "",
-		"<", "_open_",
-		">", "_close_",
-		",", "_",
-		".", "_"
-	);
+	return expr;
 }
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {
+	throw;
 	return operator()(expr.value);
 }
 
 R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
+	throw;
 	return operator()(expr.value);
 }
 

@@ -1,5 +1,5 @@
 #include "expected.hpp"
-Int f_Animal(const Vector<Variant<Cat, Dog>>& vec) {
+Int f__Animal(const Vector<Variant<Cat, Dog>>& vec) {
 		return 0;
 };
 struct Cat {
@@ -10,7 +10,7 @@ struct Dog {
 
 Int _redirect_main(const Vector<String>& s) {
 	Vector<Variant<Cat, Dog>> animals = Vector<Variant<Cat, Dog>>{};
-	return f_Animal(animals);
+	return f__Animal(animals);
 };
 
 int main(int argc, char** argv) {

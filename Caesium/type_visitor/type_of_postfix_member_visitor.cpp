@@ -5,10 +5,10 @@ using R = T::R;
 
 R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
 	if (auto it = std::find_if(
-		t.get().memberVariables.begin(),
-			t.get().memberVariables.end(),
+		t.get().member_variables.begin(),
+			t.get().member_variables.end(),
 			[&](const auto& m) { return m.name == property_name; }
-		); it != t.get().memberVariables.end())
+		); it != t.get().member_variables.end())
 		return type_of_typename(state, it->type)
 			.transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 	else if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
@@ -43,10 +43,10 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 
 R T::operator()(const NodeStructs::InterfaceType& t) {
 	if (auto it = std::find_if(
-		t.interface.get().memberVariables.begin(),
-		t.interface.get().memberVariables.end(),
+		t.interface.get().member_variables.begin(),
+		t.interface.get().member_variables.end(),
 		[&](const auto& member) { return member.name == property_name; }
-	); it != t.interface.get().memberVariables.end())
+	); it != t.interface.get().member_variables.end())
 		return type_of_typename(state, it->type)
 			.transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });
 	else

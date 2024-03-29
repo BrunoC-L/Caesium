@@ -339,101 +339,6 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 	};
 }
 
-bool has_argument_and_forced_parameter_mismatch(const std::vector<NodeStructs::Expression>& args, const NodeStructs::Template& tmpl) {
-	auto n_parameters = args.size();
-	for (auto i = 0; i < n_parameters; ++i)
-		if (tmpl.parameters.at(i).second.has_value() && (args.at(i) <=> tmpl.parameters.at(i).second.value() != std::strong_ordering::equal))
-			return true;
-	return false;
-}
-
-auto eliminate_argument_and_forced_parameter_mismatches(const std::vector<NodeStructs::Expression>& args, std::vector<NodeStructs::Template const*>&& templates) {
-	for (int i = templates.size() - 1; i >= 0; --i)
-		if (has_argument_and_forced_parameter_mismatch(args, *templates.at(i)))
-			templates.erase(templates.begin() + i);
-	return std::move(templates);
-}
-
-bool is_redundant_wrt_to(const NodeStructs::Template& tmpl, const NodeStructs::Template& reference) {
-	auto n_parameters = tmpl.parameters.size();
-	for (auto i = 0; i < n_parameters; ++i)
-		if (!reference.parameters.at(i).second.has_value() && tmpl.parameters.at(i).second.has_value())
-			return false;
-	return true;
-}
-
-auto eliminate_underspecified(const std::vector<NodeStructs::Expression>& args, std::vector<NodeStructs::Template const*>&& templates) {
-	auto mask = std::vector<bool>(templates.size(), false);
-	for (int i = 0; i < templates.size(); ++i)
-		for (int j = 0; j < templates.size(); ++j)
-			if (i != j && mask[j] == false && is_redundant_wrt_to(*templates.at(i), *templates.at(j))) {
-				mask[i] = true;
-				break;
-			}
-	unsigned index = 0;
-	templates.erase(std::remove_if(templates.begin(), templates.end(), [&](NodeStructs::Template const* t) {
-		return bool(mask.at(index++));
-		}), templates.end());
-	return std::move(templates);
-}
-
-expected<std::reference_wrapper<const NodeStructs::Template>> find_best_template(
-	const std::vector<NodeStructs::Template const*>& templates,
-	const std::vector<NodeStructs::Expression>& args
-) {
-	auto n_parameters = args.size();
-	for (unsigned i = 0; i < n_parameters; ++i) {
-		const auto& parameter_name = templates.at(0)->parameters.at(i).first;
-		for (auto const* a : templates)
-			if (a->parameters.size() != n_parameters || parameter_name != a->parameters.at(i).first)
-				throw;
-	}
-
-	auto candidates = templates;
-	candidates = eliminate_argument_and_forced_parameter_mismatches(args, std::move(candidates));
-	auto candidates2 = candidates;
-	candidates = eliminate_underspecified(args, std::move(candidates));
-
-	if (candidates.size() == 0)
-		throw;
-	else if (candidates.size() == 1)
-		return std::reference_wrapper<const NodeStructs::Template>{ *candidates.at(0) };
-	else {
-		std::stringstream args_ss;
-		bool has_prev_args = false;
-		for (const auto& arg : args) {
-			if (has_prev_args)
-				args_ss << ", ";
-			has_prev_args = true;
-			args_ss << expression_for_template(arg);
-		}
-		std::stringstream templates_ss;
-		bool has_prev_templates = false;
-		for (auto const* a : candidates) {
-			if (has_prev_templates)
-				templates_ss << ", ";
-			has_prev_templates = true;
-			std::stringstream parameters_ss;
-			bool has_prev_parameters = false;
-			for (const auto& parameter : a->parameters) {
-				if (has_prev_parameters)
-					parameters_ss << ", ";
-				has_prev_parameters = true;
-				parameters_ss << parameter.first;
-				if (parameter.second.has_value())
-					parameters_ss << " = " << expression_for_template(parameter.second.value());
-			}
-			templates_ss << "template " + templates.at(0)->name + "<" + parameters_ss.str() + ">";
-		}
-		return error{
-			"user error",
-			"More than one instance of `" + templates.at(0)->name + "`"
-			" matched the provided arguments [" + args_ss.str() + "]"
-			", contenders were [" + templates_ss.str() + "]"
-		};
-	}
-}
-
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
 	auto test = operator()(expr.operand);
 	return_if_error(test);
@@ -449,25 +354,13 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 	if (auto it = state.state.named.templates.find(std::get<std::string>(expr.operand.expression.get())); it != state.state.named.templates.end()) {
 		auto t = find_best_template(it->second, expr.arguments.args);
 		return_if_error(t);
-		const auto& tmpl = t.value().get();
+		const auto& tmpl = t.value().tmpl.get();
 		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template) | to_vec();
 		std::string tmpl_name = template_name(it->first, args);
 
 		size_t max_params = it->second.at(0)->parameters.size();
 		for (unsigned i = 1; i < it->second.size(); ++i)
 			max_params = std::max(max_params, it->second.at(i)->parameters.size());
-
-		if (tmpl.parameters.size() != expr.arguments.args.size()) {
-			std::stringstream ss;
-			ss << "invalid number of arguments to template `"
-				<< tmpl.name
-				<< "`, expected `"
-				<< tmpl.parameters.size()
-				<< "`, received `"
-				<< expr.arguments.args.size()
-				<< "`";
-			return error{ "user error", ss.str() };
-		}
 
 		if (tmpl.templated == "BUILTIN") {
 			/*if (tmpl.name == "Vector") {
@@ -493,9 +386,33 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			throw;
 		}
 
+		const auto& arg_placements = t.value().arg_placements;
 		std::string replaced = tmpl.templated;
-		for (int i = 0; i < expr.arguments.args.size(); ++i)
-			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i).first, args.at(i));
+		auto grab_nth_with_commas = [&](size_t i) {
+			std::stringstream ss;
+			bool has_previous = false;
+			for (size_t j = 0; j < arg_placements.size(); ++j) {
+				size_t k = arg_placements.at(j);
+				if (k == i) {
+					const auto& arg = args.at(j);
+					if (has_previous)
+						ss << ", ";
+					has_previous = true;
+					ss << arg;
+				}
+			}
+			return ss.str();
+		};
+		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
+			replaced = replace_all(
+				std::move(replaced),
+				std::visit(overload(
+					[](const auto& e) { return e.name; },
+					[](const NodeStructs::VariadicTemplateParameter& e) { return e.name + "..."; }
+				), tmpl.parameters.at(i)),
+				grab_nth_with_commas(i)
+			);
+		}
 
 		if (auto it = state.state.named.functions.find(tmpl_name); it != state.state.named.functions.end()) {
 			return expression_information{ type_information{
@@ -515,40 +432,43 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (!build(f, g.it))
-				throw;
-			auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
-			structured_f->name = tmpl_name;
-			state.state.named.functions[structured_f->name].push_back(structured_f);
-			state.state.traversed_functions.insert(*structured_f);
-			auto transpiled_or_e = transpile(state, *structured_f);
-			return_if_error(transpiled_or_e);
-			state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
-			return expression_information{ type_information{
-				.type = NodeStructs::FunctionType{ *structured_f },
-				.representation = template_name(tmpl.name, expr.arguments.args)
-			} };
+			if (build(f, g.it)) {
+				auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
+				structured_f->name = tmpl_name;
+				state.state.named.functions[structured_f->name].push_back(structured_f);
+				state.state.traversed_functions.insert(*structured_f);
+				auto transpiled_or_e = transpile(state, *structured_f);
+				return_if_error(transpiled_or_e);
+				state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
+				return expression_information{ type_information{
+					.type = NodeStructs::FunctionType{ *structured_f },
+					.representation = template_name(tmpl.name, expr.arguments.args)
+				} };
+			}
 		}
 		{
 			And<IndentToken, grammar::Type, Token<END>> t{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (!build(t, g.it))
-				throw;
-			auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
-			structured_t->name = tmpl_name;
-			state.state.named.types[structured_t->name].push_back(structured_t);
-			auto opt_error = traverse_type(state, *structured_t);
-			if (opt_error.has_value())
-				return opt_error.value();
-			return expression_information{ type_information{
-				.type = NodeStructs::MetaType{ *structured_t },
-				.representation = template_name(tmpl.name, expr.arguments.args)
-			} };
+			if (build(t, g.it)) {
+				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
+				structured_t->name = tmpl_name;
+				state.state.named.types[structured_t->name].push_back(structured_t);
+				auto opt_error = traverse_type(state, *structured_t);
+				if (opt_error.has_value())
+					return opt_error.value();
+				return expression_information{ type_information{
+					.type = NodeStructs::MetaType{ *structured_t },
+					.representation = template_name(tmpl.name, expr.arguments.args)
+				} };
+			}
 		}
 		throw;
 	}
-	throw;
+	return error{
+		"user error",
+		"not a template"
+	};
 }
 
 std::optional<std::vector<non_type_information>> rearrange_if_possible(
@@ -585,7 +505,7 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 			break;
 		}
 	if (no_rearrange_is_fine)
-		return v2;
+		return std::move(v2);
 	else
 		return rearrange_if_possible(v1, std::move(v2), 0, 0, {});
 }
@@ -600,10 +520,10 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			throw;
 		},
 		[&](const std::reference_wrapper<const NodeStructs::Type>& tt) -> R {
-			if (expr.arguments.args.size() != tt.get().memberVariables.size())
+			if (expr.arguments.args.size() != tt.get().member_variables.size())
 				return error{
 					"user error",
-					"expected `" + std::to_string(tt.get().memberVariables.size()) + "` arguments but received `" + std::to_string(expr.arguments.args.size()) + "`"
+					"expected `" + std::to_string(tt.get().member_variables.size()) + "` arguments but received `" + std::to_string(expr.arguments.args.size()) + "`"
 				};
 			auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args | LIFT_TRANSFORM_X(arg, operator()(arg.expr)) | to_vec());
 			return_if_error(arg_ts);
@@ -613,7 +533,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				throw;
 
 			auto param_ts = vec_of_expected_to_expected_of_vec(
-				tt.get().memberVariables | LIFT_TRANSFORM_TRAIL(.type) | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec()
+				tt.get().member_variables | LIFT_TRANSFORM_TRAIL(.type) | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec()
 			);
 			return_if_error(param_ts);
 

@@ -141,6 +141,7 @@
     <ClInclude Include="first_diff.hpp" />
     <ClInclude Include="test_parse.hpp" />
     <ClInclude Include="test_structurize.hpp" />
+    <ClInclude Include="test_template_selection.hpp" />
     <ClInclude Include="test_transpile_files.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

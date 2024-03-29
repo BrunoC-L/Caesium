@@ -29,12 +29,10 @@ struct Token {
 template <typename T>
 struct Until {
 	int n_indent;
-	Until(int n_indent) : n_indent(n_indent) {}
 };
 
 struct IndentToken {
 	int n_indent;
-	IndentToken(int n_indent) : n_indent(n_indent) {}
 };
 
 template <typename T>

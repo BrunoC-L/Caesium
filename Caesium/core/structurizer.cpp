@@ -107,24 +107,51 @@ NodeStructs::Function getStruct(const grammar::Function& f, std::optional<NodeSt
 	};
 }
 
-std::pair<std::string, std::optional<NodeStructs::Expression>> getTemplateParameter(const And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>& parameter_and_optional_value) {
+std::variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter> getTemplateParameter(
+	const And<grammar::Word, Token<DOTS>>& parameter
+) {
+	return NodeStructs::VariadicTemplateParameter{ parameter.get<grammar::Word>().value };
+}
+
+std::variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter> getTemplateParameter(
+	const And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>& parameter_and_optional_value
+) {
 	if (parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::Expression>>>().has_value())
-		return {
+		return NodeStructs::TemplateParameterWithDefaultValue{
 			parameter_and_optional_value.get<grammar::Word>().value,
 			getExpressionStruct(parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::Expression>>>().value().get<grammar::Expression>())
 		};
 	else
-		return {
+		return NodeStructs::TemplateParameter{
 			parameter_and_optional_value.get<grammar::Word>().value,
-			std::nullopt
 		};
+}
+using parameter_t = Or<
+		And<
+			grammar::Word,
+			Token<DOTS>
+		>,
+		And<
+			grammar::Word,
+			Opt<And<
+				Token<EQUAL>,
+				grammar::Expression
+			>>
+		>
+	>;
+
+std::variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter> getTemplateParameter(
+	const parameter_t& parameter
+) {
+	return std::visit(LIFT(getTemplateParameter), parameter.value());
 }
 
 NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeStructs::Typename> name_space) {
+	using parameters_t = CommaStar<parameter_t>;
 	return {
 		.name = t.get<grammar::Word>().value,
 		.name_space = name_space,
-		.parameters = t.get<CommaStar<And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>>>().get<And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>>()
+		.parameters = t.get<parameters_t>().get<parameter_t>()
 			| LIFT_TRANSFORM(getTemplateParameter)
 			| to_vec(),
 		.templated = t.get<TemplateBody>().value
@@ -160,7 +187,7 @@ NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::
 			| tranform_variant_type_eq<Function>
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),*/
-		.memberVariables = elems
+		.member_variables = elems
 			| filter_transform_variant_type_eq(grammar::MemberVariable)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec()
@@ -181,7 +208,7 @@ NodeStructs::Interface getStruct(const grammar::Interface& interface) {
 			| tranform_variant_type_eq<grammar::Alias>
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.memberVariables = elems
+		.member_variables = elems
 			| filter_transform_variant_type_eq(grammar::MemberVariable)
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec()
@@ -218,6 +245,9 @@ NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<Nod
 				},
 				[&](const grammar::NameSpace& e) {
 					namespaces.push_back(getStruct(e, this_ns));
+				},
+				[&](const grammar::Enum& e) {
+					
 				}
 			), named.get<grammar::Named>().value()
 		);
@@ -745,6 +775,10 @@ NodeStructs::ReturnStatement getStatementStruct(const grammar::ReturnStatement& 
 	};
 }
 
+NodeStructs::SwitchStatement getStatementStruct(const grammar::SwitchStatement& statement) {
+	return {};
+}
+
 NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 	return NodeStructs::Statement{ std::visit(
 		[](const auto& statement) -> NodeStructs::Statement {
@@ -760,6 +794,7 @@ NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 			grammar::BreakStatement,
 			grammar::ReturnStatement,
 			grammar::BlockStatement,
-			grammar::MatchStatement
+			grammar::MatchStatement,
+			grammar::SwitchStatement
 		>>>().get().value()) };
 }

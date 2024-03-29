@@ -94,6 +94,8 @@ bool test_parse() {
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "size<Animal>(animals)");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "size<Animal, Animal>(animals)");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "a<b,c>?d>");
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "c >=? '0' and c <=? '9'");
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "'\\\\'");
 	
 	ok &= test_parse_correct<And<Token<COLON>, Newline, Indent<Star<Statement>>>>(__LINE__, 0, ":\n\tx");
 	ok &= test_parse_correct<And<Newline, Indent<Star<Statement>>>>(__LINE__, 0, "\n\tx");
@@ -111,18 +113,12 @@ bool test_parse() {
 	ok &= test_parse_correct<ReturnStatement>(__LINE__, 0, "return a, b, \n");
 	ok &= test_parse_correct<MatchStatement>(__LINE__, 0, "match dir:\n\tfilesystem::directory d:\n");
 	ok &= test_parse_correct<MatchStatement>(__LINE__, 0, "match dir:\n\tfilesystem::directory d:\n\t\treturn test_transpile_folder(dir)\n\tfilesystem::file f:\n");
-	ok &= test_parse_correct<File>(__LINE__, 0, R"DELIM(
-Bool test_transpile_all_folders(auto ref folders):
-    for dir in folders:
-        match dir:
-            filesystem::directory d:
-                return test_transpile_folder(dir)
-            filesystem::file f:
-    return True
-
-Bool test_transpile_folder(filesystem::directory ref dir):
-    return False
-)DELIM");
+	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n");
+	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n"); 
+	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta//a\n");
+	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\tb\n");
+	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\n\tb\n");
+	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta//a\n\n\tb\n");
 
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tA a\n");

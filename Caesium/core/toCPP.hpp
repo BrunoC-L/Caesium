@@ -123,15 +123,19 @@ struct builtins {
 	NodeStructs::Type builtin_double = { "Floating", std::nullopt };
 	NodeStructs::Type builtin_string = { "String", std::nullopt };
 
-	NodeStructs::Template builtin_vector = { "Vector", std::nullopt, { { "T", std::nullopt}}, "BUILTIN" };
-	NodeStructs::Template builtin_set = { "Set", std::nullopt, { { "T", {} } }, "BUILTIN" };
-	NodeStructs::Template builtin_map = { "Map", std::nullopt, { { "K", {} }, { "V", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_variant = { "Variant", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
+	NodeStructs::Template builtin_tuple = { "Tuple", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
+	NodeStructs::Template builtin_vector = { "Vector", std::nullopt, { NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" };
+	NodeStructs::Template builtin_set = { "Set", std::nullopt, { NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" };
+	NodeStructs::Template builtin_map = { "Map", std::nullopt, { NodeStructs::TemplateParameter{ "K" }, NodeStructs::TemplateParameter{ "V" } }, "BUILTIN" };
 
-	NodeStructs::Template builtin_push = { "push", std::nullopt, { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // vec
-	NodeStructs::Template builtin_insert = { "insert", std::nullopt, { { "Cnt", {} }, { "T", {} } }, "BUILTIN" }; // map or set
+	NodeStructs::Template builtin_push =
+		{ "push", std::nullopt, { NodeStructs::TemplateParameter{ "Cnt" }, NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" }; // vec
+	NodeStructs::Template builtin_insert =
+		{ "insert", std::nullopt, { NodeStructs::TemplateParameter{ "Cnt" }, NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" }; // map or set
 
-	NodeStructs::Template builtin_print = { "print", std::nullopt, { { "T", {} } }, "BUILTIN" };
-	NodeStructs::Template builtin_println = { "println", std::nullopt, { { "T", {} } }, "BUILTIN" };
+	NodeStructs::Template builtin_print = { "print", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
+	NodeStructs::Template builtin_println = { "println", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
 
 	NodeStructs::Typename filesystem = { NodeStructs::BaseTypename{ "filesystem" } };
 	NodeStructs::Type builtin_file = { "file", filesystem, {}, {} };
@@ -216,6 +220,8 @@ static NodeStructs::ValueCategory argument_category_to_value_category(const Node
 		}
 	), cat);
 }
+
+std::optional<error> validate_templates(const std::vector<const NodeStructs::Template*>& templates);
 
 static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory> cat) {
 	if (cat.has_value())
@@ -350,6 +356,7 @@ bool uses_auto(const NodeStructs::Typename& t);
 #include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
+#include "../typename_visitor/typename_for_template_visitor.hpp"
 
 
 expected<NodeStructs::Function> realise_function_using_auto(
@@ -359,3 +366,21 @@ expected<NodeStructs::Function> realise_function_using_auto(
 );
 
 NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t);
+
+struct Arrangement {
+	std::reference_wrapper<const NodeStructs::Template> tmpl;
+	std::vector<size_t> arg_placements;
+	/*std::weak_ordering operator<=>(const Arrangement& other) {
+		return cmp(arg_placements, other.arg_placements);
+	}*/
+};
+
+expected<Arrangement> find_best_template(
+	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Expression>& args
+);
+
+expected<Arrangement> find_best_template(
+	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Typename>& args
+);

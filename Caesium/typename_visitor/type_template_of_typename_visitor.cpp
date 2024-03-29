@@ -8,36 +8,20 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
-		if (it->second.size() != 1)
-			return error{
-			"internal error",
-			"template specialization not implemented yet"
-		};
-		const auto& tmpl = *it->second.back();
-		if (tmpl.parameters.size() != templated_with.size()) {
-			std::stringstream ss;
-			ss  << "invalid number of arguments to template `"
-				<< t.type
-				<< "`, expected `"
-				<< tmpl.parameters.size()
-				<< "`, received `"
-				<< templated_with.size()
-				<< "`";
-			return error{ "user error", ss.str() };
-		}
+		const auto& templates = it->second;
 
-		if (tmpl.templated == "BUILTIN") {
-			if (tmpl.name == "Vector") {
+		if (templates.back()->templated == "BUILTIN") {
+			if (t.type == "Vector") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
 				return NodeStructs::MetaType{ NodeStructs::VectorType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
 			}
-			if (tmpl.name == "Set") {
+			if (t.type == "Set") {
 				auto x = type_of_typename(state, templated_with.at(0));
 				return_if_error(x);
 				return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
 			}
-			if (tmpl.name == "Map") {
+			if (t.type == "Map") {
 				auto k = type_of_typename(state, templated_with.at(0));
 				return_if_error(k);
 				auto v = type_of_typename(state, templated_with.at(1));
@@ -47,16 +31,50 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 					Box<NodeStructs::MetaType>{ std::move(v).value() }
 				} };
 			}
+			if (t.type == "Variant") {
+				auto ts = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec());
+				return_if_error(ts);
+				return NodeStructs::MetaType{ NodeStructs::UnionType{
+					ts.value()
+				} };
+			}
 			throw;
 		}
 
 		// todo check if already traversed
-
+		auto t = find_best_template(templates, templated_with);
+		return_if_error(t);
+		const auto& tmpl = t.value().tmpl.get();
+		const auto& arg_placements = t.value().arg_placements;
 		std::string replaced = tmpl.templated;
-		for (int i = 0; i < tmpl.parameters.size(); ++i) {
-			auto e = transpile_typename(state, templated_with.at(i));
-			return_if_error(e);
-			replaced = replace_all(std::move(replaced), tmpl.parameters.at(i).first, e.value());
+		auto grab_nth_with_commas = [&](size_t i) {
+			std::stringstream ss;
+			bool has_previous = false;
+			for (size_t j = 0; j < arg_placements.size(); ++j) {
+				size_t k = arg_placements.at(j);
+				if (k == i) {
+					const auto& arg = typename_for_template(templated_with.at(j));
+					if (has_previous)
+						ss << ", ";
+					has_previous = true;
+					ss << arg;
+				}
+			}
+			return ss.str();
+		};
+		std::vector<std::string> args = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec()).value();
+		std::string tmpl_name = template_name(it->first, args);
+		// todo check if exists
+
+		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
+			replaced = replace_all(
+				std::move(replaced),
+				std::visit(overload(
+					[](const auto& e) { return e.name; },
+					[](const NodeStructs::VariadicTemplateParameter& e) { return e.name + "..."; }
+				), tmpl.parameters.at(i)),
+				grab_nth_with_commas(i)
+			);
 		}
 		{
 			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
@@ -64,7 +82,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(f,g.it)) {
 				auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
-				structured_f->name = tmpl.name; // todo
+				structured_f->name = tmpl_name; // todo
 				state.state.named.functions[structured_f->name].push_back(structured_f);
 				state.state.traversed_functions.insert(*structured_f);
 				auto transpiled_or_e = transpile(state, *structured_f);
@@ -83,20 +101,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
 				auto templated_with_reprs= vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
 				return_if_error(templated_with_reprs);
-				structured_t->name = [&]() {
-					std::stringstream ss;
-					bool first = true;
-					ss << structured_t->name << "___";
-					for (const auto& tn : templated_with_reprs.value()) {
-						if (!first) {
-							ss << "__";
-							first = false;
-						}
-						ss << tn;
-					}
-					ss << "___";
-					return ss.str();
-				}();
+				structured_t->name = tmpl_name;
 				state.state.named.types[structured_t->name].push_back(structured_t);
 				auto opt_error = traverse_type(state, *structured_t);
 				if (opt_error.has_value())

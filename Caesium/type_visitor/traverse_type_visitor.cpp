@@ -6,9 +6,6 @@ using R = T::R;
 
 R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& type) {
 	if (!state.state.traversed_types.contains(type.get())) {
-		if (type.get().name == "Token") {
-			int a = 1;
-		}
 		state.state.traversed_types.insert(type);
 		auto t = transpile(state, type);
 		return_if_error(t);

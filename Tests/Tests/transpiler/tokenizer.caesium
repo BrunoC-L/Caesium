@@ -1,0 +1,371 @@
+using TOKENVALUE = std::pair<TOKENS, String>
+using Iterator = std::vector<TOKENVALUE>::iterator
+type tokens_and_iterator:
+	std::vector<TOKENVALUE> tokens
+	std::vector<TOKENVALUE>::iterator it
+
+type Tokenizer:
+	String program
+	Int index
+
+std::vector<TOKENVALUE> read(Tokenizer ref! tk):
+	std::vector<TOKENVALUE> out = {}
+	out.reserve(tk.program.size())
+	if tk.program.size() != 0:
+		while True:
+			TOKENVALUE t = readToken()
+			out.push(t)
+			if t.first != END:
+				break
+		// this allows for files not to end with a new line, we add it manually so we can later act as if all files end with a new line
+		if out.size():
+			//out.back().first = NEWLINE // replace END with newline
+			//out.push(TOKENVALUE{END, ""}) // add the new END
+	else:
+		out.push(TOKENVALUE{END, ""})
+	return out
+
+
+bool isNum(char val c):
+    return c >=? '0' and c <=? '9'
+
+bool isStartOfWord(char val c):
+    return c >=? 'a' and c <=? 'z' or c >=? 'A' and c <=? 'Z' or c == '_'
+
+bool isPartWord(char val c):
+    return isNum(c) or isStartOfWord(c)
+
+String parseWord():
+    if !isStartOfWord(program[index]):
+        return ""
+    String out = ""
+    while index != program.length():
+        char c = program[index]
+        if isPartWord(c):
+            //out += c
+            //++index
+        else:
+            break
+    return out
+
+String parseInt():
+	String out = ""
+	while index != program.length():
+		char c = program[index]
+		if isNum(c):
+			//out += c
+			//++index
+		else:
+			break
+	return out
+
+TOKENS peek():
+	unsigned peekFrom = index
+	while True:
+		TOKENVALUE v = readToken()
+		if v.first == SPACE or v.first == TAB or v.first == NEWLINE:
+			continue
+		//index = peekFrom
+		return v.first
+
+TOKENS peek(Int val n):
+	unsigned peekFrom = index
+	TOKENS v = peek()
+    Int i = 0
+    while i <? n:
+		//v = peek()
+	//index = peekFrom
+	return v
+
+TOKENVALUE readToken():
+	if index == program.length():
+		return{ END, "" }
+	char c = program[index]
+	String str = ""
+	switch c:
+        c:
+        '\\':
+            // backslash at the end of a line means ignore it and the newline
+            if index + 1 <=? program.size() and program[index + 1] == '\n':
+                //index += 1
+                // so we just return the next token
+                return readToken()
+            // else assume the backslash makes sense in context
+            return { BACKSLASH, "\\" }
+        // string begin
+        '\'':
+        '`':
+        '"':
+            while True:
+                //index += 1
+                if index == program.length():
+                    //throw std::runtime_error("Reached end of file before end of string, parsed so far: " + str)
+                if program[index] == '\\' and index + 1 <=? program.size() and program[index + 1] == c:
+                    // backslash with open string character means dont close the string
+                    // but all our transpiled strings use " for strings so we just replace that
+                    //index += 1
+                    //str += "\\\""
+                else:
+                    // close string
+                    if program[index] == c:
+                        //index += 1
+                        // the transpiled string uses " always, not ' or `
+                        return { STRING, "\"" + str + "\"" }
+                    // in case there are " in the string and the string uses ' or `, we need to replace them accordingly since
+                    // our transpiled c++ string uses "
+                    // so we just escape out of " not to end the string and the user will have his " in the string as expected
+                    else if c != '"' and program[index] == '"':
+                        //str += "\\\""
+                    else:
+                        //str += program[index]
+            std::unreachable()
+        '{':
+            //index += 1
+            return { BRACEOPEN, "{" }
+        '}':
+            //index += 1
+            return { BRACECLOSE, "}" }
+        '(':
+            //index += 1
+            return { PARENOPEN, "(" }
+        ')':
+            //index += 1
+            return { PARENCLOSE, ")" }
+        '[':
+            //index += 1
+            return { BRACKETOPEN, "[" }
+        ']':
+            //index += 1
+            return { BRACKETCLOSE, "]" }
+        ' ':
+            if index + 3 <? program.size() and program[index + 1] == ' ' and program[index + 2] == ' ' and program[index + 3] == ' ':
+                //index += 4
+                return { TAB, "\t" }
+            //index += 1
+            return { SPACE, " " }
+        '\n':
+            //index += 1
+            return { NEWLINE, "\n" }
+        '\t':
+            //index += 1
+            return { TAB, "\t" }
+        '.':
+            if index + 2 <? program.size() and program[index + 1] == '.' and program[index + 2] == '.':
+                //index += 3
+                return { DOTS, "..." }
+            //index += 1
+            return { DOT, "." }
+        ';':
+            //index += 1
+            return { SEMICOLON, ";" }
+        ':':
+            //index += 1
+            if index <? program.size() and program[index] == ':':
+                //index += 1
+                return { NS, "::" }
+            return { COLON, ":" }
+        ',':
+            //index += 1
+            return { COMMA, "," }
+        '=':
+            //index += 1
+            if index <? program.size() and program[index] == '=':
+                //index += 1
+                return { EQUALEQUAL, "==" }
+            return { EQUAL, "=" }
+        '!':
+            //index += 1
+            if index <? program.size() and program[index] == '=':
+                //index += 1
+                return { NEQUAL, "!=" }
+            return { NOT, "!" }
+        '<':
+            //index += 1
+            if index <? program.size():
+                if program[index] == '=':
+                    //index += 1
+                    if index <? program.size():
+                        if program[index] == '?':
+                            //index += 1
+                            return { LTEQ, "<=??" }
+                    return { LTE, "<=?" }
+                if program[index] == '?':
+                    //index += 1
+                    return { LTQ, "<?" }
+            return { LT, "<" }
+        '>':
+            //index += 1
+            if index <? program.size():
+                if program[index] == '=':
+                    //index += 1
+                    if index <? program.size():
+                        if program[index] == '?':
+                            //index += 1
+                            return { GTEQ, ">=??" }
+                    return { GTE, ">=?" }
+                if program[index] == '?':
+                    //index += 1
+                    return { GTQ, ">?" }
+            return { GT, ">" }
+        '-':
+            //index += 1
+            if index <? program.size():
+                if program[index] == '=':
+                    //index += 1
+                    return { MINUSEQUAL, "-=" }
+                else if program[index] == '-':
+                    //index += 1
+                    return { MINUSMINUS, "--" }
+            return { DASH, "-" }
+        '+':
+            //index += 1
+            if index <? program.size():
+                if program[index] == '=':
+                    //index += 1
+                    return { PLUSEQUAL, "+=" }
+                else if program[index] == '+':
+                    //index += 1
+                    return { PLUSPLUS, "++" }
+            return { PLUS, "+" }
+        '*':
+            //index += 1
+            if index <? program.size() and program[index] == '=':
+                //index += 1
+                return { TIMESEQUAL, "*=" }
+            return { ASTERISK, "*" }
+        '/':
+            //index += 1
+            // skip // comments
+            if index <? program.size() and program[index] == '/':
+                //index += 1
+                while index <? program.size():
+                    if program[index] == '\n':
+                        //index += 1
+                        break
+                    else:
+                        //index += 1
+                return readToken()
+            // skip /* */ comments
+            if index <? program.size() and program[index] == '*':
+                //index += 1
+                while index + 1 <? program.size():
+                    if program[index] == '*' and program[index + 1] == '/':
+                        //index += 2
+                        break
+                    else:
+                        //index += 1
+                return readToken()
+            if index <? program.size() and program[index] == '=':
+                //index += 1
+                return { DIVEQUAL, "/=" }
+            return { SLASH, "/" }
+        '%':
+            //index += 1
+            if index <? program.size() and program[index] == '=':
+                //index += 1
+                return { MODEQUAL, "%=" }
+            return { PERCENT, "%" }
+        '&':
+            //index += 1
+            if index <? program.size():
+                if program[index] == '&':
+                    //index += 1
+                    return { ANDAND, "and" }
+                else if program[index] == '=':
+                    //index += 1
+                    return { ANDEQUAL, "&=" }
+            //return { AMPERSAND, "&" }
+            //throw std::runtime_error("Unknown Symbol `&`")
+        '?':
+            //index += 1
+            return { QUESTION, "?" }
+        '#':
+            //index += 1
+            return { POUND, "#" }
+        '^':
+            //index += 1
+            if index + 1 <=? program.size() and program[index] == '^':
+                //index += 1
+                return { XOREQUAL, "^=" }
+            return { CARET, "^" }
+        '|':
+            //index += 1
+            if index + 1 <=? program.size():
+                if program[index] == '|':
+                    //index += 1
+                    return { OROR, "or" }
+                else if program[index] == '=':
+                    //index += 1
+                    return { OREQUAL, "|=" }
+            return { BITOR, "|" }
+        
+	String word = parseWord()
+	if word.length():
+		if word == "and":
+            return { AND, word }
+		if word == "auto":
+            return { AUTO, word }
+		if word == "break":
+            return { BREAK, word }
+		if word == "block":
+            return { BLOCK, word }
+		if word == "case":
+            return { CASE, word }
+		if word == "class":
+            return { CLASS, word }
+		if word == "do":
+            return { DO, word }
+		if word == "else":
+            return { ELSE, word }
+		if word == "for":
+            return { FOR, word }
+		if word == "if":
+            return { IF, word }
+		if word == "interface":
+            return { INTERFACE, word }
+		if word == "ifor":
+            return { IFOR, word }
+		if word == "import":
+            return { IMPORT, word }
+		if word == "from":
+            return { FROM, word }
+		if word == "in":
+            return { IN, word }
+		if word == "match":
+            return { MATCH, word }
+		if word == "or":
+            return { OR, word }
+		if word == "return":
+            return { RETURN, word }
+		if word == "static":
+            return { STATIC, word }
+		if word == "switch":
+            return { SWITCH, word }
+		if word == "using":
+            return { USING, word }
+		if word == "while":
+            return { WHILE, word }
+		if word == "type":
+            return { TYPE, word }
+		if word == "template":
+            return { TEMPLATE, word }
+		if word == "copy":
+            return { COPY, word }
+		if word == "move":
+            return { MOVE, word }
+		if word == "ref":
+            return { REF, word }
+		if word == "val":
+            return { VAL, word }
+        
+		return { WORD, word }
+        
+	String num = parseInt()
+	if !num.length():
+		//throw std::exception()
+	if index != program.length() and program[index] == '.':
+		//index += 1
+		String part2 = parseInt()
+		if part2.length():
+			return { FLOATING_POINT_NUMBER, num + "." + part2 }
+	return { INTEGER_NUMBER, num }

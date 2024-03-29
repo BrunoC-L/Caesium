@@ -7,10 +7,10 @@ using R = T::R;
 R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 	const auto& t = t_.get();
 	if (auto it = std::find_if(
-		t.memberVariables.begin(),
-		t.memberVariables.end(),
+		t.member_variables.begin(),
+		t.member_variables.end(),
 		[&](const auto& m) { return m.name == property_name; }
-	); it != t.memberVariables.end()) {
+	); it != t.member_variables.end()) {
 		auto mt = type_of_typename(state, it->type);
 		return_if_error(mt);
 		auto expect_error = type_of_function_like_call_with_args(state, arguments, mt.value());

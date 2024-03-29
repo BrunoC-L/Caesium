@@ -17,6 +17,8 @@ static void add_builtins(Named& named, const builtins& _builtins) {
 	named.types["Floating"].push_back(&_builtins.builtin_double);
 	named.types["Void"].push_back(&_builtins.builtin_void);
 
+	named.templates["Variant"].push_back(&_builtins.builtin_variant);
+	named.templates["Tuple"].push_back(&_builtins.builtin_tuple);
 	named.templates["Vector"].push_back(&_builtins.builtin_vector);
 	named.templates["Set"].push_back(&_builtins.builtin_set);
 	named.templates["Map"].push_back(&_builtins.builtin_map);
@@ -151,25 +153,27 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 					Named named_of_file;
 					add_builtins(named_of_file, _builtins);
 					named_by_file[file2.filename] = named_of_file;
-					auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.filename);
-					if (opt_error.has_value())
+					if (auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.filename); opt_error.has_value())
 						return opt_error.value();
 				}
 
 				for (const auto& file2 : project) {
 					Named& named_of_file = named_by_file[file2.filename];
-					auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.filename);
-					if (opt_e.has_value())
+					if (auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.filename); opt_e.has_value())
 						return opt_e.value();
 				}
+
+				for (const auto& [_, named] : named_by_file)
+					for (const auto& [_, templates] : named.templates)
+					if (auto opt_e = validate_templates(templates); opt_e.has_value())
+						return opt_e.value();
 
 				transpilation_state state{ std::move(variables), Named(named_by_file[file.filename]) };
 
 				traverse_builtins(state, _builtins);
 
 				transpile_header_cpp_t k = transpile_main({ state, 0 }, fn);
-				if (k.has_error())
-					return k;
+				return_if_error(k);
 
 				std::stringstream h, cpp;
 				h << "#pragma once\n#include \"defaults.hpp\"\n\n" << k.value().first;
@@ -283,7 +287,7 @@ transpile_header_cpp_t transpile(
 	for (const auto& alias : type.aliases)
 		throw;
 
-	for (const auto& member : type.memberVariables) {
+	for (const auto& member : type.member_variables) {
 		auto type = type_of_typename(state, member.type);
 		return_if_error(type);
 		auto transpiled = transpile_typename(state, member.type);
@@ -704,7 +708,7 @@ std::string template_name(std::string original_name, const std::vector<std::stri
 	std::stringstream ss;
 	ss << original_name;
 	for (const auto& arg : args)
-		ss << "_" << arg;
+		ss << "__" << arg;
 	return ss.str();
 }
 
@@ -713,25 +717,50 @@ std::string template_name(std::string original_name, const std::vector<NodeStruc
 }
 
 bool is_assignable_to(
-	transpilation_state_with_indent state,
+	transpilation_state_with_indent state_,
 	const NodeStructs::MetaType& parameter,
 	const NodeStructs::MetaType& argument
 ) {
 	return std::visit(
 		overload(
-			[&](const auto& e, const auto& u) {
+			[&](const auto& e, const auto& u, const auto& state) -> bool {
 				throw;
-				return false;
 			},
-			[&](const NodeStructs::VectorType& e, const NodeStructs::VectorType& u) {
+			[&](this auto self, const NodeStructs::UnionType& e, const auto& u, const auto& state) {
+				if constexpr (std::is_same_v<std::remove_cvref_t<decltype(u)>, NodeStructs::UnionType>) {
+					for (const auto& arg : u.arguments) {
+						bool ok = false;
+						for (const auto& param : e.arguments) {
+							if ((arg <=> param == std::weak_ordering::equivalent)
+								|| std::visit([&self,&state](const auto& _param, const auto& _arg) -> bool { return self(_param, _arg, state); }, param.type, arg.type)) {
+								ok = true;
+								break;
+							}
+						}
+						if (!ok)
+							return false;
+					}
+					return true;
+				}
+				else {
+					for (const auto& vt : e.arguments)
+						if (std::visit([&](const auto& t) -> bool { return self(t, u, state); }, vt.type))
+							return true;
+					return false;
+				}
+			},
+			[&](const NodeStructs::VectorType& e, const NodeStructs::VectorType& u, const auto& state) {
 				return e.value_type <=> u.value_type == std::weak_ordering::equivalent;
 			},
-			[&](const NodeStructs::InterfaceType& e, std::reference_wrapper<const NodeStructs::Type> u) -> bool {
-				for (const auto& [type_name, name] : e.interface.get().memberVariables) {
+			[&](const NodeStructs::SetType& e, const NodeStructs::SetType& u, const auto& state) {
+				return e.value_type <=> u.value_type == std::weak_ordering::equivalent;
+			},
+			[&](const NodeStructs::InterfaceType& e, std::reference_wrapper<const NodeStructs::Type> u, const auto& state) -> bool {
+				for (const auto& [type_name, name] : e.interface.get().member_variables) {
 					auto t = type_of_typename(state, type_name);
 					if (t.has_error())
 						throw;
-					for (const auto& [source_type_name, source_name] : u.get().memberVariables)
+					for (const auto& [source_type_name, source_name] : u.get().member_variables)
 						if (name == source_name) {
 							auto t2 = type_of_typename(state, source_type_name);
 							if (t2.has_error())
@@ -750,11 +779,19 @@ bool is_assignable_to(
 				interfacemembers.push_back(std::move(new_member));
 				return true;
 			},
-			[&](std::reference_wrapper<const NodeStructs::Type> e, std::reference_wrapper<const NodeStructs::Type> u) {
-				return e.get() <=> u.get() == std::weak_ordering::equivalent;
+			[&](this const auto& self, std::reference_wrapper<const NodeStructs::Type> e, std::reference_wrapper<const NodeStructs::Type> u, const auto& state) {
+				if (e.get() <=> u.get() == std::weak_ordering::equivalent)
+					return true;
+				if (e.get().member_variables.size() == 1) {
+					auto member_variable_t = type_of_typename(state, e.get().member_variables.at(0).type);
+					if (member_variable_t.has_error())
+						throw;
+					return std::visit([&self, &state, &u](const auto& _param) -> bool { return self(_param, u, state); }, member_variable_t.value().type);
+				}
+				return false;
 			}
 		),
-		parameter.type, argument.type
+		parameter.type, argument.type, std::variant<transpilation_state_with_indent>{state_}
 	);
 }
 
@@ -779,7 +816,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 		}
 		else {
 			ss << t_ref.name << "{";
-			for (const auto& [member_typename, member_name] : t_ref.memberVariables) {
+			for (const auto& [member_typename, member_name] : t_ref.member_variables) {
 				auto typename_t = type_of_typename(state, member_typename);
 				return_if_error(typename_t);
 				auto member = NodeStructs::PropertyAccessExpression{ .operand = expr, .property_name = member_name };
@@ -793,7 +830,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 		const auto& t_ref = std::get<NodeStructs::InterfaceType>(t_ok.type.type.type).interface.get();
 		std::stringstream ss;
 		ss << "\"" << t_ref.name << "{";
-		for (const auto& [member_typename, member_name] : t_ref.memberVariables) {
+		for (const auto& [member_typename, member_name] : t_ref.member_variables) {
 			auto typename_t = type_of_typename(state, member_typename);
 			return_if_error(typename_t);
 			auto member = NodeStructs::PropertyAccessExpression{ .operand = expr, .property_name = member_name };
@@ -988,4 +1025,285 @@ NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& pr
 			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Bool" } };
 		}
 	), primitive_t.value);
+}
+
+static bool has_consecutive_variadic_parameters(const NodeStructs::Template& tmpl) {
+	for (size_t i = 0; i + 1 < tmpl.parameters.size(); ++i) {
+		if (std::holds_alternative<NodeStructs::VariadicTemplateParameter>(tmpl.parameters.at(i))
+			&& std::holds_alternative<NodeStructs::VariadicTemplateParameter>(tmpl.parameters.at(i + 1)))
+			return true;
+	}
+	return false;
+}
+
+static bool has_two_variadic_parameters_around_non_specialized_argument(const NodeStructs::Template& tmpl) {
+	for (size_t i = 0; i + 2 < tmpl.parameters.size(); ++i) {
+		if (std::holds_alternative<NodeStructs::VariadicTemplateParameter>(tmpl.parameters.at(i))
+			&& std::holds_alternative<NodeStructs::TemplateParameter>(tmpl.parameters.at(i + 1))
+			&& std::holds_alternative<NodeStructs::VariadicTemplateParameter>(tmpl.parameters.at(i + 2)))
+			return true;
+	}
+	return false;
+}
+
+std::optional<error> validate_templates(const std::vector<const NodeStructs::Template*>& templates) {
+	for (const NodeStructs::Template* tmpl : templates) {
+		if (has_consecutive_variadic_parameters(*tmpl))
+			return error{
+				"user error",
+				"template has consecutive variadic parameters"
+		};
+		if (has_two_variadic_parameters_around_non_specialized_argument(*tmpl))
+			return error{
+				"user error",
+				"template has two variadic parameters around a non specialized argument"
+		};
+	}
+	return std::nullopt;
+}
+
+static std::vector<const NodeStructs::Template*> matching_size_candidates(
+	size_t n_args,
+	const std::vector<NodeStructs::Template const*>& templates
+) {
+	std::vector<NodeStructs::Template const*> res;
+	for (const auto& tmpl : templates) {
+		bool has_variadic = false;
+		unsigned n_non_variadic_parameters = 0;
+		for (const auto& param_variant : tmpl->parameters) {
+			std::visit(overload(
+				[&](const NodeStructs::VariadicTemplateParameter& variadic) {
+					has_variadic = true;
+				},
+				[&](const NodeStructs::TemplateParameter& non_variadic) {
+					n_non_variadic_parameters += 1;
+				},
+				[&](const NodeStructs::TemplateParameterWithDefaultValue& non_variadic) {
+					n_non_variadic_parameters += 1;
+				}
+			), param_variant);
+		}
+		if ((has_variadic && n_non_variadic_parameters <= n_args) || (!has_variadic && n_non_variadic_parameters == n_args))
+			res.push_back(tmpl);
+	}
+
+	return res;
+}
+
+template <typename T>
+static std::vector<Arrangement> arrangements(
+	const std::vector<T>& args,
+	Arrangement current,
+	size_t arg_index,
+	size_t param_index
+) {
+	if (arg_index == args.size()) // all args are placed
+		return { current };
+	else if (param_index == current.tmpl.get().parameters.size()) // not all args are placed but there are no more parameters
+		return {};
+	else // not all args are placed and there are more parameters
+		return std::visit(overload(
+			[&](const NodeStructs::VariadicTemplateParameter& variadic) -> std::vector<Arrangement> {
+				std::vector<Arrangement> res = arrangements(args, current, arg_index, param_index + 1); // skipping variadic param
+				// try to match all args to the variadic, each time aggregating the results
+				// do not match and skip, as the next call attempts to skip anyway
+				while (arg_index < args.size()) {
+					current.arg_placements.push_back(param_index);
+					++arg_index;
+					auto _arrangements = arrangements(args, current, arg_index, param_index);
+					res.insert(res.end(), _arrangements.begin(), _arrangements.end());
+				}
+				return res;
+			},
+			[&](const NodeStructs::TemplateParameter& non_variadic) -> std::vector<Arrangement> {
+				current.arg_placements.push_back(param_index);
+				return arrangements(args, std::move(current), arg_index + 1, param_index + 1);
+			},
+			[&](const NodeStructs::TemplateParameterWithDefaultValue& non_variadic) -> std::vector<Arrangement> {
+				if constexpr (std::is_same_v<T, NodeStructs::Expression>) {
+					if (non_variadic.value <=> args.at(arg_index) == std::weak_ordering::equivalent) {
+						current.arg_placements.push_back(param_index);
+						return arrangements(args, std::move(current), arg_index + 1, param_index + 1);
+					}
+					else
+						return {};
+				}
+				else {
+					if (expression_for_template(non_variadic.value) == typename_for_template(args.at(arg_index))) {
+						current.arg_placements.push_back(param_index);
+						return arrangements(args, std::move(current), arg_index + 1, param_index + 1);
+					}
+					else
+						return {};
+				}
+			}
+		), current.tmpl.get().parameters.at(param_index));
+}
+
+template <typename T>
+static std::vector<Arrangement> arrangements(const std::vector<T>& args, const NodeStructs::Template& tmpl) {
+	return arrangements(args, Arrangement{ tmpl, {} }, 0, 0);
+}
+
+template <typename T>
+static std::vector<Arrangement> arrangements(const std::vector<T>& args, const std::vector<const NodeStructs::Template*>& templates) {
+	std::vector<Arrangement> res;
+	for (const NodeStructs::Template* tmpl : templates) {
+		auto _arrangements = arrangements(args, *tmpl);
+		res.insert(res.end(), _arrangements.begin(), _arrangements.end());
+	}
+	return res;
+}
+
+bool first_is_preferable(
+	const std::variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>& first,
+	const std::variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>& second
+) {
+	auto score = [](const auto& e) {
+		return std::visit(overload(
+			[&](const NodeStructs::TemplateParameterWithDefaultValue&) {
+				return 2;
+			},
+			[&](const NodeStructs::TemplateParameter&) {
+				return 1;
+			},
+			[&](const NodeStructs::VariadicTemplateParameter&) {
+				return 0;
+			}
+		), e);
+	};
+	return score(first) > score(second);
+}
+
+template <typename T>
+bool first_arrangement_has_at_least_one_reason_to_be_preferred_over_second(
+	const std::vector<T>& args,
+	const Arrangement& first,
+	const Arrangement& second
+) {
+	for (size_t i = 0; i < args.size(); ++i)
+		if (first_is_preferable(first.tmpl.get().parameters.at(first.arg_placements.at(i)), second.tmpl.get().parameters.at(second.arg_placements.at(i))))
+			return true;
+	return false;
+}
+
+bool has_empty_variadic(
+	const Arrangement& ar
+) {
+	for (size_t i = 0; i < ar.tmpl.get().parameters.size(); ++i)
+		if (std::find(ar.arg_placements.begin(), ar.arg_placements.end(), i) == ar.arg_placements.end())
+			return true;
+	return false;
+}
+
+template <typename T>
+bool first_arrangement_preferred_over_second(
+	const std::vector<T>& args,
+	const Arrangement& first,
+	const Arrangement& second
+) {
+	if (first_arrangement_has_at_least_one_reason_to_be_preferred_over_second(args, second, first))
+		return false;
+	if (!first_arrangement_has_at_least_one_reason_to_be_preferred_over_second(args, first, second))
+		return has_empty_variadic(second) && !has_empty_variadic(first);
+}
+
+template <typename T>
+bool nth_arrangement_has_reason_to_be_picked_over_all_others(
+	const std::vector<T>& args,
+	const std::vector<Arrangement>& arrangements,
+	size_t i
+) {
+	for (size_t j = 0; j < arrangements.size(); ++j)
+		if (i != j)
+			if (!first_arrangement_preferred_over_second(args, arrangements.at(i), arrangements.at(j)))
+				return false;
+	return true;
+}
+
+template <typename T>
+expected<Arrangement> _find_best_template(
+	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<T>& args
+) {
+	std::vector<const NodeStructs::Template*> candidates = matching_size_candidates(args.size(), templates);
+	if (candidates.size() == 0)
+		throw;
+	std::vector<Arrangement> candidate_arrangements = arrangements(args, candidates);
+	std::sort(
+		candidate_arrangements.begin(),
+		candidate_arrangements.end(),
+		[](const Arrangement& l, const Arrangement& r) {
+			return &l.tmpl.get() < &r.tmpl.get() || &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::weak_ordering::less;
+		}
+	);
+	candidate_arrangements.erase(
+		std::unique(
+			candidate_arrangements.begin(),
+			candidate_arrangements.end(),
+			[](const Arrangement& l, const Arrangement& r) {
+				return &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::weak_ordering::equivalent;
+			}
+		),
+		candidate_arrangements.end()
+	);
+
+	if (candidate_arrangements.size() == 1)
+		return std::move(candidate_arrangements.at(0));
+	for (size_t i = 0; i < candidate_arrangements.size(); ++i)
+		if (nth_arrangement_has_reason_to_be_picked_over_all_others(args, candidate_arrangements, i))
+			return std::move(candidate_arrangements.at(i));
+
+	std::stringstream args_ss;
+	bool has_prev_args = false;
+	for (const auto& arg : args) {
+		if (has_prev_args)
+			args_ss << ", ";
+		has_prev_args = true;
+		if constexpr (std::is_same_v<T, NodeStructs::Expression>) {
+			args_ss << expression_for_template(arg);
+		}
+		else {
+			args_ss << typename_for_template(arg);
+		}
+	}
+	std::stringstream templates_ss;
+	bool has_prev_templates = false;
+	auto name = [](const auto& e) { return std::visit([](const auto& x) { return x.name; }, e); };
+	for (auto const* a : candidates) {
+		if (has_prev_templates)
+			templates_ss << ", ";
+		has_prev_templates = true;
+		std::stringstream parameters_ss;
+		bool has_prev_parameters = false;
+		for (const auto& parameter : a->parameters) {
+			if (has_prev_parameters)
+				parameters_ss << ", ";
+			has_prev_parameters = true;
+			parameters_ss << name(parameter);
+			/*if (parameter.second.has_value())
+				parameters_ss << " = " << expression_for_template(parameter.second.value());*/
+		}
+		templates_ss << "template " + templates.at(0)->name + "<" + parameters_ss.str() + ">";
+	}
+	return error{
+		"user error",
+		"More than one instance of `" + templates.at(0)->name + "`"
+		" matched the provided arguments [" + args_ss.str() + "]"
+		", contenders were [" + templates_ss.str() + "]"
+	};
+}
+
+expected<Arrangement> find_best_template(
+	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Expression>& args
+) {
+	return _find_best_template(templates, args);
+}
+
+expected<Arrangement> find_best_template(
+	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Typename>& args
+) {
+	return _find_best_template(templates, args);
 }

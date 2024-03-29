@@ -149,6 +149,7 @@
     <ClCompile Include="expression_visitor\expression_for_template_visitor.cpp" />
     <ClCompile Include="core\structurizer.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
+    <ClCompile Include="typename_visitor\typename_for_template_visitor.cpp" />
     <ClCompile Include="type_visitor\transpile_member_call_visitor.cpp" />
     <ClCompile Include="statement_visitor\transpile_statement_visitor.cpp" />
     <ClCompile Include="typename_visitor\transpile_typename_visitor.cpp" />
@@ -163,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\default_includes.hpp" />
+    <ClInclude Include="typename_visitor\typename_for_template_visitor.hpp" />
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
     <ClInclude Include="type_visitor\typename_of_type_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_resolution_operator.hpp" />

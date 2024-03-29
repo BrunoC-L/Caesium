@@ -39,46 +39,53 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 		}
 		throw;
 	}
-	else if (is_aggregate_init) {
-		auto type = type_of_typename(state, statement.type);
-		return_if_error(type);
-
-		auto type_repr = transpile_typename(state, statement.type);
-		return_if_error(type_repr);
-
-		const auto& aggregate = std::get<NodeStructs::BraceArguments>(statement.expr.expression.get());
-
-		auto as_construct = NodeStructs::ConstructExpression{
-			.operand = statement.type,
-			.arguments = aggregate.args
-		};
-
-		auto assigned_expression = transpile_expression(state, as_construct);
-		return_if_error(assigned_expression);
-		if (!std::holds_alternative<non_type_information>(assigned_expression.value()))
-			throw;
-		const auto& assigned_expression_ok = std::get<non_type_information>(assigned_expression.value());
-
-		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, type.value() });
-
-		return type_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
-	}
 	else {
-		auto assigned_expression = transpile_expression(state, statement.expr);
-		return_if_error(assigned_expression);
-
 		auto type = type_of_typename(state, statement.type);
 		return_if_error(type);
 
 		auto type_repr = transpile_typename(state, statement.type);
 		return_if_error(type_repr);
+
+		auto assigned_expression = [&](){
+			if (is_aggregate_init) {
+				const auto& aggregate = std::get<NodeStructs::BraceArguments>(statement.expr.expression.get());
+				auto as_construct = NodeStructs::ConstructExpression{
+					.operand = statement.type,
+					.arguments = aggregate.args
+				};
+				return transpile_expression(state, as_construct);
+			}
+			else
+				return transpile_expression(state, statement.expr);
+		}();
+		return_if_error(assigned_expression);
 		if (!std::holds_alternative<non_type_information>(assigned_expression.value()))
 			throw;
+
 		const auto& assigned_expression_ok = std::get<non_type_information>(assigned_expression.value());
+
+		if (!is_assignable_to(state, type.value(), assigned_expression_ok.type.type))
+			return error{
+				"user error",
+				"not assignable"
+			};
 
 		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, type.value() });
 
-		return type_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
+		if (std::holds_alternative<NodeStructs::UnionType>(assigned_expression_ok.type.type.type)
+			&& (type.value() <=> assigned_expression_ok.type.type != std::weak_ordering::equivalent)) {
+			std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
+			return type_repr.value() + " " + statement.name + " = "
+				"std::visit([](const auto& " + lambda_var_name + ") -> " + type_repr.value() + " {"
+					" return " + lambda_var_name + "; "
+				"}, " + assigned_expression_ok.representation + ");\n";
+		}
+		else {
+			if (assigned_expression_ok.type.type <=> type.value() == std::weak_ordering::equivalent)
+				return type_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
+			else
+				return type_repr.value() + " " + statement.name + " = { " + assigned_expression_ok.representation + " };\n";
+		}
 	}
 }
 
@@ -278,4 +285,8 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 	// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw if the code was complete
 	ss << indent(state.indent + 1) << "throw;\n";
 	return ss.str();
+}
+
+R T::operator()(const NodeStructs::SwitchStatement& statement) {
+	throw;
 }

@@ -13,6 +13,8 @@ namespace grammar {
 	using String = Token<STRING>;
 	using Newline = Token<NEWLINE>;
 
+	using Enum = And<Token<ENUM>, Word, Token<COLON>, Newline, Star<Or<Newline, Indent<And<IndentToken, Word, Newline>>>>>;
+
 	using Expression = ConditionalExpression;
 	using Import = And<Star<Token<NEWLINE>>, Token<IMPORT>, Or<Word, String>, Newline>;
 	using Alias = And<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
@@ -147,6 +149,17 @@ namespace grammar {
 			ColonIndentCodeBlock
 		>>>
 	>;
+	using SwitchStatement = And<
+		Token<SWITCH>,
+		Expression,
+		Token<COLON>,
+		Newline,
+		Indent<Plus<And<
+			IndentToken,
+			Expression,
+			ColonIndentCodeBlock
+		>>>
+	>;
 	struct Statement : public And<
 		IndentToken,
 		Alloc<Or<
@@ -159,7 +172,8 @@ namespace grammar {
 			BreakStatement,
 			ReturnStatement,
 			BlockStatement,
-			MatchStatement
+			MatchStatement,
+			SwitchStatement
 		>>
 	> {};
 
@@ -188,7 +202,27 @@ namespace grammar {
 		>>>
 	>;
 
-	using Template = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<And<Word, Opt<And<Token<EQUAL>, Expression>>>>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>;
+	using Template = And<
+		Token<TEMPLATE>,
+		Word,
+		Token<LT>,
+		CommaStar<Or<
+			And<
+				Word,
+				Token<DOTS>
+			>,
+			And<
+				Word,
+				Opt<And<
+					Token<EQUAL>,
+					Expression
+				>>
+			>
+		>>,
+		Token<GT>,
+		Token<COLON>,
+		Token<NEWLINE>,
+		TemplateBody>;
 
 	struct NameSpace;
 
@@ -198,7 +232,8 @@ namespace grammar {
 		Function,
 		Interface,
 		Template,
-		Alias
+		Alias,
+		Enum
 	>;
 
 	struct NameSpace : public And<

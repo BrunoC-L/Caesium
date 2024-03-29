@@ -1,9 +1,9 @@
 #include "expected.hpp"
-Int f_Int() {
+Int f__Int() {
 		return 0;
 };
 Int _redirect_main(const Vector<String>& args) {
-	return f_Int();
+	return f__Int();
 };
 
 int main(int argc, char** argv) {

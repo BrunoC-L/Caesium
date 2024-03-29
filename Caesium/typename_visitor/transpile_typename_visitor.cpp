@@ -15,11 +15,12 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
+	bool is_variant = type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Variant" } } == std::weak_ordering::equivalent;
 	bool is_vec_or_set =
 		type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } } == std::weak_ordering::equivalent
 		|| type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Set" } } == std::weak_ordering::equivalent;
 	bool is_map = type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Map" } } == std::weak_ordering::equivalent;
-	if (is_vec_or_set || is_map) {
+	if (is_vec_or_set || is_map || is_variant) {
 		if (is_vec_or_set && type.templated_with.size() != 1)
 			throw;
 		if (is_map && type.templated_with.size() != 2)
@@ -47,16 +48,15 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 		return_if_error(tmpl);
 		auto t = operator()(type.type);
 		return_if_error(t);
-		ss << t.value() << "___";
+		ss << t.value() << "__";
 		bool first = true;
 		for (const auto& t : type.templated_with) {
 			if (first)
 				first = false;
 			else
-				ss << "_";
+				ss << "__";
 			ss << operator()(t).value();
 		}
-		ss << "___";
 		return ss.str();
 	}
 }

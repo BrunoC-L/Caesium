@@ -9,12 +9,6 @@ NodeStructs::Typename getStruct(const grammar::Typename& t);
 
 NodeStructs::Typename extend(NodeStructs::Typename&&, const grammar::NamespaceTypenameExtension&);
 
-NodeStructs::TemplatedTypename extend_tmpl(NodeStructs::Typename&& t, const std::vector<Alloc<grammar::Typename>>& templates);
-
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const grammar::TemplateTypenameExtension& tt);
-
-NodeStructs::Typename extend(NodeStructs::Typename&& t, const grammar::UnionTypenameExtension& ut);
-
 NodeStructs::ParameterCategory getStruct(const grammar::ParameterCategory& vc);
 
 NodeStructs::Function getStruct(const grammar::Function& f, std::optional<NodeStructs::Typename> name_space);

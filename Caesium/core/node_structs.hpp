@@ -329,6 +329,10 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const ReturnStatement&) const;
 	};
 
+	struct SwitchStatement {
+		std::weak_ordering operator<=>(const SwitchStatement&) const = default;
+	};
+
 	struct BlockStatement {
 		Typename parametrized_block;
 		std::weak_ordering operator<=>(const BlockStatement&) const = default;
@@ -345,7 +349,8 @@ struct NodeStructs {
 			BreakStatement,
 			ReturnStatement,
 			BlockStatement,
-			MatchStatement
+			MatchStatement,
+			SwitchStatement
 		> statement;
 		std::weak_ordering operator<=>(const Statement&) const;
 	};
@@ -381,7 +386,7 @@ struct NodeStructs {
 		std::string name;
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
-		std::vector<MemberVariable> memberVariables;
+		std::vector<MemberVariable> member_variables;
 		std::weak_ordering operator<=>(const Type&) const;
 	};
 
@@ -389,7 +394,7 @@ struct NodeStructs {
 		std::string name;
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
-		std::vector<MemberVariable> memberVariables;
+		std::vector<MemberVariable> member_variables;
 		std::weak_ordering operator<=>(const Interface&) const;
 	};
 
@@ -409,10 +414,26 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const NamespaceType&) const;
 	};
 
+	struct TemplateParameter {
+		std::string name;
+		std::weak_ordering operator<=>(const TemplateParameter&) const = default;
+	};
+
+	struct TemplateParameterWithDefaultValue {
+		std::string name;
+		NodeStructs::Expression value;
+		std::weak_ordering operator<=>(const TemplateParameterWithDefaultValue&) const;
+	};
+
+	struct VariadicTemplateParameter {
+		std::string name;
+		std::weak_ordering operator<=>(const VariadicTemplateParameter&) const = default;
+	};
+
 	struct Template {
 		std::string name;
 		std::optional<Typename> name_space;
-		std::vector<std::pair<std::string, std::optional<NodeStructs::Expression>>> parameters;
+		std::vector<std::variant<TemplateParameter, TemplateParameterWithDefaultValue, VariadicTemplateParameter>> parameters;
 		std::string templated;
 		std::weak_ordering operator<=>(const Template&) const;
 	};
@@ -663,7 +684,7 @@ inline std::weak_ordering NodeStructs::Type::operator<=>(const Type& other) cons
 		return c;
 	if (auto c = cmp(aliases, other.aliases); c != 0)
 		return c;
-	if (auto c = cmp(memberVariables, other.memberVariables); c != 0)
+	if (auto c = cmp(member_variables, other.member_variables); c != 0)
 		return c;
 	return std::weak_ordering::equivalent;
 }
@@ -689,7 +710,7 @@ inline std::weak_ordering NodeStructs::Interface::operator<=>(const Interface& o
 		return c;
 	if (auto c = cmp(aliases, other.aliases); c != 0)
 		return c;
-	if (auto c = cmp(memberVariables, other.memberVariables); c != 0)
+	if (auto c = cmp(member_variables, other.member_variables); c != 0)
 		return c;
 	return std::weak_ordering::equivalent;
 }
@@ -708,4 +729,10 @@ inline std::weak_ordering NodeStructs::Template::operator<=>(const Template& oth
 
 inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const PrimitiveType& other) const {
 	return cmp(*this, other);
+}
+
+inline std::weak_ordering NodeStructs::TemplateParameterWithDefaultValue::operator<=>(const TemplateParameterWithDefaultValue& other) const {
+	if (auto c = cmp(name, other.name); c != 0)
+		return c;
+	return cmp(value, other.value);
 }
