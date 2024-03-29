@@ -290,3 +290,7 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 R T::operator()(const NodeStructs::SwitchStatement& statement) {
 	throw;
 }
+
+R T::operator()(const NodeStructs::EqualStatement& statement) {
+	throw;
+}

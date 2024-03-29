@@ -89,14 +89,6 @@ static constexpr std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::NOT) return "!";
 	if constexpr (token == TOKENS::EQUALEQUAL) return "==";
 	if constexpr (token == TOKENS::NEQUAL) return "!=";
-	if constexpr (token == TOKENS::PLUSEQUAL) return "+=";
-	if constexpr (token == TOKENS::MINUSEQUAL) return "-=";
-	if constexpr (token == TOKENS::TIMESEQUAL) return "*=";
-	if constexpr (token == TOKENS::DIVEQUAL) return "/=";
-	if constexpr (token == TOKENS::MODEQUAL) return "%=";
-	if constexpr (token == TOKENS::ANDEQUAL) return "&=";
-	if constexpr (token == TOKENS::OREQUAL) return "|=";
-	if constexpr (token == TOKENS::XOREQUAL) return "^=";
 	if constexpr (token == TOKENS::LTQ) return "<";
 	if constexpr (token == TOKENS::GTQ) return ">";
 	if constexpr (token == TOKENS::LTEQ) return "<=";

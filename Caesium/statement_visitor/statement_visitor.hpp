@@ -31,7 +31,8 @@ struct StatementVisitor {
 	Expand(NodeStructs::ReturnStatement)\
 	Expand(NodeStructs::BlockStatement)\
 	Expand(NodeStructs::MatchStatement)\
-	Expand(NodeStructs::SwitchStatement)
+	Expand(NodeStructs::SwitchStatement)\
+	Expand(NodeStructs::EqualStatement)
 
 #define statement_decl(T) R operator()(const T&);
 #define StatementVisitorDeclarations StatementExpands_(statement_decl)

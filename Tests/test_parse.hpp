@@ -119,6 +119,11 @@ bool test_parse() {
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\tb\n");
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\n\tb\n");
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta//a\n\n\tb\n");
+	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a // a\na\n");
+	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a //\na\n");
+	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a // a \na\n");
+	ok &= test_parse_correct<Newline>(__LINE__, 0, "\n");
+	ok &= test_parse_correct<Newline>(__LINE__, 0, " // a \n");
 
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tA a\n");

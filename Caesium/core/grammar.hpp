@@ -160,6 +160,9 @@ namespace grammar {
 			ColonIndentCodeBlock
 		>>>
 	>;
+
+	using EqualStatement = And<Expression, Token<EQUAL>, Expression>;
+
 	struct Statement : public And<
 		IndentToken,
 		Alloc<Or<
@@ -173,7 +176,8 @@ namespace grammar {
 			ReturnStatement,
 			BlockStatement,
 			MatchStatement,
-			SwitchStatement
+			SwitchStatement,
+			EqualStatement
 		>>
 	> {};
 

@@ -779,6 +779,10 @@ NodeStructs::SwitchStatement getStatementStruct(const grammar::SwitchStatement& 
 	return {};
 }
 
+NodeStructs::EqualStatement getStatementStruct(const grammar::EqualStatement& statement) {
+	return {};
+}
+
 NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 	return NodeStructs::Statement{ std::visit(
 		[](const auto& statement) -> NodeStructs::Statement {
@@ -795,6 +799,7 @@ NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 			grammar::ReturnStatement,
 			grammar::BlockStatement,
 			grammar::MatchStatement,
-			grammar::SwitchStatement
+			grammar::SwitchStatement,
+			grammar::EqualStatement
 		>>>().get().value()) };
 }

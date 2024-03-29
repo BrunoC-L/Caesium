@@ -47,18 +47,8 @@ enum TOKENS {
 	PLUS,
 	TILDE,
 
-	PLUSPLUS,
-	MINUSMINUS,
 	EQUALEQUAL,
 	NEQUAL,
-	PLUSEQUAL,
-	MINUSEQUAL,
-	TIMESEQUAL,
-	DIVEQUAL,
-	MODEQUAL,
-	ANDEQUAL,
-	OREQUAL,
-	XOREQUAL,
 
 	AND,
 	OR,
@@ -312,7 +302,7 @@ private:
 				return { BRACKETCLOSE, "]" };
 			case ' ':
 				if (space_is_comment(index))
-					continue;
+					return { NEWLINE, "\n" };
 				if (index + 3 < program.size() &&
 					program[index + 1] == ' ' &&
 					program[index + 2] == ' ' &&
@@ -324,7 +314,7 @@ private:
 				return { SPACE, " " };
 			case '\t':
 				if (space_is_comment(index))
-					continue;
+					return { NEWLINE, "\n" };
 				index += 1;
 				return { TAB, "\t" };
 			case '\n':
@@ -406,7 +396,7 @@ private:
 				return { GT, ">" };
 			case '-':
 				index += 1;
-				if (index < program.size()) {
+				/*if (index < program.size()) {
 					if (program[index] == '=') {
 						index += 1;
 						return { MINUSEQUAL, "-=" };
@@ -415,11 +405,11 @@ private:
 						index += 1;
 						return { MINUSMINUS, "--" };
 					}
-				}
+				}*/
 				return { DASH, "-" };
 			case '+':
 				index += 1;
-				if (index < program.size()) {
+				/*if (index < program.size()) {
 					if (program[index] == '=') {
 						index += 1;
 						return { PLUSEQUAL, "+=" };
@@ -428,14 +418,14 @@ private:
 						index += 1;
 						return { PLUSPLUS, "++" };
 					}
-				}
+				}*/
 				return { PLUS, "+" };
 			case '*':
 				index += 1;
-				if (index < program.size() && program[index] == '=') {
+				/*if (index < program.size() && program[index] == '=') {
 					index += 1;
 					return { TIMESEQUAL, "*=" };
-				}
+				}*/
 				return { ASTERISK, "*" };
 			case '/':
 				index += 1;
@@ -443,31 +433,36 @@ private:
 				if (index < program.size() && program[index] == '/') {
 					index += 1;
 					skip_comment(index);
-					continue;
+					return { NEWLINE, "\n" };
 				}
 				// skip /* */ comments
 				if (index < program.size() && program[index] == '*') {
 					index += 1;
-					while (index + 1 < program.size())
+					if (index == program.size())
+						throw; // no end of comment
+					while (index < program.size()) {
+						if (index + 1 == program.size())
+							throw; // no end of comment
 						if (program[index] == '*' && program[index + 1] == '/') {
 							index += 2;
 							break;
 						}
 						else
 							index += 1;
+					}
 					continue;
 				}
-				if (index < program.size() && program[index] == '=') {
+				/*if (index < program.size() && program[index] == '=') {
 					index += 1;
 					return { DIVEQUAL, "/=" };
-				}
+				}*/
 				return { SLASH, "/" };
 			case '%':
 				index += 1;
-				if (index < program.size() && program[index] == '=') {
+				/*if (index < program.size() && program[index] == '=') {
 					index += 1;
 					return { MODEQUAL, "%=" };
-				}
+				}*/
 				return { PERCENT, "%" };
 			case '&':
 				index += 1;
@@ -476,10 +471,10 @@ private:
 						index += 1;
 						return { ANDAND, "&&" };
 					}
-					else if (program[index] == '=') {
+					/*else if (program[index] == '=') {
 						index += 1;
 						return { ANDEQUAL, "&=" };
-					}
+					}*/
 				}
 				//return { AMPERSAND, "&" };
 				throw std::runtime_error("Unknown Symbol `&`");
@@ -491,10 +486,10 @@ private:
 				return { POUND, "#" };
 			case '^':
 				index += 1;
-				if (index + 1 <= program.size() && program[index] == '^') {
+				/*if (index + 1 <= program.size() && program[index] == '^') {
 					index += 1;
 					return { XOREQUAL, "^=" };
-				}
+				}*/
 				return { CARET, "^" };
 			case '|':
 				index += 1;
@@ -503,10 +498,10 @@ private:
 						index += 1;
 						return { OROR, "||" };
 					}
-					else if (program[index] == '=') {
+					/*else if (program[index] == '=') {
 						index += 1;
 						return { OREQUAL, "|=" };
-					}
+					}*/
 				}
 				return { BITOR, "|" };
 			}

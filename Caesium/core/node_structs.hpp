@@ -333,6 +333,10 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const SwitchStatement&) const = default;
 	};
 
+	struct EqualStatement {
+		std::weak_ordering operator<=>(const EqualStatement&) const = default;
+	};
+
 	struct BlockStatement {
 		Typename parametrized_block;
 		std::weak_ordering operator<=>(const BlockStatement&) const = default;
@@ -350,7 +354,8 @@ struct NodeStructs {
 			ReturnStatement,
 			BlockStatement,
 			MatchStatement,
-			SwitchStatement
+			SwitchStatement,
+			EqualStatement
 		> statement;
 		std::weak_ordering operator<=>(const Statement&) const;
 	};
