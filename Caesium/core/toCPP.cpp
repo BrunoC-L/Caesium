@@ -175,7 +175,7 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 				transpile_header_cpp_t k = transpile_main({ state, 0 }, fn);
 				return_if_error(k);
 
-				std::stringstream h, cpp;
+				/*std::stringstream h, cpp;
 				h << "#pragma once\n#include \"defaults.hpp\"\n\n" << k.value().first;
 				cpp << "#include \"expected.hpp\"\n";
 
@@ -205,7 +205,69 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 					"\treturn _redirect_main(args);\n"
 					"};\n";
 
-				return std::pair{ h.str(), cpp.str() };
+				return std::pair{ h.str(), cpp.str() };*/
+
+				std::stringstream cpp;
+				cpp <<  "#include \"defaults.hpp\"\n"
+						"\n";
+
+				{
+					std::stringstream declarations;
+					std::stringstream definitions;
+					for (const auto& t : state.types_to_transpile) {
+						if (!state.traversed_types.contains(t))
+							throw;
+						auto res = transpile({ state, 0 }, t);
+						return_if_error(res);
+						declarations << res.value().first;
+						definitions << res.value().second;
+					}
+					for (const auto& i : state.interfaces_to_transpile) {
+						if (!state.traversed_interfaces.contains(i))
+							throw;
+						if (i.name_space.has_value())
+							throw;
+						const auto& members = state.interface_symbol_to_members[{NodeStructs::BaseTypename{ i.name }}];
+						auto unindented = transpilation_state_with_indent{ state, 0 };
+						/*auto interface_repr = transpile_typename(unindented, NodeStructs::Typename{ NodeStructs::BaseTypename{ i.name } });
+						return_if_error(interface_repr);*/
+						auto k = members | LIFT_TRANSFORM_X(T, typename_of_type(unindented, T)) | to_vec();
+						auto v = vec_of_expected_to_expected_of_vec(k);
+						return_if_error(v);
+						auto members_repr = transpile_typenames(unindented, v.value());
+						return_if_error(members_repr);
+						declarations << "struct " << i.name << ";\n";
+						definitions << "struct " << i.name << " {\n\tVariant<" << members_repr.value() << "> value;\n};\n";
+					}
+					cpp << declarations.str() << "\n"
+						<< definitions.str() << "\n";
+				}
+				{
+					std::stringstream declarations;
+					std::stringstream definitions;
+					for (const auto& f : state.functions_to_transpile) {
+						if (!state.traversed_functions.contains(f))
+							throw;
+						auto res = transpile({ state, 0 }, f);
+						return_if_error(res);
+						declarations << res.value().first;
+						definitions << res.value().second;
+					}
+					declarations << k.value().first;
+					definitions << k.value().second;
+					cpp << declarations.str() << "\n"
+						<< definitions.str() << "\n";
+				}
+
+				cpp << 
+					"int main(int argc, char** argv) {\n"
+					"\tstd::vector<std::string> args {};\n"
+					"\tfor (int i = 0; i < argc; ++i)\n"
+					"\t\targs.push_back(std::string(argv[i]));\n"
+					"\treturn _redirect_main(args);\n"
+					"};\n";
+
+				return std::pair{ "", cpp.str()};
 			}
 	return error{ "user error", "Missing \"main\" function" };
 }

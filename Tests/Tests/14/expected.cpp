@@ -1,13 +1,21 @@
-#include "expected.hpp"
-Int f__Animal(const Vector<Variant<Cat, Dog>>& vec) {
-		return 0;
-};
+#include "defaults.hpp"
+
+struct Cat;
+struct Dog;
+
 struct Cat {
 };
 
 struct Dog {
 };
 
+
+Int f__Animal(const Vector<Variant<Cat, Dog>>& vec);
+Int _redirect_main(const Vector<String>& s);
+
+Int f__Animal(const Vector<Variant<Cat, Dog>>& vec) {
+	return 0;
+};
 Int _redirect_main(const Vector<String>& s) {
 	Vector<Variant<Cat, Dog>> animals = Vector<Variant<Cat, Dog>>{};
 	return f__Animal(animals);

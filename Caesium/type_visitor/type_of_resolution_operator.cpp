@@ -40,9 +40,7 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 		const auto& interface = *it;
 		if (!state.state.traversed_interfaces.contains(interface)) {
 			state.state.traversed_interfaces.insert(interface);
-			auto t = transpile(state, interface);
-			return_if_error(t);
-			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
+			state.state.interfaces_to_transpile.insert(interface);
 		}
 		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
 	}

@@ -256,10 +256,9 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 		if (std::holds_alternative<NodeStructs::FunctionType>(ti.type.type)) {
 			const auto& fn = std::get<NodeStructs::FunctionType>(ti.type.type).function.get();
 			if (!state.state.traversed_functions.contains(fn)) {
+				// TODO VERIFY
 				state.state.traversed_functions.insert(fn);
-				auto t = transpile(state.unindented(), fn);
-				return_if_error(t);
-				state.state.transpile_in_reverse_order.push_back(std::move(t).value());
+				state.state.functions_to_transpile.insert(fn);
 			}
 			auto args_or_error = transpile_args(state, expr.arguments.args);
 			return_if_error(args_or_error);
@@ -436,10 +435,9 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 				auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
 				structured_f->name = tmpl_name;
 				state.state.named.functions[structured_f->name].push_back(structured_f);
+				// TODO VERIFY
 				state.state.traversed_functions.insert(*structured_f);
-				auto transpiled_or_e = transpile(state, *structured_f);
-				return_if_error(transpiled_or_e);
-				state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
+				state.state.functions_to_transpile.insert(*structured_f);
 				return expression_information{ type_information{
 					.type = NodeStructs::FunctionType{ *structured_f },
 					.representation = template_name(tmpl.name, expr.arguments.args)
@@ -679,7 +677,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	if (std::holds_alternative<NodeStructs::InterfaceType>(operand_info_ok.type.type.type))
 		return expression_information{ non_type_information{
 			.type = t.value().second,
-			.representation = "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + operand_info_ok.representation + ")",
+			.representation = "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + operand_info_ok.representation + ".value)",
 			.value_category = operand_info_ok.value_category,
 		} };
 	else
@@ -773,10 +771,9 @@ R T::operator()(const std::string& expr) {
 	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end()) {
 		const auto& fn = *it->second.back();
 		if (!state.state.traversed_functions.contains(fn)) {
+			// TODO VERIFY
 			state.state.traversed_functions.insert(fn);
-			auto t = transpile(state.unindented(), fn);
-			return_if_error(t);
-			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
+			state.state.functions_to_transpile.insert(fn);
 		}
 		return expression_information{ type_information{
 			.type = NodeStructs::FunctionType{ fn },

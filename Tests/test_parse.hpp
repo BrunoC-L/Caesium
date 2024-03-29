@@ -55,11 +55,13 @@ bool test_parse() {
 
 	ok &= test_parse_correct<Token<END>>(__LINE__, 0, "");
 	ok &= test_parse_incorrect<Token<END>>(__LINE__, 0, "\n");
-	ok &= test_parse_correct<Token<NEWLINE>>(__LINE__, 0, "\n");
-	ok &= test_parse_correct<Token<NEWLINE>>(__LINE__, 0, "\t\n");
-	ok &= test_parse_correct<Token<NEWLINE>>(__LINE__, 0, " \n");
-	ok &= test_parse_incorrect<Token<NEWLINE>>(__LINE__, 0, "\n\n");
-	ok &= test_parse_incorrect<Token<NEWLINE>>(__LINE__, 0, "\n\t");
+	ok &= test_parse_correct<Newline>(__LINE__, 0, "\n");
+	ok &= test_parse_correct<Newline>(__LINE__, 0, "\t\n");
+	ok &= test_parse_correct<Newline>(__LINE__, 0, " \n");
+	ok &= test_parse_incorrect<Newline>(__LINE__, 0, "\n\n");
+	ok &= test_parse_incorrect<Newline>(__LINE__, 0, "\n\t");
+	ok &= test_parse_correct<Newline>(__LINE__, 0, "\n");
+	ok &= test_parse_correct<Newline>(__LINE__, 0, " // a \n");
 
 	ok &= test_parse_correct<Import>(__LINE__, 0, "import a");
 
@@ -122,8 +124,6 @@ bool test_parse() {
 	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a // a\na\n");
 	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a //\na\n");
 	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a // a \na\n");
-	ok &= test_parse_correct<Newline>(__LINE__, 0, "\n");
-	ok &= test_parse_correct<Newline>(__LINE__, 0, " // a \n");
 
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tA a\n");

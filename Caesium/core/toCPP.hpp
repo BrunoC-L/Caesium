@@ -47,7 +47,7 @@ struct Named {
 struct transpilation_state {
 	variables_t variables;
 	Named named;
-	std::vector<std::pair<std::string, std::string>> transpile_in_reverse_order;
+	//std::vector<std::pair<std::string, std::string>> transpile_in_reverse_order;
 	unsigned current_variable_unique_id = 1;
 
 	transpilation_state(const transpilation_state& other) = delete;
@@ -61,7 +61,11 @@ struct transpilation_state {
 	std::set<NodeStructs::Function> traversed_functions;
 	std::set<NodeStructs::Type> traversed_types;
 	std::set<NodeStructs::Interface> traversed_interfaces;
-	std::set<NodeStructs::Block> traversed_blocks;
+
+	std::set<NodeStructs::Function> functions_to_transpile;
+	std::set<NodeStructs::Type> types_to_transpile;
+	std::set<NodeStructs::Interface> interfaces_to_transpile;
+
 	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
 };
 

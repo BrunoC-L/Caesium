@@ -1,4 +1,15 @@
-#include "expected.hpp"
+#include "defaults.hpp"
+
+
+
+Bool test_parse();
+Bool test_transpile_all_folders(const Vector<Variant<filesystem__directory, filesystem__file>>& folders);
+Bool test_transpile_folder(const filesystem__directory& dir);
+Int _redirect_main(const Vector<String>& args);
+
+Bool test_parse() {
+	return False;
+};
 Bool test_transpile_all_folders(const Vector<Variant<filesystem__directory, filesystem__file>>& folders) {
 	for (auto&& dir : folders) {
 		const Variant<filesystem__directory, filesystem__file>& matchval1 = dir;
@@ -14,9 +25,6 @@ Bool test_transpile_all_folders(const Vector<Variant<filesystem__directory, file
 	return True;
 };
 Bool test_transpile_folder(const filesystem__directory& dir) {
-	return False;
-};
-Bool test_parse() {
 	return False;
 };
 Int _redirect_main(const Vector<String>& args) {

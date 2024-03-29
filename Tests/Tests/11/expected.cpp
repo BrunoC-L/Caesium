@@ -1,12 +1,20 @@
-#include "expected.hpp"
-struct C {
+#include "defaults.hpp"
+
+struct A;
+struct B;
+struct C;
+
+struct A {
 };
 
 struct B {
 };
 
-struct A {
+struct C {
 };
+
+
+Int _redirect_main(const Vector<String>& s);
 
 Int _redirect_main(const Vector<String>& s) {
 	Variant<A, B> v1 = Variant<A, B>{A{}};

@@ -1,4 +1,9 @@
-#include "expected.hpp"
+#include "defaults.hpp"
+
+
+
+Int _redirect_main(const Vector<String>& s);
+
 Int _redirect_main(const Vector<String>& s) {
 	Int a = Int{};
 };

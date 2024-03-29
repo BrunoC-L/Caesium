@@ -1,6 +1,12 @@
-#include "expected.hpp"
+#include "defaults.hpp"
+
+struct A;
+
 struct A {
 };
+
+
+Int _redirect_main(const Vector<String>& s);
 
 Int _redirect_main(const Vector<String>& s) {
 	A a1 = A{};

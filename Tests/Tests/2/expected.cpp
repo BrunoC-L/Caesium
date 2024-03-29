@@ -1,4 +1,9 @@
-#include "expected.hpp"
+#include "defaults.hpp"
+
+
+
+Int _redirect_main(const Vector<String>& cli_args);
+
 Int _redirect_main(const Vector<String>& cli_args) {
 	for (auto&& arg : cli_args) {
 		(Void)(std::cout << String("\"") + arg + String("\"") << "\n");

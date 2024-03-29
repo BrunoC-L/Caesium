@@ -1,4 +1,10 @@
-#include "expected.hpp"
+#include "defaults.hpp"
+
+
+
+Bool bop1(const String& s);
+Int _redirect_main(const Vector<String>& cli_args);
+
 Bool bop1(const String& s) {
 	return True;
 };

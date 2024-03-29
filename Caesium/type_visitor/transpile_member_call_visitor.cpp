@@ -21,9 +21,7 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 		const auto& fn = *it->second.back();
 		if (!state.state.traversed_functions.contains(fn)) {
 			state.state.traversed_functions.insert(fn);
-			auto t = transpile(state.unindented(), fn);
-			return_if_error(t);
-			state.state.transpile_in_reverse_order.push_back(std::move(t).value());
+			state.state.functions_to_transpile.insert(fn);
 		}
 		auto first_param_str = transpile_typename(state, fn.parameters.at(0).typename_);
 		return_if_error(first_param_str);

@@ -1,6 +1,12 @@
-#include "expected.hpp"
+#include "defaults.hpp"
+
+
+
+Int f__Int();
+Int _redirect_main(const Vector<String>& args);
+
 Int f__Int() {
-		return 0;
+	return 0;
 };
 Int _redirect_main(const Vector<String>& args) {
 	return f__Int();

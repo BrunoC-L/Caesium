@@ -92,9 +92,9 @@ Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(con
 	return res;
 }
 
-Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(const std::string& folder_name) {
+Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(const std::string& dir) {
 	Vector<Variant<filesystem__file, filesystem__directory>> res{};
-	for (const auto& file_or_folder : std::filesystem::directory_iterator(folder_name))
+	for (const auto& file_or_folder : std::filesystem::directory_iterator(dir))
 		if (file_or_folder.is_directory())
 			res.push_back(filesystem__directory{ file_or_folder });
 		else

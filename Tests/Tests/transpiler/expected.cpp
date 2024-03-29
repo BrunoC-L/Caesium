@@ -1,4 +1,8 @@
-#include "expected.hpp"
+#include "defaults.hpp"
+
+struct Or__Token__WORD__Int;
+struct Token__WORD;
+
 struct Or__Token__WORD__Int {
 Variant<Token__WORD, Int> _value;
 };
@@ -7,6 +11,9 @@ struct Token__WORD {
 String value;
 Int n_indent;
 };
+
+
+Int _redirect_main(const Vector<String>& args);
 
 Int _redirect_main(const Vector<String>& args) {
 	Token__WORD w = Token__WORD{String{"hi"}, 0};

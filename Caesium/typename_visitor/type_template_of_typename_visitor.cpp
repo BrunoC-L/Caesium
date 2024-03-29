@@ -85,9 +85,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				structured_f->name = tmpl_name; // todo
 				state.state.named.functions[structured_f->name].push_back(structured_f);
 				state.state.traversed_functions.insert(*structured_f);
-				auto transpiled_or_e = transpile(state, *structured_f);
-				return_if_error(transpiled_or_e);
-				state.state.transpile_in_reverse_order.push_back(std::move(transpiled_or_e).value());
+				state.state.functions_to_transpile.insert(*structured_f);
 				return NodeStructs::MetaType{ NodeStructs::FunctionType{ *structured_f } };
 			}
 		}

@@ -73,8 +73,8 @@ bool test_transpile_error(const std::filesystem::path& folder) {
 		auto [header, cpp] = std::move(produced_file_or_error).value();
 
 		std::cout << folder_name << " transpiled: " << colored_text_from_bool(false) << "\n";
-		auto h_file = std::ofstream{ folder / "produced.hpp" };
-		h_file << header;
+		/*auto h_file = std::ofstream{ folder / "produced.hpp" };
+		h_file << header;*/
 		auto cpp_file = std::ofstream{ folder / "produced.cpp" };
 		cpp_file << cpp;
 		return false;
@@ -119,10 +119,10 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 	auto produced_file_or_error = transpile(vec);
 
 	if (produced_file_or_error.has_value()) {
-		auto header_opt = open_read(folder / "expected.hpp");
+		/*auto header_opt = open_read(folder / "expected.hpp");
 		if (!header_opt.has_value())
 			throw;
-		const auto& expected_header = header_opt.value();
+		const auto& expected_header = header_opt.value();*/
 
 		auto cpp_opt = open_read(folder / "expected.cpp");
 		if (!cpp_opt.has_value())
@@ -131,19 +131,19 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 
 		auto [header, cpp] = std::move(produced_file_or_error).value();
 
-		auto first_diff_header = first_diff(header, expected_header);
-		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;
+		/*auto first_diff_header = first_diff(header, expected_header);
+		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;*/
 
 		auto first_diff_cpp = first_diff(cpp, expected_cpp);
 		bool cpp_ok = cpp.size() == expected_cpp.size() && cpp.size() == first_diff_cpp;
 
-		bool ok = header_ok && cpp_ok;
+		bool ok = /*header_ok && */cpp_ok;
 		if (!ok) {
 			std::cout << folder_name << " transpiled: " << colored_text_from_bool(ok) << "\n";
-			if (!header_ok) {
+			/*if (!header_ok) {
 				auto h_file = std::ofstream{ folder / "produced.hpp" };
 				h_file << header;
-			}
+			}*/
 			if (!cpp_ok) {
 				auto cpp_file = std::ofstream{ folder / "produced.cpp" };
 				cpp_file << cpp;
@@ -162,13 +162,12 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 
 bool test_transpile_folder(const std::filesystem::path& folder) {
 	std::remove((folder / "produced_error.txt").string().c_str());
-	std::remove((folder / "produced.hpp").string().c_str());
 	std::remove((folder / "produced.cpp").string().c_str());
 
 	for (const auto& file : std::filesystem::directory_iterator{ folder })
 		if (file.path().filename() == "expected_error.txt")
 			return test_transpile_error(folder);
-		else if (file.path().filename() == "expected.hpp")
+		else if (file.path().filename() == "expected.cpp")
 			return test_transpile_no_error(folder);
 
 	std::cout << "Test folder missing caesium file: " << folder << "\n";

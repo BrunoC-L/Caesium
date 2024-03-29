@@ -1,8 +1,13 @@
-#include "expected.hpp"
-CatsAndDogs add(CatsAndDogs&& cats_and_dogs, Cat&& cat) {
-	push(cats_and_dogs.cats, std::move(cat));
-	return cats_and_dogs;
+#include "defaults.hpp"
+
+struct Cat;
+struct CatsAndDogs;
+struct Dog;
+
+struct Cat {
+String name;
 };
+
 struct CatsAndDogs {
 Vector<Cat> cats;
 Vector<Dog> dogs;
@@ -12,10 +17,14 @@ struct Dog {
 String name;
 };
 
-struct Cat {
-String name;
-};
 
+CatsAndDogs add(CatsAndDogs&& cats_and_dogs, Cat&& cat);
+Int _redirect_main(const Vector<String>& s);
+
+CatsAndDogs add(CatsAndDogs&& cats_and_dogs, Cat&& cat) {
+	push(cats_and_dogs.cats, std::move(cat));
+	return cats_and_dogs;
+};
 Int _redirect_main(const Vector<String>& s) {
 	CatsAndDogs a = CatsAndDogs{Vector<Cat>{}, Vector<Dog>{}};
 	CatsAndDogs b = add(std::move(a), Cat{String{"cat1"}});
