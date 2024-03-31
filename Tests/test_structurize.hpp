@@ -31,7 +31,7 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 		return false;
 	}
 	using DT = std::remove_cvref_t<decltype(expected)>;
-	DT structurized = [&](){
+	DT structurized = [&]() -> DT {
 			if constexpr (std::is_same_v<DT, NodeStructs::Expression>)
 				return getExpressionStruct(node);
 			else
@@ -120,6 +120,14 @@ bool test_structurize_equals() {
 				},
 				.arguments = { std::vector{ NodeStructs::FunctionArgument{ std::nullopt, { str_parse("\"C:/\"") } } } }
 			}
+		});
+
+	ok &= test_structurize_equals<Template>(__LINE__, 0, "template f<T>:\n\tInt f(Vector<`T`> ref vec):\n\t\treturn 0",
+		NodeStructs::Template{
+			.name = "f",
+			.name_space = std::nullopt,
+			.parameters = { { NodeStructs::TemplateParameter{ .name = "T" } } },
+			.templated = "\tInt f(Vector<`T`> ref vec):\n\t\treturn 0"
 		});
 	return ok;
 }

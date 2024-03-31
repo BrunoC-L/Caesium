@@ -40,6 +40,7 @@ struct Named {
 	map_to_vec<NodeStructs::Interface> interfaces;
 	map_to_vec<NodeStructs::Block> blocks;
 	map_to_vec<NodeStructs::Template> templates;
+	map_to_vec<NodeStructs::Builtin> builtins;
 	map_to_vec<NodeStructs::NameSpace> namespaces;
 	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
 };
@@ -71,7 +72,7 @@ struct transpilation_state {
 
 struct transpilation_state_with_indent {
 	transpilation_state& state;
-	size_t indent = 0;
+	size_t indent;
 
 	transpilation_state_with_indent indented() {
 		return { state, indent + 1 };
@@ -111,86 +112,6 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 		token
 	);
 }
-
-struct builtins {
-	NodeStructs::Type builtin_void = { "Void", std::nullopt };
-	NodeStructs::Type builtin_bool = { "Bool", std::nullopt };
-	NodeStructs::Type builtin_int = { "Int", std::nullopt };
-	NodeStructs::Type builtin_double = { "Floating", std::nullopt };
-	NodeStructs::Type builtin_string = { "String", std::nullopt };
-
-	NodeStructs::Template builtin_variant = { "Variant", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
-	NodeStructs::Template builtin_tuple = { "Tuple", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
-	NodeStructs::Template builtin_vector = { "Vector", std::nullopt, { NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" };
-	NodeStructs::Template builtin_set = { "Set", std::nullopt, { NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" };
-	NodeStructs::Template builtin_map = { "Map", std::nullopt, { NodeStructs::TemplateParameter{ "K" }, NodeStructs::TemplateParameter{ "V" } }, "BUILTIN" };
-
-	NodeStructs::Template builtin_push =
-		{ "push", std::nullopt, { NodeStructs::TemplateParameter{ "Cnt" }, NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" }; // vec
-	NodeStructs::Template builtin_insert =
-		{ "insert", std::nullopt, { NodeStructs::TemplateParameter{ "Cnt" }, NodeStructs::TemplateParameter{ "T" } }, "BUILTIN" }; // map or set
-
-	NodeStructs::Template builtin_print = { "print", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
-	NodeStructs::Template builtin_println = { "println", std::nullopt, { NodeStructs::VariadicTemplateParameter{ "Args" } }, "BUILTIN" };
-
-	NodeStructs::Typename filesystem = { NodeStructs::BaseTypename{ "filesystem" } };
-	NodeStructs::Type builtin_file = { "file", filesystem, {}, {} };
-	NodeStructs::Type builtin_directory = { "directory", filesystem, {}, {} };
-
-	NodeStructs::Function entries_dir = {
-		"entries",
-		filesystem,
-		NodeStructs::Typename{ NodeStructs::TemplatedTypename {
-			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
-			.templated_with = std::vector{
-				NodeStructs::Typename{ NodeStructs::UnionTypename{
-					std::vector<NodeStructs::Typename>{
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "file" } },
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "directory" } }
-					}
-				} }
-			}
-		} },
-		{
-			NodeStructs::FunctionParameter{
-				NodeStructs::Typename{ NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "directory" } } },
-				NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
-				std::string{ "dir" }
-			}
-		},
-		{}
-	};
-
-	NodeStructs::Function entries_str = {
-		"entries",
-		filesystem,
-		NodeStructs::Typename{ NodeStructs::TemplatedTypename {
-			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
-			.templated_with = std::vector{
-				NodeStructs::Typename{ NodeStructs::UnionTypename{
-					std::vector<NodeStructs::Typename>{
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "file" } },
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{ filesystem, "directory" } }
-					}
-				} }
-			}
-		} },
-		{
-			NodeStructs::FunctionParameter{
-				NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } },
-				NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
-				std::string{ "dir" }
-			}
-		},
-		{}
-	};
-	NodeStructs::NameSpace filesystem_ns = {
-		.name = "filesystem",
-		.name_space = std::nullopt,
-		.types = { builtin_file, builtin_directory },
-		.functions = { entries_dir, entries_str }
-	};
-};
 
 static std::string indent(size_t n) {
 	std::string res;

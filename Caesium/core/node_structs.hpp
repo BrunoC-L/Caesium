@@ -443,6 +443,11 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const Template&) const;
 	};
 
+	struct Builtin {
+		std::string name;
+		std::weak_ordering operator<=>(const Builtin&) const = default;
+	};
+
 	struct TemplateType {
 		std::string name;
 		std::vector<const Template*> options;
@@ -489,15 +494,6 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const MapType&) const = default;
 	};
 
-	/*struct BuiltInType {
-		struct push_t {
-			NodeStructs::VectorType container;
-			std::weak_ordering operator<=>(const push_t&) const;
-		};
-		std::variant<push_t> builtin;
-		std::weak_ordering operator<=>(const BuiltInType&) const;
-	};*/
-
 	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
 		std::variant<
@@ -519,13 +515,14 @@ struct NodeStructs {
 			NamespaceType, // ex. namespace std -> type(std)
 			UnionType, // ex. type A, type B -> type(A | B)
 			TemplateType, // ex. template X -> type(X)
+			Builtin,
 
 			Vector, // type(Vector)
-			VectorType, // type(Vector<Int>), note that type(Vector<Int>{}) yields a NonPrimitiveType{VectorType}
+			VectorType, // type(Vector<Int>), note that type(Vector<Int>{}) yields a ExpressionType{VectorType}
 			Set, // type(Set)
-			SetType, // type(Set<Int>), note that type(Set<Int>{}) yields a NonPrimitiveType{SetType}
+			SetType, // type(Set<Int>), note that type(Set<Int>{}) yields a ExpressionType{SetType}
 			Map, // type(Map)
-			MapType // type(Map<Int, Int>), note that type(Map<Int,Int>{}) yields a NonPrimitiveType{MapType}
+			MapType // type(Map<Int, Int>), note that type(Map<Int,Int>{}) yields a ExpressionType{MapType}
 		> type;
 		std::weak_ordering operator<=>(const MetaType& other) const;
 	};

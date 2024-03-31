@@ -65,6 +65,8 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 	std::stringstream ss;
 	ss << "Variant<";
 	auto ts = type.ors;
+	if (ts.size() == 0)
+		throw;
 	std::sort(ts.begin(), ts.end()); // todo unique
 	bool first = true;
 	for (const auto& t : ts) {

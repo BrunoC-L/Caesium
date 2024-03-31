@@ -9,6 +9,7 @@ enum TOKENS {
 	COLON,
 	NS,
 	BACKSLASH,
+	BACKTICK,
 	DOT,
 	DOTS,
 	COMMA,
@@ -278,8 +279,10 @@ private:
 				return { BACKSLASH, "\\" };
 
 				// string begin
-			case '\'':
 			case '`':
+				index += 1;
+				return { BACKTICK, "`" };
+			case '\'':
 			case '"':
 				return string_case(c, index);
 			case '{':

@@ -11,21 +11,21 @@ type IndentToken:
 	Int n_indent
 
 template Indent<T>:
-    type Indent : public T:
-        Indent(Int n_indent) : T(n_indent + 1) {}
+    type Indent : public `T`:
+        Indent(Int n_indent) : `T`(n_indent + 1) {}
 
 template Alloc<T>:
     type Alloc:
-        Box<T> value
+        Box<`T`> value
         Int n_indent
 
 template And<Ands...>:
     type And:
-        Tuple<Ands...> value
+        Tuple<`Ands...`> value
 
 template Or<Ors...>:
     type Or:
-        Variant<Ors...> _value
+        Variant<`Ors...`> _value
 
 type TemplateBody:
 	Int n_indent

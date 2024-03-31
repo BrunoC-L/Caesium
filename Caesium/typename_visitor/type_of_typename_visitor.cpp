@@ -42,6 +42,8 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		const auto& ns = *it->second.back();
 		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ ns } };
 	}
+	if (auto it = state.state.named.builtins.find(t.type); it != state.state.named.builtins.end())
+		return NodeStructs::MetaType{ NodeStructs::Builtin{ t.type } };
 	return error{ "user error" , "Missing type `" + t.type + "`"};
 }
 

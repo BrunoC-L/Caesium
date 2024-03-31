@@ -27,6 +27,10 @@ R T::operator()(const NodeStructs::NamespaceType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Builtin& t) {
+	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name } };
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	expected<std::vector<NodeStructs::Typename>> vec = vec_of_expected_to_expected_of_vec(t.arguments | LIFT_TRANSFORM(operator()) | to_vec());
 	return_if_error(vec);

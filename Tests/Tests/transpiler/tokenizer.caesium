@@ -1,15 +1,22 @@
-using TOKENVALUE = std::pair<TOKENS, String>
-using Iterator = std::vector<TOKENVALUE>::iterator
+import tokens
+
+template Pair<T, U>:
+    type Pair:
+        `T` first
+        `U` second
+
+using TOKENVALUE = Pair<TOKENS, String>
+using Iterator = Vector<TOKENVALUE>::iterator
 type tokens_and_iterator:
-	std::vector<TOKENVALUE> tokens
-	std::vector<TOKENVALUE>::iterator it
+	Vector<TOKENVALUE> tokens
+    Int it
 
 type Tokenizer:
 	String program
 	Int index
 
-std::vector<TOKENVALUE> read(Tokenizer ref! tk):
-	std::vector<TOKENVALUE> out = {}
+Vector<TOKENVALUE> read(Tokenizer ref! tk):
+	Vector<TOKENVALUE> out = {}
 	out.reserve(tk.program.size())
 	if tk.program.size() != 0:
 		while True:

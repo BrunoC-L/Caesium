@@ -4,7 +4,7 @@ type Cat:
 using Animal = Dog | Cat
 
 template f<T>:
-    Int f(Vector<T> ref vec):
+    Int f(Vector<`T`> ref vec):
         return 0
 
 Int main(Vector<String> ref s):

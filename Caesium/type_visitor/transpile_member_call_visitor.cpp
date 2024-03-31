@@ -92,6 +92,10 @@ R T::operator()(const NodeStructs::NamespaceType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Builtin& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
@@ -111,38 +115,46 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		throw;
 	const auto& operand_info_ok = std::get<non_type_information>(operand_info.value());
 
-	auto args_repr = transpile_args(state, arguments);
-	return_if_error(args_repr);
+	/*auto args_repr = transpile_args(state, arguments);
+	return_if_error(args_repr);*/
 
 	if (property_name == "push") {
-		if (arguments.size() == 0)
-			throw;
-		if (arguments.size() > 1)
+		if (arguments.size() != 1)
 			throw;
 
-		auto arg_t = transpile_expression(state, arguments.at(0).expr);
-		return_if_error(arg_t);
-		if (!std::holds_alternative<non_type_information>(arg_t.value()))
-			throw; // primitive is ok if it fits, ex: `1` can be pushed to std::vector<int>
-		const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
-
-		if (!is_assignable_to(state, t.value_type, arg_t_ok.type.type))
+		//todo check value cat
+		auto arg_info = transpile_expression(state, arguments.at(0).expr);
+		return_if_error(arg_info);
+		if (!std::holds_alternative<non_type_information>(arg_info.value()))
 			throw;
+		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
+		auto repr = transpile_arg(state, arguments.at(0));
+		return_if_error(repr);
+
+		//todo check conversion
+		if (!is_assignable_to(state, t.value_type.get(), arg_info_ok.type.type))
+			return error{
+				"user error",
+				"wrong type pushed to Vector<T>"
+			};
 		return expression_information{ non_type_information{
-			.type = *state.state.named.types.at("Void").back(),
-			.representation = "push(" + operand_info_ok.representation + ", " + args_repr.value() + ")",
-			.value_category = NodeStructs::Value{},
+			.type = t,
+			.representation = "push(" + operand_info_ok.representation + ", " + repr.value() + ")",
+			.value_category = NodeStructs::Value{}
 		} };
 	}
+
 	if (property_name == "size") {
 		if (arguments.size() != 0)
 			throw;
 		return expression_information{ non_type_information{
-			.type = *state.state.named.types.at("Int").back(),
+			.type = NodeStructs::ExpressionType{ *state.state.named.types.at("Int").back() },
 			.representation = operand_info_ok.representation + ".size()",
-			.value_category = NodeStructs::Value{},
+			.value_category = NodeStructs::Value{}
 		} };
 	}
+
+	throw;
 }
 
 R T::operator()(const NodeStructs::Set& t) {

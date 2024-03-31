@@ -163,6 +163,7 @@
     <ClCompile Include="type_visitor\type_of_resolution_operator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="core\builtins.hpp" />
     <ClInclude Include="core\default_includes.hpp" />
     <ClInclude Include="typename_visitor\typename_for_template_visitor.hpp" />
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />

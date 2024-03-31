@@ -146,6 +146,10 @@ std::variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithD
 	return std::visit(LIFT(getTemplateParameter), parameter.value());
 }
 
+NodeStructs::Template getStruct(const grammar::Template& t) {
+	return getStruct(t, std::nullopt);
+}
+
 NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeStructs::Typename> name_space) {
 	using parameters_t = CommaStar<parameter_t>;
 	return {

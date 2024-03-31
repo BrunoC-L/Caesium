@@ -17,7 +17,7 @@ Int main(Vector<String> ref args):
 		return bad_exit
 	println("All parse tests passed")
 
-	if !test_transpile_all_folders(filesystem::entries("C:/")):
+	if !test_transpile_all_folders(entries("C:/")):
 		return bad_exit
 	println("All transpile tests passed")
 

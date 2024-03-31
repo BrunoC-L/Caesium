@@ -57,6 +57,10 @@ R T::operator()(const NodeStructs::NamespaceType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Builtin& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }

@@ -24,28 +24,27 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 	std::vector<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = grammar::File(0);
-	{
-		bool nodeBuilt = build(file, g.it);
-		bool programReadEntirely = g.it == g.tokens.end();
-		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
-			programReadEntirely = ++g.it == g.tokens.end();
+	bool nodeBuilt = build(file, g.it);
+	bool programReadEntirely = g.it == g.tokens.end();
+	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
+		programReadEntirely = ++g.it == g.tokens.end();
 
-		if (!(nodeBuilt && programReadEntirely)) {
-			std::cout << folder_name
-				<< " built: " << colored_text_from_bool(nodeBuilt)
-				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
+	if (nodeBuilt && programReadEntirely)
+		return getStruct(file, filename);
+	else {
+		std::cout << folder_name
+			<< " built: " << colored_text_from_bool(nodeBuilt)
+			<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
-			std::cout << caesiumProgram << "\n\n";
-			auto it = g.tokens.begin();
-			while (it != g.it) {
-				std::cout << it->second << " ";
-				++it;
-			}
-			std::cout << "\n";
-			return std::nullopt;
+		std::cout << caesiumProgram << "\n\n";
+		auto it = g.tokens.begin();
+		while (it != g.it) {
+			std::cout << it->second << " ";
+			++it;
 		}
+		std::cout << "\n";
+		return std::nullopt;
 	}
-	return getStruct(file, filename);
 }
 
 bool test_transpile_error(const std::filesystem::path& folder) {

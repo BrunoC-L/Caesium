@@ -4,32 +4,48 @@
 #include <stacktrace>
 #include <numeric>
 
-#include "toCPP.hpp"
-
 #include "../utility/overload.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
+
+#include "toCPP.hpp"
+#include "builtins.hpp"
 #include "default_includes.hpp"
 
+static void add(Named& named, const NodeStructs::Template& tmpl) {
+	named.templates[tmpl.name].push_back(&tmpl);
+}
+
+static void add(Named& named, const NodeStructs::Builtin& b) {
+	named.builtins[b.name].push_back(&b);
+}
+
+static void add(Named& named, const NodeStructs::Type& t) {
+	named.types[t.name].push_back(&t);
+}
+
 static void add_builtins(Named& named, const builtins& _builtins) {
-	named.types["Int"].push_back(&_builtins.builtin_int);
-	named.types["Bool"].push_back(&_builtins.builtin_bool);
-	named.types["String"].push_back(&_builtins.builtin_string);
-	named.types["Floating"].push_back(&_builtins.builtin_double);
-	named.types["Void"].push_back(&_builtins.builtin_void);
+	add(named, _builtins.builtin_int);
+	add(named, _builtins.builtin_bool);
+	add(named, _builtins.builtin_string);
+	add(named, _builtins.builtin_double);
+	add(named, _builtins.builtin_void);
 
-	named.templates["Variant"].push_back(&_builtins.builtin_variant);
-	named.templates["Tuple"].push_back(&_builtins.builtin_tuple);
-	named.templates["Vector"].push_back(&_builtins.builtin_vector);
-	named.templates["Set"].push_back(&_builtins.builtin_set);
-	named.templates["Map"].push_back(&_builtins.builtin_map);
+	add(named, _builtins.builtin_variant);
 
-	named.templates["push"].push_back(&_builtins.builtin_push);
-	named.templates["insert"].push_back(&_builtins.builtin_insert);
+	add(named, _builtins.builtin_vector);
+	add(named, _builtins.builtin_set);
+	add(named, _builtins.builtin_map);
 
-	named.templates["print"].push_back(&_builtins.builtin_print);
-	named.templates["println"].push_back(&_builtins.builtin_println);
+	add(named, _builtins.builtin_push);
+	add(named, _builtins.builtin_insert);
 
-	named.namespaces["filesystem"].push_back(&_builtins.filesystem_ns);
+	add(named, _builtins.builtin_print);
+	add(named, _builtins.builtin_println);
+	add(named, _builtins.builtin_file);
+	add(named, _builtins.builtin_directory);
+
+	named.functions["entries"].push_back(&_builtins.entries_dir);
+	named.functions["entries"].push_back(&_builtins.entries_str);
 }
 
 static void traverse_builtins(transpilation_state& state, const builtins& _builtins) {
@@ -39,10 +55,8 @@ static void traverse_builtins(transpilation_state& state, const builtins& _built
 	state.traversed_types.insert(_builtins.builtin_double);
 	state.traversed_types.insert(_builtins.builtin_void);
 
-	state.traversed_functions.insert(_builtins.filesystem_ns.functions.at(0));
-	state.traversed_functions.insert(_builtins.filesystem_ns.functions.at(1));
-	state.traversed_types.insert(_builtins.filesystem_ns.types.at(0));
-	state.traversed_types.insert(_builtins.filesystem_ns.types.at(1));
+	state.traversed_functions.insert(_builtins.entries_dir);
+	state.traversed_functions.insert(_builtins.entries_str);
 }
 
 std::optional<error> insert_all_named_recursive_with_imports(
@@ -157,11 +171,9 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 						return opt_error.value();
 				}
 
-				for (const auto& file2 : project) {
-					Named& named_of_file = named_by_file[file2.filename];
+				for (const auto& file2 : project)
 					if (auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.filename); opt_e.has_value())
 						return opt_e.value();
-				}
 
 				for (const auto& [_, named] : named_by_file)
 					for (const auto& [_, templates] : named.templates)
@@ -174,38 +186,6 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 
 				transpile_header_cpp_t k = transpile_main({ state, 0 }, fn);
 				return_if_error(k);
-
-				/*std::stringstream h, cpp;
-				h << "#pragma once\n#include \"defaults.hpp\"\n\n" << k.value().first;
-				cpp << "#include \"expected.hpp\"\n";
-
-				auto reverse_iterator = state.transpile_in_reverse_order.rbegin();
-				for (; reverse_iterator != state.transpile_in_reverse_order.rend(); ++reverse_iterator) {
-					const auto& [_h, _cpp] = *reverse_iterator;
-					h << _h;
-					cpp << _cpp;
-				}
-				for (const auto& [interface, members] : state.interface_symbol_to_members) {
-					auto unindented = transpilation_state_with_indent{ state, 0 };
-					auto interface_repr = transpile_typename(unindented, interface);
-					return_if_error(interface_repr);
-					auto k = members | LIFT_TRANSFORM_X(T, typename_of_type(unindented, T)) | to_vec();
-					auto v = vec_of_expected_to_expected_of_vec(k);
-					return_if_error(v);
-					auto members_repr = transpile_typenames(unindented, v.value());
-					return_if_error(members_repr);
-					h << "using " << interface_repr.value() << " = Variant<" << members_repr.value() << ">;\n";
-				}
-				cpp << k.value().second
-					<< "\n"
-					"int main(int argc, char** argv) {\n"
-					"\tstd::vector<std::string> args {};\n"
-					"\tfor (int i = 0; i < argc; ++i)\n"
-					"\t\targs.push_back(std::string(argv[i]));\n"
-					"\treturn _redirect_main(args);\n"
-					"};\n";
-
-				return std::pair{ h.str(), cpp.str() };*/
 
 				std::stringstream cpp;
 				cpp <<  "#include \"defaults.hpp\"\n"
@@ -228,6 +208,8 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 						if (i.name_space.has_value())
 							throw;
 						const auto& members = state.interface_symbol_to_members[{NodeStructs::BaseTypename{ i.name }}];
+						if (members.size() == 0)
+							throw;
 						auto unindented = transpilation_state_with_indent{ state, 0 };
 						/*auto interface_repr = transpile_typename(unindented, NodeStructs::Typename{ NodeStructs::BaseTypename{ i.name } });
 						return_if_error(interface_repr);*/
@@ -346,7 +328,7 @@ transpile_header_cpp_t transpile(
 		cpp << "struct " << type.name << " {\n";
 	}
 
-	for (const auto& alias : type.aliases)
+	if (type.aliases.size() != 0)
 		throw;
 
 	for (const auto& member : type.member_variables) {
@@ -448,7 +430,7 @@ NodeStructs::MetaType iterator_type(
 		[&](const auto& x) -> NodeStructs::MetaType {
 			throw;
 		},
-		[&](const NodeStructs::VectorType& vt) ->NodeStructs::MetaType {
+		[&](const NodeStructs::VectorType& vt) -> NodeStructs::MetaType {
 			return vt.value_type.get();
 		}
 	), type.type);
@@ -511,6 +493,9 @@ std::vector<NodeStructs::MetaType> decompose_type(
 				throw;
 			},
 			[&](const NodeStructs::NamespaceType&) -> std::vector<NodeStructs::MetaType> {
+				throw;
+			},
+			[&](const NodeStructs::Builtin&) -> std::vector<NodeStructs::MetaType> {
 				throw;
 			},
 			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::MetaType> {
@@ -756,6 +741,8 @@ transpile_t transpile_expressions(transpilation_state_with_indent state, const s
 }
 
 transpile_t transpile_typenames(transpilation_state_with_indent state, const std::vector<NodeStructs::Typename>& args) {
+	if (args.size() == 0)
+		return "";
 	auto vec = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM_X(T, transpile_typename(state, T)) | to_vec());
 	return_if_error(vec);
 	return std::accumulate(

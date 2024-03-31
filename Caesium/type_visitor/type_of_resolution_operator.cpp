@@ -51,6 +51,10 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 	return error{ "user error" , "Missing type `" + accessed + "` in namespace `" + ns.name + "`" };
 }
 
+R T::operator()(const NodeStructs::Builtin& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }

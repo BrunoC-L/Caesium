@@ -7,46 +7,44 @@ using T = type_template_of_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
+	if (auto it = state.state.named.builtins.find(t.type); it != state.state.named.builtins.end()) {
+		if (t.type == "Vector") {
+			auto x = type_of_typename(state, templated_with.at(0));
+			return_if_error(x);
+			return NodeStructs::MetaType{ NodeStructs::VectorType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
+		}
+		if (t.type == "Set") {
+			auto x = type_of_typename(state, templated_with.at(0));
+			return_if_error(x);
+			return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
+		}
+		if (t.type == "Map") {
+			auto k = type_of_typename(state, templated_with.at(0));
+			return_if_error(k);
+			auto v = type_of_typename(state, templated_with.at(1));
+			return_if_error(v);
+			return NodeStructs::MetaType{ NodeStructs::MapType{
+				Box<NodeStructs::MetaType>{ std::move(k).value() },
+				Box<NodeStructs::MetaType>{ std::move(v).value() }
+			} };
+		}
+		if (t.type == "Variant") {
+			auto ts = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec());
+			return_if_error(ts);
+			return NodeStructs::MetaType{ NodeStructs::UnionType{
+				ts.value()
+			} };
+		}
+		throw;
+	}
 	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
 		const auto& templates = it->second;
-
-		if (templates.back()->templated == "BUILTIN") {
-			if (t.type == "Vector") {
-				auto x = type_of_typename(state, templated_with.at(0));
-				return_if_error(x);
-				return NodeStructs::MetaType{ NodeStructs::VectorType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
-			}
-			if (t.type == "Set") {
-				auto x = type_of_typename(state, templated_with.at(0));
-				return_if_error(x);
-				return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
-			}
-			if (t.type == "Map") {
-				auto k = type_of_typename(state, templated_with.at(0));
-				return_if_error(k);
-				auto v = type_of_typename(state, templated_with.at(1));
-				return_if_error(v);
-				return NodeStructs::MetaType{ NodeStructs::MapType{
-					Box<NodeStructs::MetaType>{ std::move(k).value() },
-					Box<NodeStructs::MetaType>{ std::move(v).value() }
-				} };
-			}
-			if (t.type == "Variant") {
-				auto ts = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec());
-				return_if_error(ts);
-				return NodeStructs::MetaType{ NodeStructs::UnionType{
-					ts.value()
-				} };
-			}
-			throw;
-		}
 
 		// todo check if already traversed
 		auto t = find_best_template(templates, templated_with);
 		return_if_error(t);
 		const auto& tmpl = t.value().tmpl.get();
 		const auto& arg_placements = t.value().arg_placements;
-		std::string replaced = tmpl.templated;
 		auto grab_nth_with_commas = [&](size_t i) {
 			std::stringstream ss;
 			bool has_previous = false;
@@ -66,12 +64,13 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		std::string tmpl_name = template_name(it->first, args);
 		// todo check if exists
 
+		std::string replaced = tmpl.templated;
 		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
 			replaced = replace_all(
 				std::move(replaced),
 				std::visit(overload(
-					[](const auto& e) { return e.name; },
-					[](const NodeStructs::VariadicTemplateParameter& e) { return e.name + "..."; }
+					[](const auto& e) { return "`" + e.name + "`"; },
+					[](const NodeStructs::VariadicTemplateParameter& e) { return "`" + e.name + "...`"; }
 				), tmpl.parameters.at(i)),
 				grab_nth_with_commas(i)
 			);
@@ -107,13 +106,6 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				return NodeStructs::MetaType{ *structured_t };
 			}
 		}
-		{
-			And<IndentToken, grammar::Type> t{ 1 };
-			auto tokens = Tokenizer(replaced).read();
-			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (build(t, g.it))
-				throw;
-		}
 		return error{
 			"user error",
 			"Template expansion does not result in a type or function: |begin|\n" + replaced + "\n|end|"
@@ -131,8 +123,8 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
-	const auto& templated = operator()(t.type);
 	throw;
+	//const auto& templated = operator()(t.type);
 	/*return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstanceType{
 		::template_type_of_typename_visitor{ {}, state }(type.type),
 		type.templated_with

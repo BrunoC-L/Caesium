@@ -29,6 +29,10 @@ R T::operator()(const NodeStructs::NamespaceType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Builtin& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	for (const auto& union_type : t.arguments)
 		if (auto optional_error = operator()(union_type); optional_error.has_value())

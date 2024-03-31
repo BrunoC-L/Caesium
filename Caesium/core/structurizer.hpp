@@ -13,6 +13,8 @@ NodeStructs::ParameterCategory getStruct(const grammar::ParameterCategory& vc);
 
 NodeStructs::Function getStruct(const grammar::Function& f, std::optional<NodeStructs::Typename> name_space);
 
+NodeStructs::Template getStruct(const grammar::Template& t);
+
 NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeStructs::Typename> name_space);
 
 NodeStructs::MemberVariable getStruct(const grammar::MemberVariable& f);

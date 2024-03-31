@@ -3,28 +3,28 @@
 
 
 Bool test_parse();
-Bool test_transpile_all_folders(const Vector<Variant<filesystem__directory, filesystem__file>>& folders);
-Bool test_transpile_folder(const filesystem__directory& dir);
+Bool test_transpile_all_folders(const Vector<Variant<directory, file>>& folders);
+Bool test_transpile_folder(const directory& dir);
 Int _redirect_main(const Vector<String>& args);
 
 Bool test_parse() {
 	return False;
 };
-Bool test_transpile_all_folders(const Vector<Variant<filesystem__directory, filesystem__file>>& folders) {
+Bool test_transpile_all_folders(const Vector<Variant<directory, file>>& folders) {
 	for (auto&& dir : folders) {
-		const Variant<filesystem__directory, filesystem__file>& matchval1 = dir;
-		if (std::holds_alternative<filesystem__directory>(matchval1)) {
-			const filesystem__directory& d = std::get<filesystem__directory>(matchval1);
+		const Variant<directory, file>& matchval1 = dir;
+		if (std::holds_alternative<directory>(matchval1)) {
+			const directory& d = std::get<directory>(matchval1);
 			return test_transpile_folder(d);
 		} else
-		if (std::holds_alternative<filesystem__file>(matchval1)) {
-			const filesystem__file& f = std::get<filesystem__file>(matchval1);
+		if (std::holds_alternative<file>(matchval1)) {
+			const file& f = std::get<file>(matchval1);
 		} else
 			throw;
 	}
 	return True;
 };
-Bool test_transpile_folder(const filesystem__directory& dir) {
+Bool test_transpile_folder(const directory& dir) {
 	return False;
 };
 Int _redirect_main(const Vector<String>& args) {
@@ -42,7 +42,7 @@ Int _redirect_main(const Vector<String>& args) {
 		return bad_exit;
 	}
 	(Void)(std::cout << String("\"") + String{"All parse tests passed"} + String("\"") << "\n");
-	if (!test_transpile_all_folders(filesystem__entries(String{"C:/"}))) {
+	if (!test_transpile_all_folders(entries(String{"C:/"}))) {
 		return bad_exit;
 	}
 	(Void)(std::cout << String("\"") + String{"All transpile tests passed"} + String("\"") << "\n");

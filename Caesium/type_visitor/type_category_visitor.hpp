@@ -25,6 +25,7 @@ struct TypeCategoryVisitor {
 	R operator()(const NodeStructs::FunctionType& t);\
 	R operator()(const NodeStructs::InterfaceType& t);\
 	R operator()(const NodeStructs::NamespaceType& t);\
+	R operator()(const NodeStructs::Builtin& t);\
 	R operator()(const NodeStructs::UnionType& t);\
 	R operator()(const NodeStructs::TemplateType& t);\
 \

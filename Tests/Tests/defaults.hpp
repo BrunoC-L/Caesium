@@ -27,7 +27,7 @@ static constexpr bool True = true;
 static constexpr bool False = false;
 template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
 template <typename T>
-Void push(Vector<T>& vec, auto e) { vec.push_back(std::move(e)); }
+Vector<T>& push(Vector<T>& vec, auto e) { vec.push_back(std::move(e)); return vec; }
 
 constexpr int size(const std::string& str) {
 	return (int)str.size();
