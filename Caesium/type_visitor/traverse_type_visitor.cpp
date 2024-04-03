@@ -44,6 +44,10 @@ R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Enum& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::Vector& t) {
 	throw;
 }

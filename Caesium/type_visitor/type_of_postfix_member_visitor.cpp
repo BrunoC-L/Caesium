@@ -11,8 +11,8 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
 		); it != t.get().member_variables.end())
 		return type_of_typename(state, it->type)
 			.transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
-	else if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
-		const auto& fn = *it->second.back();
+	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
+		const auto& fn = it->second.back();
 		throw;
 	}
 	else
@@ -28,7 +28,7 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 //		throw;
 //	if (t.arguments.size() == 1)
 //		return operator()(t.arguments.at(0).second);
-//	if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
+//	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 //		throw;
 //	}
 //}
@@ -66,6 +66,10 @@ R T::operator()(const NodeStructs::UnionType& t) {
 }
 
 R T::operator()(const NodeStructs::TemplateType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Enum& tmpl) {
 	throw;
 }
 

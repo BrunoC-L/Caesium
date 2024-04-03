@@ -19,7 +19,7 @@ NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeSt
 
 NodeStructs::MemberVariable getStruct(const grammar::MemberVariable& f);
 
-NodeStructs::Alias getStruct(const grammar::Alias& f);
+NodeStructs::Alias getStruct(const grammar::Alias& f, std::optional<NodeStructs::Typename> name_space);
 
 NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::Typename> name_space);
 

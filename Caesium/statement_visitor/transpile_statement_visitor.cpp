@@ -228,8 +228,8 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 
 R T::operator()(const NodeStructs::BlockStatement& statement) {
 	auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value).type;
-	if (state.state.named.blocks.contains(s)) {
-		const NodeStructs::Block& block = *state.state.named.blocks.at(s).back();
+	if (state.state.global_namespace.blocks.contains(s)) {
+		const NodeStructs::Block& block = state.state.global_namespace.blocks.at(s).back();
 		std::stringstream ss;
 		for (const auto& statement_in_block : block.statements)
 			ss << operator()(statement_in_block).value();

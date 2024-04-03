@@ -1,6 +1,10 @@
 import grammar
 import tokenizer
 
+template build<T>:
+    Bool build(auto ref it):
+        return True
+
 Int main(Vector<String> ref args):
 	auto w = Word{0, "hi"}
 	auto t1 = Or<Word, Int>{ Word{ "t1", 1 } }
@@ -8,5 +12,5 @@ Int main(Vector<String> ref args):
 	auto program = "Int f():\n\treturn 0\n\nInt main(Vector<String> ref args):\n\treturn f()\n"
 	auto tokens = Tokenizer{ program, 0 }.read()
 	tokens_and_iterator g = { tokens, 0 }
-	println(build(ref file, ref g.it))
+	println(build<File>(ref g.it))
 	return 0

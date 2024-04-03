@@ -4,25 +4,26 @@ using T = type_of_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
-	if (auto it = state.state.named.types.find(t.type); it != state.state.named.types.end()) {
-		const auto& type = *it->second.back();
+	if (auto it = state.state.global_namespace.types.find(t.type); it != state.state.global_namespace.types.end()) {
+		const auto& types = it->second;
+		if (types.size() != 1)
+			throw;
+		const auto& type = types.at(0);
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
 			return opt_e.value();
 		return NodeStructs::MetaType{ NodeStructs::MetaType{ type } };
 	}
-	if (auto it = state.state.named.functions.find(t.type); it != state.state.named.functions.end()) {
-		const auto& f = *it->second.back();
-		return NodeStructs::MetaType{ NodeStructs::FunctionType{ f } };
+	bool has_f = state.state.global_namespace.functions.find(t.type) != state.state.global_namespace.functions.end();
+	bool has_f_using_auto = state.state.global_namespace.functions_using_auto.find(t.type) != state.state.global_namespace.functions_using_auto.end();
+	if (has_f || has_f_using_auto)
+		return NodeStructs::MetaType{ NodeStructs::FunctionType{
+			t.type, state.state.global_namespace
+		} };
+	if (auto it = state.state.global_namespace.templates.find(t.type); it != state.state.global_namespace.templates.end()) {
+		return NodeStructs::MetaType{ NodeStructs::TemplateType{ t.type, state.state.global_namespace } };
 	}
-	if (auto it = state.state.named.functions_using_auto.find(t.type); it != state.state.named.functions_using_auto.end()) {
-		const auto& f = *it->second.back();
-		return NodeStructs::MetaType{ NodeStructs::FunctionType{ f } };
-	}
-	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
-		return NodeStructs::MetaType{ NodeStructs::TemplateType{ t.type, it->second } };
-	}
-	if (auto it = state.state.named.type_aliases_typenames.find(t.type); it != state.state.named.type_aliases_typenames.end()) {
+	if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->second;
 		auto type = type_of_typename(state, type_name);
 		return_if_error(type);
@@ -30,20 +31,28 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			return err.value();
 		return type.value();
 	}
-	if (auto it = state.state.named.interfaces.find(t.type); it != state.state.named.interfaces.end()) {
-		const auto& interface = *it->second.back();
+	if (auto it = state.state.global_namespace.interfaces.find(t.type); it != state.state.global_namespace.interfaces.end()) {
+		const auto& interfaces = it->second;
+		if (interfaces.size() != 1)
+			throw;
+		const auto& interface = interfaces.at(0);
 		if (!state.state.traversed_interfaces.contains(interface)) {
 			state.state.traversed_interfaces.insert(interface);
 			state.state.interfaces_to_transpile.insert(interface);
 		}
 		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
 	}
-	if (auto it = state.state.named.namespaces.find(t.type); it != state.state.named.namespaces.end()) {
-		const auto& ns = *it->second.back();
-		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ ns } };
-	}
-	if (auto it = state.state.named.builtins.find(t.type); it != state.state.named.builtins.end())
+	if (auto it = state.state.global_namespace.namespaces.find(t.type); it != state.state.global_namespace.namespaces.end())
+		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ it->second } };
+	if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end())
 		return NodeStructs::MetaType{ NodeStructs::Builtin{ t.type } };
+	if (auto it = state.state.global_namespace.enums.find(t.type); it != state.state.global_namespace.enums.end()) {
+		const auto& enums = it->second;
+		if (enums.size() != 1)
+			throw;
+		const auto& enum_ = enums.at(0);
+		return NodeStructs::MetaType{ enum_ };
+	}
 	return error{ "user error" , "Missing type `" + t.type + "`"};
 }
 

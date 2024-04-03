@@ -9,6 +9,8 @@
 #include "../utility/box.hpp"
 #include "../utility/overload.hpp"
 
+struct Namespace;
+
 struct NodeStructs {
 	struct TemplatedTypename;
 	struct NamespacedTypename;
@@ -46,7 +48,8 @@ struct NodeStructs {
 	struct Alias {
 		std::string aliasFrom;
 		Typename aliasTo;
-		std::weak_ordering operator<=>(const Alias&) const = default;
+		std::optional<Typename> name_space;
+		std::weak_ordering operator<=>(const Alias&) const;
 	};
 
 	struct Statement;
@@ -403,20 +406,20 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const Interface&) const;
 	};
 
-	struct FunctionType {
-		std::reference_wrapper<const Function> function;
-		std::weak_ordering operator<=>(const FunctionType&) const;
-	};
-
 	struct InterfaceType {
 		std::reference_wrapper<const Interface> interface;
 		std::weak_ordering operator<=>(const InterfaceType&) const;
 	};
 
-	struct NameSpace;
 	struct NamespaceType {
-		std::reference_wrapper<const NameSpace> name_space;
+		std::reference_wrapper<const Namespace> name_space;
 		std::weak_ordering operator<=>(const NamespaceType&) const;
+	};
+
+	struct FunctionType {
+		std::string name;
+		std::reference_wrapper<const Namespace> name_space;
+		std::weak_ordering operator<=>(const FunctionType&) const;
 	};
 
 	struct TemplateParameter {
@@ -450,8 +453,8 @@ struct NodeStructs {
 
 	struct TemplateType {
 		std::string name;
-		std::vector<const Template*> options;
-		std::weak_ordering operator<=>(const TemplateType&) const = default;
+		std::reference_wrapper<const Namespace> name_space;
+		std::weak_ordering operator<=>(const TemplateType&) const;
 	};
 
 	struct MetaType;
@@ -505,6 +508,13 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const PrimitiveType&) const;
 	};
 
+	struct Enum {
+		std::string name;
+		std::vector<std::string> values;
+		std::optional<Typename> name_space;
+		std::weak_ordering operator<=>(const Enum&) const;
+	};
+
 	struct MetaType {
 		std::variant<
 			PrimitiveType, // ex. type(1)
@@ -516,6 +526,7 @@ struct NodeStructs {
 			UnionType, // ex. type A, type B -> type(A | B)
 			TemplateType, // ex. template X -> type(X)
 			Builtin,
+			Enum,
 
 			Vector, // type(Vector)
 			VectorType, // type(Vector<Int>), note that type(Vector<Int>{}) yields a ExpressionType{VectorType}
@@ -531,8 +542,9 @@ struct NodeStructs {
 		MetaType type;
 		std::weak_ordering operator<=>(const ExpressionType&) const = default;
 	};
-	using ValueType = std::variant<PrimitiveType, ExpressionType>;
-	using UniversalType = std::variant<PrimitiveType, ExpressionType, MetaType>;
+
+	//using ValueType = std::variant<PrimitiveType, ExpressionType>;
+	//using UniversalType = std::variant<PrimitiveType, ExpressionType, MetaType>;
 
 	struct Block {
 		std::string name;
@@ -543,26 +555,27 @@ struct NodeStructs {
 	struct NameSpace {
 		std::string name;
 		std::optional<Typename> name_space;
-		std::vector<Type> types;
+
 		std::vector<Function> functions;
+		std::vector<Function> functions_using_auto;
+
+		std::vector<Type> types;
 		std::vector<Interface> interfaces;
+
 		std::vector<Template> templates;
+
 		std::vector<Block> blocks;
 		std::vector<Alias> aliases;
+		std::vector<Enum> enums;
+
 		std::vector<NameSpace> namespaces;
+
 		std::weak_ordering operator<=>(const NameSpace&) const;
 	};
 
 	struct File {
-		std::string filename;
 		std::vector<Import> imports;
-		std::vector<Type> types;
-		std::vector<Function> functions;
-		std::vector<Interface> interfaces;
-		std::vector<Template> templates;
-		std::vector<Block> blocks;
-		std::vector<Alias> aliases;
-		std::vector<NameSpace> namespaces;
+		NameSpace content;
 		std::weak_ordering operator<=>(const File&) const = default;
 	};
 };
@@ -574,7 +587,7 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 			return size_cmp;
 
 		for (size_t i = 0; i < a.size(); ++i)
-			if (auto v = cmp(a.at(i), b.at(i)); v != 0)
+			if (auto v = cmp(a.at(i), b.at(i)); v != std::weak_ordering::equivalent)
 				return v;
 
 		return std::weak_ordering::equivalent;
@@ -594,7 +607,12 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 		);
 	}
 	else if constexpr (is_specialization<T, std::reference_wrapper>::value) {
-		return cmp(a.get(), b.get());
+		if constexpr (std::is_same_v<T, std::reference_wrapper<const Namespace>>) {
+			return &a.get() <=> &b.get();
+		}
+		else {
+			return cmp(a.get(), b.get());
+		}
 	}
 	else if constexpr (std::is_same_v<T, std::string>)
 		return a <=> b;
@@ -620,9 +638,9 @@ inline std::weak_ordering NodeStructs::Expression::operator<=>(const NodeStructs
 }
 
 inline std::weak_ordering NodeStructs::IfStatement::operator<=>(const NodeStructs::IfStatement& other) const {
-	if (auto c = cmp(ifStatements, other.ifStatements); c != 0)
+	if (auto c = cmp(ifStatements, other.ifStatements); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
+	if (auto c = cmp(ifExpr, other.ifExpr); c != std::weak_ordering::equivalent)
 		return c;
 	return cmp(elseExprStatements, other.elseExprStatements);
 }
@@ -636,13 +654,13 @@ inline std::weak_ordering NodeStructs::BreakStatement::operator<=>(const NodeStr
 }
 
 inline std::weak_ordering NodeStructs::ReturnStatement::operator<=>(const NodeStructs::ReturnStatement& other) const {
-	if (auto c = cmp(ifExpr, other.ifExpr); c != 0)
+	if (auto c = cmp(ifExpr, other.ifExpr); c != std::weak_ordering::equivalent)
 		return c;
 	return cmp(returnExpr, other.returnExpr);
 }
 
 inline std::weak_ordering NodeStructs::UnaryExpression::operator<=>(const NodeStructs::UnaryExpression& other) const {
-	if (auto c = cmp(expr, other.expr); c != 0)
+	if (auto c = cmp(expr, other.expr); c != std::weak_ordering::equivalent)
 		return c;
 	return cmp(unary_operators, other.unary_operators);
 }
@@ -655,76 +673,68 @@ inline std::weak_ordering NodeStructs::MetaType::operator<=>(const NodeStructs::
 	return cmp(type, other.type);
 }
 
-//inline std::weak_ordering NodeStructs::TypeType::operator<=>(const TypeType& other) const {
-//	return cmp(type.get(), other.type.get());
-//}
-
-inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionType& other) const {
-	return cmp(function.get(), other.function.get());
-}
-
 inline std::weak_ordering NodeStructs::InterfaceType::operator<=>(const InterfaceType& other) const {
 	return cmp(interface.get(), other.interface.get());
 }
 
 inline std::weak_ordering NodeStructs::NamespaceType::operator<=>(const NamespaceType& other) const {
-	return cmp(name_space.get(), other.name_space.get());
+	return &name_space.get() <=> &other.name_space.get();
 }
 
 inline std::weak_ordering NodeStructs::NameSpace::operator<=>(const NameSpace& other) const {
-	if (auto c = cmp(name, other.name); c != 0)
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(name_space, other.name_space); c != 0)
+	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
 		return c;
 	return std::weak_ordering::equivalent;
 }
 
 inline std::weak_ordering NodeStructs::Type::operator<=>(const Type& other) const {
-	if (auto c = cmp(name, other.name); c != 0)
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(name_space, other.name_space); c != 0)
+	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(aliases, other.aliases); c != 0)
+	if (auto c = cmp(aliases, other.aliases); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(member_variables, other.member_variables); c != 0)
+	if (auto c = cmp(member_variables, other.member_variables); c != std::weak_ordering::equivalent)
 		return c;
 	return std::weak_ordering::equivalent;
 }
 
 inline std::weak_ordering NodeStructs::Function::operator<=>(const Function& other) const {
-	if (auto c = cmp(name, other.name); c != 0)
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(name_space, other.name_space); c != 0)
+	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(parameters, other.parameters); c != 0)
+	if (auto c = cmp(parameters, other.parameters); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(returnType, other.returnType); c != 0)
+	if (auto c = cmp(returnType, other.returnType); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(statements, other.statements); c != 0)
+	if (auto c = cmp(statements, other.statements); c != std::weak_ordering::equivalent)
 		return c;
 	return std::weak_ordering::equivalent;
 }
 
 inline std::weak_ordering NodeStructs::Interface::operator<=>(const Interface& other) const {
-	if (auto c = cmp(name, other.name); c != 0)
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(name_space, other.name_space); c != 0)
+	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(aliases, other.aliases); c != 0)
+	if (auto c = cmp(aliases, other.aliases); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(member_variables, other.member_variables); c != 0)
+	if (auto c = cmp(member_variables, other.member_variables); c != std::weak_ordering::equivalent)
 		return c;
 	return std::weak_ordering::equivalent;
 }
 
 inline std::weak_ordering NodeStructs::Template::operator<=>(const Template& other) const {
-	if (auto c = cmp(name, other.name); c != 0)
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(name_space, other.name_space); c != 0)
+	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(parameters, other.parameters); c != 0)
+	if (auto c = cmp(parameters, other.parameters); c != std::weak_ordering::equivalent)
 		return c;
-	if (auto c = cmp(templated, other.templated); c != 0)
+	if (auto c = cmp(templated, other.templated); c != std::weak_ordering::equivalent)
 		return c;
 	return std::weak_ordering::equivalent;
 }
@@ -734,7 +744,39 @@ inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const Primitiv
 }
 
 inline std::weak_ordering NodeStructs::TemplateParameterWithDefaultValue::operator<=>(const TemplateParameterWithDefaultValue& other) const {
-	if (auto c = cmp(name, other.name); c != 0)
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
 		return c;
 	return cmp(value, other.value);
+}
+
+inline std::weak_ordering NodeStructs::Enum::operator<=>(const Enum& other) const {
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(values, other.values); c != std::weak_ordering::equivalent)
+		return c;
+	return std::weak_ordering::equivalent;
+}
+
+inline std::weak_ordering NodeStructs::Alias::operator<=>(const Alias& other) const {
+	if (auto c = cmp(aliasFrom, other.aliasFrom); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(aliasTo, other.aliasTo); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
+		return c;
+	return std::weak_ordering::equivalent;
+}
+
+inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionType& other) const {
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
+		return c;
+	return cmp(name_space, other.name_space);
+}
+
+inline std::weak_ordering NodeStructs::TemplateType::operator<=>(const TemplateType& other) const {
+	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
+		return c;
+	return cmp(name_space, other.name_space);
 }

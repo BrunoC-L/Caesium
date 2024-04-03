@@ -17,8 +17,8 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 		return_if_error(expect_error);
 		throw;
 	}
-	else if (auto it = state.state.named.functions.find(property_name); it != state.state.named.functions.end()) {
-		const auto& fn = *it->second.back();
+	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
+		const auto& fn = it->second.back();
 		if (!state.state.traversed_functions.contains(fn)) {
 			state.state.traversed_functions.insert(fn);
 			state.state.functions_to_transpile.insert(fn);
@@ -28,7 +28,7 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 		auto first_param = type_of_typename(state, fn.parameters.at(0).typename_);
 		return_if_error(first_param);
 		if (!is_assignable_to(state, first_param.value(), { t }))
-			return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n"};
+			return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n" };
 
 		if (arguments.size() + 1 != fn.parameters.size())
 			throw;
@@ -64,11 +64,16 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t_) {
 			.value_category = NodeStructs::Value{},
 		} };
 	}
-	else if (auto it = state.state.named.functions_using_auto.find(property_name); it != state.state.named.functions_using_auto.end()) {
-		auto fn = realise_function_using_auto(state, *it->second.back()/*, t*/, arguments);
+	else if (auto it = state.state.global_namespace.functions_using_auto.find(property_name); it != state.state.global_namespace.functions_using_auto.end()) {
+		auto fn = realise_function_using_auto(state, it->second.back(), arguments);
 		return_if_error(fn);
-		auto& vec = state.state.named.functions[fn.value().name];
-		vec.push_back(new NodeStructs::Function(std::move(fn).value()));
+		auto& vec = state.state.global_namespace.functions[fn.value().name];
+		bool found = false;
+		for (const auto& f : vec)
+			if (f <=> fn.value() == std::weak_ordering::equivalent)
+				found = true;
+		if (!found)
+			vec.push_back(std::move(fn).value());
 		return operator()(t);
 	}
 	else
@@ -104,6 +109,10 @@ R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::Enum& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::Vector& t) {
 	throw;
 }
@@ -136,7 +145,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 			return error{
 				"user error",
 				"wrong type pushed to Vector<T>"
-			};
+		};
 		return expression_information{ non_type_information{
 			.type = t,
 			.representation = "push(" + operand_info_ok.representation + ", " + repr.value() + ")",
@@ -148,8 +157,34 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		if (arguments.size() != 0)
 			throw;
 		return expression_information{ non_type_information{
-			.type = NodeStructs::ExpressionType{ *state.state.named.types.at("Int").back() },
+			.type = NodeStructs::ExpressionType{ state.state.global_namespace.types.at("Int").back() },
 			.representation = operand_info_ok.representation + ".size()",
+			.value_category = NodeStructs::Value{}
+		} };
+	}
+
+	if (property_name == "reserve") {
+		if (arguments.size() != 1)
+			throw;
+
+		//todo check value cat
+		auto arg_info = transpile_expression(state, arguments.at(0).expr);
+		return_if_error(arg_info);
+		if (!std::holds_alternative<non_type_information>(arg_info.value()))
+			throw;
+		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
+		auto repr = transpile_arg(state, arguments.at(0));
+		return_if_error(repr);
+
+		//todo check conversion
+		if (t.value_type.get() <=> NodeStructs::MetaType{ state.state.global_namespace.types.at("Int").back() } != std::weak_ordering::equivalent)
+			return error{
+				"user error",
+				"wrong type for vector reserve"
+		};
+		return expression_information{ non_type_information{
+			.type = NodeStructs::ExpressionType{ state.state.global_namespace.types.at("Void").back() },
+			.representation = operand_info_ok.representation + ".reserve(" + repr.value() + ")",
 			.value_category = NodeStructs::Value{}
 		} };
 	}

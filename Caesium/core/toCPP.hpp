@@ -31,32 +31,38 @@ using expression_information = std::variant<type_information, non_type_informati
 using transpile_t = expected<std::string>;
 using transpile_t2 = expected<expression_information>;
 
-struct Named {
-	template <typename T> using map_to_vec = std::map<std::string, std::vector<T const*>>;
+struct Namespace {
+	std::string name;
+
+	template <typename T> using map_to_vec = std::map<std::string, std::vector<T>>;
 
 	map_to_vec<NodeStructs::Function> functions;
 	map_to_vec<NodeStructs::Function> functions_using_auto;
+
 	map_to_vec<NodeStructs::Type> types;
 	map_to_vec<NodeStructs::Interface> interfaces;
-	map_to_vec<NodeStructs::Block> blocks;
+
 	map_to_vec<NodeStructs::Template> templates;
+
+	map_to_vec<NodeStructs::Block> blocks;
+	std::map<std::string, NodeStructs::Typename> aliases;
+	map_to_vec<NodeStructs::Enum> enums;
+
+	std::map<std::string, Namespace> namespaces;
 	map_to_vec<NodeStructs::Builtin> builtins;
-	map_to_vec<NodeStructs::NameSpace> namespaces;
-	std::map<std::string, NodeStructs::Typename> type_aliases_typenames;
 };
 
 struct transpilation_state {
 	variables_t variables;
-	Named named;
-	//std::vector<std::pair<std::string, std::string>> transpile_in_reverse_order;
+	Namespace global_namespace;
 	unsigned current_variable_unique_id = 1;
 
 	transpilation_state(const transpilation_state& other) = delete;
 	transpilation_state(transpilation_state&& other) = delete;
 	transpilation_state(
 		variables_t&& variables,
-		Named&& named
-	) : variables(std::move(variables)), named(std::move(named)) {}
+		Namespace&& global_namespace
+	) : variables(std::move(variables)), global_namespace(std::move(global_namespace)) {}
 
 	// shouldnt those be pointers...?
 	std::set<NodeStructs::Function> traversed_functions;
@@ -138,7 +144,7 @@ static NodeStructs::ValueCategory argument_category_to_value_category(const Node
 	), cat);
 }
 
-std::optional<error> validate_templates(const std::vector<const NodeStructs::Template*>& templates);
+std::optional<error> validate_templates(const std::vector<NodeStructs::Template>& templates);
 
 static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory> cat) {
 	if (cat.has_value())
@@ -293,11 +299,18 @@ struct Arrangement {
 };
 
 expected<Arrangement> find_best_template(
-	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Template>& templates,
 	const std::vector<NodeStructs::Expression>& args
 );
 
 expected<Arrangement> find_best_template(
-	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Template>& templates,
 	const std::vector<NodeStructs::Typename>& args
+);
+
+expected<const NodeStructs::Function*> find_best_function(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const Namespace& space
 );

@@ -63,7 +63,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 		ss << " || " << or_expr_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = *state.state.named.types.at("Bool").back(),
+		.type = state.state.global_namespace.types.at("Bool").back(),
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -86,7 +86,7 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 		ss << " || " << and_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = *state.state.named.types.at("Bool").back(),
+		.type = state.state.global_namespace.types.at("Bool").back(),
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -111,7 +111,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 			throw;
 	}
 	return expression_information{ non_type_information{
-		.type = *state.state.named.types.at("Bool").back(),
+		.type = state.state.global_namespace.types.at("Bool").back(),
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -134,7 +134,7 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 		ss << " " << symbol_variant_as_text(op) << " " << cmp_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = *state.state.named.types.at("Bool").back(),
+		.type = state.state.global_namespace.types.at("Bool").back(),
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -157,7 +157,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 			throw;
 	}
 	return expression_information{ non_type_information{
-		.type = *state.state.named.types.at("Int").back(),
+		.type = state.state.global_namespace.types.at("Int").back(),
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -180,7 +180,7 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 			throw;
 	}
 	return expression_information{ non_type_information{
-		.type = *state.state.named.types.at("Int").back(),
+		.type = state.state.global_namespace.types.at("Int").back(),
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -197,7 +197,7 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
 	ss << base_ok.representation;
 	return expression_information{ non_type_information{
-		.type = *state.state.named.types.at("Int").back(),
+		.type = state.state.global_namespace.types.at("Int").back(),
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -206,12 +206,17 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 R T::operator()(const NodeStructs::CallExpression& expr) {
 	if (std::holds_alternative<std::string>(expr.operand.expression.get())) {
 		const std::string& operand = std::get<std::string>(expr.operand.expression.get());
-		if (auto it = state.state.named.functions_using_auto.find(operand); it != state.state.named.functions_using_auto.end()) {
+		if (auto it = state.state.global_namespace.functions_using_auto.find(operand); it != state.state.global_namespace.functions_using_auto.end()) {
 			std::vector<NodeStructs::FunctionArgument> args;
-			auto fn = realise_function_using_auto(state, *it->second.back(), expr.arguments.args);
+			auto fn = realise_function_using_auto(state, it->second.back(), expr.arguments.args);
 			return_if_error(fn);
-			auto& vec = state.state.named.functions[fn.value().name];
-			vec.push_back(new NodeStructs::Function(std::move(fn).value()));
+			auto& vec = state.state.global_namespace.functions[fn.value().name];
+			bool found = false;
+			for (const auto& f : vec)
+				if (f <=> fn.value() == std::weak_ordering::equivalent)
+					found = true;
+			if (!found)
+				vec.push_back(std::move(fn).value());
 		}
 	}
 	auto t = transpile_expression(state, expr.operand);
@@ -234,7 +239,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 					ss << " << \"\\n\"";
 				ss << ")";
 				return expression_information{ non_type_information{
-					.type = *state.state.named.types.at("Void").back(),
+					.type = state.state.global_namespace.types.at("Void").back(),
 					.representation = ss.str(),
 					.value_category = NodeStructs::Value{}
 				} };
@@ -242,10 +247,10 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			throw;
 		}
 		if (std::holds_alternative<NodeStructs::TemplateType>(ti.type.type)) {
-			const auto& options = std::get<NodeStructs::TemplateType>(ti.type.type).options;
+			const auto& options = std::get<NodeStructs::TemplateType>(ti.type.type).name_space.get().templates.at(std::get<NodeStructs::TemplateType>(ti.type.type).name);
 			if (options.size() != 1)
 				throw;
-			const auto& tmpl = *options.back();
+			const auto& tmpl = options.back();
 			auto arg_ts = vec_of_expected_to_expected_of_vec(
 				expr.arguments.args
 				| LIFT_TRANSFORM_TRAIL(.expr)
@@ -255,9 +260,18 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			throw;
 		}
 		if (std::holds_alternative<NodeStructs::FunctionType>(ti.type.type)) {
-			const auto& fn = std::get<NodeStructs::FunctionType>(ti.type.type).function.get();
+			auto expected_f = find_best_function(
+				state,
+				std::get<NodeStructs::FunctionType>(ti.type.type).name,
+				expr.arguments.args,
+				std::get<NodeStructs::FunctionType>(ti.type.type).name_space
+			);
+			return_if_error(expected_f);
+			const auto& fn = *expected_f.value();
 			if (!state.state.traversed_functions.contains(fn)) {
 				// TODO VERIFY
+				if (uses_auto(fn))
+					throw;
 				state.state.traversed_functions.insert(fn);
 				state.state.functions_to_transpile.insert(fn);
 			}
@@ -265,7 +279,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			return_if_error(args_or_error);
 			return expression_information{ non_type_information{
 				.type = type_of_typename(state, fn.returnType).value(),
-				.representation = std::move(ti).representation + "(" + std::move(args_or_error).value() + ")",
+				.representation = ti.representation + "(" + std::move(args_or_error).value() + ")",
 				.value_category = NodeStructs::Value{}
 			} };
 		}
@@ -275,26 +289,26 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::NamespaceExpression& expr) {
-	using pair_t = std::pair<std::string, std::reference_wrapper<const NodeStructs::NameSpace>>;
+	using pair_t = std::pair<std::string, std::reference_wrapper<const Namespace>>;
 	auto ns_or_e_f = overload(
 		[&](this auto&& ns_or_e_f, const NodeStructs::NamespaceExpression& nse) -> expected<pair_t> {
 			expected<pair_t> ns_or_e = ns_or_e_f(nse.name_space);
 			return_if_error(ns_or_e);
-			const NodeStructs::NameSpace& ns = ns_or_e.value().second.get();
+			const Namespace& ns = ns_or_e.value().second.get();
 			const std::string& ns_repr = ns_or_e.value().first;
 			if (
-				auto it = std::find_if(ns.namespaces.begin(), ns.namespaces.end(), [&](const auto& n) { return n.name == nse.name_in_name_space; });
+				auto it = ns.namespaces.find(nse.name_in_name_space);
 				it != ns.namespaces.end()
 			)
-				return pair_t{ ns_repr + "__" + nse.name_in_name_space, *it };
+				return pair_t{ ns_repr + "__" + nse.name_in_name_space, it->second };
 			return error{
 				"user error",
 				"namespace `" + ns.name + "` has no namespace `" + nse.name_in_name_space + "`"
 			};
 		},
 		[&](const std::string& ns) -> expected<pair_t> {
-			if (auto it = state.state.named.namespaces.find(ns); it != state.state.named.namespaces.end())
-				return pair_t{ ns, *it->second.back() };
+			if (auto it = state.state.global_namespace.namespaces.find(ns); it != state.state.global_namespace.namespaces.end())
+				return pair_t{ ns, it->second };
 			else
 				return error{
 					"user error",
@@ -315,24 +329,28 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 	);
 	expected<pair_t> ns_or_e = ns_or_e_f(expr.name_space);
 	return_if_error(ns_or_e);
-	const NodeStructs::NameSpace& ns = ns_or_e.value().second.get();
+	const Namespace& ns = ns_or_e.value().second.get();
 	const std::string& ns_repr = ns_or_e.value().first;
 	if (
-		auto it = std::find_if(ns.types.begin(), ns.types.end(), [&](const auto& t) { return t.name == expr.name_in_name_space; });
+		auto it = ns.types.find(expr.name_in_name_space);
 		it != ns.types.end()
 	)
 		return expression_information{ type_information{
-			.type = *it,
+			.type = it->second.back(),
 			.representation = ns_repr + "__" + expr.name_in_name_space
 		} };
 	if (
-		auto it = std::find_if(ns.functions.begin(), ns.functions.end(), [&](const auto& f) { return f.name == expr.name_in_name_space; });
+		auto it = ns.functions.find(expr.name_in_name_space);
 		it != ns.functions.end()
 	)
-		return expression_information{ type_information{
-			.type = NodeStructs::FunctionType{ *it },
-			.representation = ns_repr + "__" + expr.name_in_name_space
-		} };
+		throw;
+	/*return expression_information{ type_information{
+		.type = NodeStructs::FunctionType{
+			.name = it->name,
+			.options = ns.functions | LIFT_FILTER_TRAIL(.name == expr.name_in_name_space) | LIFT_TRANSFORM_X(t, &t) | to_vec()
+		},
+		.representation = ns_repr + "__" + expr.name_in_name_space
+	} };*/
 	return error{
 		"user error",
 		"namespace `" + ns.name + "` has no type or function `" + expr.name_in_name_space + "`"
@@ -351,16 +369,17 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 	if (!std::holds_alternative<std::string>(expr.operand.expression.get()))
 		throw;
 
-	if (auto it = state.state.named.templates.find(std::get<std::string>(expr.operand.expression.get())); it != state.state.named.templates.end()) {
+	if (auto it = state.state.global_namespace.templates.find(std::get<std::string>(expr.operand.expression.get()));
+		it != state.state.global_namespace.templates.end()) {
 		auto t = find_best_template(it->second, expr.arguments.args);
 		return_if_error(t);
 		const auto& tmpl = t.value().tmpl.get();
 		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template) | to_vec();
-		std::string tmpl_name = template_name(it->first, args);
+		std::string tmpl_name = template_name(it->first, expr.arguments.args);
 
-		size_t max_params = it->second.at(0)->parameters.size();
+		size_t max_params = it->second.at(0).parameters.size();
 		for (unsigned i = 1; i < it->second.size(); ++i)
-			max_params = std::max(max_params, it->second.at(i)->parameters.size());
+			max_params = std::max(max_params, it->second.at(i).parameters.size());
 
 		if (tmpl.templated == "BUILTIN") {
 			/*if (tmpl.name == "Vector") {
@@ -401,7 +420,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 				}
 			}
 			return ss.str();
-		};
+			};
 		std::string replaced = tmpl.templated;
 		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
 			replaced = replace_all(
@@ -414,17 +433,20 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			);
 		}
 
-		if (auto it = state.state.named.functions.find(tmpl_name); it != state.state.named.functions.end()) {
+		bool has_f = state.state.global_namespace.functions.find(tmpl_name) != state.state.global_namespace.functions.end();
+		bool has_f_using_auto = state.state.global_namespace.functions_using_auto.find(tmpl_name) != state.state.global_namespace.functions_using_auto.end();
+		if (has_f || has_f_using_auto)
 			return expression_information{ type_information{
-				.type = NodeStructs::FunctionType{ *it->second.back() },
-				.representation = template_name(tmpl.name, expr.arguments.args)
+				.type = NodeStructs::MetaType{ NodeStructs::FunctionType{
+					tmpl_name, state.state.global_namespace
+				} },
+				.representation = tmpl_name
 			} };
-		}
 
-		if (auto it = state.state.named.types.find(tmpl_name); it != state.state.named.types.end()) {
+		if (auto it = state.state.global_namespace.types.find(tmpl_name); it != state.state.global_namespace.types.end()) {
 			return expression_information{ type_information{
-				.type = NodeStructs::MetaType{ *it->second.back() },
-				.representation = template_name(tmpl.name, expr.arguments.args)
+				.type = NodeStructs::MetaType{ it->second.back() },
+				.representation = tmpl_name
 			} };
 		}
 
@@ -433,16 +455,29 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(f, g.it)) {
-				auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
-				structured_f->name = tmpl_name;
-				state.state.named.functions[structured_f->name].push_back(structured_f);
-				// TODO VERIFY
-				state.state.traversed_functions.insert(*structured_f);
-				state.state.functions_to_transpile.insert(*structured_f);
-				return expression_information{ type_information{
-					.type = NodeStructs::FunctionType{ *structured_f },
-					.representation = template_name(tmpl.name, expr.arguments.args)
-				} };
+				auto structured_f = getStruct(f.get<grammar::Function>(), std::nullopt);
+				structured_f.name = tmpl_name;
+				if (uses_auto(structured_f)) {
+					state.state.global_namespace.functions_using_auto[structured_f.name].push_back(structured_f);
+					return expression_information{ type_information{
+						.type = NodeStructs::FunctionType{
+							tmpl_name, state.state.global_namespace
+						},
+						.representation = tmpl_name
+					} };
+				}
+				else {
+					state.state.global_namespace.functions[structured_f.name].push_back(structured_f);
+					// TODO VERIFY
+					state.state.traversed_functions.insert(structured_f);
+					state.state.functions_to_transpile.insert(structured_f);
+					return expression_information{ type_information{
+						.type = NodeStructs::FunctionType{
+							tmpl_name, state.state.global_namespace
+						},
+						.representation = tmpl_name
+					} };
+				}
 			}
 		}
 		{
@@ -450,14 +485,14 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(t, g.it)) {
-				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
-				structured_t->name = tmpl_name;
-				state.state.named.types[structured_t->name].push_back(structured_t);
-				auto opt_error = traverse_type(state, *structured_t);
+				auto structured_t = NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
+				structured_t.name = tmpl_name;
+				state.state.global_namespace.types[structured_t.name].push_back(structured_t);
+				auto opt_error = traverse_type(state, structured_t);
 				if (opt_error.has_value())
 					return opt_error.value();
 				return expression_information{ type_information{
-					.type = NodeStructs::MetaType{ *structured_t },
+					.type = NodeStructs::MetaType{ structured_t },
 					.representation = template_name(tmpl.name, expr.arguments.args)
 				} };
 			}
@@ -526,7 +561,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				return error{
 					"user error",
 					"expected `" + std::to_string(tt.get().member_variables.size()) + "` arguments but received `" + std::to_string(expr.arguments.args.size()) + "`"
-				};
+			};
 			auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args | LIFT_TRANSFORM_X(arg, operator()(arg.expr)) | to_vec());
 			return_if_error(arg_ts);
 			const auto& arg_ts_ok = arg_ts.value();
@@ -582,12 +617,12 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				return error{
 					"user error",
 					"unions require at least one argument"
-				};
+			};
 			if (expr.arguments.args.size() > 1)
 				return error{
 					"user error",
 					"unions require at most one argument"
-				};
+			};
 			auto expr_info = operator()(expr.arguments.args.at(0).expr);
 			return_if_error(expr_info);
 			if (!std::holds_alternative<non_type_information>(expr_info.value()))
@@ -609,8 +644,8 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 	), t.value().type);
 }
 
-template <typename T>
-concept VecSet = requires { std::is_same_v<T, NodeStructs::VectorType> || std::is_same_v<T, NodeStructs::SetType>; };
+//template <typename T>
+//concept VecSet = requires { std::is_same_v<T, NodeStructs::VectorType> || std::is_same_v<T, NodeStructs::SetType>; };
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 	auto operand_info = transpile_expression(state, expr.operand);
@@ -619,7 +654,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 		throw;
 	const non_type_information& operand_info_ok = std::get<non_type_information>(operand_info.value());
 	return std::visit(overload(
-		[&](const auto&) -> R{
+		[&](const auto&) -> R {
 			return error{
 				"user error",
 				"bracket access is reserved for vector, set and map types"
@@ -631,7 +666,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				throw;
 			const non_type_information& arg_info_ok = std::get<non_type_information>(arg_info.value());
-			if (arg_info_ok.type.type <=> NodeStructs::MetaType{ *state.state.named.types.at("Int").back() } != std::weak_ordering::equivalent)
+			if (arg_info_ok.type.type <=> NodeStructs::MetaType{ state.state.global_namespace.types.at("Int").back() } != std::weak_ordering::equivalent)
 				throw;
 			return expression_information{ non_type_information{
 				.type = vt.value_type,
@@ -670,7 +705,7 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(operand_info.value()))
 		throw;
 	const non_type_information& operand_info_ok = std::get<non_type_information>(operand_info.value());
-	
+
 	return transpile_member_call(state, expr.operand, expr.property_name, expr.arguments.args, operand_info_ok.type.type);
 }
 
@@ -726,20 +761,18 @@ R T::operator()(const std::string& expr) {
 			.value_category = v.value_category,
 		} };
 	}
-	if (auto it = state.state.named.functions.find(expr); it != state.state.named.functions.end()) {
-		const auto& fn = *it->second.back();
-		if (!state.state.traversed_functions.contains(fn)) {
-			// TODO VERIFY
-			state.state.traversed_functions.insert(fn);
-			state.state.functions_to_transpile.insert(fn);
-		}
+
+	bool has_f = state.state.global_namespace.functions.find(expr) != state.state.global_namespace.functions.end();
+	bool has_f_using_auto = state.state.global_namespace.functions_using_auto.find(expr) != state.state.global_namespace.functions_using_auto.end();
+	if (has_f || has_f_using_auto)
 		return expression_information{ type_information{
-			.type = NodeStructs::FunctionType{ fn },
+			.type = NodeStructs::MetaType{ NodeStructs::FunctionType{
+				expr, state.state.global_namespace
+			} },
 			.representation = expr
 		} };
-	}
-	if (auto it = state.state.named.types.find(expr); it != state.state.named.types.end()) {
-		const auto& T = *it->second.back();
+	if (auto it = state.state.global_namespace.types.find(expr); it != state.state.global_namespace.types.end()) {
+		const auto& T = it->second.back();
 		if (std::optional<error> err = traverse_type(state, T); err.has_value())
 			return err.value();
 		return expression_information{ type_information{
@@ -747,7 +780,7 @@ R T::operator()(const std::string& expr) {
 			.representation = expr
 		} };
 	}
-	if (auto it = state.state.named.type_aliases_typenames.find(expr); it != state.state.named.type_aliases_typenames.end()) {
+	if (auto it = state.state.global_namespace.aliases.find(expr); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->second;
 		auto type = type_of_typename(state, type_name);
 		return_if_error(type);
@@ -755,31 +788,30 @@ R T::operator()(const std::string& expr) {
 			return err.value();
 		return expression_information{ type_information{
 			.type = type.value(),
-			.representation = transpile_typename(state, state.state.named.type_aliases_typenames.at(expr)).value()
+			.representation = transpile_typename(state, state.state.global_namespace.aliases.at(expr)).value()
 		} };
 	}
-	if (auto it = state.state.named.templates.find(expr); it != state.state.named.templates.end())
+	if (auto it = state.state.global_namespace.templates.find(expr); it != state.state.global_namespace.templates.end())
 		return expression_information{ type_information{
-			.type = NodeStructs::TemplateType{ expr, it->second },
+			.type = NodeStructs::TemplateType{ expr, state.state.global_namespace },
 			.representation = expr
 		} };
-	if (auto it = state.state.named.namespaces.find(expr); it != state.state.named.namespaces.end())
+	if (auto it = state.state.global_namespace.namespaces.find(expr); it != state.state.global_namespace.namespaces.end())
 		return expression_information{ type_information{
-			.type = NodeStructs::NamespaceType{ *it->second.back() },
+			.type = NodeStructs::NamespaceType{ it->second },
 			.representation = expr
 		} };
-	if (auto it = state.state.named.builtins.find(expr); it != state.state.named.builtins.end())
+	if (auto it = state.state.global_namespace.builtins.find(expr); it != state.state.global_namespace.builtins.end())
 		return expression_information{ type_information{
-			.type = *it->second.back(),
+			.type = it->second.back(),
 			.representation = expr
 		} };
 	return error{ "user error", "Undeclared variable `" + expr + "`" };
 }
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {
-	
 	return expression_information{ non_type_information{
-		.type = { *state.state.named.types.at("Int").back() },
+		.type = { state.state.global_namespace.types.at("Int").back() },
 		.representation = expr.value,
 		.value_category = NodeStructs::Value{}
 	} };
@@ -787,7 +819,7 @@ R T::operator()(const Token<INTEGER_NUMBER>& expr) {
 
 R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 	return expression_information{ non_type_information{
-		.type = { *state.state.named.types.at("Floating").back() },
+		.type = { state.state.global_namespace.types.at("Floating").back() },
 		.representation = expr.value,
 		.value_category = NodeStructs::Value{}
 	} };
@@ -795,7 +827,7 @@ R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 
 R T::operator()(const Token<STRING>& expr) {
 	return expression_information{ non_type_information{
-		.type = { *state.state.named.types.at("String").back() },
+		.type = { state.state.global_namespace.types.at("String").back() },
 		.representation = "String{" + expr.value + "}",
 		.value_category = NodeStructs::Value{}
 	} };

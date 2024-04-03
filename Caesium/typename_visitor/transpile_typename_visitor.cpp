@@ -5,7 +5,7 @@ using T = transpile_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& type) {
-	if (auto it = state.state.named.type_aliases_typenames.find(type.type); it != state.state.named.type_aliases_typenames.end())
+	if (auto it = state.state.global_namespace.aliases.find(type.type); it != state.state.global_namespace.aliases.end())
 		return operator()(it->second);
 	return type.type;
 }

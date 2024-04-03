@@ -21,33 +21,37 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 
 R T::operator()(const NodeStructs::NamespaceType& nst) {
 	const auto& ns = nst.name_space.get();
-	if (auto it = std::find_if(ns.types.begin(), ns.types.end(), [&](const auto& t) { return t.name == accessed; }); it != ns.types.end()) {
-		const auto& type = *it;
+	if (auto it = ns.types.find(accessed); it != ns.types.end()) {
+		const auto& types = it->second;
+		if (types.size() != 1)
+			throw;
+		const auto& type = types.at(0);
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
 			return opt_e.value();
 		return NodeStructs::MetaType{ type };
 	}
-	if (auto it = std::find_if(ns.aliases.begin(), ns.aliases.end(), [&](const auto& t) { return t.aliasFrom == accessed; }); it != ns.aliases.end()) {
-		const auto& e_t = type_of_typename(state, it->aliasTo);
+	if (auto it = ns.aliases.find(accessed); it != ns.aliases.end()) {
+		const auto& e_t = type_of_typename(state, it->second);
 		return_if_error(e_t);
 		auto opt_e = traverse_type(state, e_t.value());
 		if (opt_e.has_value())
 			return opt_e.value();
 		return e_t.value();
 	}
-	if (auto it = std::find_if(ns.interfaces.begin(), ns.interfaces.end(), [&](const auto& t) { return t.name == accessed; }); it != ns.interfaces.end()) {
-		const auto& interface = *it;
+	if (auto it = ns.interfaces.find(accessed); it != ns.interfaces.end()) {
+		const auto& interfaces = it->second;
+		if (interfaces.size() != 1)
+			throw;
+		const auto& interface = interfaces.at(0);
 		if (!state.state.traversed_interfaces.contains(interface)) {
 			state.state.traversed_interfaces.insert(interface);
 			state.state.interfaces_to_transpile.insert(interface);
 		}
 		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
 	}
-	if (auto it = std::find_if(ns.namespaces.begin(), ns.namespaces.end(), [&](const auto& t) { return t.name == accessed; }); it != ns.namespaces.end()) {
-		const auto& ns = *it;
-		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ ns } };
-	}
+	if (auto it = ns.namespaces.find(accessed); it != ns.namespaces.end())
+		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ it->second } };
 	return error{ "user error" , "Missing type `" + accessed + "` in namespace `" + ns.name + "`" };
 }
 
@@ -60,6 +64,10 @@ R T::operator()(const NodeStructs::UnionType& t) {
 }
 
 R T::operator()(const NodeStructs::TemplateType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Enum& tmpl) {
 	throw;
 }
 

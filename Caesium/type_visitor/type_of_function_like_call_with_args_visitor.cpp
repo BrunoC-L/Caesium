@@ -15,17 +15,17 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {
-	if (args.size() != t.function.get().parameters.size()) {
-		std::stringstream ss;
-		ss << t.function.get().name << " has " << t.function.get().parameters.size() << " parameters but received " << args.size() << " arguments";
-		return error{ "user error", ss.str() };
-	}
-	else {
-		// if args apply... TODO
-		auto ret = type_of_typename(state, t.function.get().returnType);
-		return_if_error(ret);
-		return std::pair{ NodeStructs::Value{}, ret.value() };
-	}
+	//if (args.size() != t.function.get().parameters.size()) {
+	//	std::stringstream ss;
+	//	ss << t.function.get().name << " has " << t.function.get().parameters.size() << " parameters but received " << args.size() << " arguments";
+	//	return error{ "user error", ss.str() };
+	//}
+	//else {
+	//	// if args apply... TODO
+	//	auto ret = type_of_typename(state, t.function.get().returnType);
+	//	return_if_error(ret);
+	//	return std::pair{ NodeStructs::Value{}, ret.value() };
+	//}
 	throw;
 }
 
@@ -46,6 +46,10 @@ R T::operator()(const NodeStructs::UnionType& t) {
 }
 
 R T::operator()(const NodeStructs::TemplateType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::Enum& tmpl) {
 	throw;
 }
 

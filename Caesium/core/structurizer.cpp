@@ -169,10 +169,11 @@ NodeStructs::MemberVariable getStruct(const grammar::MemberVariable& f) {
 	};
 }
 
-NodeStructs::Alias getStruct(const grammar::Alias& f) {
+NodeStructs::Alias getStruct(const grammar::Alias& f, std::optional<NodeStructs::Typename> name_space) {
 	return NodeStructs::Alias{
 		.aliasFrom = f.get<grammar::Word>().value,
 		.aliasTo = getStruct(f.get<grammar::Typename>()),
+		.name_space = name_space
 	};
 }
 
@@ -184,7 +185,7 @@ NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::
 		.aliases = elems
 			| filter_variant_type_eq<grammar::Alias>
 			| tranform_variant_type_eq<grammar::Alias>
-			| LIFT_TRANSFORM(getStruct)
+			| LIFT_TRANSFORM_X(t, getStruct(t, name_space))
 			| to_vec(),
 		/*.methods = elems
 			| filter_variant_type_eq<Function>
@@ -198,7 +199,7 @@ NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::
 	};
 }
 
-NodeStructs::Interface getStruct(const grammar::Interface& interface) {
+NodeStructs::Interface getStruct(const grammar::Interface& interface, std::optional<NodeStructs::Typename> name_space) {
 	using Member = Or<
 		grammar::Alias,
 		grammar::MemberVariable
@@ -207,10 +208,11 @@ NodeStructs::Interface getStruct(const grammar::Interface& interface) {
 	auto elems = interface.get<Members>().get_view<Member>() | LIFT_TRANSFORM_TRAIL(.value());
 	return {
 		.name = interface.get<grammar::Word>().value,
+		.name_space = name_space,
 		.aliases = elems
 			| filter_variant_type_eq<grammar::Alias>
 			| tranform_variant_type_eq<grammar::Alias>
-			| LIFT_TRANSFORM(getStruct)
+			| LIFT_TRANSFORM_X(t, getStruct(t, name_space))
 			| to_vec(),
 		.member_variables = elems
 			| filter_transform_variant_type_eq(grammar::MemberVariable)
@@ -219,6 +221,18 @@ NodeStructs::Interface getStruct(const grammar::Interface& interface) {
 	};
 }
 
+NodeStructs::Enum getStruct(const grammar::Enum& e, std::optional<NodeStructs::Typename> name_space) {
+	using values_t = Star<Or<grammar::Newline, Indent<And<IndentToken, grammar::Word, grammar::Newline>>>>;
+	std::vector<std::string> values = {};
+	return {
+		.name = e.get<grammar::Word>().value,
+		.values = std::move(values),
+		.name_space = name_space
+	};
+}
+
+bool uses_auto(const NodeStructs::Function& fn);
+
 NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<NodeStructs::Typename> name_space) {
 	std::vector<NodeStructs::Type> types;
 	std::vector<NodeStructs::Function> functions;
@@ -226,6 +240,7 @@ NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<Nod
 	std::vector<NodeStructs::Template> templates;
 	std::vector<NodeStructs::Alias> aliases;
 	std::vector<NodeStructs::NameSpace> namespaces;
+	std::vector<NodeStructs::Enum> enums;
 	NodeStructs::Typename this_ns = name_space.has_value() ?
 		NodeStructs::Typename{ NodeStructs::NamespacedTypename{ name_space.value(), ns.get<grammar::Word>().value } } :
 		NodeStructs::Typename{ NodeStructs::BaseTypename{ ns.get<grammar::Word>().value } };
@@ -239,31 +254,35 @@ NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<Nod
 					functions.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::Interface& e) {
-					interfaces.push_back(getStruct(e));
+					interfaces.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::Template& e) {
 					templates.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::Alias& e) {
-					aliases.push_back(getStruct(e));
+					aliases.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::NameSpace& e) {
 					namespaces.push_back(getStruct(e, this_ns));
 				},
 				[&](const grammar::Enum& e) {
-					
+					enums.push_back(getStruct(e, this_ns));
 				}
 			), named.get<grammar::Named>().value()
 		);
 	}
+
+
 	return {
 		.name = ns.get<grammar::Word>().value,
+		.functions = functions | LIFT_FILTER_X(f, !uses_auto(f)) | to_vec(),
+		.functions_using_auto = functions | LIFT_FILTER_X(f, uses_auto(f)) | to_vec(),
 		.types = std::move(types),
-		.functions = std::move(functions),
 		.interfaces = std::move(interfaces),
 		.templates = std::move(templates),
 		.aliases = std::move(aliases),
-		.namespaces = std::move(namespaces)
+		.enums = std::move(enums),
+		.namespaces = std::move(namespaces),
 	};
 }
 
@@ -271,41 +290,51 @@ NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
 	using T = Star<Or<Token<NEWLINE>, grammar::Named>>;
 	const auto& t = f.get<T>().get<grammar::Named>();
 
+	auto functions = t
+		| LIFT_TRANSFORM_TRAIL(.value())
+		| filter_transform_variant_type_eq(grammar::Function)
+		| LIFT_TRANSFORM_X(f, getStruct(f, std::nullopt))
+		| to_vec();
+
 	return NodeStructs::File{
-		.filename = std::string{ fileName },
 		.imports = f.get<Star<grammar::Import>>().get<grammar::Import>()
 			| LIFT_TRANSFORM(getStruct)
 			| to_vec(),
-		.types = t
-			| LIFT_TRANSFORM_TRAIL(.value())
-			| filter_transform_variant_type_eq(grammar::Type)
-			| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
-			| to_vec(),
-		.functions = t
-			| LIFT_TRANSFORM_TRAIL(.value())
-			| filter_transform_variant_type_eq(grammar::Function)
-			| LIFT_TRANSFORM_X(f, getStruct(f, std::nullopt))
-			| to_vec(),
-		.interfaces = t
-			| LIFT_TRANSFORM_TRAIL(.value())
-			| filter_transform_variant_type_eq(grammar::Interface)
-			| LIFT_TRANSFORM(getStruct)
-			| to_vec(),
-		.templates = t
-			| LIFT_TRANSFORM_TRAIL(.value())
-			| filter_transform_variant_type_eq(grammar::Template)
-			| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
-			| to_vec(),
-		.aliases = t
-			| LIFT_TRANSFORM_TRAIL(.value())
-			| filter_transform_variant_type_eq(grammar::Alias)
-			| LIFT_TRANSFORM(getStruct)
-			| to_vec(),
-		.namespaces = t
-			| LIFT_TRANSFORM_TRAIL(.value())
-			| filter_transform_variant_type_eq(grammar::NameSpace)
-			| LIFT_TRANSFORM_X(gns, getStruct(gns, std::nullopt))
-			| to_vec()
+		.content = NodeStructs::NameSpace{
+			.name = std::string{ fileName },
+			.functions = functions | LIFT_FILTER_X(f, !uses_auto(f)) | to_vec(),
+			.functions_using_auto = functions | LIFT_FILTER_X(f, uses_auto(f)) | to_vec(),
+			.types = t
+				| LIFT_TRANSFORM_TRAIL(.value())
+				| filter_transform_variant_type_eq(grammar::Type)
+				| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
+				| to_vec(),
+			.interfaces = t
+				| LIFT_TRANSFORM_TRAIL(.value())
+				| filter_transform_variant_type_eq(grammar::Interface)
+				| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
+				| to_vec(),
+			.templates = t
+				| LIFT_TRANSFORM_TRAIL(.value())
+				| filter_transform_variant_type_eq(grammar::Template)
+				| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
+				| to_vec(),
+			.aliases = t
+				| LIFT_TRANSFORM_TRAIL(.value())
+				| filter_transform_variant_type_eq(grammar::Alias)
+				| LIFT_TRANSFORM_X(t, getStruct(t, std::nullopt))
+				| to_vec(),
+			.enums = t
+				| LIFT_TRANSFORM_TRAIL(.value())
+				| filter_transform_variant_type_eq(grammar::Enum)
+				| LIFT_TRANSFORM_X(e, getStruct(e, std::nullopt))
+				| to_vec(),
+			.namespaces = t
+				| LIFT_TRANSFORM_TRAIL(.value())
+				| filter_transform_variant_type_eq(grammar::NameSpace)
+				| LIFT_TRANSFORM_X(gns, getStruct(gns, std::nullopt))
+				| to_vec()
+		}
 	};
 }
 

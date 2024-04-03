@@ -7,7 +7,7 @@ using T = type_template_of_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
-	if (auto it = state.state.named.builtins.find(t.type); it != state.state.named.builtins.end()) {
+	if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end()) {
 		if (t.type == "Vector") {
 			auto x = type_of_typename(state, templated_with.at(0));
 			return_if_error(x);
@@ -37,7 +37,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		}
 		throw;
 	}
-	if (auto it = state.state.named.templates.find(t.type); it != state.state.named.templates.end()) {
+	if (auto it = state.state.global_namespace.templates.find(t.type); it != state.state.global_namespace.templates.end()) {
 		const auto& templates = it->second;
 
 		// todo check if already traversed
@@ -80,12 +80,20 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(f,g.it)) {
-				auto* structured_f = new NodeStructs::Function{ getStruct(f.get<grammar::Function>(), std::nullopt) };
-				structured_f->name = tmpl_name; // todo
-				state.state.named.functions[structured_f->name].push_back(structured_f);
-				state.state.traversed_functions.insert(*structured_f);
-				state.state.functions_to_transpile.insert(*structured_f);
-				return NodeStructs::MetaType{ NodeStructs::FunctionType{ *structured_f } };
+				auto structured_f = getStruct(f.get<grammar::Function>(), std::nullopt);
+				structured_f.name = tmpl_name;
+				if (uses_auto(structured_f)) {
+					state.state.global_namespace.functions_using_auto[tmpl_name].push_back(structured_f);
+					//return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name } };
+					throw;
+				}
+				else {
+					// TODO VERIFY
+					state.state.global_namespace.functions[tmpl_name].push_back(structured_f);
+					state.state.traversed_functions.insert(structured_f);
+					state.state.functions_to_transpile.insert(structured_f);
+					return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name, state.state.global_namespace } };
+				}
 			}
 		}
 		{
@@ -95,15 +103,15 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			auto ok = build(t, g.it);
 			while (parse_empty_line(g.it));
 			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
-				auto* structured_t = new NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
+				auto structured_t = getStruct(t.get<grammar::Type>(), std::nullopt);
+				structured_t.name = tmpl_name;
 				auto templated_with_reprs= vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
 				return_if_error(templated_with_reprs);
-				structured_t->name = tmpl_name;
-				state.state.named.types[structured_t->name].push_back(structured_t);
-				auto opt_error = traverse_type(state, *structured_t);
+				state.state.global_namespace.types[structured_t.name].push_back(structured_t);
+				auto opt_error = traverse_type(state, structured_t);
 				if (opt_error.has_value())
 					return opt_error.value();
-				return NodeStructs::MetaType{ *structured_t };
+				return NodeStructs::MetaType{ structured_t };
 			}
 		}
 		return error{

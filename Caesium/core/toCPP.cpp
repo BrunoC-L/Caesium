@@ -11,44 +11,50 @@
 #include "builtins.hpp"
 #include "default_includes.hpp"
 
-static void add(Named& named, const NodeStructs::Template& tmpl) {
-	named.templates[tmpl.name].push_back(&tmpl);
+static void add(Namespace& name_space, NodeStructs::Template&& tmpl) {
+	name_space.templates[tmpl.name].push_back(std::move(tmpl));
 }
 
-static void add(Named& named, const NodeStructs::Builtin& b) {
-	named.builtins[b.name].push_back(&b);
+static void add(Namespace& name_space, NodeStructs::Builtin&& b) {
+	name_space.builtins[b.name].push_back(std::move(b));
 }
 
-static void add(Named& named, const NodeStructs::Type& t) {
-	named.types[t.name].push_back(&t);
+static void add(Namespace& name_space, NodeStructs::Type&& t) {
+	name_space.types[t.name].push_back(std::move(t));
 }
 
-static void add_builtins(Named& named, const builtins& _builtins) {
-	add(named, _builtins.builtin_int);
-	add(named, _builtins.builtin_bool);
-	add(named, _builtins.builtin_string);
-	add(named, _builtins.builtin_double);
-	add(named, _builtins.builtin_void);
-
-	add(named, _builtins.builtin_variant);
-
-	add(named, _builtins.builtin_vector);
-	add(named, _builtins.builtin_set);
-	add(named, _builtins.builtin_map);
-
-	add(named, _builtins.builtin_push);
-	add(named, _builtins.builtin_insert);
-
-	add(named, _builtins.builtin_print);
-	add(named, _builtins.builtin_println);
-	add(named, _builtins.builtin_file);
-	add(named, _builtins.builtin_directory);
-
-	named.functions["entries"].push_back(&_builtins.entries_dir);
-	named.functions["entries"].push_back(&_builtins.entries_str);
+static void add(Namespace& name_space, NodeStructs::Function&& f) {
+	name_space.functions[f.name].push_back(std::move(f));
 }
 
-static void traverse_builtins(transpilation_state& state, const builtins& _builtins) {
+static void add_builtins(Namespace& name_space) {
+	builtins _builtins;
+	add(name_space, std::move(_builtins.builtin_int));
+	add(name_space, std::move(_builtins.builtin_bool));
+	add(name_space, std::move(_builtins.builtin_string));
+	add(name_space, std::move(_builtins.builtin_double));
+	add(name_space, std::move(_builtins.builtin_void));
+
+	add(name_space, std::move(_builtins.builtin_variant));
+
+	add(name_space, std::move(_builtins.builtin_vector));
+	add(name_space, std::move(_builtins.builtin_set));
+	add(name_space, std::move(_builtins.builtin_map));
+
+	add(name_space, std::move(_builtins.builtin_push));
+	add(name_space, std::move(_builtins.builtin_insert));
+
+	add(name_space, std::move(_builtins.builtin_print));
+	add(name_space, std::move(_builtins.builtin_println));
+	add(name_space, std::move(_builtins.builtin_file));
+	add(name_space, std::move(_builtins.builtin_directory));
+
+	add(name_space, std::move(_builtins.entries_dir));
+	add(name_space, std::move(_builtins.entries_str));
+}
+
+static void traverse_builtins(transpilation_state& state) {
+	builtins _builtins;
 	state.traversed_types.insert(_builtins.builtin_int);
 	state.traversed_types.insert(_builtins.builtin_bool);
 	state.traversed_types.insert(_builtins.builtin_string);
@@ -58,42 +64,54 @@ static void traverse_builtins(transpilation_state& state, const builtins& _built
 	state.traversed_functions.insert(_builtins.entries_dir);
 	state.traversed_functions.insert(_builtins.entries_str);
 }
+std::optional<error> insert_all_named_recursive_with_imports(
+	Namespace& named,
+	const NodeStructs::NameSpace& to_insert
+) {
+	for (const auto& e : to_insert.types)
+		named.types[e.name].push_back(e);
+
+	for (const auto& e : to_insert.functions)
+		named.functions[e.name].push_back(e);
+
+	for (const auto& e : to_insert.functions_using_auto)
+		named.functions_using_auto[e.name].push_back(e);
+
+	for (const auto& e : to_insert.interfaces)
+		named.interfaces[e.name].push_back(e);
+
+	for (const auto& e : to_insert.blocks)
+		named.blocks[e.name].push_back(e);
+
+	for (const auto& e : to_insert.templates)
+		named.templates[e.name].push_back(e);
+
+	for (const auto& e : to_insert.namespaces)
+		insert_all_named_recursive_with_imports(named.namespaces[e.name], e);
+
+	for (const auto& e : to_insert.enums)
+		named.enums[e.name].push_back(e);
+
+	return std::nullopt;
+}
 
 std::optional<error> insert_all_named_recursive_with_imports(
 	const std::vector<NodeStructs::File>& project,
-	std::map<std::string, Named>& named_by_file,
+	std::map<std::string, Namespace>& named_by_file,
 	const std::string& filename
 ) {
 	for (const NodeStructs::File& file : project)
-		if (file.filename == filename) {
-			Named& named = named_by_file[filename];
-
-			for (const auto& e : file.types)
-				named.types[e.name].push_back(&e);
-
-			for (const auto& e : file.functions)
-				if (uses_auto(e))
-					named.functions_using_auto[e.name].push_back(&e);
-				else
-					named.functions[e.name].push_back(&e);
-
-			for (const auto& e : file.interfaces)
-				named.interfaces[e.name].push_back(&e);
-
-			for (const auto& e : file.blocks)
-				named.blocks[e.name].push_back(&e);
-
-			for (const auto& e : file.templates)
-				named.templates[e.name].push_back(&e);
-
-			for (const auto& e : file.namespaces)
-				named.namespaces[e.name].push_back(&e);
+		if (file.content.name == filename) {
+			Namespace& named = named_by_file[filename];
+			auto x = insert_all_named_recursive_with_imports(named, file.content);
+			if (x.has_value())
+				return x.value();
 
 			for (const auto& i : file.imports) {
 				auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, i.imported);
 				if (opt_error.has_value())
 					return opt_error;
-				Named& imported_named = named_by_file[i.imported];
+				Namespace& imported_named = named_by_file[i.imported];
 
 				named.types.insert(imported_named.types.begin(), imported_named.types.end());
 				named.functions.insert(imported_named.functions.begin(), imported_named.functions.end());
@@ -102,8 +120,8 @@ std::optional<error> insert_all_named_recursive_with_imports(
 				named.blocks.insert(imported_named.blocks.begin(), imported_named.blocks.end());
 				named.templates.insert(imported_named.templates.begin(), imported_named.templates.end());
 				named.namespaces.insert(imported_named.namespaces.begin(), imported_named.namespaces.end());
+				named.enums.insert(imported_named.enums.begin(), imported_named.enums.end());
 			}
-
 			return std::nullopt;
 		}
 	return error{
@@ -114,22 +132,22 @@ std::optional<error> insert_all_named_recursive_with_imports(
 
 std::optional<error> insert_aliases_recursive_with_imports(
 	const std::vector<NodeStructs::File>& project,
-	std::map<std::string, Named>& named_by_file,
+	std::map<std::string, Namespace>& named_by_file,
 	const std::string& filename
 ) {
 	for (const NodeStructs::File& file : project)
-		if (file.filename == filename) {
-			Named& named = named_by_file[filename];
+		if (file.content.name == filename) {
+			Namespace& named = named_by_file[filename];
 
-			auto state = transpilation_state{ {}, Named(named) };
-			for (const auto& alias : file.aliases)
-				named.type_aliases_typenames.emplace(alias.aliasFrom, alias.aliasTo);
+			auto state = transpilation_state{ {}, Namespace(named) };
+			for (const auto& alias : file.content.aliases)
+				named.aliases.emplace(alias.aliasFrom, alias.aliasTo);
 			for (const auto& i : file.imports) {
 				auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, i.imported);
 				if (opt_e.has_value())
 					return opt_e;
-				Named& imported_named = named_by_file[i.imported];
-				named.type_aliases_typenames.insert(imported_named.type_aliases_typenames.begin(), imported_named.type_aliases_typenames.end());
+				Namespace& imported_named = named_by_file[i.imported];
+				named.aliases.insert(imported_named.aliases.begin(), imported_named.aliases.end());
 			}
 
 			return std::nullopt;
@@ -142,9 +160,8 @@ std::optional<error> insert_aliases_recursive_with_imports(
 
 transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) {
 	for (const auto& file : project)
-		for (const auto& fn : file.functions)
+		for (const auto& fn : file.content.functions)
 			if (fn.name == "main") {
-				builtins _builtins{};
 				variables_t variables{};
 				{
 					variables["True"].push_back(
@@ -161,18 +178,18 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 					);
 				}
 
-				std::map<std::string, Named> named_by_file;
+				std::map<std::string, Namespace> named_by_file;
 
 				for (const auto& file2 : project) {
-					Named named_of_file;
-					add_builtins(named_of_file, _builtins);
-					named_by_file[file2.filename] = named_of_file;
-					if (auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.filename); opt_error.has_value())
+					Namespace named_of_file;
+					add_builtins(named_of_file);
+					named_by_file[file2.content.name] = named_of_file;
+					if (auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.content.name); opt_error.has_value())
 						return opt_error.value();
 				}
 
 				for (const auto& file2 : project)
-					if (auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.filename); opt_e.has_value())
+					if (auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.content.name); opt_e.has_value())
 						return opt_e.value();
 
 				for (const auto& [_, named] : named_by_file)
@@ -180,9 +197,9 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 					if (auto opt_e = validate_templates(templates); opt_e.has_value())
 						return opt_e.value();
 
-				transpilation_state state{ std::move(variables), Named(named_by_file[file.filename]) };
+				transpilation_state state{ std::move(variables), Namespace(named_by_file[file.content.name]) };
 
-				traverse_builtins(state, _builtins);
+				traverse_builtins(state);
 
 				transpile_header_cpp_t k = transpile_main({ state, 0 }, fn);
 				return_if_error(k);
@@ -229,6 +246,8 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 					std::stringstream definitions;
 					for (const auto& f : state.functions_to_transpile) {
 						if (!state.traversed_functions.contains(f))
+							throw;
+						if (uses_auto(f))
 							throw;
 						auto res = transpile({ state, 0 }, f);
 						return_if_error(res);
@@ -405,8 +424,8 @@ void remove_added_variables(
 			[&](const NodeStructs::BlockStatement& statement) {
 				auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value).type;
 
-				if (state.state.named.blocks.contains(s)) {
-					const NodeStructs::Block& block = *state.state.named.blocks.at(s).back();
+				if (state.state.global_namespace.blocks.contains(s)) {
+					const NodeStructs::Block& block = state.state.global_namespace.blocks.at(s).back();
 					for (const auto& statement_in_block : block.statements)
 						remove_added_variables(state, statement_in_block);
 				}
@@ -502,6 +521,9 @@ std::vector<NodeStructs::MetaType> decompose_type(
 				throw;
 			},
 			[&](const NodeStructs::TemplateType&) -> std::vector<NodeStructs::MetaType> {
+				throw;
+			},
+			[&](const NodeStructs::Enum&) -> std::vector<NodeStructs::MetaType> {
 				throw;
 			},
 			[&](const NodeStructs::Vector&) -> std::vector<NodeStructs::MetaType> {
@@ -874,6 +896,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 				ss << member_name << " = \" << " << member_repr.value();
 			}
 		}
+		return ss.str();
 	}
 	else if (std::holds_alternative<NodeStructs::InterfaceType>(t_ok.type.type.type)) {
 		const auto& t_ref = std::get<NodeStructs::InterfaceType>(t_ok.type.type.type).interface.get();
@@ -900,9 +923,6 @@ bool uses_auto(const NodeStructs::Function& fn) {
 		return true;
 	for (const auto& param : fn.parameters)
 		if (uses_auto(param))
-			return true;
-	for (const auto& statement : fn.statements)
-		if (uses_auto(statement))
 			return true;
 	return false;
 }
@@ -1095,14 +1115,14 @@ static bool has_two_variadic_parameters_around_non_specialized_argument(const No
 	return false;
 }
 
-std::optional<error> validate_templates(const std::vector<const NodeStructs::Template*>& templates) {
-	for (const NodeStructs::Template* tmpl : templates) {
-		if (has_consecutive_variadic_parameters(*tmpl))
+std::optional<error> validate_templates(const std::vector<NodeStructs::Template>& templates) {
+	for (const NodeStructs::Template& tmpl : templates) {
+		if (has_consecutive_variadic_parameters(tmpl))
 			return error{
 				"user error",
 				"template has consecutive variadic parameters"
 		};
-		if (has_two_variadic_parameters_around_non_specialized_argument(*tmpl))
+		if (has_two_variadic_parameters_around_non_specialized_argument(tmpl))
 			return error{
 				"user error",
 				"template has two variadic parameters around a non specialized argument"
@@ -1113,13 +1133,13 @@ std::optional<error> validate_templates(const std::vector<const NodeStructs::Tem
 
 static std::vector<const NodeStructs::Template*> matching_size_candidates(
 	size_t n_args,
-	const std::vector<NodeStructs::Template const*>& templates
+	const std::vector<NodeStructs::Template>& templates
 ) {
 	std::vector<NodeStructs::Template const*> res;
 	for (const auto& tmpl : templates) {
 		bool has_variadic = false;
 		unsigned n_non_variadic_parameters = 0;
-		for (const auto& param_variant : tmpl->parameters) {
+		for (const auto& param_variant : tmpl.parameters) {
 			std::visit(overload(
 				[&](const NodeStructs::VariadicTemplateParameter& variadic) {
 					has_variadic = true;
@@ -1133,7 +1153,7 @@ static std::vector<const NodeStructs::Template*> matching_size_candidates(
 			), param_variant);
 		}
 		if ((has_variadic && n_non_variadic_parameters <= n_args) || (!has_variadic && n_non_variadic_parameters == n_args))
-			res.push_back(tmpl);
+			res.push_back(&tmpl);
 	}
 
 	return res;
@@ -1231,7 +1251,10 @@ bool first_arrangement_has_at_least_one_reason_to_be_preferred_over_second(
 	const Arrangement& second
 ) {
 	for (size_t i = 0; i < args.size(); ++i)
-		if (first_is_preferable(first.tmpl.get().parameters.at(first.arg_placements.at(i)), second.tmpl.get().parameters.at(second.arg_placements.at(i))))
+		if (first_is_preferable(
+			first.tmpl.get().parameters.at(first.arg_placements.at(i)),
+			second.tmpl.get().parameters.at(second.arg_placements.at(i))
+		))
 			return true;
 	return false;
 }
@@ -1272,7 +1295,7 @@ bool nth_arrangement_has_reason_to_be_picked_over_all_others(
 
 template <typename T>
 expected<Arrangement> _find_best_template(
-	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Template>& templates,
 	const std::vector<T>& args
 ) {
 	std::vector<const NodeStructs::Template*> candidates = matching_size_candidates(args.size(), templates);
@@ -1333,26 +1356,41 @@ expected<Arrangement> _find_best_template(
 			/*if (parameter.second.has_value())
 				parameters_ss << " = " << expression_for_template(parameter.second.value());*/
 		}
-		templates_ss << "template " + templates.at(0)->name + "<" + parameters_ss.str() + ">";
+		templates_ss << "template " + templates.at(0).name + "<" + parameters_ss.str() + ">";
 	}
 	return error{
 		"user error",
-		"More than one instance of `" + templates.at(0)->name + "`"
+		"More than one instance of `" + templates.at(0).name + "`"
 		" matched the provided arguments [" + args_ss.str() + "]"
 		", contenders were [" + templates_ss.str() + "]"
 	};
 }
 
 expected<Arrangement> find_best_template(
-	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Template>& templates,
 	const std::vector<NodeStructs::Expression>& args
 ) {
 	return _find_best_template(templates, args);
 }
 
 expected<Arrangement> find_best_template(
-	const std::vector<NodeStructs::Template const*>& templates,
+	const std::vector<NodeStructs::Template>& templates,
 	const std::vector<NodeStructs::Typename>& args
 ) {
 	return _find_best_template(templates, args);
+}
+
+expected<const NodeStructs::Function*> find_best_function(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const Namespace& space
+) {
+	const auto& fs = space.functions.find(name);
+	if (fs != space.functions.end())
+		if (fs->second.size() != 1)
+			return error{ "todo","todo" };
+		else
+			return &fs->second.at(0);
+	return error{ "todo","todo" };
 }

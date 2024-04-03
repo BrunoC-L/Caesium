@@ -77,7 +77,7 @@ struct builtins {
 	NodeStructs::NameSpace filesystem_ns = {
 		.name = "filesystem",
 		.name_space = std::nullopt,
+		.functions = { entries_dir, entries_str },
 		.types = {},
-		.functions = { entries_dir, entries_str }
 	};
 };
