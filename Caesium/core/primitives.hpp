@@ -206,16 +206,22 @@ bool build_end_token(Token<token>& t, Iterator& it) {
 	return ok;
 }
 
-template <int token>
-bool build_newline_token(Token<token>& t, Iterator& it) {
-	auto save = it;
-	parse_whitespaces(it);
-	bool ok = it->first == token;
-	if (ok)
-		it++;
-	else
-		it = save;
-	return ok;
+inline bool build_newline_token(Iterator& it) {
+	auto beg = it;
+	auto checkpoint = it;
+	while (true) {
+		parse_whitespaces(it);
+		bool ok = it->first == NEWLINE;
+		if (ok) {
+			it++;
+			checkpoint = it;
+		}
+		else {
+			it = checkpoint;
+			break;
+		}
+	}
+	return it != beg;
 }
 
 template <int token>
@@ -234,7 +240,7 @@ bool build(Token<token>& t, Iterator& it) {
 	if constexpr (token == END)
 		return build_end_token(t, it);
 	else if constexpr (token == NEWLINE)
-		return build_newline_token(t, it);
+		return build_newline_token(it);
 	else
 		return build_normal_token(t, it);
 }

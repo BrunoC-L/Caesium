@@ -3,12 +3,12 @@
 using T = type_of_postfix_member_visitor;
 using R = T::R;
 
-R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
+R T::operator()(const NodeStructs::Type& t) {
 	if (auto it = std::find_if(
-		t.get().member_variables.begin(),
-			t.get().member_variables.end(),
+		t.member_variables.begin(),
+			t.member_variables.end(),
 			[&](const auto& m) { return m.name == property_name; }
-		); it != t.get().member_variables.end())
+		); it != t.member_variables.end())
 		return type_of_typename(state, it->type)
 			.transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
@@ -16,7 +16,7 @@ R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
 		throw;
 	}
 	else
-		return error{ "user error","Error: object of type `" + t.get().name + "` has no member `" + property_name + "`\n" };
+		return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
@@ -69,7 +69,15 @@ R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Enum& tmpl) {
+R T::operator()(const NodeStructs::EnumType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::EnumValueType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
 }
 

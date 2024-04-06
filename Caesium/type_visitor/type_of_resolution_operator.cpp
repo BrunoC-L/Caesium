@@ -3,7 +3,7 @@
 using T = type_of_resolution_operator_visitor;
 using R = T::R;
 
-R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
+R T::operator()(const NodeStructs::Type& t) {
 	throw;
 }
 
@@ -67,7 +67,15 @@ R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Enum& tmpl) {
+R T::operator()(const NodeStructs::EnumType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::EnumValueType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
 }
 

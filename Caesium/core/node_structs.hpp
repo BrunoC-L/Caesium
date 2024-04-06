@@ -337,6 +337,8 @@ struct NodeStructs {
 	};
 
 	struct EqualStatement {
+		Expression left;
+		Expression right;
 		std::weak_ordering operator<=>(const EqualStatement&) const = default;
 	};
 
@@ -459,10 +461,10 @@ struct NodeStructs {
 
 	struct MetaType;
 
-	/*struct AggregateType {
+	struct AggregateType {
 		std::vector<std::pair<ArgumentCategory, MetaType>> arguments;
 		std::weak_ordering operator<=>(const AggregateType&) const = default;
-	};*/
+	};
 
 	struct UnionType {
 		std::vector<MetaType> arguments;
@@ -497,13 +499,16 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const MapType&) const = default;
 	};
 
+	using void_t = struct {};
+
 	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
 		std::variant<
 			std::string,
 			double,
 			int,
-			bool
+			bool,
+			void_t
 		> value;
 		std::weak_ordering operator<=>(const PrimitiveType&) const;
 	};
@@ -515,10 +520,21 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const Enum&) const;
 	};
 
+	struct EnumType {
+		std::reference_wrapper<const Enum> enum_;
+		std::weak_ordering operator<=>(const EnumType&) const;
+	};
+
+	struct EnumValueType {
+		std::reference_wrapper<const Enum> enum_;
+		std::string value;
+		std::weak_ordering operator<=>(const EnumValueType&) const;
+	};
+
 	struct MetaType {
 		std::variant<
 			PrimitiveType, // ex. type(1)
-			std::reference_wrapper<const Type>, // ex. type Dog -> type(Dog)
+			Type, // ex. type Dog -> type(Dog{})
 
 			FunctionType, // ex. Bool has_bone(...) -> type(has_bone)
 			InterfaceType, // ex. interface Animal -> type(Animal)
@@ -526,14 +542,16 @@ struct NodeStructs {
 			UnionType, // ex. type A, type B -> type(A | B)
 			TemplateType, // ex. template X -> type(X)
 			Builtin,
-			Enum,
+			EnumType,
+			EnumValueType,
+			AggregateType,
 
 			Vector, // type(Vector)
-			VectorType, // type(Vector<Int>), note that type(Vector<Int>{}) yields a ExpressionType{VectorType}
+			VectorType, // type(Vector<Int>)
 			Set, // type(Set)
-			SetType, // type(Set<Int>), note that type(Set<Int>{}) yields a ExpressionType{SetType}
+			SetType, // type(Set<Int>)
 			Map, // type(Map)
-			MapType // type(Map<Int, Int>), note that type(Map<Int,Int>{}) yields a ExpressionType{MapType}
+			MapType // type(Map<Int, Int>)
 		> type;
 		std::weak_ordering operator<=>(const MetaType& other) const;
 	};
@@ -740,7 +758,7 @@ inline std::weak_ordering NodeStructs::Template::operator<=>(const Template& oth
 }
 
 inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const PrimitiveType& other) const {
-	return cmp(*this, other);
+	return value.index() <=> other.value.index();
 }
 
 inline std::weak_ordering NodeStructs::TemplateParameterWithDefaultValue::operator<=>(const TemplateParameterWithDefaultValue& other) const {
@@ -779,4 +797,14 @@ inline std::weak_ordering NodeStructs::TemplateType::operator<=>(const TemplateT
 	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
 		return c;
 	return cmp(name_space, other.name_space);
+}
+
+inline std::weak_ordering NodeStructs::EnumType::operator<=>(const EnumType& other) const {
+	return cmp(enum_, other.enum_);
+}
+
+inline std::weak_ordering NodeStructs::EnumValueType::operator<=>(const EnumValueType& other) const {
+	if (auto c = cmp(enum_, other.enum_); c != std::weak_ordering::equivalent)
+		return c;
+	return cmp(value, other.value);
 }

@@ -3,15 +3,18 @@
 using T = type_of_function_like_call_with_args_visitor;
 using R = T::R;
 
-R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
+R T::operator()(const NodeStructs::Type& t) {
 	return error{
 		"user error",
-		"Use of type like a function is prohibited. Type was `" + t.get().name + "`"
+		"Use of type like a function is prohibited. Type was `" + t.name + "`"
 	};
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
-	throw;
+	return error{
+		"user error",
+		"Use of type like a function is prohibited. Type was `" + transpile_typename(state, typename_of_primitive(t)).value() + "`"
+	};
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {
@@ -49,7 +52,15 @@ R T::operator()(const NodeStructs::TemplateType& tmpl) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Enum& tmpl) {
+R T::operator()(const NodeStructs::EnumType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::EnumValueType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
 }
 

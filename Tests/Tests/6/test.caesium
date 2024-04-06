@@ -1,2 +1,2 @@
 Int main(Vector<String> ref s):
-    Int a = {}
+    Int a = { 0 }

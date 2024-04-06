@@ -182,7 +182,8 @@ transpile_t transpile(
 
 transpile_t transpile(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Statement>& statements
+	const std::vector<NodeStructs::Statement>& statements,
+	const NodeStructs::MetaType& expected_return_type
 );
 
 std::vector<NodeStructs::MetaType> decompose_type(
@@ -308,7 +309,7 @@ expected<Arrangement> find_best_template(
 	const std::vector<NodeStructs::Typename>& args
 );
 
-expected<const NodeStructs::Function*> find_best_function(
+expected<std::optional<const NodeStructs::Function*>> find_best_function(
 	transpilation_state_with_indent state,
 	const std::string& name,
 	const std::vector<NodeStructs::FunctionArgument>& args,

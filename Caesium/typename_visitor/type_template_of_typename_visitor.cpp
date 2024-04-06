@@ -105,13 +105,13 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
 				auto structured_t = getStruct(t.get<grammar::Type>(), std::nullopt);
 				structured_t.name = tmpl_name;
-				auto templated_with_reprs= vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
+				auto templated_with_reprs = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
 				return_if_error(templated_with_reprs);
 				state.state.global_namespace.types[structured_t.name].push_back(structured_t);
 				auto opt_error = traverse_type(state, structured_t);
 				if (opt_error.has_value())
 					return opt_error.value();
-				return NodeStructs::MetaType{ structured_t };
+				return NodeStructs::MetaType{ std::move(structured_t) };
 			}
 		}
 		return error{

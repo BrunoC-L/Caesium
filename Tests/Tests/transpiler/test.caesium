@@ -6,6 +6,7 @@ template build<T>:
         return True
 
 Int main(Vector<String> ref args):
+    Vector<Int>{}.size()
 	auto w = Word{0, "hi"}
 	auto t1 = Or<Word, Int>{ Word{ "t1", 1 } }
 	Or<Word, Int> t2 = Word{ 't2', 2 }

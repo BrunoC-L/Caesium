@@ -5,6 +5,10 @@ template Pair<T, U>:
         `T` first
         `U` second
 
+template back<T>:
+    `T` back(Vector<`T`> ref vec):
+        return vec[vec.size() - 1]
+
 using TOKENVALUE = Pair<TOKENS, String>
 using Iterator = Vector<TOKENVALUE>::iterator
 type tokens_and_iterator:
@@ -22,14 +26,14 @@ Vector<TOKENVALUE> read(Tokenizer ref! tk):
 		while True:
 			TOKENVALUE t = readToken()
 			out.push(t)
-			if t.first != END:
+			if t.first != TOKENS::END:
 				break
 		// this allows for files not to end with a new line, we add it manually so we can later act as if all files end with a new line
 		if out.size():
-			out.back().first = NEWLINE // replace END with newline
-			out.push(TOKENVALUE{END, ""}) // add the new END
+//			out.back().first = NEWLINE // replace END with newline
+			out.push(TOKENVALUE{TOKENS::END, ""}) // add the new END
 	else:
-		out.push(TOKENVALUE{END, ""})
+		out.push(TOKENVALUE{TOKENS::END, ""})
 	return out
 
 
@@ -86,7 +90,7 @@ TOKENS peek(Int val n):
 
 TOKENVALUE readToken():
 	if index == program.length():
-		return{ END, "" }
+		return{ TOKENS::END, "" }
 	char c = program[index]
 	String str = ""
 	switch c:

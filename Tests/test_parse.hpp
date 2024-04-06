@@ -58,8 +58,6 @@ bool test_parse() {
 	ok &= test_parse_correct<Newline>(__LINE__, 0, "\n");
 	ok &= test_parse_correct<Newline>(__LINE__, 0, "\t\n");
 	ok &= test_parse_correct<Newline>(__LINE__, 0, " \n");
-	ok &= test_parse_incorrect<Newline>(__LINE__, 0, "\n\n");
-	ok &= test_parse_incorrect<Newline>(__LINE__, 0, "\n\t");
 	ok &= test_parse_correct<Newline>(__LINE__, 0, "\n");
 	ok &= test_parse_correct<Newline>(__LINE__, 0, " // a \n");
 

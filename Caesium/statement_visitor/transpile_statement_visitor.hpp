@@ -6,6 +6,7 @@ struct transpile_statement_visitor : StatementVisitor<transpile_statement_visito
 	using StatementVisitor<transpile_statement_visitor>::operator();
 
 	transpilation_state_with_indent state;
+	const NodeStructs::MetaType& expected_return_type;
 
 	using R = transpile_t;
 
@@ -14,7 +15,8 @@ struct transpile_statement_visitor : StatementVisitor<transpile_statement_visito
 
 transpile_t transpile_statement(
 	transpilation_state_with_indent state,
-	const auto& statement
+	const auto& statement,
+	const NodeStructs::MetaType& expected_return_type
 ) {
-	return transpile_statement_visitor{ {}, state }(statement);
+	return transpile_statement_visitor{ {}, state, expected_return_type }(statement);
 }

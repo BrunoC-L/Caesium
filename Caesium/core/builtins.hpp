@@ -2,12 +2,6 @@
 #include "toCpp.hpp"
 
 struct builtins {
-	NodeStructs::Type builtin_void = { "Void", std::nullopt };
-	NodeStructs::Type builtin_bool = { "Bool", std::nullopt };
-	NodeStructs::Type builtin_int = { "Int", std::nullopt };
-	NodeStructs::Type builtin_double = { "Floating", std::nullopt };
-	NodeStructs::Type builtin_string = { "String", std::nullopt };
-
 	NodeStructs::Builtin builtin_variant = { "Variant" };
 
 	//vec

@@ -222,8 +222,12 @@ NodeStructs::Interface getStruct(const grammar::Interface& interface, std::optio
 }
 
 NodeStructs::Enum getStruct(const grammar::Enum& e, std::optional<NodeStructs::Typename> name_space) {
-	using values_t = Star<Or<grammar::Newline, Indent<And<IndentToken, grammar::Word, grammar::Newline>>>>;
+	using value_t = Indent<And<IndentToken, grammar::Word, grammar::Newline>>;
 	std::vector<std::string> values = {};
+	auto vec = e.get<Star<value_t>>().get<value_t>();
+	values.reserve(vec.size());
+	for (const value_t& v : vec)
+		values.push_back(v.get<grammar::Word>().value);
 	return {
 		.name = e.get<grammar::Word>().value,
 		.values = std::move(values),
@@ -813,7 +817,7 @@ NodeStructs::SwitchStatement getStatementStruct(const grammar::SwitchStatement& 
 }
 
 NodeStructs::EqualStatement getStatementStruct(const grammar::EqualStatement& statement) {
-	return {};
+	return { getExpressionStruct(statement.get<grammar::Expression, 0>()), getExpressionStruct(statement.get<grammar::Expression, 1>()) };
 }
 
 NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {

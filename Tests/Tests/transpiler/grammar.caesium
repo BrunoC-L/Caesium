@@ -66,4 +66,4 @@ using Type = And<Token<TYPE>,Word,Token<COLON>,Newline,Indent<Star<And<IndentTok
 using Template = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<And<Word, Opt<And<Token<EQUAL>, Expression>>>>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>
 using Named = Or<NameSpace,Type,Function,Interface,Template,Alias>
 using NameSpace = And<Word,Token<COLON>,Token<NEWLINE>,Indent<Star<Or<Token<NEWLINE>, And<IndentToken, Named>>>>>
-using File = And<Star<Import>, Star<Or<Token<NEWLINE>, Named>>, Token<END>>
+using File = And<Star<Import>, Star<Or<Token<NEWLINE>, Named>>, Token<TOKENS::END>>

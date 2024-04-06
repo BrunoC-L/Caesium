@@ -199,6 +199,7 @@
     <ClInclude Include="typename_visitor\type_of_typename_visitor.hpp" />
     <ClInclude Include="type_visitor\type_category_visitor.hpp" />
     <ClInclude Include="utility\vec_of_expected_to_expected_of_vec.hpp" />
+    <ClInclude Include="utility\vec_of_variant_to_optional_vector_single_type.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

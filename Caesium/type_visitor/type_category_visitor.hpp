@@ -20,7 +20,7 @@ struct TypeCategoryVisitor {
 	}
 #define TypeCategoryVisitorDeclarations \
 	R operator()(const NodeStructs::PrimitiveType& t);\
-	R operator()(const std::reference_wrapper<const NodeStructs::Type>& t);\
+	R operator()(const NodeStructs::Type& t);\
 \
 	R operator()(const NodeStructs::FunctionType& t);\
 	R operator()(const NodeStructs::InterfaceType& t);\
@@ -28,7 +28,9 @@ struct TypeCategoryVisitor {
 	R operator()(const NodeStructs::Builtin& t);\
 	R operator()(const NodeStructs::UnionType& t);\
 	R operator()(const NodeStructs::TemplateType& t);\
-	R operator()(const NodeStructs::Enum& t);\
+	R operator()(const NodeStructs::EnumType& t);\
+	R operator()(const NodeStructs::EnumValueType& t);\
+	R operator()(const NodeStructs::AggregateType& t);\
 \
 	R operator()(const NodeStructs::Vector& t);\
 	R operator()(const NodeStructs::VectorType& t);\

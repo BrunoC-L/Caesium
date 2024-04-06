@@ -4,11 +4,11 @@
 using T = typename_of_type_visitor;
 using R = T::R;
 
-R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& t) {
-	if (t.get().name_space.has_value())
-		return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ t.get().name_space.value(), t.get().name } };
+R T::operator()(const NodeStructs::Type& t) {
+	if (t.name_space.has_value())
+		return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ t.name_space.value(), t.name } };
 	else
-		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.get().name } };
+		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name } };
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
@@ -43,7 +43,15 @@ R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Enum& t) {
+R T::operator()(const NodeStructs::EnumType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::EnumValueType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
 }
 

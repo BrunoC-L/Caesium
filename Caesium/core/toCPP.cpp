@@ -6,6 +6,7 @@
 
 #include "../utility/overload.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
+#include "../utility/vec_of_variant_to_optional_vector_single_type.hpp"
 
 #include "toCPP.hpp"
 #include "builtins.hpp"
@@ -29,11 +30,6 @@ static void add(Namespace& name_space, NodeStructs::Function&& f) {
 
 static void add_builtins(Namespace& name_space) {
 	builtins _builtins;
-	add(name_space, std::move(_builtins.builtin_int));
-	add(name_space, std::move(_builtins.builtin_bool));
-	add(name_space, std::move(_builtins.builtin_string));
-	add(name_space, std::move(_builtins.builtin_double));
-	add(name_space, std::move(_builtins.builtin_void));
 
 	add(name_space, std::move(_builtins.builtin_variant));
 
@@ -43,6 +39,7 @@ static void add_builtins(Namespace& name_space) {
 
 	add(name_space, std::move(_builtins.builtin_push));
 	add(name_space, std::move(_builtins.builtin_insert));
+	add(name_space, std::move(_builtins.builtin_size));
 
 	add(name_space, std::move(_builtins.builtin_print));
 	add(name_space, std::move(_builtins.builtin_println));
@@ -55,11 +52,6 @@ static void add_builtins(Namespace& name_space) {
 
 static void traverse_builtins(transpilation_state& state) {
 	builtins _builtins;
-	state.traversed_types.insert(_builtins.builtin_int);
-	state.traversed_types.insert(_builtins.builtin_bool);
-	state.traversed_types.insert(_builtins.builtin_string);
-	state.traversed_types.insert(_builtins.builtin_double);
-	state.traversed_types.insert(_builtins.builtin_void);
 
 	state.traversed_functions.insert(_builtins.entries_dir);
 	state.traversed_functions.insert(_builtins.entries_str);
@@ -303,7 +295,9 @@ transpile_header_cpp_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 ) {
-	auto return_type = transpile_typename(state, fn.returnType);
+	auto return_typename = transpile_typename(state, fn.returnType);
+	return_if_error(return_typename);
+	auto return_type = type_of_typename(state, fn.returnType);
 	return_if_error(return_type);
 	auto parameters = transpile(state, fn.parameters);
 	return_if_error(parameters);
@@ -315,18 +309,18 @@ transpile_header_cpp_t transpile(
 		else
 			state.state.variables[name].push_back({ value_cat, t.value() });
 	}
-	auto statements = transpile(state.indented(), fn.statements);
+	auto statements = transpile(state.indented(), fn.statements, return_type.value());
 	return_if_error(statements);
 	for (auto&& [type_name, value_cat, name] : fn.parameters)
 		state.state.variables[name].pop_back();
 	if (fn.name_space.has_value()) {
-		auto common = return_type.value() + " " + transpile_typename(state, fn.name_space.value()).value() + "__" + fn.name + "(" + parameters.value() + ")";
+		auto common = return_typename.value() + " " + transpile_typename(state, fn.name_space.value()).value() + "__" + fn.name + "(" + parameters.value() + ")";
 		auto h = common + ";\n";
 		auto cpp = common + " {\n" + statements.value() + "};\n";
 		return std::pair{ h, cpp };
 	}
 	else {
-		auto common = return_type.value() + " " + fn.name + "(" + parameters.value() + ")";
+		auto common = return_typename.value() + " " + fn.name + "(" + parameters.value() + ")";
 		auto h = common + ";\n";
 		auto cpp = common + " {\n" + statements.value() + "};\n";
 		return std::pair{ h, cpp };
@@ -396,11 +390,12 @@ transpile_t transpile(
 
 transpile_t transpile(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Statement>& statements
+	const std::vector<NodeStructs::Statement>& statements,
+	const NodeStructs::MetaType& expected_return_type
 ) {
 	std::stringstream ss;
 	for (const auto& statement : statements) {
-		auto k = transpile_statement(state, statement);
+		auto k = transpile_statement(state, statement, expected_return_type);
 		if (k.has_value())
 			ss << indent(state.indent) << k.value();
 		else
@@ -459,94 +454,7 @@ std::vector<NodeStructs::MetaType> decompose_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::MetaType& type
 ) {
-	return std::visit(
-		overload(overload_default_error,
-			[&](const NodeStructs::PrimitiveType& _type) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const std::reference_wrapper<const NodeStructs::Type>& _type) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			/*[&](const std::reference_wrapper<const NodeStructs::Type>& _type) -> std::vector<NodeStructs::MetaType> {
-				const auto& type = _type.get();
-				if (type.name == "Int" || type.name == "String" || type.name == "Bool")
-					throw std::runtime_error("Cannot decompose type 'Int'");
-				return type.memberVariables
-					| std::views::transform([&](const auto& e) { return type_of_typename(state, e.type).value(); })
-					| to_vec();
-			},
-			[&](const NodeStructs::TypeTemplateInstanceType& type) -> std::vector<NodeStructs::MetaType> {
-				const auto tn = type.type_template.get().templated.name;
-				if (tn == "Set")
-					if (type.template_arguments.size() == 1)
-						return { type.template_arguments.at(0) };
-					else
-						throw;
-				else
-					if (tn == "Vector")
-						if (type.template_arguments.size() == 1)
-							return { type.template_arguments.at(0) };
-						else
-							throw;
-					else
-						if (tn == "Map")
-							if (type.template_arguments.size() == 2)
-								return { type.template_arguments.at(0), type.template_arguments.at(1) };
-							else
-								throw;
-						else
-							if (tn == "Pair")
-								if (type.template_arguments.size() == 2)
-									return { type.template_arguments.at(0), type.template_arguments.at(1) };
-								else
-									throw;
-				throw;
-			},*/
-			/*[&](const NodeStructs::AggregateType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},*/
-			[&](const NodeStructs::FunctionType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::InterfaceType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::NamespaceType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::Builtin&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::UnionType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::TemplateType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::Enum&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::Vector&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::VectorType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::Set&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::SetType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::Map&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			},
-			[&](const NodeStructs::MapType&) -> std::vector<NodeStructs::MetaType> {
-				throw;
-			}
-		),
-		type.type
-	);
+	throw;
 }
 
 std::optional<error> add_decomposed_for_iterator_variables(
@@ -797,13 +705,40 @@ bool is_assignable_to(
 			[&](const auto& e, const auto& u, const auto& state) -> bool {
 				throw;
 			},
-			[&](this auto self, const NodeStructs::UnionType& e, const auto& u, const auto& state) {
+			[&](const NodeStructs::Type& e, const NodeStructs::AggregateType& u, const auto& state) -> bool {
+				if (e.member_variables.size() != u.arguments.size())
+					return false;
+				for (size_t i = 0; i < e.member_variables.size(); ++i) {
+					auto mem_t = type_of_typename(state, e.member_variables.at(i).type);
+					if (mem_t.has_error())
+						throw;
+					if (!is_assignable_to(state, mem_t.value(), u.arguments.at(i).second))
+						return false;
+				}
+				return true;
+			},
+			[&](const NodeStructs::PrimitiveType& e, const NodeStructs::PrimitiveType& u, const auto& state) -> bool {
+				return e.value.index() == u.value.index();
+			},
+			[&](const NodeStructs::EnumType& e, const NodeStructs::EnumValueType& u, const auto& state) -> bool {
+				return e.enum_.get() <=> u.enum_.get() == std::weak_ordering::equivalent;
+			},
+			[&](const NodeStructs::Builtin& e, const NodeStructs::Builtin& u, const auto& state) -> bool {
+				return e.name == u.name;
+			},
+			[&](const NodeStructs::Builtin& e, const auto& u, const auto& state) -> bool {
+				if (e.name == "directory") {
+					return is_assignable_to(state, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } }, { u });
+				}
+				throw;
+			},
+			[&](const NodeStructs::UnionType& e, const auto& u, const auto& state) {
 				if constexpr (std::is_same_v<std::remove_cvref_t<decltype(u)>, NodeStructs::UnionType>) {
 					for (const auto& arg : u.arguments) {
 						bool ok = false;
 						for (const auto& param : e.arguments) {
 							if ((arg <=> param == std::weak_ordering::equivalent)
-								|| std::visit([&self,&state](const auto& _param, const auto& _arg) -> bool { return self(_param, _arg, state); }, param.type, arg.type)) {
+								|| std::visit([&state](const auto& _param, const auto& _arg) -> bool { return is_assignable_to(state, { _param }, { _arg }); }, param.type, arg.type)) {
 								ok = true;
 								break;
 							}
@@ -815,7 +750,7 @@ bool is_assignable_to(
 				}
 				else {
 					for (const auto& vt : e.arguments)
-						if (std::visit([&](const auto& t) -> bool { return self(t, u, state); }, vt.type))
+						if (std::visit([&](const auto& t) -> bool { return is_assignable_to(state, { t }, { u }); }, vt.type))
 							return true;
 					return false;
 				}
@@ -826,12 +761,12 @@ bool is_assignable_to(
 			[&](const NodeStructs::SetType& e, const NodeStructs::SetType& u, const auto& state) {
 				return e.value_type <=> u.value_type == std::weak_ordering::equivalent;
 			},
-			[&](const NodeStructs::InterfaceType& e, std::reference_wrapper<const NodeStructs::Type> u, const auto& state) -> bool {
+			[&](const NodeStructs::InterfaceType& e, const NodeStructs::Type& u, const auto& state) -> bool {
 				for (const auto& [type_name, name] : e.interface.get().member_variables) {
 					auto t = type_of_typename(state, type_name);
 					if (t.has_error())
 						throw;
-					for (const auto& [source_type_name, source_name] : u.get().member_variables)
+					for (const auto& [source_type_name, source_name] : u.member_variables)
 						if (name == source_name) {
 							auto t2 = type_of_typename(state, source_type_name);
 							if (t2.has_error())
@@ -841,7 +776,7 @@ bool is_assignable_to(
 						}
 				}
 				auto& interfacemembers = state.state.interface_symbol_to_members[
-					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name} }
+					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name } }
 				];
 				auto new_member = NodeStructs::MetaType{ u };
 				for (const auto& member : interfacemembers)
@@ -850,14 +785,14 @@ bool is_assignable_to(
 				interfacemembers.push_back(std::move(new_member));
 				return true;
 			},
-			[&](this const auto& self, std::reference_wrapper<const NodeStructs::Type> e, std::reference_wrapper<const NodeStructs::Type> u, const auto& state) {
-				if (e.get() <=> u.get() == std::weak_ordering::equivalent)
+			[&](const NodeStructs::Type& e, const NodeStructs::Type& u, const auto& state) {
+				if (e <=> u == std::weak_ordering::equivalent)
 					return true;
-				if (e.get().member_variables.size() == 1) {
-					auto member_variable_t = type_of_typename(state, e.get().member_variables.at(0).type);
+				if (e.member_variables.size() == 1) {
+					auto member_variable_t = type_of_typename(state, e.member_variables.at(0).type);
 					if (member_variable_t.has_error())
 						throw;
-					return std::visit([&self, &state, &u](const auto& _param) -> bool { return self(_param, u, state); }, member_variable_t.value().type);
+					return std::visit([&state, &u](const auto& _param) -> bool { return is_assignable_to(state, { _param }, { u }); }, member_variable_t.value().type);
 				}
 				return false;
 			}
@@ -874,27 +809,16 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 	const auto& t_ok = std::get<non_type_information>(t.value());
 
 	std::stringstream ss;
-	if (std::holds_alternative<std::reference_wrapper<const NodeStructs::Type>>(t_ok.type.type.type)) {
-		const auto& t_ref = std::get<std::reference_wrapper<const NodeStructs::Type>>(t_ok.type.type.type).get();
-		if (t_ref.name == "String") {
-			auto expr_repr = transpile_expression(state, expr);
-			return_if_error(expr_repr);
-			if (!std::holds_alternative<non_type_information>(expr_repr.value()))
-				throw;
-			const auto& expr_repr_ok = std::get<non_type_information>(expr_repr.value());
-			ss << "String(\"\\\"\") + " << expr_repr_ok.representation << " + String(\"\\\"\")";
-			return ss.str();
-		}
-		else {
-			ss << t_ref.name << "{";
-			for (const auto& [member_typename, member_name] : t_ref.member_variables) {
-				auto typename_t = type_of_typename(state, member_typename);
-				return_if_error(typename_t);
-				auto member = NodeStructs::PropertyAccessExpression{ .operand = expr, .property_name = member_name };
-				auto member_repr = expr_to_printable(state, { member });
-				return_if_error(member_repr);
-				ss << member_name << " = \" << " << member_repr.value();
-			}
+	if (std::holds_alternative<NodeStructs::Type>(t_ok.type.type.type)) {
+		const auto& t_ref = std::get<NodeStructs::Type>(t_ok.type.type.type);
+		ss << t_ref.name << "{";
+		for (const auto& [member_typename, member_name] : t_ref.member_variables) {
+			auto typename_t = type_of_typename(state, member_typename);
+			return_if_error(typename_t);
+			auto member = NodeStructs::PropertyAccessExpression{ .operand = expr, .property_name = member_name };
+			auto member_repr = expr_to_printable(state, { member });
+			return_if_error(member_repr);
+			ss << member_name << " = \" << " << member_repr.value();
 		}
 		return ss.str();
 	}
@@ -911,6 +835,15 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, const NodeS
 			ss << member_name << " = \" << " << member_repr.value();
 		}
 		ss << " << \"}\"";
+		return ss.str();
+	}
+	else if (std::holds_alternative<NodeStructs::PrimitiveType>(t_ok.type.type.type)) {
+		auto expr_repr = transpile_expression(state, expr);
+		return_if_error(expr_repr);
+		if (!std::holds_alternative<non_type_information>(expr_repr.value()))
+			throw;
+		const auto& expr_repr_ok = std::get<non_type_information>(expr_repr.value());
+		ss << "String(\"\\\"\") + " << expr_repr_ok.representation << " + String(\"\\\"\")";
 		return ss.str();
 	}
 	else {
@@ -1092,6 +1025,9 @@ NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& pr
 		},
 		[&](const bool&) {
 			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Bool" } };
+		},
+		[&](const NodeStructs::void_t&) {
+			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } };
 		}
 	), primitive_t.value);
 }
@@ -1380,17 +1316,176 @@ expected<Arrangement> find_best_template(
 	return _find_best_template(templates, args);
 }
 
-expected<const NodeStructs::Function*> find_best_function(
+static expected<std::optional<const NodeStructs::Function*>> find_best_function100(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const std::vector<NodeStructs::Function>& fs
+) {
+	auto args_ = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM_X(arg, transpile_expression(state, arg.expr)) | to_vec());
+	return_if_error(args_);
+	const auto& args_ok_maybe_wrong_type = args_.value();
+	auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(args_ok_maybe_wrong_type);
+	if (!opt.has_value())
+		throw;
+	const auto& args_ok = opt.value();
+	std::optional<const NodeStructs::Function*> res = std::nullopt;
+
+	for (const auto& fn : fs) {
+		size_t size = fn.parameters.size();
+		if (size != args.size())
+			continue;
+		bool failed = false;
+		for (size_t i = 0; i < size; ++i) {
+			auto f_tn = type_of_typename(state, fn.parameters.at(i).typename_);
+			return_if_error(f_tn);
+			if (!is_assignable_to(state, f_tn.value(), args_ok.at(i).type.type))
+				failed = true;
+		}
+		if (failed)
+			continue;
+		else
+			res.emplace(&fn);
+	}
+
+	if (res.has_value())
+		return res.value();
+	else
+		return std::nullopt;
+}
+
+static expected<std::optional<const NodeStructs::Function*>> find_best_function010(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const std::vector<NodeStructs::Function>& auto_fs
+) {
+	auto args_ = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM_X(arg, transpile_expression(state, arg.expr)) | to_vec());
+	return_if_error(args_);
+	const auto& args_ok_maybe_wrong_type = args_.value();
+	auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(args_ok_maybe_wrong_type);
+	if (!opt.has_value())
+		throw;
+	const auto& args_ok = opt.value();
+	std::optional<const NodeStructs::Function*> res = std::nullopt;
+	for (const auto& auto_fn : auto_fs) {
+		size_t size = auto_fn.parameters.size();
+		if (size != args.size())
+			continue;
+		auto fn = realise_function_using_auto(state, auto_fn, args);
+		if (fn.has_error())
+			continue;
+
+		const auto& fn_ok = fn.value();
+		// TODO VERIFY
+		auto it = state.state.traversed_functions.insert(fn_ok);
+		if (it.second) {
+			state.state.functions_to_transpile.insert(fn_ok);
+		}
+
+		bool failed = false;
+		for (size_t i = 0; i < size; ++i) {
+			auto f_tn = type_of_typename(state, fn_ok.parameters.at(i).typename_);
+			if (f_tn.has_error()) {
+				failed = true;
+				continue;
+			}
+			if (!is_assignable_to(state, f_tn.value(), args_ok.at(i).type.type))
+				failed = true;
+		}
+		if (failed)
+			continue;
+		else
+			res.emplace(&*it.first);
+	}
+	if (res.has_value())
+		return res.value();
+	else
+		return std::nullopt;
+}
+
+static expected<std::optional<const NodeStructs::Function*>> find_best_function001(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const std::vector<NodeStructs::Template>& templates
+) {
+	throw;
+}
+
+static expected<std::optional<const NodeStructs::Function*>> find_best_function110(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const std::vector<NodeStructs::Function>& fs,
+	const std::vector<NodeStructs::Function>& auto_fs
+) {
+	auto e_f = find_best_function100(state, name, args, fs);
+	if (e_f.has_error() || e_f.value().has_value())
+		return e_f;
+	return find_best_function010(state, name, args, auto_fs);
+}
+
+static expected<std::optional<const NodeStructs::Function*>> find_best_function101(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const std::vector<NodeStructs::Function>& fs,
+	const std::vector<NodeStructs::Template>& templates
+) {
+	throw;
+}
+
+static expected<std::optional<const NodeStructs::Function*>> find_best_function011(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const std::vector<NodeStructs::Function>& auto_fs,
+	const std::vector<NodeStructs::Template>& templates
+) {
+	throw;
+}
+
+static expected<std::optional<const NodeStructs::Function*>> find_best_function111(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::vector<NodeStructs::FunctionArgument>& args,
+	const std::vector<NodeStructs::Function>& fs,
+	const std::vector<NodeStructs::Function>& auto_fs,
+	const std::vector<NodeStructs::Template>& templates
+) {
+	throw;
+}
+
+expected<std::optional<const NodeStructs::Function*>> find_best_function(
 	transpilation_state_with_indent state,
 	const std::string& name,
 	const std::vector<NodeStructs::FunctionArgument>& args,
 	const Namespace& space
 ) {
 	const auto& fs = space.functions.find(name);
+	const auto& auto_fs = space.functions_using_auto.find(name);
+	const auto& templates = space.templates.find(name);
 	if (fs != space.functions.end())
-		if (fs->second.size() != 1)
-			return error{ "todo","todo" };
+		if (auto_fs != space.functions_using_auto.end())
+			if (templates != space.templates.end())
+				return find_best_function111(state, name, args, fs->second, auto_fs->second, templates->second);
+			else
+				return find_best_function110(state, name, args, fs->second, auto_fs->second);
 		else
-			return &fs->second.at(0);
-	return error{ "todo","todo" };
+			if (templates != space.templates.end())
+				return find_best_function101(state, name, args, fs->second, templates->second);
+			else
+				return find_best_function100(state, name, args, fs->second);
+	else
+		if (auto_fs != space.functions_using_auto.end())
+			if (templates != space.templates.end())
+				return find_best_function011(state, name, args, auto_fs->second, templates->second);
+			else
+				return find_best_function010(state, name, args, auto_fs->second);
+		else
+			if (templates != space.templates.end())
+				return find_best_function001(state, name, args, templates->second);
+			else
+				throw;
 }

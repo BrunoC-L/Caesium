@@ -13,7 +13,7 @@ namespace grammar {
 	using String = Token<STRING>;
 	using Newline = Token<NEWLINE>;
 
-	using Enum = And<Token<ENUM>, Word, Token<COLON>, Newline, Star<Or<Newline, Indent<And<IndentToken, Word, Newline>>>>>;
+	using Enum = And<Token<ENUM>, Word, Token<COLON>, Newline, Star<Indent<And<IndentToken, Word, Newline>>>>;
 
 	using Expression = ConditionalExpression;
 	using Import = And<Star<Token<NEWLINE>>, Token<IMPORT>, Or<Word, String>, Newline>;

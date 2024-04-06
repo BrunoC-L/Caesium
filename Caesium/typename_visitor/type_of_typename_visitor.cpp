@@ -4,6 +4,17 @@ using T = type_of_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
+	if (t.type == "Int")
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } };
+	if (t.type == "Bool")
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { bool{} } } };
+	if (t.type == "String")
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } };
+	if (t.type == "Void")
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } } };
+	if (t.type == "Floating")
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { double{} } } };
+
 	if (auto it = state.state.global_namespace.types.find(t.type); it != state.state.global_namespace.types.end()) {
 		const auto& types = it->second;
 		if (types.size() != 1)
@@ -51,7 +62,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		if (enums.size() != 1)
 			throw;
 		const auto& enum_ = enums.at(0);
-		return NodeStructs::MetaType{ enum_ };
+		return NodeStructs::MetaType{ NodeStructs::EnumType{ enum_ } };
 	}
 	return error{ "user error" , "Missing type `" + t.type + "`"};
 }

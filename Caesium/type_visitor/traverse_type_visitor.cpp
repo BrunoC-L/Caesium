@@ -4,8 +4,8 @@
 using T = traverse_type_visitor;
 using R = T::R;
 
-R T::operator()(const std::reference_wrapper<const NodeStructs::Type>& type) {
-	if (!state.state.traversed_types.contains(type.get())) {
+R T::operator()(const NodeStructs::Type& type) {
+	if (!state.state.traversed_types.contains(type)) {
 		state.state.traversed_types.insert(type);
 		state.state.types_to_transpile.insert(type);
 	}
@@ -44,7 +44,15 @@ R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Enum& t) {
+R T::operator()(const NodeStructs::EnumType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::EnumValueType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::AggregateType& t) {
 	throw;
 }
 

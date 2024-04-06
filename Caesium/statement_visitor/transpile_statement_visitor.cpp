@@ -90,7 +90,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::IfStatement& statement) {
-	auto if_statements = transpile(state.indented(), statement.ifStatements);
+	auto if_statements = transpile(state.indented(), statement.ifStatements, expected_return_type);
 	return_if_error(if_statements);
 
 	auto if_expr = transpile_expression(state, statement.ifExpr);
@@ -111,7 +111,7 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 					return operator()(elseif.get()).value();
 				},
 				[&](const std::vector<NodeStructs::Statement>& justelse) {
-					return "{" + transpile(state, justelse).value() + "}";
+					return "{" + transpile(state, justelse, expected_return_type).value() + "}";
 				}
 			),
 			statement.elseExprStatements.value()
@@ -162,7 +162,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 	if (!std::holds_alternative<non_type_information>(s1.value()))
 		throw;
 	const auto& s1_ok = std::get<non_type_information>(s1.value());
-	auto s2 = transpile(state.indented(), statement.statements);
+	auto s2 = transpile(state.indented(), statement.statements, expected_return_type);
 	return_if_error(s2);
 	ss << " : "
 		<< s1_ok.representation
@@ -185,33 +185,36 @@ R T::operator()(const NodeStructs::WhileStatement& statement) {
 	if (!std::holds_alternative<non_type_information>(s1.value()))
 		throw;
 	const auto& s1_ok = std::get<non_type_information>(s1.value());
-	auto s2 = transpile(state.indented(), statement.statements);
+	auto s2 = transpile(state.indented(), statement.statements, expected_return_type);
 	return_if_error(s2);
 	return "while (" + s1_ok.representation + ") {\n" + s2.value() + "}";
 }
 
 R T::operator()(const NodeStructs::BreakStatement& statement) {
+	if (!statement.ifExpr.has_value())
+		return "break;\n";
 	auto s1 = transpile_expression(state, statement.ifExpr.value());
 	return_if_error(s1);
 	if (!std::holds_alternative<non_type_information>(s1.value()))
 		throw;
 	const auto& s1_ok = std::get<non_type_information>(s1.value());
-	if (statement.ifExpr.has_value())
-		return "if (" + s1_ok.representation + ") break;\n";
-	else
-		return "break;\n";
+	return "if (" + s1_ok.representation + ") break;\n";
 }
 
 R T::operator()(const NodeStructs::ReturnStatement& statement) {
 	if (statement.returnExpr.size() == 0)
 		return "return;\n";
+	if (statement.returnExpr.size() != 1)
+		throw; // gonna have to see about that
 	R return_expression = [&]() -> R {
-		auto args_repr = transpile_args(state, statement.returnExpr);
-		return_if_error(args_repr);
-		if (statement.returnExpr.size() == 1)
-			return args_repr.value();
-		else
-			return "{" + args_repr.value() + "}";
+		auto expr_info = transpile_expression(state, statement.returnExpr.at(0).expr);
+		return_if_error(expr_info);
+		if (!std::holds_alternative<non_type_information>(expr_info.value()))
+			throw;
+		const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
+		if (!is_assignable_to(state, expected_return_type, expr_info_ok.type.type))
+			throw;
+		return expr_info_ok.representation;
 	}();
 	return_if_error(return_expression);
 	if (statement.ifExpr.has_value()) {
@@ -267,7 +270,7 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 				.value_category = NodeStructs::Reference{},
 				.type = type_of_typename(state, match_case.variable_declarations.at(0).first).value() 
 			});
-		auto statements = transpile(state.indented(), match_case.statements);
+		auto statements = transpile(state.indented(), match_case.statements, expected_return_type);
 		state.state.variables[varname].pop_back();
 		return_if_error(statements);
 
@@ -292,5 +295,13 @@ R T::operator()(const NodeStructs::SwitchStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::EqualStatement& statement) {
-	throw;
+	auto left = transpile_expression(state, statement.left);
+	auto right = transpile_expression(state, statement.right);
+	return_if_error(left);
+	return_if_error(right);
+	if (!std::holds_alternative<non_type_information>(left.value()))
+		throw;
+	if (!std::holds_alternative<non_type_information>(right.value()))
+		throw;
+	return std::get<non_type_information>(left.value()).representation + " = " + std::get<non_type_information>(right.value()).representation;
 }

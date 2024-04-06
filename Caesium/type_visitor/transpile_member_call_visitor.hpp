@@ -7,7 +7,7 @@ struct transpile_member_call_visitor : TypeCategoryVisitor<transpile_member_call
 
 	transpilation_state_with_indent state;
 
-	const NodeStructs::Expression expr;
+	const non_type_information& operand_info;
 	const std::string& property_name;
 	const std::vector<NodeStructs::FunctionArgument>& arguments;
 
@@ -18,10 +18,9 @@ struct transpile_member_call_visitor : TypeCategoryVisitor<transpile_member_call
 
 transpile_t2 transpile_member_call(
 	transpilation_state_with_indent state,
-	const NodeStructs::Expression expr,
+	const auto& operand_info,
 	const std::string& property_name,
-	const std::vector<NodeStructs::FunctionArgument>& arguments,
-	const auto& expr_t
+	const std::vector<NodeStructs::FunctionArgument>& arguments
 ) {
-	return transpile_member_call_visitor{ {}, state, expr, property_name, arguments }(expr_t);
+	return transpile_member_call_visitor{ {}, state, operand_info, property_name, arguments }(operand_info.type.type);
 }
