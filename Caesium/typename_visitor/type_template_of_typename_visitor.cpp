@@ -60,8 +60,10 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			}
 			return ss.str();
 		};
-		std::vector<std::string> args = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec()).value();
-		std::string tmpl_name = template_name(it->first, args);
+		auto args = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
+		return_if_error(args);
+		const auto& args_ok = args.value();
+		std::string tmpl_name = template_name(it->first, args_ok);
 		// todo check if exists
 
 		std::string replaced = tmpl.templated;
@@ -79,7 +81,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (build(f,g.it)) {
+			if (build(f, g.it)) {
 				auto structured_f = getStruct(f.get<grammar::Function>(), std::nullopt);
 				structured_f.name = tmpl_name;
 				if (uses_auto(structured_f)) {

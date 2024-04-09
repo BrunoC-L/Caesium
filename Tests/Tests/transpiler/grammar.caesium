@@ -1,29 +1,29 @@
 import primitives
 import tokens
 
-using Word = Token<WORD>
-using Str = Token<STRING>
-using Newline = Token<NEWLINE>
+using Word = Token<TOKENS::WORD>
+using Str = Token<TOKENS::STRING>
+using Newline = Token<TOKENS::NEWLINE>
 
 using Expression = ConditionalExpression
-using Import = And<Star<Newline>, Token<IMPORT>, Or<Word, Str>, Newline>
-using Alias = And<Token<USING>, Word, Token<EQUAL>, Typename, Newline>
-using ParameterCategory = Or<Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>
-using ArgumentCategory = Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>
+using Import = And<Star<Newline>, Token<TOKENS::IMPORT>, Or<Word, Str>, Newline>
+using Alias = And<Token<TOKENS::USING>, Word, Token<TOKENS::EQUAL>, Typename, Newline>
+using ParameterCategory = Or<Token<TOKENS::VAL>, And<Token<TOKENS::REF>, Token<TOKENS::NOT>>, Token<TOKENS::REF>>
+using ArgumentCategory = Or<Token<TOKENS::COPY>, Token<TOKENS::MOVE>, And<Token<TOKENS::REF>, Token<TOKENS::NOT>>, Token<TOKENS::REF>>
 using FunctionParameter = And<Typename, ParameterCategory, Word>
 using FunctionParameters = CommaStar<FunctionParameter>
-using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Newline, Statement>>>>
-using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>
-using ParenArguments = And<Token<PARENOPEN>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>
-using BraceArguments = And<Token<BRACEOPEN>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>
-using BracketArguments = And<Token<BRACKETOPEN>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>
-using TemplateArguments = And<Token<LT>, CommaStar<Expression>, Token<GT>>
+using ColonIndentCodeBlock = And<Token<TOKENS::COLON>, Newline, Indent<Star<Or<Newline, Statement>>>>
+using Function = And<Typename, Word, Token<TOKENS::PARENOPEN>, FunctionParameters, Token<TOKENS::PARENCLOSE>, ColonIndentCodeBlock>
+using ParenArguments = And<Token<TOKENS::PARENOPEN>, CommaStar<FunctionArgument>, Token<TOKENS::PARENCLOSE>>
+using BraceArguments = And<Token<TOKENS::BRACEOPEN>, CommaStar<FunctionArgument>, Token<TOKENS::BRACECLOSE>>
+using BracketArguments = And<Token<TOKENS::BRACKETOPEN>, CommaStar<FunctionArgument>, Token<TOKENS::BRACKETCLOSE>>
+using TemplateArguments = And<Token<TOKENS::LT>, CommaStar<Expression>, Token<TOKENS::GT>>
 using FunctionArgument = And<Opt<ArgumentCategory>, Expression>
 
-using BaseTypename = Or<Token<AUTO>, Word>
-using NamespaceTypenameExtension = And<Token<NS>, BaseTypename>
-using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>>
-using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>
+using BaseTypename = Or<Token<TOKENS::AUTO>, Word>
+using NamespaceTypenameExtension = And<Token<TOKENS::NS>, BaseTypename>
+using TemplateTypenameExtension = And<Token<TOKENS::LT>, CommaStar<Alloc<Typename>>, Token<TOKENS::GT>>
+using UnionTypenameExtension = And<Token<TOKENS::BITOR>, Alloc<Typename>>
 using Typename = And<BaseTypename, Star<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>>
 
 using MemberVariable = And<Typename, Word, Newline>
@@ -31,39 +31,39 @@ using TypeElement = Or<Alias, MemberVariable>
 
 using Construct = And<Typename, BraceArguments>
 
-using ParenExpression = Or<Construct,Word,Token<FLOATING_POINT_NUMBER>,Token<INTEGER_NUMBER>,Str,ParenArguments,BracketArguments,BraceArguments>
-using Postfix = Or<And<Token<DOT>,Word,ParenArguments>,And<Token<DOT>,Word>,ParenArguments,BracketArguments,TemplateArguments,And<Token<NS>, Word>>
+using ParenExpression = Or<Construct,Word,Token<TOKENS::FLOATING_POINT_NUMBER>,Token<TOKENS::INTEGER_NUMBER>,Str,ParenArguments,BracketArguments,BraceArguments>
+using Postfix = Or<And<Token<TOKENS::DOT>,Word,ParenArguments>,And<Token<TOKENS::DOT>,Word>,ParenArguments,BracketArguments,TemplateArguments,And<Token<TOKENS::NS>, Word>>
 using PostfixExpression = And<ParenExpression,Star<Postfix>>
 
-using unary_operators = Or<Token<DASH>, Token<NOT>>
+using unary_operators = Or<Token<TOKENS::DASH>, Token<TOKENS::NOT>>
 using UnaryExpression = Alloc<And<Star<unary_operators>, PostfixExpression>>
-using MultiplicativeExpression = And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>>
-using AdditiveExpression = And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>>
-using CompareOperator = Or<Token<LTQ>, Token<LTEQ>, Token<GTQ>, Token<GTEQ>>
+using MultiplicativeExpression = And<UnaryExpression, Star<And<Or<Token<TOKENS::ASTERISK>, Token<TOKENS::SLASH>, Token<TOKENS::PERCENT>>, UnaryExpression>>>
+using AdditiveExpression = And<MultiplicativeExpression, Star<And<Or<Token<TOKENS::PLUS>, Token<TOKENS::DASH>>, MultiplicativeExpression>>>
+using CompareOperator = Or<Token<TOKENS::LTQ>, Token<TOKENS::LTEQ>, Token<TOKENS::GTQ>, Token<TOKENS::GTEQ>>
 using CompareExpression = And<AdditiveExpression, Star<And<CompareOperator, AdditiveExpression>>>
-using EqualityExpression = And<CompareExpression, Star<And<Or<Token<EQUALEQUAL>, Token<NEQUAL>>, CompareExpression>>>
-using AndExpression = And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>
-using OrExpression = And<AndExpression, Star<And<Token<OR>, AndExpression>>>
-using ConditionalExpression = And<OrExpression,Opt<And<Token<IF>,OrExpression,Token<ELSE>,OrExpression>>>
+using EqualityExpression = And<CompareExpression, Star<And<Or<Token<TOKENS::EQUALEQUAL>, Token<TOKENS::NEQUAL>>, CompareExpression>>>
+using AndExpression = And<EqualityExpression, Star<And<Token<TOKENS::AND>, EqualityExpression>>>
+using OrExpression = And<AndExpression, Star<And<Token<TOKENS::OR>, AndExpression>>>
+using ConditionalExpression = And<OrExpression,Opt<And<Token<TOKENS::IF>,OrExpression,Token<TOKENS::ELSE>,OrExpression>>>
 
 using ExpressionStatement = And<Expression, Newline>
-using BlockDeclaration = And<Token<BLOCK>, ColonIndentCodeBlock>
-using BlockStatement = And<Token<BLOCK>, Typename>
+using BlockDeclaration = And<Token<TOKENS::BLOCK>, ColonIndentCodeBlock>
+using BlockStatement = And<Token<TOKENS::BLOCK>, Typename>
 using VariableDeclaration = And<Typename, Word>
-using VariableDeclarationStatement = And<Typename, Word, Token<EQUAL>, Expression, Newline>
-using IfStatement = And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>
-using ElseStatement = And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>>
-using BreakStatement = And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>
-using ForStatement = And<Token<FOR>,CommaPlus<Or<VariableDeclaration, Word>>,Token<IN>,Expression,Opt<And<Token<IF>, Expression>>,Opt<And<Token<WHILE>, Expression>>,ColonIndentCodeBlock>
-using IForStatement = And<Token<IFOR>,Word,Token<COMMA>,CommaPlus<Or<VariableDeclaration, Word>>,Token<IN>,Expression,Opt<And<Token<IF>, Expression>>,Opt<And<Token<WHILE>, Expression>>,ColonIndentCodeBlock>
-using WhileStatement = And<Token<WHILE>, Expression, ColonIndentCodeBlock>
-using ReturnStatement = And<Token<RETURN>,CommaStar<FunctionArgument>,Opt<And<Token<IF>, Expression>>,Newline>
-using MatchStatement = And<Token<MATCH>,CommaPlus<Expression>,Token<COLON>,Newline,Indent<Plus<And<IndentToken, CommaPlus<VariableDeclaration>, ColonIndentCodeBlock>>>>
+using VariableDeclarationStatement = And<Typename, Word, Token<TOKENS::EQUAL>, Expression, Newline>
+using IfStatement = And<Token<TOKENS::IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>
+using ElseStatement = And<IndentToken, Token<TOKENS::ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>>
+using BreakStatement = And<Token<TOKENS::BREAK>, Opt<And<Token<TOKENS::IF>, Expression>>, Newline>
+using ForStatement = And<Token<TOKENS::FOR>,CommaPlus<Or<VariableDeclaration, Word>>,Token<TOKENS::IN>,Expression,Opt<And<Token<TOKENS::IF>, Expression>>,Opt<And<Token<TOKENS::WHILE>, Expression>>,ColonIndentCodeBlock>
+using IForStatement = And<Token<TOKENS::IFOR>,Word,Token<TOKENS::COMMA>,CommaPlus<Or<VariableDeclaration, Word>>,Token<TOKENS::IN>,Expression,Opt<And<Token<TOKENS::IF>, Expression>>,Opt<And<Token<TOKENS::WHILE>, Expression>>,ColonIndentCodeBlock>
+using WhileStatement = And<Token<TOKENS::WHILE>, Expression, ColonIndentCodeBlock>
+using ReturnStatement = And<Token<TOKENS::RETURN>,CommaStar<FunctionArgument>,Opt<And<Token<TOKENS::IF>, Expression>>,Newline>
+using MatchStatement = And<Token<TOKENS::MATCH>,CommaPlus<Expression>,Token<TOKENS::COLON>,Newline,Indent<Plus<And<IndentToken, CommaPlus<VariableDeclaration>, ColonIndentCodeBlock>>>>
 using Statement = And<IndentToken,Alloc<Or<VariableDeclarationStatement, ExpressionStatement, IfStatement, ForStatement, IForStatement, WhileStatement, BreakStatement, ReturnStatement, BlockStatement, MatchStatement>>>
 
-using Interface = And<Token<INTERFACE>,Word,Token<COLON>,Newline,Indent<Star<And<IndentToken, Or<Alias, MemberVariable >>>>>
-using Type = And<Token<TYPE>,Word,Token<COLON>,Newline,Indent<Star<And<IndentToken, TypeElement>>>>
-using Template = And<Token<TEMPLATE>, Word, Token<LT>, CommaStar<And<Word, Opt<And<Token<EQUAL>, Expression>>>>, Token<GT>, Token<COLON>, Token<NEWLINE>, TemplateBody>
+using Interface = And<Token<TOKENS::INTERFACE>,Word,Token<TOKENS::COLON>,Newline,Indent<Star<And<IndentToken, Or<Alias, MemberVariable >>>>>
+using Type = And<Token<TOKENS::TYPE>,Word,Token<TOKENS::COLON>,Newline,Indent<Star<And<IndentToken, TypeElement>>>>
+using Template = And<Token<TOKENS::TEMPLATE>, Word, Token<TOKENS::LT>, CommaStar<And<Word, Opt<And<Token<TOKENS::EQUAL>, Expression>>>>, Token<TOKENS::GT>, Token<TOKENS::COLON>, Token<TOKENS::NEWLINE>, TemplateBody>
 using Named = Or<NameSpace,Type,Function,Interface,Template,Alias>
-using NameSpace = And<Word,Token<COLON>,Token<NEWLINE>,Indent<Star<Or<Token<NEWLINE>, And<IndentToken, Named>>>>>
-using File = And<Star<Import>, Star<Or<Token<NEWLINE>, Named>>, Token<TOKENS::END>>
+using NameSpace = And<Word,Token<TOKENS::COLON>,Token<TOKENS::NEWLINE>,Indent<Star<Or<Token<TOKENS::NEWLINE>, And<IndentToken, Named>>>>>
+using File = And<Star<Import>, Star<Or<Token<TOKENS::NEWLINE>, Named>>, Token<TOKENS::END>>

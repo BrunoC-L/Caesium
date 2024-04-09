@@ -17,6 +17,7 @@ template <typename... Ts> using Variant = std::variant<Ts...>;
 template <typename T> using Vector = std::vector<T>;
 #include <string>
 using String = std::string;
+using Char = char;
 #include <unordered_set>
 template <typename T> using Set = std::unordered_set<T>;
 #include <set>

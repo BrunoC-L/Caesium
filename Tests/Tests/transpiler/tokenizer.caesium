@@ -24,7 +24,7 @@ Vector<TOKENVALUE> read(Tokenizer ref! tk):
 	out.reserve(tk.program.size())
 	if tk.program.size() != 0:
 		while True:
-			TOKENVALUE t = readToken()
+			TOKENVALUE t = readToken(tk.program, tk.index)
 			out.push(t)
 			if t.first != TOKENS::END:
 				break
@@ -37,21 +37,21 @@ Vector<TOKENVALUE> read(Tokenizer ref! tk):
 	return out
 
 
-bool isNum(char val c):
+bool isNum(Char val c):
     return c >=? '0' and c <=? '9'
 
-bool isStartOfWord(char val c):
+bool isStartOfWord(Char val c):
     return c >=? 'a' and c <=? 'z' or c >=? 'A' and c <=? 'Z' or c == '_'
 
-bool isPartWord(char val c):
+bool isPartWord(Char val c):
     return isNum(c) or isStartOfWord(c)
 
-String parseWord():
-    if !isStartOfWord(program[index]):
+String parseWord(String ref program, Int ref! index):
+    if !isStartOfWord(program.at(index)):
         return ""
     String out = ""
-    while index != program.length():
-        char c = program[index]
+    while index != program.size():
+        Char c = program.at(index)
         if isPartWord(c):
             out = out + c
             index = index + 1
@@ -59,10 +59,10 @@ String parseWord():
             break
     return out
 
-String parseInt():
+String parseInt(String ref program, Int ref! index):
 	String out = ""
-	while index != program.length():
-		char c = program[index]
+	while index != program.size():
+		Char c = program.at(index)
 		if isNum(c):
 			out = out + c
 			index = index + 1
@@ -70,312 +70,312 @@ String parseInt():
 			break
 	return out
 
-TOKENS peek():
+TOKENS peek(String ref program, Int ref! index):
 	unsigned peekFrom = index
 	while True:
-		TOKENVALUE v = readToken()
+		TOKENVALUE v = readToken(program, ref! index)
 		if v.first == SPACE or v.first == TAB or v.first == NEWLINE:
 			continue
 		index = peekFrom
 		return v.first
 
-TOKENS peek(Int val n):
-	unsigned peekFrom = index
-	TOKENS v = peek()
-    Int i = 0
-    while i <? n:
-		v = peek()
-	index = peekFrom
-	return v
+//TOKENS peek(String ref program, Int ref! index, Int val n):
+//	unsigned peekFrom = index
+//	TOKENS v = peek(program, copy n)
+//    Int i = 0
+//    while i <? n:
+//		v = peek(program, copy n)
+//	index = peekFrom
+//	return v
 
-TOKENVALUE readToken():
-	if index == program.length():
+TOKENVALUE readToken(String ref program, Int ref! index):
+	if index == program.size():
 		return{ TOKENS::END, "" }
-	char c = program[index]
+	Char c = program.at(index)
 	String str = ""
-	switch c:
-        c:
-        '\\':
-            // backslash at the end of a line means ignore it and the newline
-            if index + 1 <=? program.size() and program[index + 1] == '\n':
-                index = index + 1
-                // so we just return the next token
-                return readToken()
-            // else assume the backslash makes sense in context
-            return { BACKSLASH, "\\" }
-        // string begin
-        '\'':
-        '`':
-        '"':
-            while True:
-                index = index + 1
-                if index == program.length():
-                    //throw std::runtime_error("Reached end of file before end of string, parsed so far: " + str)
-                if program[index] == '\\' and index + 1 <=? program.size() and program[index + 1] == c:
-                    // backslash with open string character means dont close the string
-                    // but all our transpiled strings use " for strings so we just replace that
-                    index = index + 1
-                    str = str + "\\\""
-                else:
-                    // close string
-                    if program[index] == c:
-                        index = index + 1
-                        // the transpiled string uses " always, not ' or `
-                        return { STRING, "\"" + str + "\"" }
-                    // in case there are " in the string and the string uses ' or `, we need to replace them accordingly since
-                    // our transpiled c++ string uses "
-                    // so we just escape out of " not to end the string and the user will have his " in the string as expected
-                    else if c != '"' and program[index] == '"':
-                        str = str + "\\\""
-                    else:
-                        str = str + program[index]
-            std::unreachable()
-        '{':
-            index = index + 1
-            return { BRACEOPEN, "{" }
-        '}':
-            index = index + 1
-            return { BRACECLOSE, "}" }
-        '(':
-            index = index + 1
-            return { PARENOPEN, "(" }
-        ')':
-            index = index + 1
-            return { PARENCLOSE, ")" }
-        '[':
-            index = index + 1
-            return { BRACKETOPEN, "[" }
-        ']':
-            index = index + 1
-            return { BRACKETCLOSE, "]" }
-        ' ':
-            if index + 3 <? program.size() and program[index + 1] == ' ' and program[index + 2] == ' ' and program[index + 3] == ' ':
-                index = index + 4
-                return { TAB, "\t" }
-            index = index + 1
-            return { SPACE, " " }
-        '\n':
-            index = index + 1
-            return { NEWLINE, "\n" }
-        '\t':
-            index = index + 1
-            return { TAB, "\t" }
-        '.':
-            if index + 2 <? program.size() and program[index + 1] == '.' and program[index + 2] == '.':
-                index = index + 3
-                return { DOTS, "..." }
-            index = index + 1
-            return { DOT, "." }
-        ';':
-            index = index + 1
-            return { SEMICOLON, ";" }
-        ':':
-            index = index + 1
-            if index <? program.size() and program[index] == ':':
-                index = index + 1
-                return { NS, "::" }
-            return { COLON, ":" }
-        ',':
-            index = index + 1
-            return { COMMA, "," }
-        '=':
-            index = index + 1
-            if index <? program.size() and program[index] == '=':
-                index = index + 1
-                return { EQUALEQUAL, "==" }
-            return { EQUAL, "=" }
-        '!':
-            index = index + 1
-            if index <? program.size() and program[index] == '=':
-                index = index + 1
-                return { NEQUAL, "!=" }
-            return { NOT, "!" }
-        '<':
-            index = index + 1
-            if index <? program.size():
-                if program[index] == '=':
-                    index = index + 1
-                    if index <? program.size():
-                        if program[index] == '?':
-                            index = index + 1
-                            return { LTEQ, "<=??" }
-                    return { LTE, "<=?" }
-                if program[index] == '?':
-                    index = index + 1
-                    return { LTQ, "<?" }
-            return { LT, "<" }
-        '>':
-            index = index + 1
-            if index <? program.size():
-                if program[index] == '=':
-                    index = index + 1
-                    if index <? program.size():
-                        if program[index] == '?':
-                            index = index + 1
-                            return { GTEQ, ">=??" }
-                    return { GTE, ">=?" }
-                if program[index] == '?':
-                    index = index + 1
-                    return { GTQ, ">?" }
-            return { GT, ">" }
-        '-':
-            index = index + 1
-            if index <? program.size():
-                if program[index] == '=':
-                    index = index + 1
-                    return { MINUSEQUAL, "-=" }
-                else if program[index] == '-':
-                    index = index + 1
-                    return { MINUSMINUS, "--" }
-            return { DASH, "-" }
-        '+':
-            index = index + 1
-            if index <? program.size():
-                if program[index] == '=':
-                    index = index + 1
-                    return { PLUSEQUAL, "+=" }
-                else if program[index] == '+':
-                    index = index + 1
-                    return { PLUSPLUS, "++" }
-            return { PLUS, "+" }
-        '*':
-            index = index + 1
-            if index <? program.size() and program[index] == '=':
-                index = index + 1
-                return { TIMESEQUAL, "*=" }
-            return { ASTERISK, "*" }
-        '/':
-            index = index + 1
-            // skip // comments
-            if index <? program.size() and program[index] == '/':
-                index = index + 1
-                while index <? program.size():
-                    if program[index] == '\n':
-                        index = index + 1
-                        break
-                    else:
-                        index = index + 1
-                return readToken()
-            // skip /* */ comments
-            if index <? program.size() and program[index] == '*':
-                index = index + 1
-                while index + 1 <? program.size():
-                    if program[index] == '*' and program[index + 1] == '/':
-                        index = index + 2
-                        break
-                    else:
-                        index = index + 1
-                return readToken()
-            if index <? program.size() and program[index] == '=':
-                index = index + 1
-                return { DIVEQUAL, "/=" }
-            return { SLASH, "/" }
-        '%':
-            index = index + 1
-            if index <? program.size() and program[index] == '=':
-                index = index + 1
-                return { MODEQUAL, "%=" }
-            return { PERCENT, "%" }
-        '&':
-            index = index + 1
-            if index <? program.size():
-                if program[index] == '&':
-                    index = index + 1
-                    return { ANDAND, "and" }
-                else if program[index] == '=':
-                    index = index + 1
-                    return { ANDEQUAL, "&=" }
-            //throw std::runtime_error("Unknown Symbol `&`")
-        '?':
-            index = index + 1
-            return { QUESTION, "?" }
-        '#':
-            index = index + 1
-            return { POUND, "#" }
-        '^':
-            index = index + 1
-            if index + 1 <=? program.size() and program[index] == '^':
-                index = index + 1
-                return { XOREQUAL, "^=" }
-            return { CARET, "^" }
-        '|':
-            index = index + 1
-            if index + 1 <=? program.size():
-                if program[index] == '|':
-                    index = index + 1
-                    return { OROR, "or" }
-                else if program[index] == '=':
-                    index = index + 1
-                    return { OREQUAL, "|=" }
-            return { BITOR, "|" }
+//	switch c:
+//        c:
+//        '\\':
+//            // backslash at the end of a line means ignore it and the newline
+//            if index + 1 <=? program.size() and program.at(index + 1) == '\n':
+//                index = index + 1
+//                // so we just return the next token
+//                return readToken(program, ref! index)
+//            // else assume the backslash makes sense in context
+//            return { TOKENS::BACKSLASH, "\\" }
+//        // string begin
+//        '\'':
+//        '`':
+//        '"':
+//            while True:
+//                index = index + 1
+//                if index == program.size():
+//                    //throw std::runtime_error("Reached end of file before end of string, parsed so far: " + str)
+//                if program.at(index) == '\\' and index + 1 <=? program.size() and program.at(index + 1) == c:
+//                    // backslash with open string character means dont close the string
+//                    // but all our transpiled strings use " for strings so we just replace that
+//                    index = index + 1
+//                    str = str + "\\\""
+//                else:
+//                    // close string
+//                    if program.at(index) == c:
+//                        index = index + 1
+//                        // the transpiled string uses " always, not ' or `
+//                        return { TOKENS::STRING, "\"" + str + "\"" }
+//                    // in case there are " in the string and the string uses ' or `, we need to replace them accordingly since
+//                    // our transpiled c++ string uses "
+//                    // so we just escape out of " not to end the string and the user will have his " in the string as expected
+//                    else if c != '"' and program.at(index) == '"':
+//                        str = str + "\\\""
+//                    else:
+//                        str = str + program.at(index)
+//            std::unreachable()
+//        '{':
+//            index = index + 1
+//            return { TOKENS::BRACEOPEN, "{" }
+//        '}':
+//            index = index + 1
+//            return { TOKENS::BRACECLOSE, "}" }
+//        '(':
+//            index = index + 1
+//            return { TOKENS::PARENOPEN, "(" }
+//        ')':
+//            index = index + 1
+//            return { TOKENS::PARENCLOSE, ")" }
+//        '[':
+//            index = index + 1
+//            return { TOKENS::BRACKETOPEN, "[" }
+//        ']':
+//            index = index + 1
+//            return { TOKENS::BRACKETCLOSE, "]" }
+//        ' ':
+//            if index + 3 <? program.size() and program.at(index + 1) == ' ' and program.at(index + 2) == ' ' and program.at(index + 3) == ' ':
+//                index = index + 4
+//                return { TOKENS::TAB, "\t" }
+//            index = index + 1
+//            return { TOKENS::SPACE, " " }
+//        '\n':
+//            index = index + 1
+//            return { TOKENS::NEWLINE, "\n" }
+//        '\t':
+//            index = index + 1
+//            return { TOKENS::TAB, "\t" }
+//        '.':
+//            if index + 2 <? program.size() and program.at(index + 1) == '.' and program.at(index + 2) == '.':
+//                index = index + 3
+//                return { TOKENS::DOTS, "..." }
+//            index = index + 1
+//            return { TOKENS::DOT, "." }
+//        ';':
+//            index = index + 1
+//            return { TOKENS::SEMICOLON, ";" }
+//        ':':
+//            index = index + 1
+//            if index <? program.size() and program.at(index) == ':':
+//                index = index + 1
+//                return { TOKENS::NS, "::" }
+//            return { TOKENS::COLON, ":" }
+//        ',':
+//            index = index + 1
+//            return { TOKENS::COMMA, "," }
+//        '=':
+//            index = index + 1
+//            if index <? program.size() and program.at(index) == '=':
+//                index = index + 1
+//                return { TOKENS::EQUALEQUAL, "==" }
+//            return { TOKENS::EQUAL, "=" }
+//        '!':
+//            index = index + 1
+//            if index <? program.size() and program.at(index) == '=':
+//                index = index + 1
+//                return { TOKENS::NEQUAL, "!=" }
+//            return { TOKENS::NOT, "!" }
+//        '<':
+//            index = index + 1
+//            if index <? program.size():
+//                if program.at(index) == '=':
+//                    index = index + 1
+//                    if index <? program.size():
+//                        if program.at(index) == '?':
+//                            index = index + 1
+//                            return { TOKENS::LTEQ, "<=??" }
+//                    return { TOKENS::LTE, "<=?" }
+//                if program.at(index) == '?':
+//                    index = index + 1
+//                    return { TOKENS::LTQ, "<?" }
+//            return { TOKENS::LT, "<" }
+//        '>':
+//            index = index + 1
+//            if index <? program.size():
+//                if program.at(index) == '=':
+//                    index = index + 1
+//                    if index <? program.size():
+//                        if program.at(index) == '?':
+//                            index = index + 1
+//                            return { TOKENS::GTEQ, ">=??" }
+//                    return { TOKENS::GTE, ">=?" }
+//                if program.at(index) == '?':
+//                    index = index + 1
+//                    return { TOKENS::GTQ, ">?" }
+//            return { TOKENS::GT, ">" }
+//        '-':
+//            index = index + 1
+//            if index <? program.size():
+//                if program.at(index) == '=':
+//                    index = index + 1
+//                    return { TOKENS::MINUSEQUAL, "-=" }
+//                else if program.at(index) == '-':
+//                    index = index + 1
+//                    return { TOKENS::MINUSMINUS, "--" }
+//            return { TOKENS::DASH, "-" }
+//        '+':
+//            index = index + 1
+//            if index <? program.size():
+//                if program.at(index) == '=':
+//                    index = index + 1
+//                    return { TOKENS::PLUSEQUAL, "+=" }
+//                else if program.at(index) == '+':
+//                    index = index + 1
+//                    return { TOKENS::PLUSPLUS, "++" }
+//            return { TOKENS::PLUS, "+" }
+//        '*':
+//            index = index + 1
+//            if index <? program.size() and program.at(index) == '=':
+//                index = index + 1
+//                return { TOKENS::TIMESEQUAL, "*=" }
+//            return { TOKENS::ASTERISK, "*" }
+//        '/':
+//            index = index + 1
+//            // skip // comments
+//            if index <? program.size() and program.at(index) == '/':
+//                index = index + 1
+//                while index <? program.size():
+//                    if program.at(index) == '\n':
+//                        index = index + 1
+//                        break
+//                    else:
+//                        index = index + 1
+//                return readToken(tk.program, tk.index)
+//            // skip /* */ comments
+//            if index <? program.size() and program.at(index) == '*':
+//                index = index + 1
+//                while index + 1 <? program.size():
+//                    if program.at(index) == '*' and program.at(index + 1) == '/':
+//                        index = index + 2
+//                        break
+//                    else:
+//                        index = index + 1
+//                return readToken(tk.program, tk.index)
+//            if index <? program.size() and program.at(index) == '=':
+//                index = index + 1
+//                return { TOKENS::DIVEQUAL, "/=" }
+//            return { TOKENS::SLASH, "/" }
+//        '%':
+//            index = index + 1
+//            if index <? program.size() and program.at(index) == '=':
+//                index = index + 1
+//                return { TOKENS::MODEQUAL, "%=" }
+//            return { TOKENS::PERCENT, "%" }
+//        '&':
+//            index = index + 1
+//            if index <? program.size():
+//                if program.at(index) == '&':
+//                    index = index + 1
+//                    return { TOKENS::ANDAND, "and" }
+//                else if program.at(index) == '=':
+//                    index = index + 1
+//                    return { TOKENS::ANDEQUAL, "&=" }
+//            //throw std::runtime_error("Unknown Symbol `&`")
+//        '?':
+//            index = index + 1
+//            return { TOKENS::QUESTION, "?" }
+//        '#':
+//            index = index + 1
+//            return { TOKENS::POUND, "#" }
+//        '^':
+//            index = index + 1
+//            if index + 1 <=? program.size() and program.at(index) == '^':
+//                index = index + 1
+//                return { TOKENS::XOREQUAL, "^=" }
+//            return { TOKENS::CARET, "^" }
+//        '|':
+//            index = index + 1
+//            if index + 1 <=? program.size():
+//                if program.at(index) == '|':
+//                    index = index + 1
+//                    return { TOKENS::OROR, "or" }
+//                else if program.at(index) == '=':
+//                    index = index + 1
+//                    return { TOKENS::OREQUAL, "|=" }
+//            return { TOKENS::BITOR, "|" }
         
-	String word = parseWord()
-	if word.length():
+	String word = parseWord(program, ref! index)
+	if word.size():
 		if word == "and":
-            return { AND, word }
+            return { TOKENS::AND, word }
 		if word == "auto":
-            return { AUTO, word }
+            return { TOKENS::AUTO, word }
 		if word == "break":
-            return { BREAK, word }
+            return { TOKENS::BREAK, word }
 		if word == "block":
-            return { BLOCK, word }
+            return { TOKENS::BLOCK, word }
 		if word == "case":
-            return { CASE, word }
+            return { TOKENS::CASE, word }
 		if word == "class":
-            return { CLASS, word }
+            return { TOKENS::CLASS, word }
 		if word == "do":
-            return { DO, word }
+            return { TOKENS::DO, word }
 		if word == "else":
-            return { ELSE, word }
+            return { TOKENS::ELSE, word }
 		if word == "for":
-            return { FOR, word }
+            return { TOKENS::FOR, word }
 		if word == "if":
-            return { IF, word }
+            return { TOKENS::IF, word }
 		if word == "interface":
-            return { INTERFACE, word }
+            return { TOKENS::INTERFACE, word }
 		if word == "ifor":
-            return { IFOR, word }
+            return { TOKENS::IFOR, word }
 		if word == "import":
-            return { IMPORT, word }
+            return { TOKENS::IMPORT, word }
 		if word == "from":
-            return { FROM, word }
+            return { TOKENS::FROM, word }
 		if word == "in":
-            return { IN, word }
+            return { TOKENS::IN, word }
 		if word == "match":
-            return { MATCH, word }
+            return { TOKENS::MATCH, word }
 		if word == "or":
-            return { OR, word }
+            return { TOKENS::OR, word }
 		if word == "return":
-            return { RETURN, word }
+            return { TOKENS::RETURN, word }
 		if word == "static":
-            return { STATIC, word }
+            return { TOKENS::STATIC, word }
 		if word == "switch":
-            return { SWITCH, word }
+            return { TOKENS::SWITCH, word }
 		if word == "using":
-            return { USING, word }
+            return { TOKENS::USING, word }
 		if word == "while":
-            return { WHILE, word }
+            return { TOKENS::WHILE, word }
 		if word == "type":
-            return { TYPE, word }
+            return { TOKENS::TYPE, word }
 		if word == "template":
-            return { TEMPLATE, word }
+            return { TOKENS::TEMPLATE, word }
 		if word == "copy":
-            return { COPY, word }
+            return { TOKENS::COPY, word }
 		if word == "move":
-            return { MOVE, word }
+            return { TOKENS::MOVE, word }
 		if word == "ref":
-            return { REF, word }
+            return { TOKENS::REF, word }
 		if word == "val":
-            return { VAL, word }
+            return { TOKENS::VAL, word }
         
-		return { WORD, word }
+		return { TOKENS::WORD, word }
         
-	String num = parseInt()
-	if !num.length():
+	String num = parseInt(program, ref! index)
+	if !num.size():
 		//throw std::exception()
-	if index != program.length() and program[index] == '.':
+	if index != program.size() and program.at(index) == '.':
 		index = index + 1
-		String part2 = parseInt()
-		if part2.length():
-			return { FLOATING_POINT_NUMBER, num + "." + part2 }
-	return { INTEGER_NUMBER, num }
+		String part2 = parseInt(program, ref! index)
+		if part2.size():
+			return { TOKENS::FLOATING_POINT_NUMBER, num + "." + part2 }
+	return { TOKENS::INTEGER_NUMBER, num }

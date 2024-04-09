@@ -211,6 +211,12 @@ transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project) 
 						declarations << res.value().first;
 						definitions << res.value().second;
 					}
+					for (const auto& enum_ : state.enums_to_transpile) {
+						size_t val = 1;
+						std::string enum_prefix = enum_.name + "__";
+						for (const auto& enum_val : enum_.values)
+							declarations << "static constexpr Int " << enum_prefix << enum_val << " = " << val++ << ";\n";
+					}
 					for (const auto& i : state.interfaces_to_transpile) {
 						if (!state.traversed_interfaces.contains(i))
 							throw;
@@ -349,6 +355,8 @@ transpile_header_cpp_t transpile(
 		return_if_error(type);
 		auto transpiled = transpile_typename(state, member.type);
 		return_if_error(transpiled);
+		if (transpiled.value() == "TOKENS")
+			throw;
 		cpp << transpiled.value() << " " << member.name << ";\n";
 	}
 
@@ -1028,6 +1036,9 @@ NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& pr
 		},
 		[&](const NodeStructs::void_t&) {
 			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } };
+		},
+		[&](const char&) {
+			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Char" } };
 		}
 	), primitive_t.value);
 }

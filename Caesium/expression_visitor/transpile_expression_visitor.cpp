@@ -158,7 +158,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 			throw;
 	}
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { int{} } },
+		.type = std::get<non_type_information>(base.value()).type.type,
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -172,6 +172,7 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 		ss << std::get<non_type_information>(base.value()).representation;
 	else
 		throw;
+
 	for (const auto& [op, e] : expr.muls) {
 		auto mul = operator()(e);
 		return_if_error(mul);
@@ -180,6 +181,7 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 		else
 			throw;
 	}
+
 	return expression_information{ non_type_information{
 		.type = NodeStructs::PrimitiveType{ { int{} } },
 		.representation = ss.str(),
@@ -329,13 +331,6 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 			throw;
 		}
 	), operand_t_ok.type.type);
-	/*return expression_information{ type_information{
-		.type = NodeStructs::FunctionType{
-			.name = it->name,
-			.options = ns.functions | LIFT_FILTER_TRAIL(.name == expr.name_in_name_space) | LIFT_TRANSFORM_X(t, &t) | to_vec()
-		},
-		.representation = ns_repr + "__" + expr.name_in_name_space
-	} };*/
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {

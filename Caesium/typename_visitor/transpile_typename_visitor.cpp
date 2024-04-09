@@ -5,9 +5,31 @@ using T = transpile_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& type) {
+#define OK(X) if (type.type == X) return X;
+	OK("Int");
+	OK("Bool");
+	OK("String");
+	OK("Char");
+	OK("Void");
+	OK("Floating");
+#define OK(X) if (auto it = state.state.global_namespace. X .find(type.type); it != state.state.global_namespace. X .end()) return type.type;
+	OK(types);
+	OK(functions);
+	OK(interfaces);
+	OK(namespaces);
+	OK(builtins);
+	OK(blocks);
+	OK(templates);
+#undef OK
+
 	if (auto it = state.state.global_namespace.aliases.find(type.type); it != state.state.global_namespace.aliases.end())
 		return operator()(it->second);
-	return type.type;
+	if (auto it = state.state.global_namespace.enums.find(type.type); it != state.state.global_namespace.enums.end())
+		return "Int";
+	return error{
+		"user error",
+		"undeclared identifier `" + type.type + "`"
+	};
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& type) {

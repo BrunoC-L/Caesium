@@ -72,6 +72,7 @@ struct transpilation_state {
 	std::set<NodeStructs::Function> functions_to_transpile;
 	std::set<NodeStructs::Type> types_to_transpile;
 	std::set<NodeStructs::Interface> interfaces_to_transpile;
+	std::set<NodeStructs::Enum> enums_to_transpile;
 
 	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
 };

@@ -10,6 +10,8 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { bool{} } } };
 	if (t.type == "String")
 		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } };
+	if (t.type == "Char")
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { char{} } } };
 	if (t.type == "Void")
 		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } } };
 	if (t.type == "Floating")
@@ -62,6 +64,8 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		if (enums.size() != 1)
 			throw;
 		const auto& enum_ = enums.at(0);
+		if (!state.state.enums_to_transpile.contains(enum_))
+			state.state.enums_to_transpile.insert(enum_);
 		return NodeStructs::MetaType{ NodeStructs::EnumType{ enum_ } };
 	}
 	return error{ "user error" , "Missing type `" + t.type + "`"};

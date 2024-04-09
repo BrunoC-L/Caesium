@@ -8,7 +8,6 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& t) {
-	throw;
 	return operator()(t.name_space.get()) + "__" + t.name_in_name_space;
 }
 

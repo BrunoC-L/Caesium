@@ -508,7 +508,8 @@ struct NodeStructs {
 			double,
 			int,
 			bool,
-			void_t
+			void_t,
+			char
 		> value;
 		std::weak_ordering operator<=>(const PrimitiveType&) const;
 	};

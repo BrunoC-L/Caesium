@@ -100,6 +100,22 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 				.value_category = NodeStructs::Value{},
 			} };
 		}
+		if (property_name == "at") {
+			if (arguments.size() != 1)
+				throw;
+			auto arg_t = transpile_expression(state, arguments.at(0).expr);
+			return_if_error(arg_t);
+			if (!std::holds_alternative<non_type_information>(arg_t.value()))
+				throw;
+			const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
+			if (!is_assignable_to(state, { NodeStructs::PrimitiveType{ int{} } }, arg_t_ok.type.type))
+				throw;
+			return expression_information{ non_type_information{
+				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { char{} } } },
+				.representation = operand_info.representation + ".at(" + arg_t_ok.representation + ")",
+				.value_category = NodeStructs::Value{},
+			} };
+		}
 	}
 	throw;
 }
