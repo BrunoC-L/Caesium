@@ -38,11 +38,6 @@ std::optional<std::ofstream> open(const std::filesystem::path& folder, std::stri
 }
 
 static bool transpile(const std::vector<NodeStructs::File>& project, const std::filesystem::path& folder) {
-	auto h_opt = open(folder, "/header.hpp");
-	if (!h_opt.has_value())
-		return false;
-	auto& h = h_opt.value();
-
 	auto cpp_opt = open(folder, "/main.cpp");
 	if (!cpp_opt.has_value())
 		return false;
@@ -50,9 +45,7 @@ static bool transpile(const std::vector<NodeStructs::File>& project, const std::
 
 	auto compilation_result = transpile(project);
 	if (compilation_result.has_value()) {
-		auto& [_h, _cpp] = compilation_result.value();
-		h << _h;
-		cpp << _cpp;
+		cpp << compilation_result.value();
 		return true;
 	}
 	else {

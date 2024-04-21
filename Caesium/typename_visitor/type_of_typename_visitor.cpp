@@ -25,7 +25,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
 			return opt_e.value();
-		return NodeStructs::MetaType{ NodeStructs::MetaType{ type } };
+		return NodeStructs::MetaType{ NodeStructs::MetaType{ copy(type) } };
 	}
 	bool has_f = state.state.global_namespace.functions.find(t.type) != state.state.global_namespace.functions.end();
 	bool has_f_using_auto = state.state.global_namespace.functions_using_auto.find(t.type) != state.state.global_namespace.functions_using_auto.end();
@@ -36,22 +36,23 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.global_namespace.templates.find(t.type); it != state.state.global_namespace.templates.end()) {
 		return NodeStructs::MetaType{ NodeStructs::TemplateType{ t.type, state.state.global_namespace } };
 	}
-	if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
+	throw;
+	/*if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->second;
 		auto type = type_of_typename(state, type_name);
 		return_if_error(type);
 		if (std::optional<error> err = traverse_type(state, type.value()); err.has_value())
 			return err.value();
-		return type.value();
-	}
+		return std::move(type).value();
+	}*/
 	if (auto it = state.state.global_namespace.interfaces.find(t.type); it != state.state.global_namespace.interfaces.end()) {
 		const auto& interfaces = it->second;
 		if (interfaces.size() != 1)
 			throw;
 		const auto& interface = interfaces.at(0);
 		if (!state.state.traversed_interfaces.contains(interface)) {
-			state.state.traversed_interfaces.insert(interface);
-			state.state.interfaces_to_transpile.insert(interface);
+			state.state.traversed_interfaces.insert(copy(interface));
+			state.state.interfaces_to_transpile.insert(copy(interface));
 		}
 		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
 	}
@@ -65,7 +66,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			throw;
 		const auto& enum_ = enums.at(0);
 		if (!state.state.enums_to_transpile.contains(enum_))
-			state.state.enums_to_transpile.insert(enum_);
+			state.state.enums_to_transpile.insert(copy(enum_));
 		return NodeStructs::MetaType{ NodeStructs::EnumType{ enum_ } };
 	}
 	return error{ "user error" , "Missing type `" + t.type + "`"};
@@ -88,7 +89,7 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 	for (const auto& e : t.ors) {
 		auto exp = operator()(e);
 		return_if_error(exp);
-		v.push_back(exp.value());
+		v.push_back(std::move(exp).value());
 	}
 	return NodeStructs::MetaType{ NodeStructs::UnionType{ std::move(v) } };
 }

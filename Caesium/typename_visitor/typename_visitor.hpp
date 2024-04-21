@@ -15,7 +15,7 @@ struct TypenameVisitor {
 			[&](const auto& t) {
 				return self(t);
 			},
-			t.value
+			t.value._value
 		);
 	}
 	/*

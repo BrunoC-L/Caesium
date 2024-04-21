@@ -15,7 +15,7 @@ struct TypeCategoryVisitor {
 			[&](const auto& t) {
 				return self(t);
 			},
-			t.type
+			t.type._value
 		);
 	}
 #define TypeCategoryVisitorDeclarations \

@@ -11,12 +11,12 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		if (t.type == "Vector") {
 			auto x = type_of_typename(state, templated_with.at(0));
 			return_if_error(x);
-			return NodeStructs::MetaType{ NodeStructs::VectorType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
+			return NodeStructs::MetaType{ NodeStructs::VectorType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
 		}
 		if (t.type == "Set") {
 			auto x = type_of_typename(state, templated_with.at(0));
 			return_if_error(x);
-			return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
+			return NodeStructs::MetaType{ NodeStructs::SetType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
 		}
 		if (t.type == "Map") {
 			auto k = type_of_typename(state, templated_with.at(0));
@@ -24,15 +24,15 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			auto v = type_of_typename(state, templated_with.at(1));
 			return_if_error(v);
 			return NodeStructs::MetaType{ NodeStructs::MapType{
-				Box<NodeStructs::MetaType>{ std::move(k).value() },
-				Box<NodeStructs::MetaType>{ std::move(v).value() }
+				NonCopyableBox<NodeStructs::MetaType>{ std::move(k).value() },
+				NonCopyableBox<NodeStructs::MetaType>{ std::move(v).value() }
 			} };
 		}
 		if (t.type == "Variant") {
 			auto ts = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec());
 			return_if_error(ts);
 			return NodeStructs::MetaType{ NodeStructs::UnionType{
-				ts.value()
+				std::move(ts).value()
 			} };
 		}
 		throw;
@@ -73,7 +73,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				std::visit(overload(
 					[](const auto& e) { return "`" + e.name + "`"; },
 					[](const NodeStructs::VariadicTemplateParameter& e) { return "`" + e.name + "...`"; }
-				), tmpl.parameters.at(i)),
+				), tmpl.parameters.at(i)._value),
 				grab_nth_with_commas(i)
 			);
 		}
@@ -85,15 +85,15 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				auto structured_f = getStruct(f.get<grammar::Function>(), std::nullopt);
 				structured_f.name = tmpl_name;
 				if (uses_auto(structured_f)) {
-					state.state.global_namespace.functions_using_auto[tmpl_name].push_back(structured_f);
+					state.state.global_namespace.functions_using_auto[tmpl_name].push_back(std::move(structured_f));
 					//return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name } };
 					throw;
 				}
 				else {
 					// TODO VERIFY
-					state.state.global_namespace.functions[tmpl_name].push_back(structured_f);
-					state.state.traversed_functions.insert(structured_f);
-					state.state.functions_to_transpile.insert(structured_f);
+					state.state.global_namespace.functions[tmpl_name].push_back(copy(structured_f));
+					state.state.traversed_functions.insert(copy(structured_f));
+					state.state.functions_to_transpile.insert(std::move(structured_f));
 					return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name, state.state.global_namespace } };
 				}
 			}
@@ -109,7 +109,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				structured_t.name = tmpl_name;
 				auto templated_with_reprs = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
 				return_if_error(templated_with_reprs);
-				state.state.global_namespace.types[structured_t.name].push_back(structured_t);
+				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
 				auto opt_error = traverse_type(state, structured_t);
 				if (opt_error.has_value())
 					return opt_error.value();

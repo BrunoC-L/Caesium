@@ -1,5 +1,6 @@
 #pragma once
 #include "toCpp.hpp"
+#include "../utility/as_vec.hpp"
 
 struct builtins {
 	NodeStructs::Builtin builtin_variant = { "Variant" };
@@ -25,22 +26,22 @@ struct builtins {
 		std::nullopt,
 		NodeStructs::Typename{ NodeStructs::TemplatedTypename {
 			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
-			.templated_with = std::vector{
+			.templated_with = as_vec(
 				NodeStructs::Typename{ NodeStructs::UnionTypename{
-					std::vector<NodeStructs::Typename>{
+					as_vec(
 						NodeStructs::Typename{ NodeStructs::BaseTypename{ "file" } },
 						NodeStructs::Typename{ NodeStructs::BaseTypename{ "directory" } }
-					}
+					)
 				} }
-			}
+			)
 		} },
-		{
+		as_vec(
 			NodeStructs::FunctionParameter{
 				NodeStructs::Typename{ NodeStructs::Typename{ NodeStructs::BaseTypename{ "directory" } } },
 				NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
 				std::string{ "dir" }
 			}
-		},
+		),
 		{}
 	};
 
@@ -49,29 +50,29 @@ struct builtins {
 		std::nullopt,
 		NodeStructs::Typename{ NodeStructs::TemplatedTypename {
 			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
-			.templated_with = std::vector{
+			.templated_with = as_vec(
 				NodeStructs::Typename{ NodeStructs::UnionTypename{
-					std::vector<NodeStructs::Typename>{
+					as_vec(
 						NodeStructs::Typename{ NodeStructs::BaseTypename{ "file" } },
 						NodeStructs::Typename{ NodeStructs::BaseTypename{ "directory" } }
-					}
+					)
 				} }
-			}
+			)
 		} },
-		{
+		as_vec(
 			NodeStructs::FunctionParameter{
 				NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" } },
 				NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
 				std::string{ "dir" }
 			}
-		},
+		),
 		{}
 	};
 	
 	NodeStructs::NameSpace filesystem_ns = {
 		.name = "filesystem",
 		.name_space = std::nullopt,
-		.functions = { entries_dir, entries_str },
+		.functions = as_vec(copy(entries_dir), copy(entries_str)),
 		.types = {},
 	};
 };

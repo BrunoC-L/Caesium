@@ -15,10 +15,11 @@ struct ExpressionVisitor {
 			[&](const auto& t) {
 				return self(t);
 			},
-			t.expression.get()
+			t.expression.get()._value
 		);
 	}
 };
+
 #define ExpressionExpands_(Expand) \
 	Expand(NodeStructs::ConditionalExpression)\
 	Expand(NodeStructs::OrExpression)\
@@ -46,4 +47,3 @@ struct ExpressionVisitor {
 #define ExpressionVisitorDeclarations ExpressionExpands_(expr_decl)
 
 #define ExpressionExpands(Expand) Expand(NodeStructs::Expression) ExpressionExpands_(Expand)
-

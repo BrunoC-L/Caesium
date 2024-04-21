@@ -4,6 +4,7 @@
 #include "core/structurizer.hpp"
 #include "utility/colored_text.hpp"
 #include "core/structurizer.hpp"
+#include "utility/as_vec.hpp"
 
 template <bool exp_ok, typename T>
 bool test_structurize(int line, int n_indent, std::string program, auto&& expected) {
@@ -87,14 +88,14 @@ bool test_structurize_equals() {
 	ok &= test_structurize_equals<Typename>(__LINE__, 0, "a | b",
 		NodeStructs::Typename{
 			NodeStructs::UnionTypename{
-				std::vector<NodeStructs::Typename>{ { NodeStructs::BaseTypename{ "a" } }, { NodeStructs::BaseTypename{ "b" } } }
+				as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" } }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "b" } })
 			}
 		});
 
 	ok &= test_structurize_equals<Typename>(__LINE__, 0, "a | b | c",
 		NodeStructs::Typename{
 			NodeStructs::UnionTypename{
-				std::vector<NodeStructs::Typename>{ { NodeStructs::BaseTypename{ "a" } }, { NodeStructs::BaseTypename{ "b" } }, { NodeStructs::BaseTypename{ "c" } } }
+				as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" } }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "b" } }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "c" } })
 			}
 		});
 
@@ -118,7 +119,7 @@ bool test_structurize_equals() {
 						.name_in_name_space = "entries"
 					}
 				},
-				.arguments = { std::vector{ NodeStructs::FunctionArgument{ std::nullopt, { str_parse("\"C:/\"") } } } }
+				.arguments = { as_vec(NodeStructs::FunctionArgument{ std::nullopt, { str_parse("\"C:/\"") } }) }
 			}
 		});
 
@@ -126,7 +127,10 @@ bool test_structurize_equals() {
 		NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = { { NodeStructs::TemplateParameter{ .name = "T" } } },
+			.parameters = as_vec(
+				Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+					NodeStructs::TemplateParameter{.name = "T" }
+				}),
 			.templated = "\tInt f(Vector<`T`> ref vec):\n\t\treturn 0"
 		});
 	return ok;

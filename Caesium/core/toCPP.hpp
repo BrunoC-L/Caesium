@@ -52,6 +52,10 @@ struct Namespace {
 	map_to_vec<NodeStructs::Builtin> builtins;
 };
 
+inline auto copy(const Namespace& ns) {
+	return copy11(ns);
+}
+
 struct transpilation_state {
 	variables_t variables;
 	Namespace global_namespace;
@@ -128,7 +132,7 @@ static std::string indent(size_t n) {
 	return res;
 };
 
-static NodeStructs::ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory cat) {
+static NodeStructs::ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory& cat) {
 	return std::visit(overload(
 		[](const NodeStructs::Reference&) -> NodeStructs::ValueCategory {
 			return NodeStructs::Reference{};
@@ -142,19 +146,19 @@ static NodeStructs::ValueCategory argument_category_to_value_category(const Node
 		[](const NodeStructs::Move&) -> NodeStructs::ValueCategory {
 			return NodeStructs::Value{};
 		}
-	), cat);
+	), cat._value);
 }
 
 std::optional<error> validate_templates(const std::vector<NodeStructs::Template>& templates);
 
-static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory> cat) {
+static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory>& cat) {
 	if (cat.has_value())
 		return argument_category_to_value_category(cat.value());
 	else
 		return NodeStructs::Value{};
 }
 
-transpile_header_cpp_t transpile(const std::vector<NodeStructs::File>& project);
+transpile_t transpile(const std::vector<NodeStructs::File>& project);
 
 transpile_header_cpp_t transpile_main(
 	transpilation_state_with_indent state,
@@ -164,6 +168,28 @@ transpile_header_cpp_t transpile_main(
 transpile_header_cpp_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
+);
+
+std::optional<error> stack(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::FunctionParameter>& parameters
+);
+
+void unstack(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::FunctionParameter>& parameters
+);
+
+transpile_t transpile(
+	transpilation_state_with_indent state,
+	const std::vector<NodeStructs::Statement>& statements,
+	const NodeStructs::MetaType& expected_return_type
+);
+
+transpile_t transpile(
+	transpilation_state_with_indent state,
+	const NodeStructs::Statement& statement,
+	const NodeStructs::MetaType& expected_return_type
 );
 
 transpile_header_cpp_t transpile(
@@ -181,12 +207,6 @@ transpile_t transpile(
 	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
-transpile_t transpile(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Statement>& statements,
-	const NodeStructs::MetaType& expected_return_type
-);
-
 std::vector<NodeStructs::MetaType> decompose_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::MetaType& type
@@ -194,13 +214,13 @@ std::vector<NodeStructs::MetaType> decompose_type(
 
 std::optional<error> add_decomposed_for_iterator_variables(
 	transpilation_state_with_indent state,
-	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
+	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::MetaType& it_type
 );
 
 std::optional<error> add_for_iterator_variable(
 	transpilation_state_with_indent state,
-	const std::vector<std::variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
+	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::MetaType& it_type
 );
 

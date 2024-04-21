@@ -13,7 +13,7 @@ R T::operator()(const NodeStructs::Expression& statement) {
 }
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
-	bool is_aggregate_init = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get());
+	bool is_aggregate_init = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get()._value);
 	bool is_auto = statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent;
 	if (is_auto) {
 		if (is_aggregate_init)
@@ -25,7 +25,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 		auto assigned_expression = transpile_expression(state, statement.expr);
 		return_if_error(assigned_expression);
 		if (std::holds_alternative<non_type_information>(assigned_expression.value())) {
-			const auto& assigned_expression_ok = std::get<non_type_information>(assigned_expression.value());
+			auto assigned_expression_ok = std::get<non_type_information>(std::move(assigned_expression).value());
 
 			auto deduced_typename = typename_of_type(state, assigned_expression_ok.type.type);
 			return_if_error(deduced_typename);
@@ -33,7 +33,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 			auto deduced_typename_repr = transpile_typename(state, deduced_typename.value());
 			return_if_error(deduced_typename_repr);
 
-			state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, assigned_expression_ok.type.type });
+			state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, std::move(assigned_expression_ok).type.type });
 
 			return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 		}
@@ -48,10 +48,10 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 
 		auto assigned_expression = [&](){
 			if (is_aggregate_init) {
-				const auto& aggregate = std::get<NodeStructs::BraceArguments>(statement.expr.expression.get());
+				const auto& aggregate = std::get<NodeStructs::BraceArguments>(statement.expr.expression.get()._value);
 				auto as_construct = NodeStructs::ConstructExpression{
-					.operand = statement.type,
-					.arguments = aggregate.args
+					.operand = copy(statement.type),
+					.arguments = copy(aggregate.args)
 				};
 				return transpile_expression(state, as_construct);
 			}
@@ -70,9 +70,9 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 				"not assignable"
 			};
 
-		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, type.value() });
+		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type.value()) });
 
-		if (std::holds_alternative<NodeStructs::UnionType>(assigned_expression_ok.type.type.type)
+		if (std::holds_alternative<NodeStructs::UnionType>(assigned_expression_ok.type.type.type._value)
 			&& (type.value() <=> assigned_expression_ok.type.type != std::weak_ordering::equivalent)) {
 			std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
 			return type_repr.value() + " " + statement.name + " = "
@@ -107,14 +107,14 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 		"} else " +
 		std::visit(
 			overload(overload_default_error,
-				[&](const Box<NodeStructs::IfStatement>& elseif) {
+				[&](const NonCopyableBox<NodeStructs::IfStatement>& elseif) {
 					return operator()(elseif.get()).value();
 				},
 				[&](const std::vector<NodeStructs::Statement>& justelse) {
 					return "{" + transpile(state, justelse, expected_return_type).value() + "}";
 				}
 			),
-			statement.elseExprStatements.value()
+			statement.elseExprStatements.value()._value
 		);
 	else {
 		auto k = transpile_expression(state, statement.ifExpr);
@@ -154,7 +154,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 			[&](const std::string& iterator) {
 				return iterator;
 			}
-		), statement.iterators.at(0));
+		), statement.iterators.at(0)._value);
 	}
 	
 	auto s1 = transpile_expression(state, statement.collection);
@@ -232,7 +232,7 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::BlockStatement& statement) {
-	auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value).type;
+	auto s = std::get<NodeStructs::BaseTypename>(statement.parametrized_block.value._value).type;
 	if (state.state.global_namespace.blocks.contains(s)) {
 		const NodeStructs::Block& block = state.state.global_namespace.blocks.at(s).back();
 		std::stringstream ss;

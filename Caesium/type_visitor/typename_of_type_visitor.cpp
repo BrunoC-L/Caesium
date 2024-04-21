@@ -6,7 +6,7 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::Type& t) {
 	if (t.name_space.has_value())
-		return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ t.name_space.value(), t.name } };
+		return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name}};
 	else
 		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name } };
 }
@@ -62,9 +62,11 @@ R T::operator()(const NodeStructs::Vector& t) {
 R T::operator()(const NodeStructs::VectorType& t) {
 	auto inner = operator()(t.value_type.get());
 	return_if_error(inner);
+	std::vector<NodeStructs::Typename> v;
+	v.push_back(std::move(inner).value());
 	return NodeStructs::Typename{ NodeStructs::TemplatedTypename{
 		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
-		.templated_with = std::vector{ inner.value() }
+		.templated_with = std::move(v)
 	} };
 }
 

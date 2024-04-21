@@ -22,8 +22,9 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 	OK(templates);
 #undef OK
 
-	if (auto it = state.state.global_namespace.aliases.find(type.type); it != state.state.global_namespace.aliases.end())
-		return operator()(it->second);
+	throw;
+	/*if (auto it = state.state.global_namespace.aliases.find(type.type); it != state.state.global_namespace.aliases.end())
+		return operator()(it->second);*/
 	if (auto it = state.state.global_namespace.enums.find(type.type); it != state.state.global_namespace.enums.end())
 		return "Int";
 	return error{
@@ -86,10 +87,11 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 R T::operator()(const NodeStructs::UnionTypename& type) {
 	std::stringstream ss;
 	ss << "Variant<";
-	auto ts = type.ors;
+	auto ts = copy(type.ors);
 	if (ts.size() == 0)
 		throw;
-	std::sort(ts.begin(), ts.end()); // todo unique
+	throw;
+	//std::sort(ts.begin(), ts.end()); // todo unique
 	bool first = true;
 	for (const auto& t : ts) {
 		if (first)

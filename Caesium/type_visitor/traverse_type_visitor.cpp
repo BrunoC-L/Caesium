@@ -6,8 +6,8 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::Type& type) {
 	if (!state.state.traversed_types.contains(type)) {
-		state.state.traversed_types.insert(type);
-		state.state.types_to_transpile.insert(type);
+		state.state.traversed_types.insert(copy(type));
+		state.state.types_to_transpile.insert(copy(type));
 	}
 	return std::nullopt;
 }

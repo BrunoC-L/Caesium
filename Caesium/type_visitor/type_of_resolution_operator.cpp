@@ -29,24 +29,25 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
 			return opt_e.value();
-		return NodeStructs::MetaType{ type };
+		return NodeStructs::MetaType{ copy(type) };
 	}
-	if (auto it = ns.aliases.find(accessed); it != ns.aliases.end()) {
-		const auto& e_t = type_of_typename(state, it->second);
+	throw;
+	/*if (auto it = ns.aliases.find(accessed); it != ns.aliases.end()) {
+		auto e_t = type_of_typename(state, it->second);
 		return_if_error(e_t);
 		auto opt_e = traverse_type(state, e_t.value());
 		if (opt_e.has_value())
 			return opt_e.value();
-		return e_t.value();
-	}
+		return std::move(e_t).value();
+	}*/
 	if (auto it = ns.interfaces.find(accessed); it != ns.interfaces.end()) {
 		const auto& interfaces = it->second;
 		if (interfaces.size() != 1)
 			throw;
 		const auto& interface = interfaces.at(0);
 		if (!state.state.traversed_interfaces.contains(interface)) {
-			state.state.traversed_interfaces.insert(interface);
-			state.state.interfaces_to_transpile.insert(interface);
+			state.state.traversed_interfaces.insert(copy(interface));
+			state.state.interfaces_to_transpile.insert(copy(interface));
 		}
 		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
 	}

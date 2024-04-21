@@ -42,7 +42,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.equals)
-		ss << " " << symbol_variant_as_text(op) << " " << operator()(e);
+		ss << " " << symbol_variant_as_text(op._value) << " " << operator()(e);
 	return ss.str();
 }
 
@@ -51,7 +51,7 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.comparisons)
-		ss << " " << symbol_variant_as_text(op) << " " << operator()(e);
+		ss << " " << symbol_variant_as_text(op._value) << " " << operator()(e);
 	return ss.str();
 }
 
@@ -60,7 +60,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.adds)
-		ss << " " << symbol_variant_as_text(op) << " " << operator()(e);
+		ss << " " << symbol_variant_as_text(op._value) << " " << operator()(e);
 	return ss.str();
 }
 
@@ -69,7 +69,7 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.muls)
-		ss << " " << symbol_variant_as_text(op) << " " << operator()(e);
+		ss << " " << symbol_variant_as_text(op._value) << " " << operator()(e);
 	return ss.str();
 }
 
@@ -80,12 +80,12 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
 	throw;
-	auto args = expr.arguments.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
+	/*auto args = expr.arguments.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;
 	auto operand_repr = operator()(expr.operand);
-	return std::move(operand_repr) + "_" + ss.str() + "_";
+	return std::move(operand_repr) + "_" + ss.str() + "_";*/
 }
 
 R T::operator()(const NodeStructs::NamespaceExpression& expr) {
@@ -114,20 +114,20 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
 	throw;
-	auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
+	/*auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;
-	return "_" + ss.str() + "_";
+	return "_" + ss.str() + "_";*/
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
 	throw;
-	auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
+	/*auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;
-	return "_" + ss.str() + "_";
+	return "_" + ss.str() + "_";*/
 }
 
 R T::operator()(const std::string& expr) {

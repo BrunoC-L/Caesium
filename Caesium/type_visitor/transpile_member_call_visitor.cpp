@@ -20,14 +20,14 @@ R T::operator()(const NodeStructs::Type& t) {
 	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 		const auto& fn = it->second.back();
 		if (!state.state.traversed_functions.contains(fn)) {
-			state.state.traversed_functions.insert(fn);
-			state.state.functions_to_transpile.insert(fn);
+			state.state.traversed_functions.insert(copy(fn));
+			state.state.functions_to_transpile.insert(copy(fn));
 		}
 		auto first_param_str = transpile_typename(state, fn.parameters.at(0).typename_);
 		return_if_error(first_param_str);
 		auto first_param = type_of_typename(state, fn.parameters.at(0).typename_);
 		return_if_error(first_param);
-		if (!is_assignable_to(state, first_param.value(), { t }))
+		if (!is_assignable_to(state, first_param.value(), { copy(t) }))
 			return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n" };
 
 		if (arguments.size() + 1 != fn.parameters.size())
@@ -54,7 +54,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		return_if_error(return_t);
 
 		return expression_information{ non_type_information{
-			.type = return_t.value(),
+			.type = std::move(return_t).value(),
 			.representation = ss.str(),
 			.value_category = NodeStructs::Value{},
 		} };
@@ -90,7 +90,7 @@ R T::operator()(const NodeStructs::Type& t) {
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
-	if (std::holds_alternative<std::string>(t.value)) {
+	if (std::holds_alternative<std::string>(t.value._value)) {
 		if (property_name == "size") {
 			if (arguments.size() != 0)
 				throw;
@@ -184,7 +184,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 				"wrong type pushed to Vector<T>"
 		};
 		return expression_information{ non_type_information{
-			.type = t,
+			.type = copy(t),
 			.representation = "push(" + operand_info.representation + ", " + repr.value() + ")",
 			.value_category = NodeStructs::Value{}
 		} };

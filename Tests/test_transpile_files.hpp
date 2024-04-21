@@ -69,13 +69,11 @@ bool test_transpile_error(const std::filesystem::path& folder) {
 	auto produced_file_or_error = transpile(vec);
 
 	if (produced_file_or_error.has_value()) {
-		auto [header, cpp] = std::move(produced_file_or_error).value();
-
 		std::cout << folder_name << " transpiled: " << colored_text_from_bool(false) << "\n";
 		/*auto h_file = std::ofstream{ folder / "produced.hpp" };
 		h_file << header;*/
 		auto cpp_file = std::ofstream{ folder / "produced.cpp" };
-		cpp_file << cpp;
+		cpp_file << produced_file_or_error.value();
 		return false;
 	}
 	else {
@@ -128,7 +126,7 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 			throw;
 		const auto& expected_cpp = cpp_opt.value();
 
-		auto [header, cpp] = std::move(produced_file_or_error).value();
+		const auto& cpp = produced_file_or_error.value();
 
 		/*auto first_diff_header = first_diff(header, expected_header);
 		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;*/
