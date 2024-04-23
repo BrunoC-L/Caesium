@@ -230,7 +230,9 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 						auto unindented = transpilation_state_with_indent{ state, 0 };
 						/*auto interface_repr = transpile_typename(unindented, NodeStructs::Typename{ NodeStructs::BaseTypename{ i.name } });
 						return_if_error(interface_repr);*/
-						auto k = members | LIFT_TRANSFORM_X(T, typename_of_type(unindented, T)) | to_vec();
+						auto k = members
+							| std::views::transform([&](auto&& T) { return typename_of_type(unindented, T); })
+							| to_vec();
 						auto v = vec_of_expected_to_expected_of_vec(std::move(k));
 						return_if_error(v);
 						auto members_repr = transpile_typenames(unindented, v.value());
@@ -710,7 +712,9 @@ transpile_t transpile_expressions(transpilation_state_with_indent state, const s
 transpile_t transpile_typenames(transpilation_state_with_indent state, const std::vector<NodeStructs::Typename>& args) {
 	if (args.size() == 0)
 		return "";
-	auto vec = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM_X(T, transpile_typename(state, T)) | to_vec());
+	auto vec = vec_of_expected_to_expected_of_vec(args
+		| std::views::transform([&](auto&& T) { return transpile_typename(state, T); })
+		| to_vec());
 	return_if_error(vec);
 	return std::accumulate(
 		std::next(vec.value().begin()),
@@ -729,7 +733,9 @@ std::string template_name(std::string original_name, const std::vector<std::stri
 }
 
 std::string template_name(std::string original_name, const std::vector<NodeStructs::Expression>& arguments) {
-	return template_name(original_name, arguments | LIFT_TRANSFORM(expression_for_template) | to_vec());
+	return template_name(original_name, arguments
+		| std::views::transform([&](auto&& e) { return expression_for_template(e); })
+		| to_vec());
 }
 
 bool is_assignable_to(
@@ -1364,7 +1370,9 @@ static expected<std::optional<const NodeStructs::Function*>> find_best_function1
 	const std::vector<NodeStructs::FunctionArgument>& args,
 	const std::vector<NodeStructs::Function>& fs
 ) {
-	auto args_ = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM_X(arg, transpile_expression(state, arg.expr)) | to_vec());
+	auto args_ = vec_of_expected_to_expected_of_vec(args
+		| std::views::transform([&](auto&& arg) { return transpile_expression(state, arg.expr); })
+		| to_vec());
 	return_if_error(args_);
 	auto args_ok_maybe_wrong_type = std::move(args_).value();
 	auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(std::move(args_ok_maybe_wrong_type));
@@ -1402,7 +1410,9 @@ static expected<std::optional<const NodeStructs::Function*>> find_best_function0
 	const std::vector<NodeStructs::FunctionArgument>& args,
 	const std::vector<NodeStructs::Function>& auto_fs
 ) {
-	auto args_ = vec_of_expected_to_expected_of_vec(args | LIFT_TRANSFORM_X(arg, transpile_expression(state, arg.expr)) | to_vec());
+	auto args_ = vec_of_expected_to_expected_of_vec(args
+		| std::views::transform([&](auto&& arg) { return transpile_expression(state, arg.expr); })
+		| to_vec());
 	return_if_error(args_);
 	auto args_ok_maybe_wrong_type = std::move(args_).value();
 	auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(std::move(args_ok_maybe_wrong_type));

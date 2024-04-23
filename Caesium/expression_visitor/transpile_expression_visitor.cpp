@@ -258,8 +258,8 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			const auto& tmpl = options.back();
 			/*auto arg_ts = vec_of_expected_to_expected_of_vec(
 				expr.arguments.args
-				| LIFT_TRANSFORM_TRAIL(.expr)
-				| LIFT_TRANSFORM_X(X, transpile_expression(state, X))
+				| std::views::transform([&](auto&& e) { return e.expr; })
+				| std::views::transform([&](auto&& e) { return transpile_expression(state, e); })
 				| to_vec()
 			);*/
 			throw;
@@ -353,7 +353,9 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		auto t = find_best_template(it->second, expr.arguments.args);
 		return_if_error(t);
 		const auto& tmpl = t.value().tmpl.get();
-		std::vector<std::string> args = expr.arguments.args | LIFT_TRANSFORM(expression_for_template) | to_vec();
+		std::vector<std::string> args = expr.arguments.args
+			| std::views::transform([&](auto&& e) { return expression_for_template(e); })
+			| to_vec();
 		std::string tmpl_name = template_name(it->first, expr.arguments.args);
 
 		size_t max_params = it->second.at(0).parameters.size();
@@ -496,7 +498,9 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 ) {
 	throw;
 	/*if (i1 == v1.size())
-		return mappings | LIFT_TRANSFORM(v2.at) | to_vec();*/
+		return mappings
+		| std::views::transform([&](auto&& e) { return v2.at(e); });
+		| to_vec();*/
 	if (i2 == v2.size())
 		return std::nullopt;
 	if (v1.at(i1) <=> v2.at(i2).type.type == std::weak_ordering::equivalent) {
@@ -561,30 +565,23 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 					"user error",
 					"expected `" + std::to_string(tt.member_variables.size()) + "` arguments but received `" + std::to_string(expr.arguments.args.size()) + "`"
 			};
-			auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args | LIFT_TRANSFORM_X(arg, operator()(arg.expr)) | to_vec());
+			auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args
+				| std::views::transform([&](auto&& arg) { return operator()(arg.expr); })
+				| to_vec());
 			return_if_error(arg_ts);
 			auto sz = arg_ts.value().size();
 
-			// doesn't seem to work.. elements are not being moved i think
-			/*auto non_type_args = std::move(arg_ts).value()
-				| filter_transform_variant_type_eq(non_type_information)
+			auto non_type_args = std::move(arg_ts).value()
+				| std::views::filter([&](const auto& e) -> bool { return std::holds_alternative<non_type_information>(e); })
+				| std::views::transform([&](auto& e) -> non_type_information { return std::get<non_type_information>(std::move(e)); })
 				| to_vec();
 			if (non_type_args.size() != sz)
-				throw;*/
-
-			std::vector<non_type_information> non_type_args;
-			non_type_args.reserve(sz);
-			for (auto& e : arg_ts.value())
-				if (std::holds_alternative<non_type_information>(e))
-					non_type_args.push_back(std::get<non_type_information>(std::move(e)));
-				else
-					throw;
-
+				throw;
 
 			auto param_ts = vec_of_expected_to_expected_of_vec(
 				tt.member_variables
 				| std::views::transform([](const NodeStructs::MemberVariable& mem) -> const NodeStructs::Typename& { return mem.type; })
-				| LIFT_TRANSFORM_X(tn, type_of_typename(state, tn))
+				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
 				| to_vec()
 			);
 			return_if_error(param_ts);
@@ -779,7 +776,9 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
-	auto vec = expr.args | LIFT_TRANSFORM_X(arg, transpile_expression(state, FORWARD(arg).expr)) | to_vec();
+	auto vec = expr.args
+		| std::views::transform([&](auto&& arg) { return transpile_expression(state, arg.expr); })
+		| to_vec();
 	auto args_ = vec_of_expected_to_expected_of_vec(std::move(vec));
 	return_if_error(args_);
 	auto args_ok_maybe_wrong_type = std::move(args_).value();

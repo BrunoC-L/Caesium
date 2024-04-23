@@ -138,21 +138,21 @@ struct KNode {
 	auto get_view() const {
 		if constexpr (std::is_same_v<U, T>)
 			return nodes
-			| LIFT_TRANSFORM_X(node, U{ node })
+			| std::views::transform([&](auto&& e) { return U{ e }; })
 			;
 		else if constexpr (is_specialization<T, And>::value)
 			return nodes
-			| LIFT_TRANSFORM_TRAIL(.get<U>())
+			| std::views::transform([&](auto&& e) { return e.get<U>(); })
 			;
 		else if constexpr (is_specialization<T, Alloc>::value)
 			return nodes
-			| LIFT_TRANSFORM_TRAIL(.get())
+			| std::views::transform([&](auto&& e) { return e.get(); })
 			;
 		else if constexpr (is_specialization<T, Or>::value)
 			return nodes
-			| LIFT_TRANSFORM_TRAIL(.value())
-			| filter_variant_type_eq<U>
-			| tranform_variant_type_eq<U>
+			| std::views::transform([&](auto&& e) { return e.value(); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<U>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<U>(e); })
 			;
 		else
 			static_assert(!sizeof(T*), "T is not supported");

@@ -13,7 +13,8 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
 	throw;
-	auto args = t.templated_with | LIFT_TRANSFORM(operator());
+	auto args = t.templated_with
+		| std::views::transform([&](auto&& e) { return operator()(e); });
 	std::stringstream ss;
 	ss << operator()(t.type.get()) << "__";
 	for (const auto& arg : args)
@@ -23,7 +24,8 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 
 R T::operator()(const NodeStructs::UnionTypename& t) {
 	throw;
-	auto args = t.ors | LIFT_TRANSFORM(operator());
+	auto args = t.ors
+		| std::views::transform([&](auto&& e) { return operator()(e); });
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;

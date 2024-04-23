@@ -80,7 +80,9 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
 	throw;
-	/*auto args = expr.arguments.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
+	/*auto args = expr.arguments.args
+		| std::views::transform([&](auto&& e) { return e.expr; })
+		| std::views::transform([&](auto&& e) { return operator()(e); });
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;
@@ -114,7 +116,9 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
 	throw;
-	/*auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
+	/*auto args = expr.args
+		| std::views::transform([&](auto&& e) { return e.expr; })
+		| std::views::transform([&](auto&& e) { return operator()(e); });
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;
@@ -123,7 +127,9 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
 	throw;
-	/*auto args = expr.args | LIFT_TRANSFORM_TRAIL(.expr) | LIFT_TRANSFORM(operator());
+	/*auto args = expr.args
+		| std::views::transform([&](auto&& e) { return e.expr; })
+		| std::views::transform([&](auto&& e) { return operator()(e); });
 	std::stringstream ss;
 	for (const auto& arg : args)
 		ss << "_" << arg;

@@ -8,7 +8,9 @@ std::optional<std::vector<T>> vec_of_variant_to_optional_vector_single_type(cons
 	for (const auto& e : vec)
 		if (!std::holds_alternative<T>(e))
 			return std::nullopt;
-	return vec | LIFT_TRANSFORM_X(e, std::get<T>(e)) | to_vec();
+	return vec
+		| std::views::transform([&](auto&& e) { return std::get<T>(e); })
+		| to_vec();
 }
 
 template <typename T, typename... Ts>
@@ -16,5 +18,7 @@ std::optional<std::vector<T>> vec_of_variant_to_optional_vector_single_type(std:
 	for (auto& e : vec)
 		if (!std::holds_alternative<T>(e))
 			return std::nullopt;
-	return vec | LIFT_TRANSFORM_X(e, std::get<T>(std::move(e))) | to_vec();
+	return vec
+		| std::views::transform([&](auto& e) { return std::get<T>(std::move(e)); })
+		| to_vec();
 }

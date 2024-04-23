@@ -29,7 +29,9 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			} };
 		}
 		if (t.type == "Variant") {
-			auto ts = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec());
+			auto ts = vec_of_expected_to_expected_of_vec(templated_with
+				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
+				| to_vec());
 			return_if_error(ts);
 			return NodeStructs::MetaType{ NodeStructs::UnionType{
 				std::move(ts).value()
@@ -60,7 +62,9 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			}
 			return ss.str();
 		};
-		auto args = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
+		auto args = vec_of_expected_to_expected_of_vec(templated_with 
+			| std::views::transform([&](auto&& tn) { return transpile_typename(state, tn); })
+			| to_vec());
 		return_if_error(args);
 		const auto& args_ok = args.value();
 		std::string tmpl_name = template_name(it->first, args_ok);
@@ -107,7 +111,9 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
 				auto structured_t = getStruct(t.get<grammar::Type>(), std::nullopt);
 				structured_t.name = tmpl_name;
-				auto templated_with_reprs = vec_of_expected_to_expected_of_vec(templated_with | LIFT_TRANSFORM_X(tn, transpile_typename(state, tn)) | to_vec());
+				auto templated_with_reprs = vec_of_expected_to_expected_of_vec(templated_with
+					| std::views::transform([&](auto&& tn) { return transpile_typename(state, tn); })
+					| to_vec());
 				return_if_error(templated_with_reprs);
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
 				auto opt_error = traverse_type(state, structured_t);

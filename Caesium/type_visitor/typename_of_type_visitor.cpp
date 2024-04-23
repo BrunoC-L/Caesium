@@ -32,7 +32,10 @@ R T::operator()(const NodeStructs::Builtin& t) {
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {
-	expected<std::vector<NodeStructs::Typename>> vec = vec_of_expected_to_expected_of_vec(t.arguments | LIFT_TRANSFORM(operator()) | to_vec());
+	expected<std::vector<NodeStructs::Typename>> vec = vec_of_expected_to_expected_of_vec(t.arguments
+		| std::views::transform([&](auto&& e) { return operator()(e); })
+		| to_vec()
+	);
 	return_if_error(vec);
 	return NodeStructs::Typename{ NodeStructs::UnionTypename{
 		.ors = std::move(vec).value()

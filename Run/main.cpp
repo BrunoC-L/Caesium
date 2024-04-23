@@ -73,9 +73,9 @@ int main(int argc, char** argv) {
 				compilation_success &=
 				transpile(
 					as_vec(std::filesystem::directory_iterator(folder))
-						| LIFT_FILTER_TRAIL(.path().extension() == ".caesium")
-						| LIFT_TRANSFORM_TRAIL(.path())
-						| LIFT_TRANSFORM(caesium2AST)
+						| std::views::filter([&](auto&& e) { return e.path().extension() == ".caesium"; })
+						| std::views::transform([&](auto&& e) { return e.path(); })
+						| std::views::transform([&](auto&& e) { return caesium2AST(e); })
 						| to_vec(),
 					folder);
 
