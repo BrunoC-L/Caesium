@@ -77,15 +77,27 @@ public:
 		return !has_value();
 	}
 
-	template <typename Self>
+	/*template <typename Self>
 	decltype(auto) raw(this Self&& self) {
 		return std::forward<Self>(self).value_or_error;
-	}
+	}*/
 
 	template <typename Self>
 	decltype(auto) value(this Self&& self) {
 		return std::get<value_type>(std::forward<Self>(self).value_or_error);
 	}
+
+	/*value_type& value()& {
+		return std::get<value_type>(value_or_error);
+	}
+
+	const value_type& value() const& {
+		return std::get<value_type>(value_or_error);
+	}
+
+	value_type value()&& {
+		return std::get<value_type>(std::move(value_or_error));
+	}*/
 
 	template <typename Self>
 	decltype(auto) error(this Self&& self) {

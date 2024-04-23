@@ -502,7 +502,9 @@ struct NodeStructs {
 		std::weak_ordering operator<=>(const MapType&) const;
 	};
 
-	using void_t = struct {};
+	struct void_t {
+		std::weak_ordering operator<=>(const void_t&) const;
+	};
 
 	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
@@ -852,10 +854,22 @@ CMP5(Function)
 CMP11(NameSpace)
 CMP2(File)
 CMP1(Import)
+CMP1(PrimitiveType)
+CMP0(void_t)
 
-inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const NodeStructs::PrimitiveType& other) const {
-	throw;
-}
+//inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const NodeStructs::PrimitiveType& other) const {
+//	const auto& a = value._value;
+//	const auto& b = other.value._value;
+//	auto index_cmp = cmp(a.index(), b.index());
+//	if (index_cmp != 0)
+//		return index_cmp;
+//	return std::visit(
+//		[&](const auto& _a) {
+//			return cmp(_a, std::get<std::remove_cvref_t<decltype(_a)>>(b));
+//		},
+//		a
+//	);
+//}
 
 //inline std::weak_ordering NodeStructs::IfStatement::operator<=>(const NodeStructs::IfStatement& other) const {
 //	if (auto c = cmp(ifStatements, other.ifStatements); c != std::weak_ordering::equivalent)

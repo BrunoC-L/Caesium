@@ -158,7 +158,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 			throw;
 	}
 	return expression_information{ non_type_information{
-		.type = std::move(std::get<non_type_information>(base.value()).type.type),
+		.type = std::get<non_type_information>(std::move(base).value()).type.type,
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -560,19 +560,32 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				return error{
 					"user error",
 					"expected `" + std::to_string(tt.member_variables.size()) + "` arguments but received `" + std::to_string(expr.arguments.args.size()) + "`"
-				};
-			throw;
-			/*auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args | LIFT_TRANSFORM_X(arg, operator()(arg.expr)) | to_vec());
+			};
+			auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args | LIFT_TRANSFORM_X(arg, operator()(arg.expr)) | to_vec());
 			return_if_error(arg_ts);
-			const auto& arg_ts_ok = arg_ts.value();*/
-			throw;
-			/*auto non_type_args = arg_ts_ok | filter_transform_variant_type_eq(non_type_information) | to_vec();
-			if (non_type_args.size() != arg_ts_ok.size())
+			auto sz = arg_ts.value().size();
+
+			// doesn't seem to work.. elements are not being moved i think
+			/*auto non_type_args = std::move(arg_ts).value()
+				| filter_transform_variant_type_eq(non_type_information)
+				| to_vec();
+			if (non_type_args.size() != sz)
 				throw;*/
 
-			throw;
-			/*auto param_ts = vec_of_expected_to_expected_of_vec(
-				tt.member_variables | LIFT_TRANSFORM_TRAIL(.type) | LIFT_TRANSFORM_X(tn, type_of_typename(state, tn)) | to_vec()
+			std::vector<non_type_information> non_type_args;
+			non_type_args.reserve(sz);
+			for (auto& e : arg_ts.value())
+				if (std::holds_alternative<non_type_information>(e))
+					non_type_args.push_back(std::get<non_type_information>(std::move(e)));
+				else
+					throw;
+
+
+			auto param_ts = vec_of_expected_to_expected_of_vec(
+				tt.member_variables
+				| std::views::transform([](const NodeStructs::MemberVariable& mem) -> const NodeStructs::Typename& { return mem.type; })
+				| LIFT_TRANSFORM_X(tn, type_of_typename(state, tn))
+				| to_vec()
 			);
 			return_if_error(param_ts);
 
@@ -591,10 +604,10 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			}
 
 			return expression_information{ non_type_information{
-				.type = tt,
+				.type = copy(tt),
 				.representation = typename_repr.value() + "{" + args_repr.str() + "}",
 				.value_category = NodeStructs::Value{},
-			} };*/
+			} };
 		},
 		[&](const NodeStructs::SetType& set_t) -> R {
 			if (expr.arguments.args.size() != 0)
@@ -828,8 +841,7 @@ R T::operator()(const std::string& expr) {
 			.representation = expr
 		} };
 	}
-	throw;
-	/*if (auto it = state.state.global_namespace.aliases.find(expr); it != state.state.global_namespace.aliases.end()) {
+	if (auto it = state.state.global_namespace.aliases.find(expr); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->second;
 		auto type = type_of_typename(state, type_name);
 		return_if_error(type);
@@ -839,7 +851,7 @@ R T::operator()(const std::string& expr) {
 			.type = std::move(type).value(),
 			.representation = transpile_typename(state, type_name).value()
 		} };
-	}*/
+	}
 	if (auto it = state.state.global_namespace.templates.find(expr); it != state.state.global_namespace.templates.end())
 		return expression_information{ type_information{
 			.type = NodeStructs::TemplateType{ expr, state.state.global_namespace },

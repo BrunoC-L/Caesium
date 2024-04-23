@@ -36,15 +36,14 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.global_namespace.templates.find(t.type); it != state.state.global_namespace.templates.end()) {
 		return NodeStructs::MetaType{ NodeStructs::TemplateType{ t.type, state.state.global_namespace } };
 	}
-	throw;
-	/*if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
+	if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->second;
 		auto type = type_of_typename(state, type_name);
 		return_if_error(type);
 		if (std::optional<error> err = traverse_type(state, type.value()); err.has_value())
 			return err.value();
 		return std::move(type).value();
-	}*/
+	}
 	if (auto it = state.state.global_namespace.interfaces.find(t.type); it != state.state.global_namespace.interfaces.end()) {
 		const auto& interfaces = it->second;
 		if (interfaces.size() != 1)

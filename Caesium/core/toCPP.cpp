@@ -94,7 +94,7 @@ std::optional<error> insert_all_named_recursive_with_imports(
 ) {
 	for (const NodeStructs::File& file : project)
 		if (file.content.name == filename) {
-			Namespace& named = named_by_file.at(filename);
+			Namespace& named = named_by_file[filename];
 			auto x = insert_all_named_recursive_with_imports(named, file.content);
 			if (x.has_value())
 				return x.value();
@@ -133,8 +133,7 @@ std::optional<error> insert_aliases_recursive_with_imports(
 			Namespace& named = named_by_file.at(filename);
 
 			auto state = transpilation_state{ {}, copy(named) };
-			throw;
-			/*for (const auto& alias : file.content.aliases)
+			for (const auto& alias : file.content.aliases)
 				named.aliases.emplace(alias.aliasFrom, copy(alias.aliasTo));
 			for (const auto& i : file.imports) {
 				auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, i.imported);
@@ -143,7 +142,7 @@ std::optional<error> insert_aliases_recursive_with_imports(
 				Namespace& imported_named = named_by_file[i.imported];
 				for (const auto& alias : imported_named.aliases)
 					named.aliases.emplace(alias.first, copy(alias.second));
-			}*/
+			}
 
 			return std::nullopt;
 		}
@@ -175,14 +174,13 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 
 				std::map<std::string, Namespace> named_by_file;
 
-				throw;
-				/*for (const auto& file2 : project) {
+				for (const auto& file2 : project) {
 					Namespace named_of_file = {};
 					add_builtins(named_of_file);
 					named_by_file.emplace(file2.content.name, std::move(named_of_file));
 					if (auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.content.name); opt_error.has_value())
 						return opt_error.value();
-				}*/
+				}
 
 				for (const auto& file2 : project)
 					if (auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.content.name); opt_e.has_value())
@@ -816,9 +814,9 @@ bool is_assignable_to(
 								return false;
 						}
 				}
-				auto& interfacemembers = state.state.interface_symbol_to_members.at(
+				auto& interfacemembers = state.state.interface_symbol_to_members[
 					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name } }
-				);
+				];
 				auto new_member = NodeStructs::MetaType{ copy(u) };
 				for (const auto& member : interfacemembers)
 					if (member <=> new_member == std::weak_ordering::equivalent)
@@ -969,8 +967,8 @@ expected<NodeStructs::Function> realise_function_using_auto(
 				const auto& info_ok = std::get<non_type_information>(info.value());
 				auto tn = typename_of_type(state, info_ok.type.type);
 				return_if_error(tn);
-				throw;
-				//realised.parameters.at(index).typename_.value._value.swap(tn.value().value._value);
+				auto del = std::move(realised.parameters.at(index).typename_);
+				new (&realised.parameters.at(index).typename_) NodeStructs::Typename(std::move(tn).value());
 			}
 			else
 				throw;
@@ -1282,14 +1280,13 @@ expected<Arrangement> _find_best_template(
 		throw;
 	std::vector<Arrangement> candidate_arrangements = arrangements(args, candidates);
 	
-	throw;
-	/*std::sort(
+	std::sort(
 		candidate_arrangements.begin(),
 		candidate_arrangements.end(),
 		[](const Arrangement& l, const Arrangement& r) {
 			return &l.tmpl.get() < &r.tmpl.get() || &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::weak_ordering::less;
 		}
-	);*/
+	);
 	candidate_arrangements.erase(
 		std::unique(
 			candidate_arrangements.begin(),

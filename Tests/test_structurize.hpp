@@ -35,6 +35,8 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 	DT structurized = [&]() -> DT {
 			if constexpr (std::is_same_v<DT, NodeStructs::Expression>)
 				return getExpressionStruct(node);
+			else if constexpr (std::is_same_v<DT, NodeStructs::Function>)
+				return getStruct(node, std::nullopt);
 			else
 				return getStruct(node);
 		}();
@@ -132,6 +134,31 @@ bool test_structurize_equals() {
 					NodeStructs::TemplateParameter{.name = "T" }
 				}),
 			.templated = "\tInt f(Vector<`T`> ref vec):\n\t\treturn 0"
+		});
+
+	ok &= test_structurize_equals<Function>(__LINE__, 0, "A f(A ref a):\n\tprintln(a)\n",
+		NodeStructs::Function{
+			.name = "f",
+			.name_space = std::nullopt,
+			.returnType = NodeStructs::BaseTypename{ "A" },
+			.parameters = as_vec(NodeStructs::FunctionParameter{
+				.typename_ = NodeStructs::BaseTypename{ "A" },
+				.category = NodeStructs::Reference{},
+				.name = "a",
+			}),
+			.statements = as_vec(NodeStructs::Statement{
+				NodeStructs::Expression{
+					NodeStructs::CallExpression{
+						.operand = "println",
+						.arguments = NodeStructs::ParenArguments{
+							.args = as_vec(NodeStructs::FunctionArgument{
+								.category = std::nullopt,
+								.expr = "a"
+							})
+						}
+					}
+				}
+			})
 		});
 	return ok;
 }

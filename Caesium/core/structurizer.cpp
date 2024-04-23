@@ -566,73 +566,73 @@ NodeStructs::Expression getExpressionStruct(const grammar::UnaryExpression& stat
 
 NodeStructs::Expression getExpressionStruct(const grammar::MultiplicativeExpression& statement) {
 	using operators = Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>;
+	using VT = Variant<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>;
 	const auto& multiplications = statement.get<Star<And<operators, grammar::UnaryExpression>>>().get<And<operators, grammar::UnaryExpression>>();
 	if (multiplications.size() == 0)
 		return getExpressionStruct(statement.get<grammar::UnaryExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::MultiplicativeExpression{
 			getExpressionStruct(statement.get<grammar::UnaryExpression>()),
-			{}
-			/*multiplications
+			multiplications
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
-						operators::variant_t{ op_exp.get<operators>().value() },
+						VT{ op_exp.get<operators>().value() },
 						getExpressionStruct(op_exp.get<grammar::UnaryExpression>())
 					})
-				| to_vec()*/
+				| to_vec()
 		} };
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::AdditiveExpression& statement) {
 	using operators = Or<Token<PLUS>, Token<DASH>>;
+	using VT = Variant<Token<PLUS>, Token<DASH>>;
 	const auto& additions = statement.get<Star<And<operators, grammar::MultiplicativeExpression>>>().get<And<operators, grammar::MultiplicativeExpression>>();
 	if (additions.size() == 0)
 		return getExpressionStruct(statement.get<grammar::MultiplicativeExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::AdditiveExpression{
 			getExpressionStruct(statement.get<grammar::MultiplicativeExpression>()),
-			{}
-			/*additions
+			additions
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
-						operators::variant_t{ op_exp.get<operators>().value() },
+						VT{ op_exp.get<operators>().value() },
 						getExpressionStruct(op_exp.get<grammar::MultiplicativeExpression>())
 					})
-				| to_vec()*/
+				| to_vec()
 		} };
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& statement) {
 	using op_add = And<grammar::CompareOperator, grammar::AdditiveExpression>;
+	using VT = Variant<Token<LTQ>, Token<LTEQ>, Token<GTQ>, Token<GTEQ>>;
 	const auto& comparisons = statement.get<Star<op_add>>().get<op_add>();
 	if (comparisons.size() == 0)
 		return getExpressionStruct(statement.get<grammar::AdditiveExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::CompareExpression{
 			getExpressionStruct(statement.get<grammar::AdditiveExpression>()),
-			{}
-			/*comparisons
+			comparisons
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
-						grammar::CompareOperator::variant_t{ op_exp.get<grammar::CompareOperator>().value() },
+						VT{ op_exp.get<grammar::CompareOperator>().value() },
 						getExpressionStruct(op_exp.get<grammar::AdditiveExpression>())
 					})
-				| to_vec()*/
+				| to_vec()
 		} };
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::EqualityExpression& statement) {
 	using operators = Or<Token<EQUALEQUAL>, Token<NEQUAL>>;
+	using VT = Variant<Token<EQUALEQUAL>, Token<NEQUAL>>;
 	const auto& equals = statement.get<Star<And<operators, grammar::CompareExpression>>>().get<And<operators, grammar::CompareExpression>>();
 	if (equals.size() == 0)
 		return getExpressionStruct(statement.get<grammar::CompareExpression>());
 	else
 		return NodeStructs::Expression{ NodeStructs::EqualityExpression{
 			getExpressionStruct(statement.get<grammar::CompareExpression>()),
-			{}
-			/*equals
+			equals
 				| LIFT_TRANSFORM_X(op_exp, std::pair{
-						operators::variant_t{ op_exp.get<operators>().value() },
+						VT{ op_exp.get<operators>().value() },
 						getExpressionStruct(op_exp.get<grammar::CompareExpression>())
 					})
-				| to_vec()*/
+				| to_vec()
 		} };
 }
 
@@ -694,12 +694,11 @@ NodeStructs::VariableDeclarationStatement getStatementStruct(const grammar::Vari
 }
 
 std::vector<NodeStructs::Statement> getStatements(const grammar::ColonIndentCodeBlock& code) {
-	return {};
-	/*return code.get<Indent<Star<Or<Token<NEWLINE>, grammar::Statement>>>>().get<Or<Token<NEWLINE>, grammar::Statement>>()
+	return code.get<Indent<Star<Or<Token<NEWLINE>, grammar::Statement>>>>().get<Or<Token<NEWLINE>, grammar::Statement>>()
 		| LIFT_TRANSFORM_TRAIL(.value())
 		| filter_transform_variant_type_eq(grammar::Statement)
 		| LIFT_TRANSFORM(getStatementStruct)
-		| to_vec();*/
+		| to_vec();
 }
 
 NodeStructs::BlockStatement getStatementStruct(const grammar::BlockStatement& statement) {
@@ -732,18 +731,18 @@ NodeStructs::IfStatement getStatementStruct(const grammar::IfStatement& statemen
 NodeStructs::ForStatement getStatementStruct(const grammar::ForStatement& statement) {
 	return {
 		.collection = getExpressionStruct(statement.get<grammar::Expression>()),
-		.iterators = {}/*statement.get<CommaPlus<Or<grammar::VariableDeclaration, grammar::Word>>>().get<Or<grammar::VariableDeclaration, grammar::Word>>()
+		.iterators = statement.get<CommaPlus<Or<grammar::VariableDeclaration, grammar::Word>>>().get<Or<grammar::VariableDeclaration, grammar::Word>>()
 			| std::views::transform([](const Or<grammar::VariableDeclaration, grammar::Word>& or_node) {
 				return std::visit(overload(
-					[](const grammar::Word& e) -> std::variant<NodeStructs::VariableDeclaration, std::string> {
+					[](const grammar::Word& e) -> Variant<NodeStructs::VariableDeclaration, std::string> {
 						return { e.value };
 					},
-					[](const grammar::VariableDeclaration& e) -> std::variant<NodeStructs::VariableDeclaration, std::string> {
+					[](const grammar::VariableDeclaration& e) -> Variant<NodeStructs::VariableDeclaration, std::string> {
 						return NodeStructs::VariableDeclaration{ getStruct(e.get<grammar::Typename>()), e.get<grammar::Word>().value };
 					}
 				), or_node.value());
 			})
-			| to_vec()*/,
+			| to_vec(),
 		.statements = getStatements(statement.get<grammar::ColonIndentCodeBlock>())
 	};
 }

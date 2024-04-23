@@ -22,9 +22,8 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 	OK(templates);
 #undef OK
 
-	throw;
-	/*if (auto it = state.state.global_namespace.aliases.find(type.type); it != state.state.global_namespace.aliases.end())
-		return operator()(it->second);*/
+	if (auto it = state.state.global_namespace.aliases.find(type.type); it != state.state.global_namespace.aliases.end())
+		return operator()(it->second);
 	if (auto it = state.state.global_namespace.enums.find(type.type); it != state.state.global_namespace.enums.end())
 		return "Int";
 	return error{
@@ -60,7 +59,9 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 				first = false;
 			else
 				ss << ", ";
-			ss << operator()(t).value();
+			auto res = operator()(t);
+			return_if_error(res);
+			ss << res.value();
 		}
 		ss << ">";
 		return ss.str();
@@ -78,10 +79,27 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 				first = false;
 			else
 				ss << "__";
-			ss << operator()(t).value();
+			auto res = operator()(t);
+			return_if_error(res);
+			ss << res.value();
 		}
 		return ss.str();
 	}
+}
+
+template<typename T>
+void bubble_sort_swap(std::vector<T>& arr) {
+	int n = arr.size();
+	for (int i = 0; i < n - 1; ++i)
+		for (int j = 0; j < n - i - 1; ++j)
+			if (arr.at(j) > arr.at(j + 1))
+				swap(arr.at(j), arr.at(j + 1));
+}
+
+void swap(NodeStructs::Typename& a, NodeStructs::Typename& b) {
+	NodeStructs::Typename c = std::move(a);
+	new (&a) NodeStructs::Typename(std::move(b));
+	new (&b) NodeStructs::Typename(std::move(c));
 }
 
 R T::operator()(const NodeStructs::UnionTypename& type) {
@@ -90,15 +108,16 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 	auto ts = copy(type.ors);
 	if (ts.size() == 0)
 		throw;
-	throw;
-	//std::sort(ts.begin(), ts.end()); // todo unique
+	bubble_sort_swap(ts); // todo unique
 	bool first = true;
 	for (const auto& t : ts) {
 		if (first)
 			first = false;
 		else
 			ss << ", ";
-		ss << operator()(t).value();
+		auto res = operator()(t);
+		return_if_error(res);
+		ss << res.value();
 	}
 	ss << ">";
 	return ss.str();
