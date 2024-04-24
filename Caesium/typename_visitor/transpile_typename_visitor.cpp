@@ -33,7 +33,19 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& type) {
-	return operator()(type.name_space.get()).value() + "__" + type.name_in_name_space;
+	if (!std::holds_alternative<NodeStructs::BaseTypename>(type.name_space.get().value._value))
+		throw;
+	const std::string& ns_str = std::get<NodeStructs::BaseTypename>(type.name_space.get().value._value).type;
+	if (auto it = state.state.global_namespace.namespaces.find(ns_str); it != state.state.global_namespace.namespaces.end()) {
+		if (auto it2 = it->second.types.find(type.name_in_name_space); it2 != it->second.types.end())
+			return operator()(type.name_space.get()).value() + "__" + type.name_in_name_space;
+		if (auto it2 = it->second.aliases.find(type.name_in_name_space); it2 != it->second.aliases.end())
+			return operator()(it2->second);
+		throw;
+	}
+	else {
+		throw;
+	}
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {

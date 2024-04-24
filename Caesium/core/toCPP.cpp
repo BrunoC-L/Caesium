@@ -1,7 +1,3 @@
-#include <algorithm>
-#include <source_location>
-#include <format>
-#include <stacktrace>
 #include <numeric>
 
 #include "../utility/overload.hpp"
@@ -28,6 +24,10 @@ static void add(Namespace& name_space, NodeStructs::Function&& f) {
 	name_space.functions[f.name].push_back(std::move(f));
 }
 
+static void add(Namespace& name_space, Namespace&& ns) {
+	name_space.namespaces.emplace(ns.name, std::move(ns));
+}
+
 static void add_builtins(Namespace& name_space) {
 	builtins _builtins;
 
@@ -46,14 +46,16 @@ static void add_builtins(Namespace& name_space) {
 	add(name_space, std::move(_builtins.builtin_file));
 	add(name_space, std::move(_builtins.builtin_directory));
 
-	add(name_space, std::move(_builtins.entries_dir));
 	add(name_space, std::move(_builtins.entries_str));
+	add(name_space, std::move(_builtins.entries_dir));
+
+	add(name_space, std::move(_builtins.filesystem_ns));
 }
 
 static void traverse_builtins(transpilation_state& state) {
 	builtins _builtins;
 
-	state.traversed_functions.insert(std::move(_builtins.entries_dir));
+	state.traversed_functions.insert(std::move(_builtins.entries_str));
 	state.traversed_functions.insert(std::move(_builtins.entries_dir));
 }
 std::optional<error> insert_all_named_recursive_with_imports(
@@ -247,7 +249,10 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 					std::stringstream declarations;
 					std::stringstream definitions;
 					size_t size = state.functions_to_transpile.size();
-					for (const auto& f : state.functions_to_transpile) {
+					std::vector<NodeStructs::Function> v;
+					for (const auto& f : state.functions_to_transpile)
+						v.push_back(copy(f));
+					for (const auto& f : v) {
 						if (!state.traversed_functions.contains(f))
 							throw;
 						if (uses_auto(f))
@@ -770,7 +775,7 @@ bool is_assignable_to(
 				return e.name == u.name;
 			},
 			[&](const NodeStructs::Builtin& e, const auto& u, const auto& state) -> bool {
-				if (e.name == "directory") {
+				if (e.name == "builtin_filesystem_directory") {
 					return is_assignable_to(state, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } }, { copy(u) });
 				}
 				throw;

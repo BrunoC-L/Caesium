@@ -170,6 +170,7 @@
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
     <ClInclude Include="type_visitor\typename_of_type_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_resolution_operator.hpp" />
+    <ClInclude Include="utility\as_map.hpp" />
     <ClInclude Include="utility\as_vec.hpp" />
     <ClInclude Include="utility\box.hpp" />
     <ClInclude Include="utility\colored_text.hpp" />

@@ -222,7 +222,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 				vec.push_back(std::move(fn).value());
 		}
 	}
-	auto t = transpile_expression(state, expr.operand);
+	auto t = operator()(expr.operand);
 	return_if_error(t);
 	if (std::holds_alternative<type_information>(t.value())) {
 		const auto& ti = std::get<type_information>(t.value());
@@ -276,7 +276,8 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 				return error{ "user error", "no matching function" };
 			const NodeStructs::Function& fn = *expected_f.value().value();
 			if (!state.state.traversed_functions.contains(fn)) {
-				// TODO VERIFY
+				auto transpiled_f = transpile(state, fn);
+				return_if_error(transpiled_f);
 				if (uses_auto(fn))
 					throw;
 				state.state.traversed_functions.insert(copy(fn));
@@ -310,7 +311,13 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
 				} };
 			if (auto it = ns.functions.find(expr.name_in_name_space); it != ns.functions.end())
-				throw;
+				return expression_information{ type_information{
+					.type = NodeStructs::MetaType{ NodeStructs::FunctionType{
+						.name = expr.name_in_name_space,
+						.name_space = ns
+					} },
+					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
+				} };
 			return error{
 				"user error",
 				"namespace `" + ns.name + "` has no type or function `" + expr.name_in_name_space + "`"

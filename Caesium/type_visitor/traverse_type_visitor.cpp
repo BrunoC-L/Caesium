@@ -30,7 +30,7 @@ R T::operator()(const NodeStructs::NamespaceType& t) {
 }
 
 R T::operator()(const NodeStructs::Builtin& t) {
-	throw;
+	return std::nullopt;
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {

@@ -31,15 +31,14 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 			return opt_e.value();
 		return NodeStructs::MetaType{ copy(type) };
 	}
-	throw;
-	/*if (auto it = ns.aliases.find(accessed); it != ns.aliases.end()) {
+	if (auto it = ns.aliases.find(accessed); it != ns.aliases.end()) {
 		auto e_t = type_of_typename(state, it->second);
 		return_if_error(e_t);
 		auto opt_e = traverse_type(state, e_t.value());
 		if (opt_e.has_value())
 			return opt_e.value();
 		return std::move(e_t).value();
-	}*/
+	}
 	if (auto it = ns.interfaces.find(accessed); it != ns.interfaces.end()) {
 		const auto& interfaces = it->second;
 		if (interfaces.size() != 1)
