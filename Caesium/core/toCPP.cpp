@@ -345,8 +345,8 @@ transpile_header_cpp_t transpile_main(
 
 std::optional<error> stack(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::FunctionParameter>& parameters,
-	variables_t& variables
+	variables_t& variables,
+	const std::vector<NodeStructs::FunctionParameter>& parameters
 ) {
 	for (auto&& [type_name, value_cat, name] : parameters) {
 		auto t = type_of_typename(state, type_name);
@@ -389,7 +389,7 @@ transpile_header_cpp_t transpile(
 	return_if_error(return_type);
 	auto parameters = transpile(state, fn.parameters);
 	return_if_error(parameters);
-	auto stack_params_opt_error = stack(state, fn.parameters, variables);
+	auto stack_params_opt_error = stack(state, variables, fn.parameters);
 	if (stack_params_opt_error.has_value())
 		return stack_params_opt_error.value();
 	auto statements = transpile(state.indented(), variables, fn.statements, return_type.value());
@@ -563,7 +563,7 @@ std::vector<NodeStructs::MetaType> decompose_type(
 //	return std::nullopt;
 //}
 
-std::optional<error> add_for_iterator_variable(
+std::optional<error> add_for_iterator_variables(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
@@ -949,6 +949,175 @@ bool uses_auto(const NodeStructs::Typename& t) {
 	return std::visit([](const auto& t_) { return uses_auto(t_); }, t.value._value);
 }
 
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const std::vector<NodeStructs::Statement>& statements
+);
+
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::Statement& statement
+) {
+	return std::visit(
+		overload(
+			overload_default_error,
+			[&](const NodeStructs::ReturnStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				if (statement.ifExpr.has_value())
+					throw;
+				if (statement.returnExpr.size() != 1)
+					throw;
+				auto res_info = transpile_expression(state, variables, statement.returnExpr.at(0).expr);
+				return_if_error(res_info);
+				if (!std::holds_alternative<non_type_information>(res_info.value()))
+					throw;
+				return std::get<non_type_information>(std::move(res_info).value()).type.type;
+			},
+			[&](const NodeStructs::Expression& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				return std::nullopt;
+			},
+			[&](const NodeStructs::VariableDeclarationStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				auto t = transpile_statement(
+					state,
+					variables,
+					statement,
+					type_of_typename(state, NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } }).value()
+				);
+				return_if_error(t);
+			},
+			[&](const NodeStructs::IfStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				auto if_res_t = deduce_return_type(state, variables, statement.ifStatements);
+				return_if_error(if_res_t);
+
+				if (!statement.elseExprStatements.has_value())
+					return std::move(if_res_t);
+
+				auto else_res_t = std::visit(
+					overload(
+						[&](const std::vector<NodeStructs::Statement>& statements) -> expected<std::optional<NodeStructs::MetaType>> {
+							return deduce_return_type(state, variables, statements);
+						},
+						[&](const NonCopyableBox<NodeStructs::IfStatement>& inner_if) -> expected<std::optional<NodeStructs::MetaType>> {
+							return deduce_return_type(state, variables, NodeStructs::Statement{ copy(inner_if.get()) });
+						}
+					),
+					statement.elseExprStatements.value()._value
+				);
+				return_if_error(else_res_t);
+
+				if (if_res_t.value().has_value() && else_res_t.value().has_value())
+					if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::weak_ordering::equivalent)
+						throw;
+					else
+						return std::move(if_res_t);
+				if (if_res_t.value().has_value())
+					return std::move(if_res_t);
+				return std::move(else_res_t);
+			},
+			[&](const NodeStructs::IForStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				throw;
+			},
+			[&](const NodeStructs::ForStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
+				return_if_error(coll_type_or_e);
+				if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
+					throw;
+				const auto& coll_type_or_e_ok = std::get<non_type_information>(coll_type_or_e.value());
+				auto it_type = iterator_type(state, coll_type_or_e_ok.type.type);
+				if (statement.iterators.size() > 1)
+					throw;
+				auto opt_e = add_for_iterator_variables(state, variables, statement.iterators, it_type);
+				if (opt_e.has_value())
+					return opt_e.value();
+				return deduce_return_type(state, variables, statement.statements);
+			},
+			[&](const NodeStructs::WhileStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				return deduce_return_type(state, variables, statement.statements);
+			},
+			[&](const NodeStructs::BreakStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				return std::nullopt;
+			},
+			[&](const NodeStructs::BlockStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				throw;
+			},
+			[&](const NodeStructs::MatchStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				// for each match case copy variables, add the match variables, note the return type from the case, compare with stored
+				if (statement.expressions.size() != 1)
+					throw;
+				if (statement.cases.size() == 0)
+					throw;
+				/*auto expr_info = transpile_expression(state, variables, statement.expressions.at(0));
+				return_if_error(expr_info);
+				if (!std::holds_alternative<non_type_information>(expr_info.value()))
+					throw;
+				const auto& expr_ok = std::get<non_type_information>(expr_info.value());
+				auto tn = typename_of_type(state, expr_ok.type.type);
+				return_if_error(tn);
+				auto tn_repr = transpile_typename(state, tn.value());
+				return_if_error(tn_repr);*/
+
+				std::optional<NodeStructs::MetaType> res = std::nullopt;
+				for (const NodeStructs::MatchCase& match_case : statement.cases) {
+					if (match_case.variable_declarations.size() != 1)
+						throw;
+					auto tn = transpile_typename(state, match_case.variable_declarations.at(0).first);
+					return_if_error(tn);
+					const auto& varname = match_case.variable_declarations.at(0).second;
+					variables[varname]
+						.push_back(variable_info{
+							.value_category = NodeStructs::Reference{},
+							.type = type_of_typename(state, match_case.variable_declarations.at(0).first).value()
+							});
+					auto deduced = deduce_return_type(state, variables, match_case.statements);
+					variables[varname].pop_back();
+					return_if_error(deduced);
+
+					if (deduced.value().has_value())
+						if (res.has_value())
+							if (cmp(res.value(), deduced.value().value()) != std::weak_ordering::equivalent)
+								throw;
+							else
+								continue;
+						else
+							res.emplace(std::move(deduced).value().value());
+				}
+				return res;
+				// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw, it will be removed eventually
+			},
+			[&](const NodeStructs::SwitchStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				throw;
+			},
+			[&](const NodeStructs::EqualStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+				return std::nullopt;
+			}
+		),
+		statement.statement._value
+	);
+}
+
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const std::vector<NodeStructs::Statement>& statements
+) {
+	std::optional<NodeStructs::MetaType> res = std::nullopt;
+	for (const auto& statement : statements) {
+		expected<std::optional<NodeStructs::MetaType>> e = deduce_return_type(state, variables, statement);
+		return_if_error(e);
+
+		if (e.value().has_value())
+			if (res.has_value())
+				if (cmp(res.value(), e.value().value()) != std::weak_ordering::equivalent)
+					throw;
+				else
+					continue;
+			else
+				res.emplace(std::move(e).value().value());
+	}
+	return res;
+}
+
 expected<NodeStructs::Function> realise_function_using_auto(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn_using_auto,
@@ -975,25 +1144,6 @@ expected<NodeStructs::Function> realise_function_using_auto(
 		if (uses_auto(statement))
 			throw;
 
-	bool at_least_one = false;
-	bool only_one = false;
-	for (const auto& statement : realised.statements)
-		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement._value)) {
-			only_one = at_least_one ? false : true;
-			at_least_one = true;
-		}
-	if (at_least_one == false) {
-		return NodeStructs::Function{
-			.name = realised.name,
-			.name_space = std::nullopt,
-			.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
-			.parameters = copy(realised.parameters),
-			.statements = copy(realised.statements)
-		};
-	}
-	else if (only_one == false)
-		throw;
-
 	variables_t variables{};
 	{
 		variables["True"].push_back(
@@ -1010,45 +1160,29 @@ expected<NodeStructs::Function> realise_function_using_auto(
 		);
 	}
 
-	auto stack_params_opt_error = stack(state, realised.parameters, variables);
+	auto stack_params_opt_error = stack(state, variables, realised.parameters);
 	if (stack_params_opt_error.has_value())
 		return stack_params_opt_error.value();
 
-	for (int i = 0; i < realised.statements.size(); ++i) {
-		const auto& statement = realised.statements.at(i);
-		if (std::holds_alternative<NodeStructs::ReturnStatement>(statement.statement._value)) {
-			const auto& return_expr = std::get<NodeStructs::ReturnStatement>(statement.statement._value).returnExpr;
-			if (return_expr.size() != 1)
-				throw;
+	auto return_tn = deduce_return_type(state, variables, realised.statements);
+	return_if_error(return_tn);
 
-			auto deduced_t = transpile_expression(state, variables, return_expr.at(0).expr);
-			return_if_error(deduced_t);
-			if (!std::holds_alternative<non_type_information>(deduced_t.value()))
-				throw;
-			const auto& deduced_t_ok = std::get<non_type_information>(deduced_t.value());
-
-			auto return_tn = typename_of_type(state, deduced_t_ok.type.type);
-			return_if_error(return_tn);
-
-			return NodeStructs::Function{
-				.name = realised.name,
-				.name_space = std::nullopt,
-				.returnType = std::move(return_tn).value(),
-				.parameters = copy(realised.parameters),
-				.statements = copy(realised.statements)
-			};
-		}
-		else {
-			auto v = transpile_statement(
-				state,
-				variables,
-				statement,
-				type_of_typename(state, NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } }).value()
-			);
-			return_if_error(v);
-		}
-	}
-	throw;
+	if (return_tn.value().has_value())
+		return NodeStructs::Function{
+			.name = realised.name,
+			.name_space = std::nullopt,
+			.returnType = typename_of_type(state, std::move(return_tn).value().value()).value(),
+			.parameters = std::move(realised.parameters),
+			.statements = std::move(realised.statements)
+		};
+	else
+		return NodeStructs::Function{
+			.name = realised.name,
+			.name_space = std::nullopt,
+			.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
+			.parameters = std::move(realised.parameters),
+			.statements = std::move(realised.statements)
+		};
 }
 
 NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t) {

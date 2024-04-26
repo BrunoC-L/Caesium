@@ -144,7 +144,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 		throw;
 	}
 	else {
-		auto opt_e = add_for_iterator_variable(state, variables, statement.iterators, it_type);
+		auto opt_e = add_for_iterator_variables(state, variables, statement.iterators, it_type);
 		if (opt_e.has_value())
 			return opt_e.value();
 		ss << "for (auto&& " << std::visit(overload(overload_default_error,
@@ -263,7 +263,7 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 	for (const NodeStructs::MatchCase& match_case : statement.cases) {
 		auto tn = transpile_typename(state, match_case.variable_declarations.at(0).first);
 		return_if_error(tn);
-		auto varname = match_case.variable_declarations.at(0).second;
+		const auto& varname = match_case.variable_declarations.at(0).second;
 
 		variables[varname]
 			.push_back(variable_info{
@@ -285,7 +285,7 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 			<< statements.value()
 			<< indent(state.indent)<< "} else\n";
 	}
-	// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw if the code was complete
+	// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw, it will be removed eventually
 	ss << indent(state.indent + 1) << "throw;\n";
 	return ss.str();
 }

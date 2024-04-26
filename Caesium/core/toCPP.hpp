@@ -170,12 +170,7 @@ transpile_header_cpp_t transpile(
 
 std::optional<error> stack(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::FunctionParameter>& parameters,
-	variables_t& variables
-);
-
-void unstack(
-	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
@@ -219,7 +214,7 @@ std::vector<NodeStructs::MetaType> decompose_type(
 //	const NodeStructs::MetaType& it_type
 //);
 
-std::optional<error> add_for_iterator_variable(
+std::optional<error> add_for_iterator_variables(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,

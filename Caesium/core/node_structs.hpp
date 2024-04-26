@@ -854,22 +854,23 @@ CMP5(Function)
 CMP11(NameSpace)
 CMP2(File)
 CMP1(Import)
-CMP1(PrimitiveType)
+//CMP1(PrimitiveType)
 CMP0(void_t)
 
-//inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const NodeStructs::PrimitiveType& other) const {
-//	const auto& a = value._value;
-//	const auto& b = other.value._value;
-//	auto index_cmp = cmp(a.index(), b.index());
-//	if (index_cmp != 0)
-//		return index_cmp;
-//	return std::visit(
-//		[&](const auto& _a) {
-//			return cmp(_a, std::get<std::remove_cvref_t<decltype(_a)>>(b));
-//		},
-//		a
-//	);
-//}
+inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const NodeStructs::PrimitiveType& other) const {
+	const auto& a = value._value;
+	const auto& b = other.value._value;
+	auto index_cmp = cmp(a.index(), b.index());
+	return index_cmp;
+	/*if (index_cmp != 0)
+		return index_cmp;
+	return std::visit(
+		[&](const auto& _a) {
+			return cmp(_a, std::get<std::remove_cvref_t<decltype(_a)>>(b));
+		},
+		a
+	);*/
+}
 
 //inline std::weak_ordering NodeStructs::IfStatement::operator<=>(const NodeStructs::IfStatement& other) const {
 //	if (auto c = cmp(ifStatements, other.ifStatements); c != std::weak_ordering::equivalent)
