@@ -210,8 +210,20 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	if (std::holds_alternative<std::string>(expr.operand.expression.get()._value)) {
 		const std::string& operand = std::get<std::string>(expr.operand.expression.get()._value);
 		if (auto it = state.state.global_namespace.functions_using_auto.find(operand); it != state.state.global_namespace.functions_using_auto.end()) {
-			std::vector<NodeStructs::FunctionArgument> args;
-			auto fn = realise_function_using_auto(state, it->second.back(), expr.arguments.args);
+			auto args_ = vec_of_expected_to_expected_of_vec(expr.arguments.args
+				| std::views::transform([&](auto&& arg) { return transpile_expression(state, variables, arg.expr); })
+				| to_vec());
+			return_if_error(args_);
+			auto args_ok_maybe_wrong_type = std::move(args_).value();
+			auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(std::move(args_ok_maybe_wrong_type));
+			if (!opt.has_value())
+				throw;
+			const auto& args_ok = opt.value();
+			auto fn = realise_function_using_auto(
+				state,
+				it->second.back(),
+				args_ok | std::views::transform([](const auto& e) { return copy(e.type.type); }) | to_vec()
+			);
 			return_if_error(fn);
 			auto& vec = state.state.global_namespace.functions[fn.value().name];
 			bool found = false;
@@ -233,7 +245,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 
 				ss << "(Void)(std::cout";
 				for (const auto& [_, arg] : expr.arguments.args) {
-					auto expr_s = expr_to_printable(state, arg);
+					auto expr_s = expr_to_printable(state, variables, arg);
 					return_if_error(expr_s);
 					ss << " << " << expr_s.value();
 				}
@@ -265,11 +277,20 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			throw;
 		}
 		if (std::holds_alternative<NodeStructs::FunctionType>(ti.type.type._value)) {
+			auto args_ = vec_of_expected_to_expected_of_vec(expr.arguments.args
+				| std::views::transform([&](auto&& arg) { return transpile_expression(state, variables, arg.expr); })
+				| to_vec());
+			return_if_error(args_);
+			auto args_ok_maybe_wrong_type = std::move(args_).value();
+			auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(std::move(args_ok_maybe_wrong_type));
+			if (!opt.has_value())
+				throw;
+			const auto& args_ok = opt.value();
 			auto expected_f = find_best_function(
 				state,
 				std::get<NodeStructs::FunctionType>(ti.type.type._value).name,
-				expr.arguments.args,
-				std::get<NodeStructs::FunctionType>(ti.type.type._value).name_space
+				std::get<NodeStructs::FunctionType>(ti.type.type._value).name_space,
+				args_ok | std::views::transform([](const auto& e) { return copy(e.type.type); }) | to_vec()
 			);
 			return_if_error(expected_f);
 			if (!expected_f.value().has_value())
@@ -283,7 +304,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 				state.state.traversed_functions.insert(copy(fn));
 				state.state.functions_to_transpile.insert(copy(fn));
 			}
-			auto args_or_error = transpile_args(state, expr.arguments.args);
+			auto args_or_error = transpile_args(state, variables, expr.arguments.args);
 			return_if_error(args_or_error);
 			return expression_information{ non_type_information{
 				.type = type_of_typename(state, fn.returnType).value(),
@@ -503,11 +524,10 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 	int i2,
 	std::vector<int>&& mappings
 ) {
-	throw;
-	/*if (i1 == v1.size())
+	if (i1 == v1.size())
 		return mappings
-		| std::views::transform([&](auto&& e) { return v2.at(e); });
-		| to_vec();*/
+		| std::views::transform([&](auto&& e) -> non_type_information { return std::move(v2.at(e)); })
+		| to_vec();
 	if (i2 == v2.size())
 		return std::nullopt;
 	if (v1.at(i1) <=> v2.at(i2).type.type == std::weak_ordering::equivalent) {
@@ -664,7 +684,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
-	auto operand_info = transpile_expression(state, expr.operand);
+	auto operand_info = transpile_expression(state, variables, expr.operand);
 	return_if_error(operand_info);
 	if (!std::holds_alternative<non_type_information>(operand_info.value()))
 		throw;
@@ -677,7 +697,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			};
 		},
 		[&](NodeStructs::VectorType&& vt) -> R {
-			auto arg_info = transpile_expression(state, expr.arguments.args.at(0).expr);
+			auto arg_info = transpile_expression(state, variables, expr.arguments.args.at(0).expr);
 			return_if_error(arg_info);
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				throw;
@@ -691,7 +711,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			} };
 		},
 		[&](NodeStructs::MapType&& vt) -> R {
-			auto arg_info = transpile_expression(state, expr.arguments.args.at(0).expr);
+			auto arg_info = transpile_expression(state, variables, expr.arguments.args.at(0).expr);
 			return_if_error(arg_info);
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				throw;
@@ -734,17 +754,17 @@ R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 		};
 		return operator()(rewired);
 	}
-	auto operand_info = transpile_expression(state, expr.operand);
+	auto operand_info = transpile_expression(state, variables, expr.operand);
 	return_if_error(operand_info);
 	if (!std::holds_alternative<non_type_information>(operand_info.value()))
 		throw;
 	const non_type_information& operand_info_ok = std::get<non_type_information>(operand_info.value());
 
-	return transpile_member_call(state, operand_info_ok, expr.property_name, expr.arguments.args);
+	return transpile_member_call(state, variables, operand_info_ok, expr.property_name, expr.arguments.args);
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
-	auto operand_info = transpile_expression(state, expr.operand);
+	auto operand_info = transpile_expression(state, variables, expr.operand);
 	return_if_error(operand_info);
 	if (!std::holds_alternative<non_type_information>(operand_info.value()))
 		throw;
@@ -784,7 +804,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
 	auto vec = expr.args
-		| std::views::transform([&](auto&& arg) { return transpile_expression(state, arg.expr); })
+		| std::views::transform([&](auto&& arg) { return transpile_expression(state, variables, arg.expr); })
 		| to_vec();
 	auto args_ = vec_of_expected_to_expected_of_vec(std::move(vec));
 	return_if_error(args_);
@@ -816,7 +836,7 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 }
 
 R T::operator()(const std::string& expr) {
-	if (auto it = state.state.variables.find(expr); it != state.state.variables.end() && it->second.size() > 0) {
+	if (auto it = variables.find(expr); it != variables.end() && it->second.size() > 0) {
 		if (it->second.size() != 1)
 			throw;
 		const auto& v = it->second.back();

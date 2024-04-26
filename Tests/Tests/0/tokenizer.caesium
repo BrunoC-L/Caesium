@@ -37,13 +37,13 @@ Vector<TOKENVALUE> read(Tokenizer ref! tk):
 	return out
 
 
-bool isNum(Char val c):
+Bool isNum(Char val c):
     return c >=? '0' and c <=? '9'
 
-bool isStartOfWord(Char val c):
+Bool isStartOfWord(Char val c):
     return c >=? 'a' and c <=? 'z' or c >=? 'A' and c <=? 'Z' or c == '_'
 
-bool isPartWord(Char val c):
+Bool isPartWord(Char val c):
     return isNum(c) or isStartOfWord(c)
 
 String parseWord(String ref program, Int ref! index):

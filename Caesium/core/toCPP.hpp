@@ -57,16 +57,14 @@ inline auto copy(const Namespace& ns) {
 }
 
 struct transpilation_state {
-	variables_t variables;
 	Namespace global_namespace;
 	unsigned current_variable_unique_id = 1;
 
 	transpilation_state(const transpilation_state& other) = delete;
 	transpilation_state(transpilation_state&& other) = delete;
 	transpilation_state(
-		variables_t&& variables,
 		Namespace&& global_namespace
-	) : variables(std::move(variables)), global_namespace(std::move(global_namespace)) {}
+	) : global_namespace(std::move(global_namespace)) {}
 
 	// shouldnt those be pointers...?
 	std::set<NodeStructs::Function> traversed_functions;
@@ -172,7 +170,8 @@ transpile_header_cpp_t transpile(
 
 std::optional<error> stack(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::FunctionParameter>& parameters
+	const std::vector<NodeStructs::FunctionParameter>& parameters,
+	variables_t& variables
 );
 
 void unstack(
@@ -182,12 +181,14 @@ void unstack(
 
 transpile_t transpile(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::vector<NodeStructs::Statement>& statements,
 	const NodeStructs::MetaType& expected_return_type
 );
 
 transpile_t transpile(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const NodeStructs::Statement& statement,
 	const NodeStructs::MetaType& expected_return_type
 );
@@ -212,35 +213,28 @@ std::vector<NodeStructs::MetaType> decompose_type(
 	const NodeStructs::MetaType& type
 );
 
-std::optional<error> add_decomposed_for_iterator_variables(
-	transpilation_state_with_indent state,
-	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
-	const NodeStructs::MetaType& it_type
-);
+//std::optional<error> add_decomposed_for_iterator_variables(
+//	transpilation_state_with_indent state,
+//	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
+//	const NodeStructs::MetaType& it_type
+//);
 
 std::optional<error> add_for_iterator_variable(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
 	const NodeStructs::MetaType& it_type
-);
-
-void remove_for_iterator_variables(
-	transpilation_state_with_indent state,
-	const NodeStructs::ForStatement& statement
-);
-
-void remove_added_variables(
-	transpilation_state_with_indent state,
-	const NodeStructs::Statement& statement
 );
 
 transpile_t transpile_arg(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const NodeStructs::FunctionArgument& arg
 );
 
 transpile_t transpile_args(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
@@ -277,6 +271,7 @@ bool is_assignable_to(
 
 transpile_t expr_to_printable(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const NodeStructs::Expression& expr
 );
 
@@ -307,7 +302,7 @@ bool uses_auto(const NodeStructs::Typename& t);
 expected<NodeStructs::Function> realise_function_using_auto(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn_using_auto,
-	const std::vector<NodeStructs::FunctionArgument>& args
+	const std::vector<NodeStructs::MetaType>& arg_types
 );
 
 NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t);
@@ -333,6 +328,6 @@ expected<Arrangement> find_best_template(
 expected<std::optional<const NodeStructs::Function*>> find_best_function(
 	transpilation_state_with_indent state,
 	const std::string& name,
-	const std::vector<NodeStructs::FunctionArgument>& args,
-	const Namespace& space
+	const Namespace& space,
+	const std::vector<NodeStructs::MetaType>& arg_types
 );

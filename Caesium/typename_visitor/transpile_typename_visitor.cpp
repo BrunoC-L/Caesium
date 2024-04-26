@@ -43,9 +43,15 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 			return operator()(it2->second);
 		throw;
 	}
-	else {
+	else if (auto it = state.state.global_namespace.enums.find(ns_str); it != state.state.global_namespace.enums.end()) {
+		if (it->second.size() != 1)
+			throw;
+		const auto& enum_ = it->second.back();
+		if (auto it = std::find(enum_.values.begin(), enum_.values.end(), type.name_in_name_space); it != enum_.values.end())
+			return ns_str + "__" + type.name_in_name_space;
 		throw;
 	}
+	throw;
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {

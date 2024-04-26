@@ -4,7 +4,7 @@ using T = transpile_statement_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::Expression& statement) {
-	auto repr =  transpile_expression(state, statement);
+	auto repr =  transpile_expression(state, variables, statement);
 	return_if_error(repr);
 	if (!std::holds_alternative<non_type_information>(repr.value()))
 		throw;
@@ -22,7 +22,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 				"auto cannot deduce aggregate initialization"
 			};
 
-		auto assigned_expression = transpile_expression(state, statement.expr);
+		auto assigned_expression = transpile_expression(state, variables, statement.expr);
 		return_if_error(assigned_expression);
 		if (std::holds_alternative<non_type_information>(assigned_expression.value())) {
 			auto assigned_expression_ok = std::get<non_type_information>(std::move(assigned_expression).value());
@@ -33,7 +33,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 			auto deduced_typename_repr = transpile_typename(state, deduced_typename.value());
 			return_if_error(deduced_typename_repr);
 
-			state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, std::move(assigned_expression_ok).type.type });
+			variables[statement.name].push_back({ NodeStructs::MutableReference{}, std::move(assigned_expression_ok).type.type });
 
 			return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 		}
@@ -53,10 +53,10 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 					.operand = copy(statement.type),
 					.arguments = copy(aggregate.args)
 				};
-				return transpile_expression(state, as_construct);
+				return transpile_expression(state, variables, as_construct);
 			}
 			else
-				return transpile_expression(state, statement.expr);
+				return transpile_expression(state, variables, statement.expr);
 		}();
 		return_if_error(assigned_expression);
 		if (!std::holds_alternative<non_type_information>(assigned_expression.value()))
@@ -70,7 +70,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 				"not assignable"
 			};
 
-		state.state.variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type.value()) });
+		variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type.value()) });
 
 		if (std::holds_alternative<NodeStructs::UnionType>(assigned_expression_ok.type.type.type._value)
 			&& (type.value() <=> assigned_expression_ok.type.type != std::weak_ordering::equivalent)) {
@@ -90,10 +90,10 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::IfStatement& statement) {
-	auto if_statements = transpile(state.indented(), statement.ifStatements, expected_return_type);
+	auto if_statements = transpile(state.indented(), variables, statement.ifStatements, expected_return_type);
 	return_if_error(if_statements);
 
-	auto if_expr = transpile_expression(state, statement.ifExpr);
+	auto if_expr = transpile_expression(state, variables, statement.ifExpr);
 	return_if_error(if_expr);
 	if (!std::holds_alternative<non_type_information>(if_expr.value()))
 		throw;
@@ -111,13 +111,13 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 					return operator()(elseif.get()).value();
 				},
 				[&](const std::vector<NodeStructs::Statement>& justelse) {
-					return "{" + transpile(state, justelse, expected_return_type).value() + "}";
+					return "{" + transpile(state, variables, justelse, expected_return_type).value() + "}";
 				}
 			),
 			statement.elseExprStatements.value()._value
 		);
 	else {
-		auto k = transpile_expression(state, statement.ifExpr);
+		auto k = transpile_expression(state, variables, statement.ifExpr);
 		return_if_error(k);
 		if (!std::holds_alternative<non_type_information>(k.value()))
 			throw;
@@ -132,7 +132,7 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::ForStatement& statement) {
-	auto coll_type_or_e = transpile_expression(state, statement.collection);
+	auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
 	return_if_error(coll_type_or_e);
 	if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
 		throw;
@@ -144,7 +144,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 		throw;
 	}
 	else {
-		auto opt_e = add_for_iterator_variable(state, statement.iterators, it_type);
+		auto opt_e = add_for_iterator_variable(state, variables, statement.iterators, it_type);
 		if (opt_e.has_value())
 			return opt_e.value();
 		ss << "for (auto&& " << std::visit(overload(overload_default_error,
@@ -157,12 +157,12 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 		), statement.iterators.at(0)._value);
 	}
 	
-	auto s1 = transpile_expression(state, statement.collection);
+	auto s1 = transpile_expression(state, variables, statement.collection);
 	return_if_error(s1);
 	if (!std::holds_alternative<non_type_information>(s1.value()))
 		throw;
 	const auto& s1_ok = std::get<non_type_information>(s1.value());
-	auto s2 = transpile(state.indented(), statement.statements, expected_return_type);
+	auto s2 = transpile(state.indented(), variables, statement.statements, expected_return_type);
 	return_if_error(s2);
 	ss << " : "
 		<< s1_ok.representation
@@ -170,8 +170,6 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 		<< s2.value()
 		<< indent(state.indent)
 		<< "}\n";
-	
-	remove_for_iterator_variables(state, statement);
 	return ss.str();
 }
 
@@ -180,12 +178,12 @@ R T::operator()(const NodeStructs::IForStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::WhileStatement& statement) {
-	auto s1 = transpile_expression(state, statement.whileExpr);
+	auto s1 = transpile_expression(state, variables, statement.whileExpr);
 	return_if_error(s1);
 	if (!std::holds_alternative<non_type_information>(s1.value()))
 		throw;
 	const auto& s1_ok = std::get<non_type_information>(s1.value());
-	auto s2 = transpile(state.indented(), statement.statements, expected_return_type);
+	auto s2 = transpile(state.indented(), variables, statement.statements, expected_return_type);
 	return_if_error(s2);
 	return "while (" + s1_ok.representation + ") {\n" + s2.value() + "}";
 }
@@ -193,7 +191,7 @@ R T::operator()(const NodeStructs::WhileStatement& statement) {
 R T::operator()(const NodeStructs::BreakStatement& statement) {
 	if (!statement.ifExpr.has_value())
 		return "break;\n";
-	auto s1 = transpile_expression(state, statement.ifExpr.value());
+	auto s1 = transpile_expression(state, variables, statement.ifExpr.value());
 	return_if_error(s1);
 	if (!std::holds_alternative<non_type_information>(s1.value()))
 		throw;
@@ -207,7 +205,7 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 	if (statement.returnExpr.size() != 1)
 		throw; // gonna have to see about that
 	R return_expression = [&]() -> R {
-		auto expr_info = transpile_expression(state, statement.returnExpr.at(0).expr);
+		auto expr_info = transpile_expression(state, variables, statement.returnExpr.at(0).expr);
 		return_if_error(expr_info);
 		if (!std::holds_alternative<non_type_information>(expr_info.value()))
 			throw;
@@ -220,7 +218,7 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 	}();
 	return_if_error(return_expression);
 	if (statement.ifExpr.has_value()) {
-		auto cnd = transpile_expression(state, statement.ifExpr.value());
+		auto cnd = transpile_expression(state, variables, statement.ifExpr.value());
 		return_if_error(cnd);
 		if (!std::holds_alternative<non_type_information>(cnd.value()))
 			throw;
@@ -251,7 +249,7 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 		throw;
 	if (statement.cases.size() == 0)
 		throw;
-	auto expr_info = transpile_expression(state, statement.expressions.at(0));
+	auto expr_info = transpile_expression(state, variables, statement.expressions.at(0));
 	return_if_error(expr_info);
 	if (!std::holds_alternative<non_type_information>(expr_info.value()))
 		throw;
@@ -267,13 +265,13 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 		return_if_error(tn);
 		auto varname = match_case.variable_declarations.at(0).second;
 
-		state.state.variables[varname]
+		variables[varname]
 			.push_back(variable_info{
 				.value_category = NodeStructs::Reference{},
 				.type = type_of_typename(state, match_case.variable_declarations.at(0).first).value() 
 			});
-		auto statements = transpile(state.indented(), match_case.statements, expected_return_type);
-		state.state.variables[varname].pop_back();
+		auto statements = transpile(state.indented(), variables, match_case.statements, expected_return_type);
+		variables[varname].pop_back();
 		return_if_error(statements);
 
 		ss  << indent(state.indent)
@@ -297,8 +295,8 @@ R T::operator()(const NodeStructs::SwitchStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::EqualStatement& statement) {
-	auto left = transpile_expression(state, statement.left);
-	auto right = transpile_expression(state, statement.right);
+	auto left = transpile_expression(state, variables, statement.left);
+	auto right = transpile_expression(state, variables, statement.right);
 	return_if_error(left);
 	return_if_error(right);
 	if (!std::holds_alternative<non_type_information>(left.value()))
