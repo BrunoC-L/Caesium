@@ -295,7 +295,10 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 						definitions << res.value().second;
 					}
 					if (size != state.functions_to_transpile.size()) {
-						puts("size != state.functions_to_transpile.size()\n");
+						puts("size != state.functions_to_transpile.size()");
+						for (const auto& f : state.functions_to_transpile)
+							if (std::find_if(v.begin(), v.end(), [&](const auto& e) { return cmp(f, e) == std::weak_ordering::equivalent; }) == v.end())
+								puts(f.name.c_str());
 					}
 					declarations << k.value().first;
 					definitions << k.value().second;

@@ -69,6 +69,18 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		const auto& args_ok = args.value();
 		std::string tmpl_name = template_name(it->first, args_ok);
 		// todo check if exists
+		if (auto it = state.state.global_namespace.types.find(tmpl_name); it != state.state.global_namespace.types.end()) {
+			const auto& types = it->second;
+			if (types.size() != 1)
+				throw;
+			return NodeStructs::MetaType{ copy(types.at(0)) };
+		}
+		if (auto it = state.state.global_namespace.functions.find(tmpl_name); it != state.state.global_namespace.functions.end()) {
+			const auto& fns = it->second;
+			if (fns.size() != 1)
+				throw;
+			return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name, state.state.global_namespace } };
+		}
 
 		std::string replaced = tmpl.templated;
 		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {

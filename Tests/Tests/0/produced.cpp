@@ -120,11 +120,49 @@ Int it;
 
 
 Bool build__File(const Int& it);
+Bool isNum(Char&& c);
+Bool isPartWord(Char&& c);
+Bool isStartOfWord(Char&& c);
+String parseInt(const String& program, Int& index);
+String parseWord(const String& program, Int& index);
 Vector<Pair__Int__String> read(Tokenizer& tk);
+Pair__Int__String readToken(const String& program, Int& index);
 Int _redirect_main(const Vector<String>& args);
 
 Bool build__File(const Int& it) {
 	return True;
+};
+Bool isNum(Char&& c) {
+	return c >= String{"0"} || c <= String{"9"};
+};
+Bool isPartWord(Char&& c) {
+	return isNum(c) || isStartOfWord(c);
+};
+Bool isStartOfWord(Char&& c) {
+	return c >= String{"a"} || c <= String{"z"} || c >= String{"A"} || c <= String{"Z"} || c == String{"_"};
+};
+String parseInt(const String& program, Int& index) {
+	String out = String{""};
+	while (index != program.size()) {
+		Char c = program.at(index);
+		if (isNum(c)) {
+						out = out + c;
+						index = index + 1;
+} else {		break;
+}}	return out;
+};
+String parseWord(const String& program, Int& index) {
+	if (!isStartOfWord(program.at(index))) {
+		return String{""};
+	}
+	String out = String{""};
+	while (index != program.size()) {
+		Char c = program.at(index);
+		if (isPartWord(c)) {
+						out = out + c;
+						index = index + 1;
+} else {		break;
+}}	return out;
 };
 Vector<Pair__Int__String> read(Tokenizer& tk) {
 	Vector<Pair__Int__String> out = Vector<Pair__Int__String>{};
@@ -141,6 +179,112 @@ Vector<Pair__Int__String> read(Tokenizer& tk) {
 		}
 } else {	push(out, Pair__Int__String{TOKENS__END, String{""}});
 }	return out;
+};
+Pair__Int__String readToken(const String& program, Int& index) {
+	if (index == program.size()) {
+		return { TOKENS__END, String{""}, };
+	}
+	Char c = program.at(index);
+	String str = String{""};
+	String word = parseWord(program, index);
+	if (word.size()) {
+		if (word == String{"and"}) {
+			return { TOKENS__AND, word, };
+		}
+		if (word == String{"auto"}) {
+			return { TOKENS__AUTO, word, };
+		}
+		if (word == String{"break"}) {
+			return { TOKENS__BREAK, word, };
+		}
+		if (word == String{"block"}) {
+			return { TOKENS__BLOCK, word, };
+		}
+		if (word == String{"case"}) {
+			return { TOKENS__CASE, word, };
+		}
+		if (word == String{"class"}) {
+			return { TOKENS__CLASS, word, };
+		}
+		if (word == String{"do"}) {
+			return { TOKENS__DO, word, };
+		}
+		if (word == String{"else"}) {
+			return { TOKENS__ELSE, word, };
+		}
+		if (word == String{"for"}) {
+			return { TOKENS__FOR, word, };
+		}
+		if (word == String{"if"}) {
+			return { TOKENS__IF, word, };
+		}
+		if (word == String{"interface"}) {
+			return { TOKENS__INTERFACE, word, };
+		}
+		if (word == String{"ifor"}) {
+			return { TOKENS__IFOR, word, };
+		}
+		if (word == String{"import"}) {
+			return { TOKENS__IMPORT, word, };
+		}
+		if (word == String{"from"}) {
+			return { TOKENS__FROM, word, };
+		}
+		if (word == String{"in"}) {
+			return { TOKENS__IN, word, };
+		}
+		if (word == String{"match"}) {
+			return { TOKENS__MATCH, word, };
+		}
+		if (word == String{"or"}) {
+			return { TOKENS__OR, word, };
+		}
+		if (word == String{"return"}) {
+			return { TOKENS__RETURN, word, };
+		}
+		if (word == String{"static"}) {
+			return { TOKENS__STATIC, word, };
+		}
+		if (word == String{"switch"}) {
+			return { TOKENS__SWITCH, word, };
+		}
+		if (word == String{"using"}) {
+			return { TOKENS__USING, word, };
+		}
+		if (word == String{"while"}) {
+			return { TOKENS__WHILE, word, };
+		}
+		if (word == String{"type"}) {
+			return { TOKENS__TYPE, word, };
+		}
+		if (word == String{"template"}) {
+			return { TOKENS__TEMPLATE, word, };
+		}
+		if (word == String{"copy"}) {
+			return { TOKENS__COPY, word, };
+		}
+		if (word == String{"move"}) {
+			return { TOKENS__MOVE, word, };
+		}
+		if (word == String{"ref"}) {
+			return { TOKENS__REF, word, };
+		}
+		if (word == String{"val"}) {
+			return { TOKENS__VAL, word, };
+		}
+		return { TOKENS__WORD, word, };
+	}
+	String num = parseInt(program, index);
+	if (!num.size()) {
+	}
+	if (index != program.size() || program.at(index) == String{"."}) {
+				index = index + 1;
+		String part2 = parseInt(program, index);
+		if (part2.size()) {
+			return { TOKENS__FLOATING_POINT_NUMBER, num + String{"."} + part2, };
+		}
+	}
+	return { TOKENS__INTEGER_NUMBER, num, };
 };
 Int _redirect_main(const Vector<String>& args) {
 	Vector<Int>{}.size();

@@ -21,6 +21,8 @@ R T::operator()(const NodeStructs::Type& t) {
 
 	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 		const auto& fn = it->second.back();
+		auto fn_or_e = transpile(state, fn);
+		return_if_error(fn_or_e);
 		if (!state.state.traversed_functions.contains(fn)) {
 			state.state.traversed_functions.insert(copy(fn));
 			state.state.functions_to_transpile.insert(copy(fn));

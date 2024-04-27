@@ -303,5 +303,5 @@ R T::operator()(const NodeStructs::EqualStatement& statement) {
 		throw;
 	if (!std::holds_alternative<non_type_information>(right.value()))
 		throw;
-	return std::get<non_type_information>(left.value()).representation + " = " + std::get<non_type_information>(right.value()).representation;
+	return indent(state.indent) + std::get<non_type_information>(left.value()).representation + " = " + std::get<non_type_information>(right.value()).representation + ";\n";
 }

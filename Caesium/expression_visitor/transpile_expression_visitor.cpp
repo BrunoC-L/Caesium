@@ -727,39 +727,33 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 	), std::move(type).type.type._value);
 }
 
+// for expressions like (move cat).meow() or {move cat}.meow()
+auto rewire(const NodeStructs::PropertyAccessAndCallExpression& expr, const auto& operand) {
+	std::vector<NodeStructs::FunctionArgument> joined;
+	for (const auto& arg : operand.args)
+		joined.push_back(copy(arg));
+	for (const auto& arg : expr.arguments.args)
+		joined.push_back(copy(arg));
+	return NodeStructs::CallExpression{
+		.operand = NodeStructs::Expression{ expr.property_name },
+		.arguments = std::move(joined)
+	};
+}
+
 R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
 	if (std::holds_alternative<NodeStructs::ParenArguments>(expr.operand.expression.get()._value)) {
 		const auto& operand = std::get<NodeStructs::ParenArguments>(expr.operand.expression.get()._value);
-		std::vector<NodeStructs::FunctionArgument> joined;
-		for (const auto& arg : operand.args)
-			joined.push_back(copy(arg));
-		for (const auto& arg : expr.arguments.args)
-			joined.push_back(copy(arg));
-		auto rewired = NodeStructs::CallExpression{
-			.operand = NodeStructs::Expression{ expr.property_name },
-			.arguments = std::move(joined)
-		};
-		return operator()(rewired);
+		return operator()(rewire(expr, operand));
 	}
-	if (std::holds_alternative<NodeStructs::BraceArguments>(expr.operand.expression.get()._value)) {
+	/*if (std::holds_alternative<NodeStructs::BraceArguments>(expr.operand.expression.get()._value)) {
 		const auto& operand = std::get<NodeStructs::BraceArguments>(expr.operand.expression.get()._value);
-		std::vector<NodeStructs::FunctionArgument> joined;
-		for (const auto& arg : operand.args)
-			joined.push_back(copy(arg));
-		for (const auto& arg : expr.arguments.args)
-			joined.push_back(copy(arg));
-		auto rewired = NodeStructs::CallExpression{
-			.operand = NodeStructs::Expression{ expr.property_name },
-			.arguments = std::move(joined)
-		};
-		return operator()(rewired);
-	}
+		return operator()(rewire(expr, operand));
+	}*/
 	auto operand_info = transpile_expression(state, variables, expr.operand);
 	return_if_error(operand_info);
 	if (!std::holds_alternative<non_type_information>(operand_info.value()))
 		throw;
 	const non_type_information& operand_info_ok = std::get<non_type_information>(operand_info.value());
-
 	return transpile_member_call(state, variables, operand_info_ok, expr.property_name, expr.arguments.args);
 }
 
