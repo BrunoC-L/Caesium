@@ -38,10 +38,10 @@ Vector<TOKENVALUE> read(Tokenizer ref! tk):
 
 
 Bool isNum(Char val c):
-    return c >=? '0' and c <=? '9'
+    return c >=? '0'.at(0) and c <=? '9'.at(0)
 
 Bool isStartOfWord(Char val c):
-    return c >=? 'a' and c <=? 'z' or c >=? 'A' and c <=? 'Z' or c == '_'
+    return c >=? 'a'.at(0) and c <=? 'z'.at(0) or c >=? 'A'.at(0) and c <=? 'Z'.at(0) or c == '_'.at(0)
 
 Bool isPartWord(Char val c):
     return isNum(c) or isStartOfWord(c)
@@ -97,7 +97,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //        c:
 //        '\\':
 //            // backslash at the end of a line means ignore it and the newline
-//            if index + 1 <=? program.size() and program.at(index + 1) == '\n':
+//            if index + 1 <=? program.size() and program.at(index + 1) == '\n'.at(0):
 //                index = index + 1
 //                // so we just return the next token
 //                return readToken(program, ref! index)
@@ -111,7 +111,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //                index = index + 1
 //                if index == program.size():
 //                    //throw std::runtime_error("Reached end of file before end of string, parsed so far: " + str)
-//                if program.at(index) == '\\' and index + 1 <=? program.size() and program.at(index + 1) == c:
+//                if program.at(index) == '\\'.at(0) and index + 1 <=? program.size() and program.at(index + 1) == c.at(0):
 //                    // backslash with open string character means dont close the string
 //                    // but all our transpiled strings use " for strings so we just replace that
 //                    index = index + 1
@@ -125,7 +125,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //                    // in case there are " in the string and the string uses ' or `, we need to replace them accordingly since
 //                    // our transpiled c++ string uses "
 //                    // so we just escape out of " not to end the string and the user will have his " in the string as expected
-//                    else if c != '"' and program.at(index) == '"':
+//                    else if c != '"' and program.at(index) == '"'.at(0):
 //                        str = str + "\\\""
 //                    else:
 //                        str = str + program.at(index)
@@ -149,7 +149,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //            index = index + 1
 //            return { TOKENS::BRACKETCLOSE, "]" }
 //        ' ':
-//            if index + 3 <? program.size() and program.at(index + 1) == ' ' and program.at(index + 2) == ' ' and program.at(index + 3) == ' ':
+//            if index + 3 <? program.size() and program.at(index + 1) == ' '.at(0) and program.at(index + 2) == ' '.at(0) and program.at(index + 3) == ' '.at(0):
 //                index = index + 4
 //                return { TOKENS::TAB, "\t" }
 //            index = index + 1
@@ -161,7 +161,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //            index = index + 1
 //            return { TOKENS::TAB, "\t" }
 //        '.':
-//            if index + 2 <? program.size() and program.at(index + 1) == '.' and program.at(index + 2) == '.':
+//            if index + 2 <? program.size() and program.at(index + 1) == '.'.at(0) and program.at(index + 2) == '.'.at(0):
 //                index = index + 3
 //                return { TOKENS::DOTS, "..." }
 //            index = index + 1
@@ -171,7 +171,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //            return { TOKENS::SEMICOLON, ";" }
 //        ':':
 //            index = index + 1
-//            if index <? program.size() and program.at(index) == ':':
+//            if index <? program.size() and program.at(index) == ':'.at(0):
 //                index = index + 1
 //                return { TOKENS::NS, "::" }
 //            return { TOKENS::COLON, ":" }
@@ -180,109 +180,109 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //            return { TOKENS::COMMA, "," }
 //        '=':
 //            index = index + 1
-//            if index <? program.size() and program.at(index) == '=':
+//            if index <? program.size() and program.at(index) == '='.at(0):
 //                index = index + 1
 //                return { TOKENS::EQUALEQUAL, "==" }
 //            return { TOKENS::EQUAL, "=" }
 //        '!':
 //            index = index + 1
-//            if index <? program.size() and program.at(index) == '=':
+//            if index <? program.size() and program.at(index) == '='.at(0):
 //                index = index + 1
 //                return { TOKENS::NEQUAL, "!=" }
 //            return { TOKENS::NOT, "!" }
 //        '<':
 //            index = index + 1
 //            if index <? program.size():
-//                if program.at(index) == '=':
+//                if program.at(index) == '='.at(0):
 //                    index = index + 1
 //                    if index <? program.size():
-//                        if program.at(index) == '?':
+//                        if program.at(index) == '?'.at(0):
 //                            index = index + 1
 //                            return { TOKENS::LTEQ, "<=??" }
 //                    return { TOKENS::LTE, "<=?" }
-//                if program.at(index) == '?':
+//                if program.at(index) == '?'.at(0):
 //                    index = index + 1
 //                    return { TOKENS::LTQ, "<?" }
 //            return { TOKENS::LT, "<" }
 //        '>':
 //            index = index + 1
 //            if index <? program.size():
-//                if program.at(index) == '=':
+//                if program.at(index) == '='.at(0):
 //                    index = index + 1
 //                    if index <? program.size():
-//                        if program.at(index) == '?':
+//                        if program.at(index) == '?'.at(0):
 //                            index = index + 1
 //                            return { TOKENS::GTEQ, ">=??" }
 //                    return { TOKENS::GTE, ">=?" }
-//                if program.at(index) == '?':
+//                if program.at(index) == '?'.at(0):
 //                    index = index + 1
 //                    return { TOKENS::GTQ, ">?" }
 //            return { TOKENS::GT, ">" }
 //        '-':
 //            index = index + 1
 //            if index <? program.size():
-//                if program.at(index) == '=':
+//                if program.at(index) == '='.at(0):
 //                    index = index + 1
 //                    return { TOKENS::MINUSEQUAL, "-=" }
-//                else if program.at(index) == '-':
+//                else if program.at(index) == '-'.at(0):
 //                    index = index + 1
 //                    return { TOKENS::MINUSMINUS, "--" }
 //            return { TOKENS::DASH, "-" }
 //        '+':
 //            index = index + 1
 //            if index <? program.size():
-//                if program.at(index) == '=':
+//                if program.at(index) == '='.at(0):
 //                    index = index + 1
 //                    return { TOKENS::PLUSEQUAL, "+=" }
-//                else if program.at(index) == '+':
+//                else if program.at(index) == '+'.at(0):
 //                    index = index + 1
 //                    return { TOKENS::PLUSPLUS, "++" }
 //            return { TOKENS::PLUS, "+" }
 //        '*':
 //            index = index + 1
-//            if index <? program.size() and program.at(index) == '=':
+//            if index <? program.size() and program.at(index) == '='.at(0):
 //                index = index + 1
 //                return { TOKENS::TIMESEQUAL, "*=" }
 //            return { TOKENS::ASTERISK, "*" }
 //        '/':
 //            index = index + 1
 //            // skip // comments
-//            if index <? program.size() and program.at(index) == '/':
+//            if index <? program.size() and program.at(index) == '/'.at(0):
 //                index = index + 1
 //                while index <? program.size():
-//                    if program.at(index) == '\n':
+//                    if program.at(index) == '\n'.at(0):
 //                        index = index + 1
 //                        break
 //                    else:
 //                        index = index + 1
 //                return readToken(tk.program, tk.index)
 //            // skip /* */ comments
-//            if index <? program.size() and program.at(index) == '*':
+//            if index <? program.size() and program.at(index) == '*'.at(0):
 //                index = index + 1
 //                while index + 1 <? program.size():
-//                    if program.at(index) == '*' and program.at(index + 1) == '/':
+//                    if program.at(index) == '*'.at(0) and program.at(index + 1) == '/'.at(0):
 //                        index = index + 2
 //                        break
 //                    else:
 //                        index = index + 1
 //                return readToken(tk.program, tk.index)
-//            if index <? program.size() and program.at(index) == '=':
+//            if index <? program.size() and program.at(index) == '='.at(0):
 //                index = index + 1
 //                return { TOKENS::DIVEQUAL, "/=" }
 //            return { TOKENS::SLASH, "/" }
 //        '%':
 //            index = index + 1
-//            if index <? program.size() and program.at(index) == '=':
+//            if index <? program.size() and program.at(index) == '='.at(0):
 //                index = index + 1
 //                return { TOKENS::MODEQUAL, "%=" }
 //            return { TOKENS::PERCENT, "%" }
 //        '&':
 //            index = index + 1
 //            if index <? program.size():
-//                if program.at(index) == '&':
+//                if program.at(index) == '&'.at(0):
 //                    index = index + 1
 //                    return { TOKENS::ANDAND, "and" }
-//                else if program.at(index) == '=':
+//                else if program.at(index) == '='.at(0):
 //                    index = index + 1
 //                    return { TOKENS::ANDEQUAL, "&=" }
 //            //throw std::runtime_error("Unknown Symbol `&`")
@@ -294,17 +294,17 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 //            return { TOKENS::POUND, "#" }
 //        '^':
 //            index = index + 1
-//            if index + 1 <=? program.size() and program.at(index) == '^':
+//            if index + 1 <=? program.size() and program.at(index) == '^'.at(0):
 //                index = index + 1
 //                return { TOKENS::XOREQUAL, "^=" }
 //            return { TOKENS::CARET, "^" }
 //        '|':
 //            index = index + 1
 //            if index + 1 <=? program.size():
-//                if program.at(index) == '|':
+//                if program.at(index) == '|'.at(0):
 //                    index = index + 1
 //                    return { TOKENS::OROR, "or" }
-//                else if program.at(index) == '=':
+//                else if program.at(index) == '='.at(0):
 //                    index = index + 1
 //                    return { TOKENS::OREQUAL, "|=" }
 //            return { TOKENS::BITOR, "|" }
@@ -373,7 +373,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 	String num = parseInt(program, ref! index)
 	if !num.size():
 		//throw std::exception()
-	if index != program.size() and program.at(index) == '.':
+	if index != program.size() and program.at(index) == '.'.at(0):
 		index = index + 1
 		String part2 = parseInt(program, ref! index)
 		if part2.size():

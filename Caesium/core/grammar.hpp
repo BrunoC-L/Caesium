@@ -18,8 +18,8 @@ namespace grammar {
 	using Expression = ConditionalExpression;
 	using Import = And<Star<Token<NEWLINE>>, Token<IMPORT>, Or<Word, String>, Newline>;
 	using Alias = And<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
-	using ParameterCategory = Or</*Token<KEY>, */Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
-	using ArgumentCategory = Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
+	using ParameterCategory = Or<Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
+	using ArgumentCategory = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	using FunctionParameter = And<Typename, ParameterCategory, Word>;
 	using FunctionParameters = CommaStar<FunctionParameter>;
 	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Statement>>>>;

@@ -5,7 +5,7 @@
 Int _redirect_main(const Vector<String>& s);
 
 Int _redirect_main(const Vector<String>& s) {
-	2 + 2 + 2 * 2 * 2 + 2 > 2 * 2 - 2 - (2 * 2 - 2) / 2 + 2;
+	(2 + 2 + 2 * 2 * 2 + 2) > (2 * 2 - 2 - ((2 * 2 - 2)) / 2 + 2);
 };
 
 int main(int argc, char** argv) {

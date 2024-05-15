@@ -229,7 +229,7 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 
 				traverse_builtins(state);
 
-				transpile_header_cpp_t k = transpile_main({ state, 0 }, fn);
+				transpile_declaration_definition_t k = transpile_main({ state, 0 }, fn);
 				return_if_error(k);
 
 				std::stringstream cpp;
@@ -248,7 +248,7 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 						definitions << res.value().second;
 					}
 					for (const auto& enum_ : state.enums_to_transpile) {
-						size_t val = 1;
+						size_t val = 0;
 						std::string enum_prefix = enum_.name + "__";
 						for (const auto& enum_val : enum_.values)
 							declarations << "static constexpr Int " << enum_prefix << enum_val << " = " << val++ << ";\n";
@@ -319,7 +319,7 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 	return error{ "user error", "Missing \"main\" function" };
 }
 
-transpile_header_cpp_t transpile_main(
+transpile_declaration_definition_t transpile_main(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 ) {
@@ -367,7 +367,7 @@ std::optional<error> stack(
 	return std::nullopt;
 }
 
-transpile_header_cpp_t transpile(
+transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 ) {
@@ -411,7 +411,7 @@ transpile_header_cpp_t transpile(
 	}
 }
 
-transpile_header_cpp_t transpile(
+transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
 ) {
@@ -442,7 +442,7 @@ transpile_header_cpp_t transpile(
 	return std::pair{ h.str(), cpp.str()};
 }
 
-transpile_header_cpp_t transpile(
+transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Interface& interface
 ) {
@@ -639,25 +639,6 @@ transpile_t transpile_arg(
 			},
 			[&](const NodeStructs::MutableReference& expr_cat, const NodeStructs::MutableReference& arg_cat) -> transpile_t {
 				return expr_info_ok.representation;
-			},
-			[&](const NodeStructs::Reference& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
-				// todo check if copyable
-				auto tn = typename_of_type(state, expr_info_ok.type.type);
-				return_if_error(tn);
-				auto tn_repr = transpile_typename(state, tn.value());
-				return_if_error(tn_repr);
-				return tn_repr.value() + "{ " + expr_info_ok.representation + " }";
-			},
-			[&](const NodeStructs::Value& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
-				return error{ "user error", "do not copy temporary values" };
-			},
-			[&](const NodeStructs::MutableReference& expr_cat, const NodeStructs::Copy& arg_cat) -> transpile_t {
-				// todo check if copyable
-				auto tn = typename_of_type(state, expr_info_ok.type.type);
-				return_if_error(tn);
-				auto tn_repr = transpile_typename(state, tn.value());
-				return_if_error(tn_repr);
-				return tn_repr.value() + "{ " + expr_info_ok.representation + " }";
 			},
 			[&](const NodeStructs::Reference& expr_cat, const NodeStructs::Move& arg_cat) -> transpile_t {
 				return error{ "user error", "do not move from a non mutable reference" };
@@ -985,7 +966,7 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 					state,
 					variables,
 					statement,
-					type_of_typename(state, NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } }).value()
+					NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::void_t{} } }
 				);
 				return_if_error(t);
 			},
@@ -994,7 +975,7 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 				return_if_error(if_res_t);
 
 				if (!statement.elseExprStatements.has_value())
-					return std::move(if_res_t);
+					return if_res_t;
 
 				auto else_res_t = std::visit(
 					overload(
@@ -1013,9 +994,9 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 					if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::weak_ordering::equivalent)
 						throw;
 					else
-						return std::move(if_res_t);
+						return if_res_t;
 				if (if_res_t.value().has_value())
-					return std::move(if_res_t);
+					return if_res_t;
 				return std::move(else_res_t);
 			},
 			[&](const NodeStructs::IForStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {

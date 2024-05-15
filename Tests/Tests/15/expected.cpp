@@ -17,7 +17,7 @@ Int f__String__String() {
 	return 2;
 };
 Int _redirect_main(const Vector<String>& s) {
-	return f__String__String() + f__String__Int() + f__Int__String();
+	return (f__String__String() + f__String__Int() + f__Int__String());
 };
 
 int main(int argc, char** argv) {

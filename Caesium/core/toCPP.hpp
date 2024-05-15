@@ -14,7 +14,7 @@ struct variable_info {
 	NodeStructs::MetaType type;
 };
 using variables_t = std::map<std::string, std::vector<variable_info>>;
-using transpile_header_cpp_t = expected<std::pair<std::string, std::string>>;
+using transpile_declaration_definition_t = expected<std::pair<std::string, std::string>>;
 
 struct type_information{
 	NodeStructs::MetaType type;
@@ -138,9 +138,6 @@ static NodeStructs::ValueCategory argument_category_to_value_category(const Node
 		[](const NodeStructs::MutableReference&) -> NodeStructs::ValueCategory {
 			return NodeStructs::MutableReference{};
 		},
-		[](const NodeStructs::Copy&) -> NodeStructs::ValueCategory {
-			return NodeStructs::Value{};
-		},
 		[](const NodeStructs::Move&) -> NodeStructs::ValueCategory {
 			return NodeStructs::Value{};
 		}
@@ -158,12 +155,12 @@ static NodeStructs::ValueCategory argument_category_optional_to_value_category(c
 
 transpile_t transpile(const std::vector<NodeStructs::File>& project);
 
-transpile_header_cpp_t transpile_main(
+transpile_declaration_definition_t transpile_main(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 );
 
-transpile_header_cpp_t transpile(
+transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 );
@@ -188,12 +185,12 @@ transpile_t transpile(
 	const NodeStructs::MetaType& expected_return_type
 );
 
-transpile_header_cpp_t transpile(
+transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
 );
 
-transpile_header_cpp_t transpile(
+transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Interface& interface
 );

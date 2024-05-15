@@ -60,7 +60,7 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 				for (auto& o : ut.ors)
 					v.push_back(std::move(o));
 				std::swap(ut.ors, v);
-				return std::move(temp);
+				return temp;
 			}
 			std::vector<NodeStructs::Typename> v;
 			v.push_back(std::move(res));
@@ -362,11 +362,8 @@ NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
 	};
 }
 
-NodeStructs::ArgumentCategory getStruct(const Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t) {
+NodeStructs::ArgumentCategory getStruct(const Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t) {
 	return std::visit(overload(overload_default_error,
-		[](const Token<COPY>&) -> NodeStructs::ArgumentCategory {
-			return NodeStructs::Copy{};
-		},
 		[](const Token<MOVE>&) -> NodeStructs::ArgumentCategory {
 			return NodeStructs::Move{};
 		},
@@ -381,7 +378,7 @@ NodeStructs::ArgumentCategory getStruct(const Or<Token<COPY>, Token<MOVE>, And<T
 }
 
 NodeStructs::FunctionArgument getStruct(const grammar::FunctionArgument& arg) {
-	using call_t = Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
+	using call_t = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	if (arg.get<Opt<call_t>>().has_value())
 		return NodeStructs::FunctionArgument{
 			getStruct(arg.get<Opt<call_t>>().value()),

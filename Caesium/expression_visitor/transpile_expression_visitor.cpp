@@ -24,6 +24,8 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(if_expr_info.value()))
 			throw;
 		non_type_information& if_expr_info_ok = std::get<non_type_information>(condition_expr_info.value());
+		if (cmp(if_expr_info_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+		throw;
 
 		auto else_expr_info = operator()(expr.ifElseExprs.value().second);
 		return_if_error(else_expr_info);
@@ -54,6 +56,8 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
+	if (cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+	throw;
 	ss << base_ok.representation;
 	for (const auto& e : expr.ors) {
 		auto or_expr = operator()(e);
@@ -61,6 +65,8 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(or_expr.value()))
 			throw;
 		const non_type_information& or_expr_ok = std::get<non_type_information>(or_expr.value());
+		if (cmp(or_expr_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+		throw;
 		ss << " || " << or_expr_ok.representation;
 	}
 	return expression_information{ non_type_information{
@@ -77,6 +83,8 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
+	if (cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+	throw;
 	ss << base_ok.representation;
 	for (const auto& e : expr.ands) {
 		auto and_ = operator()(e);
@@ -84,6 +92,8 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(and_.value()))
 			throw;
 		const non_type_information& and_ok = std::get<non_type_information>(and_.value());
+		if (cmp(and_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+		throw;
 		ss << " || " << and_ok.representation;
 	}
 	return expression_information{ non_type_information{
@@ -106,6 +116,10 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 		return_if_error(eq);
 		if (std::holds_alternative<non_type_information>(eq.value())) {
 			const non_type_information& eq_ok = std::get<non_type_information>(eq.value());
+			if (cmp(base_ok.type.type, eq_ok.type.type) != std::weak_ordering::equivalent) {
+				cmp(base_ok.type.type, eq_ok.type.type);
+				return error{ "user error", "cannot compare types for EqualityExpression" };
+			}
 			ss << " " << symbol_variant_as_text(op._value) << " " << eq_ok.representation;
 		}
 		else
@@ -125,13 +139,23 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
+	if (cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ std::string{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ char{} } }) != std::weak_ordering::equivalent)
+		throw;
 	ss << base_ok.representation;
+	if (expr.comparisons.size() != 1)
+		throw; // todo implement a > b > c, which is not (a>b)>c but rather (a>b)&&(b>c)
 	for (const auto& [op, e] : expr.comparisons) {
-		auto cmp = operator()(e);
-		return_if_error(cmp);
-		if (!std::holds_alternative<non_type_information>(cmp.value()))
+		auto cmp_ = operator()(e);
+		return_if_error(cmp_);
+		if (!std::holds_alternative<non_type_information>(cmp_.value()))
 			throw;
-		const non_type_information& cmp_ok = std::get<non_type_information>(cmp.value());
+		const non_type_information& cmp_ok = std::get<non_type_information>(cmp_.value());
+		if (cmp(base_ok.type.type, cmp_ok.type.type) != std::weak_ordering::equivalent) {
+			return error{ "user error", "cannot compare types for CompareExpression" };
+		}
 		ss << " " << symbol_variant_as_text(op._value) << " " << cmp_ok.representation;
 	}
 	return expression_information{ non_type_information{
@@ -141,45 +165,113 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 	} };
 }
 
+bool is_int(const auto& t) {
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) == std::weak_ordering::equivalent;
+}
+
+bool is_floating(const auto& t) {
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) == std::weak_ordering::equivalent;
+}
+
+bool is_char_or_string(const auto& t) {
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ std::string{} } }) == std::weak_ordering::equivalent
+		|| cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ char{} } }) == std::weak_ordering::equivalent;
+}
+
+template <typename OP, typename E>
+static R sum_numbers(auto& vis, const non_type_information& base, const std::vector<std::pair<OP, E>>& v, bool has_floating) {
+	std::stringstream ss;
+	ss << "(" << base.representation;
+	for (const auto& [op, e] : v) {
+		auto add = vis(e);
+		return_if_error(add);
+		if (!std::holds_alternative<non_type_information>(add.value()))
+			throw;
+		const non_type_information& add_ok = std::get<non_type_information>(add.value());
+		if (is_int(add_ok.type.type))
+			ss << " " << symbol_variant_as_text(op._value) << " " << add_ok.representation;
+		else if (is_floating(add_ok.type.type)) {
+			has_floating = true;
+			ss << " " << symbol_variant_as_text(op._value) << " " << add_ok.representation;
+		}
+		else
+			return error{ "user error", "Expected an Integer or Floating to sum with previous Integer or Floating" };
+	}
+	ss << ")";
+	return expression_information{ non_type_information{
+		.type = NodeStructs::MetaType{ has_floating ? NodeStructs::PrimitiveType{ double{} } : NodeStructs::PrimitiveType{ int{} } },
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
+}
+
+template <typename OP, typename E>
+static R sum_strings(auto& vis, const non_type_information& base, const std::vector<std::pair<OP, E>>& v) {
+	std::stringstream ss;
+	ss << "sum_strings(" << base.representation;
+	for (const auto& [op, e] : v) {
+		auto add = vis(e);
+		return_if_error(add);
+		if (!std::holds_alternative<non_type_information>(add.value()))
+			throw;
+		const non_type_information& add_ok = std::get<non_type_information>(add.value());
+		if (!std::holds_alternative<Token<PLUS>>(op._value))
+			return error{ "user error", "Addition between Char and String only allows for +, not -" };
+		if (is_char_or_string(add_ok.type.type))
+			ss << ", " << add_ok.representation;
+		else
+			return error{ "user error", "Expected a Char or String to sum with previous Char or String" };
+	}
+	ss << ")";
+	return expression_information{ non_type_information{
+		.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ std::string{} } },
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{},
+	} };
+}
+
 R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	if (std::holds_alternative<non_type_information>(base.value()))
-		ss << std::get<non_type_information>(base.value()).representation;
-	else
+	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
-	for (const auto& [op, e] : expr.adds) {
-		auto add = operator()(e);
-		return_if_error(add);
-		if (std::holds_alternative<non_type_information>(add.value()))
-			ss << " " << symbol_variant_as_text(op._value) << " " << std::get<non_type_information>(add.value()).representation;
-		else
-			throw;
-	}
-	return expression_information{ non_type_information{
-		.type = std::get<non_type_information>(std::move(base).value()).type.type,
-		.representation = ss.str(),
-		.value_category = NodeStructs::Value{},
-	} };
+	const non_type_information& base_ok = std::get<non_type_information>(base.value());
+	if (is_int(base_ok.type.type))
+		return sum_numbers(*this, base_ok, expr.adds, false);
+	else if (is_floating(base_ok.type.type))
+		return sum_numbers(*this, base_ok, expr.adds, true);
+	else if (is_char_or_string(base_ok.type.type))
+		return sum_strings(*this, base_ok, expr.adds);
+	else
+		return error{
+			"user error",
+			"expected Integer, Floating, Char or String for addition"
+		};
 }
 
 R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	if (std::holds_alternative<non_type_information>(base.value()))
-		ss << std::get<non_type_information>(base.value()).representation;
-	else
+	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
+	const non_type_information& base_ok = std::get<non_type_information>(base.value());
+	if (cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) != std::weak_ordering::equivalent)
+		throw;
+	ss << base_ok.representation;
 
 	for (const auto& [op, e] : expr.muls) {
 		auto mul = operator()(e);
 		return_if_error(mul);
-		if (std::holds_alternative<non_type_information>(mul.value()))
-			ss << " " << symbol_variant_as_text(op._value) << " " << std::get<non_type_information>(mul.value()).representation;
-		else
+		if (!std::holds_alternative<non_type_information>(mul.value()))
 			throw;
+		const non_type_information& mul_ok = std::get<non_type_information>(mul.value());
+		if (cmp(base_ok.type.type, mul_ok.type.type) != std::weak_ordering::equivalent) {
+			return error{ "user error", "cannot compare types for MultiplicativeExpression" };
+		}
+		ss << " " << symbol_variant_as_text(op._value) << " " << mul_ok.representation;
 	}
 
 	return expression_information{ non_type_information{
@@ -198,6 +290,10 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
+	if (cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+		throw;
 	ss << base_ok.representation;
 	return expression_information{ non_type_information{
 		.type = NodeStructs::PrimitiveType{ { int{} } },

@@ -211,8 +211,10 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 			throw;
 		const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
 		if (!is_assignable_to(state, expected_return_type, expr_info_ok.type.type)) {
-			is_assignable_to(state, expected_return_type, expr_info_ok.type.type);
-			throw;
+			return error{
+				"user error",
+				"returned expression does not match declared return type"
+			};
 		}
 		return expr_info_ok.representation;
 	}();

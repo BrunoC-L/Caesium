@@ -25,7 +25,7 @@ NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::
 
 NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName);
 
-NodeStructs::ArgumentCategory getStruct(const Or<Token<COPY>, Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t);
+NodeStructs::ArgumentCategory getStruct(const Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t);
 
 NodeStructs::FunctionArgument getStruct(const grammar::FunctionArgument& arg);
 

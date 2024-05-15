@@ -86,7 +86,6 @@ enum TOKENS {
 	INTERFACE,
 	BLOCK,
 
-	COPY,
 	MOVE,
 	REF,
 	VAL,
@@ -537,7 +536,6 @@ private:
 				return_token(while, WHILE);
 				return_token(type, TYPE);
 				return_token(template, TEMPLATE);
-				return_token(copy, COPY);
 				return_token(move, MOVE);
 				return_token(ref, REF);
 				return_token(val, VAL);

@@ -109,27 +109,14 @@ struct NodeStructs {
 	struct MutableReference {
 		std::weak_ordering operator<=>(const MutableReference&) const;
 	};
-	struct Copy {
-		std::weak_ordering operator<=>(const Copy&) const;
-	};
 	struct Move {
 		std::weak_ordering operator<=>(const Move&) const;
 	};
 	struct Value {
 		std::weak_ordering operator<=>(const Value&) const;
 	};
-	/*struct Key {
-		std::weak_ordering operator<=>(const Key&) const;
-	};*/
-	/*
-	ref -> ref
-	ref! -> ref!
-	copy or move -> value
-	move->value
-	key->key
-	*/
-	using ArgumentCategory = Variant<Reference, MutableReference, Copy, Move/*, Key*/>;
-	using ParameterCategory = Variant<Reference, MutableReference, Value/*, Key*/>;
+	using ArgumentCategory = Variant<Reference, MutableReference, Move>;
+	using ParameterCategory = Variant<Reference, MutableReference, Value>;
 	using ValueCategory = Variant<Reference, MutableReference, Value>;
 	struct FunctionArgument {
 		std::optional<ArgumentCategory> category;
@@ -626,6 +613,9 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 	else if constexpr (is_specialization<T, std::optional>::value) {
 		return a.has_value() && b.has_value() ? cmp(a.value(), b.value()) : cmp(a.has_value(), b.has_value());
 	}
+	else if constexpr (is_specialization<T, caesium_lib::variant::type>::value) {
+		return cmp(a._value, b._value);
+	}
 	else if constexpr (is_specialization<T, std::variant>::value) {
 		auto index_cmp = cmp(a.index(), b.index());
 		if (index_cmp != 0)
@@ -785,7 +775,6 @@ CMP1(UnionTypename)
 CMP1(Typename)
 CMP0(Reference)
 CMP0(MutableReference)
-CMP0(Copy)
 CMP0(Move)
 CMP0(Value)
 CMP1(Statement)
@@ -823,7 +812,7 @@ CMP1(ParenArguments)
 CMP1(BraceArguments)
 CMP1(BracketArguments)
 CMP1(TemplateArguments)
-CMP1(MetaType)
+CMP1(ExpressionType)
 CMP4(Type)
 CMP3(Alias)
 CMP2(MemberVariable)
@@ -854,179 +843,31 @@ CMP5(Function)
 CMP11(NameSpace)
 CMP2(File)
 CMP1(Import)
-//CMP1(PrimitiveType)
 CMP0(void_t)
+
+inline std::weak_ordering NodeStructs::MetaType::operator<=>(const NodeStructs::MetaType& other) const {
+	if (std::holds_alternative<NodeStructs::EnumType>(type._value) &&
+		std::holds_alternative<NodeStructs::EnumValueType>(other.type._value)) {
+		const auto& a = std::get<NodeStructs::EnumType>(type._value);
+		const auto& b = std::get<NodeStructs::EnumValueType>(other.type._value);
+		return cmp(a.enum_.get(), b.enum_.get());
+	}
+	if (std::holds_alternative<NodeStructs::EnumValueType>(type._value) &&
+		std::holds_alternative<NodeStructs::EnumType>(other.type._value)) {
+		const auto& a = std::get<NodeStructs::EnumValueType>(type._value);
+		const auto& b = std::get<NodeStructs::EnumType>(other.type._value);
+		return cmp(a.enum_.get(), b.enum_.get());
+	}
+	return cmp(type._value, other.type._value);
+}
 
 inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const NodeStructs::PrimitiveType& other) const {
 	const auto& a = value._value;
 	const auto& b = other.value._value;
-	auto index_cmp = cmp(a.index(), b.index());
-	return index_cmp;
-	/*if (index_cmp != 0)
-		return index_cmp;
-	return std::visit(
-		[&](const auto& _a) {
-			return cmp(_a, std::get<std::remove_cvref_t<decltype(_a)>>(b));
-		},
-		a
-	);*/
+	return cmp(a.index(), b.index());
 }
 
-//inline std::weak_ordering NodeStructs::IfStatement::operator<=>(const NodeStructs::IfStatement& other) const {
-//	if (auto c = cmp(ifStatements, other.ifStatements); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(ifExpr, other.ifExpr); c != std::weak_ordering::equivalent)
-//		return c;
-//	return cmp(elseExprStatements, other.elseExprStatements);
-//}
-//
-//inline std::weak_ordering NodeStructs::Statement::operator<=>(const NodeStructs::Statement& other) const {
-//	return cmp(statement._value, other.statement._value);
-//}
-//
-//inline std::weak_ordering NodeStructs::BreakStatement::operator<=>(const NodeStructs::BreakStatement& other) const {
-//	return cmp(ifExpr, other.ifExpr);
-//}
-//
-//inline std::weak_ordering NodeStructs::ReturnStatement::operator<=>(const NodeStructs::ReturnStatement& other) const {
-//	if (auto c = cmp(ifExpr, other.ifExpr); c != std::weak_ordering::equivalent)
-//		return c;
-//	return cmp(returnExpr, other.returnExpr);
-//}
-//
-//inline std::weak_ordering NodeStructs::UnaryExpression::operator<=>(const NodeStructs::UnaryExpression& other) const {
-//	if (auto c = cmp(expr, other.expr); c != std::weak_ordering::equivalent)
-//		return c;
-//	return cmp(unary_operators, other.unary_operators);
-//}
-//
-//inline std::weak_ordering NodeStructs::Typename::operator<=>(const NodeStructs::Typename& other) const {
-//	return cmp(value._value, other.value._value);
-//}
-//
-//inline std::weak_ordering NodeStructs::MetaType::operator<=>(const NodeStructs::MetaType& other) const {
-//	return cmp(type._value, other.type._value);
-//}
-//
-//inline std::weak_ordering NodeStructs::InterfaceType::operator<=>(const InterfaceType& other) const {
-//	return cmp(interface.get(), other.interface.get());
-//}
-//
-//inline std::weak_ordering NodeStructs::NamespaceType::operator<=>(const NamespaceType& other) const {
-//	return &name_space.get() <=> &other.name_space.get();
-//}
-//
-//inline std::weak_ordering NodeStructs::NameSpace::operator<=>(const NameSpace& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
-//		return c;
-//	return std::weak_ordering::equivalent;
-//}
-//
-//inline std::weak_ordering NodeStructs::Type::operator<=>(const Type& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(aliases, other.aliases); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(member_variables, other.member_variables); c != std::weak_ordering::equivalent)
-//		return c;
-//	return std::weak_ordering::equivalent;
-//}
-//
-//inline std::weak_ordering NodeStructs::Function::operator<=>(const Function& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(parameters, other.parameters); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(returnType, other.returnType); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(statements, other.statements); c != std::weak_ordering::equivalent)
-//		return c;
-//	return std::weak_ordering::equivalent;
-//}
-//
-//inline std::weak_ordering NodeStructs::Interface::operator<=>(const Interface& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(aliases, other.aliases); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(member_variables, other.member_variables); c != std::weak_ordering::equivalent)
-//		return c;
-//	return std::weak_ordering::equivalent;
-//}
-//
-//inline std::weak_ordering NodeStructs::Template::operator<=>(const Template& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(parameters, other.parameters); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(templated, other.templated); c != std::weak_ordering::equivalent)
-//		return c;
-//	return std::weak_ordering::equivalent;
-//}
-//
-//inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const PrimitiveType& other) const {
-//	return value._value.index() <=> other.value._value.index();
-//}
-//
-//inline std::weak_ordering NodeStructs::TemplateParameterWithDefaultValue::operator<=>(const TemplateParameterWithDefaultValue& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	return cmp(value, other.value);
-//}
-//
-//inline std::weak_ordering NodeStructs::Enum::operator<=>(const Enum& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(values, other.values); c != std::weak_ordering::equivalent)
-//		return c;
-//	return std::weak_ordering::equivalent;
-//}
-//
-//inline std::weak_ordering NodeStructs::Alias::operator<=>(const Alias& other) const {
-//	if (auto c = cmp(aliasFrom, other.aliasFrom); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(aliasTo, other.aliasTo); c != std::weak_ordering::equivalent)
-//		return c;
-//	if (auto c = cmp(name_space, other.name_space); c != std::weak_ordering::equivalent)
-//		return c;
-//	return std::weak_ordering::equivalent;
-//}
-//
-//inline std::weak_ordering NodeStructs::FunctionType::operator<=>(const FunctionType& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	return cmp(name_space, other.name_space);
-//}
-//
-//inline std::weak_ordering NodeStructs::TemplateType::operator<=>(const TemplateType& other) const {
-//	if (auto c = cmp(name, other.name); c != std::weak_ordering::equivalent)
-//		return c;
-//	return cmp(name_space, other.name_space);
-//}
-//
-//inline std::weak_ordering NodeStructs::EnumType::operator<=>(const EnumType& other) const {
-//	return cmp(enum_, other.enum_);
-//}
-//
-//inline std::weak_ordering NodeStructs::EnumValueType::operator<=>(const EnumValueType& other) const {
-//	if (auto c = cmp(enum_, other.enum_); c != std::weak_ordering::equivalent)
-//		return c;
-//	return cmp(value, other.value);
-//}
-
-inline auto copy(const std::string& str) {
+inline std::string copy(const std::string& str) {
 	return str;
 }
 
@@ -1064,36 +905,6 @@ template <typename T>
 NonCopyableBox<T> copy(const NonCopyableBox<T>& box) {
 	return NonCopyableBox<T>{ copy(box.get()) };
 }
-//
-//NodeStructs::TemplatedTypename copy(const NodeStructs::TemplatedTypename& tn) {
-//	return NodeStructs::TemplatedTypename{
-//		.type = copy(tn.type),
-//		.templated_with = copy(tn.templated_with),
-//	};
-//}
-//
-//NodeStructs::NamespacedTypename copy(const NodeStructs::NamespacedTypename& tn) {
-//	return NodeStructs::NamespacedTypename{
-//		.name_space = copy(tn.name_space),
-//		.name_in_name_space = copy(tn.name_in_name_space),
-//	};
-//}
-//
-//NodeStructs::BaseTypename copy(const NodeStructs::BaseTypename& tn) {
-//	return NodeStructs::BaseTypename{
-//		.type = copy(tn.type),
-//	};
-//}
-//
-//NodeStructs::UnionTypename copy(const NodeStructs::UnionTypename& tn) {
-//	return NodeStructs::UnionTypename{
-//		.ors = copy(tn.ors),
-//	};
-//}
-//
-//NodeStructs::Typename copy(const NodeStructs::Typename& tn) {
-//	return NodeStructs::Typename{ copy(tn.value) };
-//}
 
 inline auto copy(const NodeStructs::PrimitiveType& p) {
 	return NodeStructs::PrimitiveType{ p.value._value };
@@ -1215,7 +1026,6 @@ COPY1(UnionTypename)
 COPY1(Typename)
 COPY0(Reference)
 COPY0(MutableReference)
-COPY0(Copy)
 COPY0(Move)
 COPY0(Value)
 COPY1(Statement)
