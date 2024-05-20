@@ -23,8 +23,6 @@ The only design downside of Caesium is the impossibility of dynamic extension, s
 - values
   - [move](https://en.cppreference.com/w/cpp/utility/move)
   - [references as values](https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper)
-  - [unique_ptr*](https://en.cppreference.com/w/cpp/memory/unique_ptr)
-    - * Uniqueness is associated to a type by disabling copy, while pointers are implemented with Boxing.
 
 ## Removing Branches From Generated Code
 
