@@ -93,12 +93,33 @@ Vector<Variant<builtin_filesystem_file, builtin_filesystem_directory>> filesyste
 	return res;
 }
 
-Vector<Variant<builtin_filesystem_file, builtin_filesystem_directory>> filesystem__entries(const std::string& dir) {
-	Vector<Variant<builtin_filesystem_file, builtin_filesystem_directory>> res{};
-	for (const auto& file_or_folder : std::filesystem::directory_iterator(dir))
-		if (file_or_folder.is_directory())
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
-		else
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
-	return res;
+Int str_size_(const std::string& s) {
+    return s.size();
+}
+
+Int str_size_(const char* s) {
+    return strlen(s);
+}
+
+Int str_size_(char) {
+    return 1;
+}
+
+Int str_size(auto&& s, auto&&... strs) {
+    if constexpr (sizeof...(strs) > 0) {
+        return str_size_(s) + str_size(strs...);
+    }
+    else {
+        return str_size_(s);
+    }
+}
+
+String sum_strings(auto&& s1, auto&& s2, auto&&... strs) {
+    String res;
+    res.reserve(str_size(s1, s2, strs...));
+    Int n_strs = 2 + sizeof...(strs);
+    res += s1;
+    res += s2;
+	((res += strs), ...);
+    return res;
 }

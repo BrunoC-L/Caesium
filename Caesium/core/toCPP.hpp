@@ -282,6 +282,7 @@ bool uses_auto(const NodeStructs::Typename& t);
 
 #include "../expression_visitor/expression_for_template_visitor.hpp"
 #include "../expression_visitor/transpile_expression_visitor.hpp"
+#include "../expression_visitor/expression_original_representation_visitor.hpp"
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
 
@@ -289,6 +290,7 @@ bool uses_auto(const NodeStructs::Typename& t);
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
 #include "../typename_visitor/typename_for_template_visitor.hpp"
+#include "../typename_visitor/typename_original_representation_visitor.hpp"
 
 
 expected<NodeStructs::Function> realise_function_using_auto(

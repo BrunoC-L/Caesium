@@ -751,12 +751,12 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			if (expr.arguments.args.size() < 1)
 				return error{
 					"user error",
-					"unions require at least one argument"
+					"unions require at least one argument, union type was `" + typename_original_representation(typename_of_type(state, union_t).value()) + "`, expression was: `" + expression_original_representation(expr) + "`"
 			};
 			if (expr.arguments.args.size() > 1)
 				return error{
 					"user error",
-					"unions require at most one argument"
+					"unions require at most one argument, union type was `" + typename_original_representation(typename_of_type(state, union_t).value()) + "`, expression was: `" + expression_original_representation(expr) + "`"
 			};
 			auto expr_info = operator()(expr.arguments.args.at(0).expr);
 			return_if_error(expr_info);

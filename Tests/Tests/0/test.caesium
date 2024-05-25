@@ -11,7 +11,8 @@ Int main(Vector<String> ref args):
 	auto t1 = Or<Word, Int>{ Word{ "t1", 1 } }
 	Or<Word, Int> t2 = Word{ 't2', 2 }
 	auto program = "Int f():\n\treturn 0\n\nInt main(Vector<String> ref args):\n\treturn f()\n"
-	auto tokens = Tokenizer{ program, 0 }.read()
+	auto tokenizer = Tokenizer{ program, 0 }
+	auto tokens = (ref! tokenizer).read()
 	tokens_and_iterator g = { tokens, 0 }
 	println(build<File>(ref g.it))
 	return 0

@@ -838,8 +838,8 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 		throw;
 	const auto& t_ok = std::get<non_type_information>(t.value());
 
-	std::stringstream ss;
 	if (std::holds_alternative<NodeStructs::Type>(t_ok.type.type.type._value)) {
+		std::stringstream ss;
 		const auto& t_ref = std::get<NodeStructs::Type>(t_ok.type.type.type._value);
 		ss << t_ref.name << "{";
 		for (const auto& [member_typename, member_name] : t_ref.member_variables) {
@@ -868,13 +868,36 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 		return ss.str();
 	}
 	else if (std::holds_alternative<NodeStructs::PrimitiveType>(t_ok.type.type.type._value)) {
+		const auto& primitive_type = std::get<NodeStructs::PrimitiveType>(t_ok.type.type.type._value);
 		auto expr_repr = transpile_expression(state, variables, expr);
 		return_if_error(expr_repr);
 		if (!std::holds_alternative<non_type_information>(expr_repr.value()))
 			throw;
 		const auto& expr_repr_ok = std::get<non_type_information>(expr_repr.value());
-		ss << "String(\"\\\"\") + " << expr_repr_ok.representation << " + String(\"\\\"\")";
-		return ss.str();
+		return std::visit(
+			overload(
+				[&](const std::string&) -> std::string {
+					return "('\"' + " + expr_repr_ok.representation + " + '\"')";
+				},
+				[&](const char&) -> std::string {
+					// not optimal
+					return "(String(\"'\") + " + expr_repr_ok.representation + " + String(\"'\"))";
+				},
+				[&](const int&) -> std::string {
+					return expr_repr_ok.representation;
+				},
+				[&](const double&) -> std::string {
+					return expr_repr_ok.representation;
+				},
+				[&](const bool&) -> std::string {
+					return "String{" + expr_repr_ok.representation + " ? \"True\" : \"False\"}";
+				},
+				[&](const NodeStructs::void_t&) -> std::string {
+					return "String(\"Void\")";
+				}
+			),
+			primitive_type.value._value
+		);
 	}
 	else {
 		throw;
@@ -1215,12 +1238,12 @@ std::optional<error> validate_templates(const std::vector<NodeStructs::Template>
 			return error{
 				"user error",
 				"template has consecutive variadic parameters"
-		};
+			};
 		if (has_two_variadic_parameters_around_non_specialized_argument(tmpl))
 			return error{
 				"user error",
 				"template has two variadic parameters around a non specialized argument"
-		};
+			};
 	}
 	return std::nullopt;
 }
@@ -1436,7 +1459,6 @@ expected<Arrangement> _find_best_template(
 	}
 	std::stringstream templates_ss;
 	bool has_prev_templates = false;
-	auto name = [](const auto& e) { return std::visit([](const auto& x) { return x.name; }, e._value); };
 	for (auto const* a : candidates) {
 		if (has_prev_templates)
 			templates_ss << ", ";
@@ -1447,7 +1469,17 @@ expected<Arrangement> _find_best_template(
 			if (has_prev_parameters)
 				parameters_ss << ", ";
 			has_prev_parameters = true;
-			parameters_ss << name(parameter);
+			parameters_ss << std::visit(overload(
+				[](const NodeStructs::TemplateParameter& p) -> std::string {
+					return p.name;
+				},
+				[](const NodeStructs::TemplateParameterWithDefaultValue& p) -> std::string {
+					return p.name + " = `" + expression_original_representation(p.value) + "`";
+				},
+				[](const NodeStructs::VariadicTemplateParameter& p) -> std::string {
+					return p.name + "...";
+				}
+			), parameter._value);
 			/*if (parameter.second.has_value())
 				parameters_ss << " = " << expression_for_template(parameter.second.value());*/
 		}

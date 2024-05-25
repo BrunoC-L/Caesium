@@ -15,7 +15,6 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 			"_";
 	}
 	else
-
 		return operator()(expr.expr);
 }
 

@@ -120,9 +120,9 @@ Int it;
 
 
 Bool build__File(const Int& it);
-Bool isNum(Char&& c);
-Bool isPartWord(Char&& c);
-Bool isStartOfWord(Char&& c);
+Bool isNum(const Char& c);
+Bool isPartWord(const Char& c);
+Bool isStartOfWord(const Char& c);
 String parseInt(const String& program, Int& index);
 String parseWord(const String& program, Int& index);
 Vector<Pair__Int__String> read(Tokenizer& tk);
@@ -132,13 +132,13 @@ Int _redirect_main(const Vector<String>& args);
 Bool build__File(const Int& it) {
 	return True;
 };
-Bool isNum(Char&& c) {
+Bool isNum(const Char& c) {
 	return c >= String{"0"}.at(0) || c <= String{"9"}.at(0);
 };
-Bool isPartWord(Char&& c) {
+Bool isPartWord(const Char& c) {
 	return isNum(c) || isStartOfWord(c);
 };
-Bool isStartOfWord(Char&& c) {
+Bool isStartOfWord(const Char& c) {
 	return c >= String{"a"}.at(0) || c <= String{"z"}.at(0) || c >= String{"A"}.at(0) || c <= String{"Z"}.at(0) || c == String{"_"}.at(0);
 };
 String parseInt(const String& program, Int& index) {
@@ -292,9 +292,10 @@ Int _redirect_main(const Vector<String>& args) {
 	Or__Token__TOKENS__WORD__Int t1 = Or__Token__TOKENS__WORD__Int{Token__TOKENS__WORD{String{"t1"}, 1}};
 	Or__Token__TOKENS__WORD__Int t2 = { Token__TOKENS__WORD{String{"t2"}, 2} };
 	String program = String{"Int f():\n\treturn 0\n\nInt main(Vector<String> ref args):\n\treturn f()\n"};
-	Vector<Pair__Int__String> tokens = read(Tokenizer{program, 0});
+	Tokenizer tokenizer = Tokenizer{program, 0};
+	Vector<Pair__Int__String> tokens = read(tokenizer);
 	tokens_and_iterator g = tokens_and_iterator{tokens, 0};
-	(Void)(std::cout << String("\"") + build__File(g.it) + String("\"") << "\n");
+	(Void)(std::cout << String{build__File(g.it) ? "True" : "False"} << "\n");
 	return 0;
 };
 

@@ -31,21 +31,21 @@ Int _redirect_main(const Vector<String>& args) {
 	Int argc = args.size();
 	Int bad_exit = 1;
 	if (argc == 1) {
-		(Void)(std::cout << String("\"") + String{"Expected a test folder"} + String("\"") << "\n");
+		(Void)(std::cout << ('"' + String{"Expected a test folder"} + '"') << "\n");
 		return bad_exit;
 	}
 	if (argc > 2) {
-		(Void)(std::cout << String("\"") + String{"Expected a single argument"} + String("\"") << "\n");
+		(Void)(std::cout << ('"' + String{"Expected a single argument"} + '"') << "\n");
 		return bad_exit;
 	}
 	if (!test_parse()) {
 		return bad_exit;
 	}
-	(Void)(std::cout << String("\"") + String{"All parse tests passed"} + String("\"") << "\n");
+	(Void)(std::cout << ('"' + String{"All parse tests passed"} + '"') << "\n");
 	if (!test_transpile_all_folders(filesystem__entries(String{"C:/"}))) {
 		return bad_exit;
 	}
-	(Void)(std::cout << String("\"") + String{"All transpile tests passed"} + String("\"") << "\n");
+	(Void)(std::cout << ('"' + String{"All transpile tests passed"} + '"') << "\n");
 	return 0;
 };
 

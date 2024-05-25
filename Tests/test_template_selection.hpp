@@ -11,7 +11,7 @@ bool test_single_argument() {
 				NodeStructs::TemplateParameter{.name = "A" }
 			}),
 			.templated = "\nInt f():\n"
-			});
+		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
 		auto res = find_best_template(
