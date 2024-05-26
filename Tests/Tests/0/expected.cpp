@@ -1,9 +1,9 @@
 #include "defaults.hpp"
 
-struct Or__Token__TOKENS__WORD__Int;
-struct Pair__Int__String;
 struct Token__TOKENS__WORD;
+struct Or__Token__TOKENS__WORD__Int;
 struct Tokenizer;
+struct Pair__Int__String;
 struct tokens_and_iterator;
 static constexpr Int TOKENS__END = 0;
 static constexpr Int TOKENS__SEMICOLON = 1;
@@ -94,11 +94,6 @@ static constexpr Int TOKENS__VARIANT = 85;
 static constexpr Int TOKENS__VIRTUAL = 86;
 static constexpr Int TOKENS__BOX = 87;
 
-struct Pair__Int__String {
-Int first;
-String second;
-};
-
 struct Token__TOKENS__WORD {
 String value;
 Int n_indent;
@@ -111,6 +106,11 @@ Variant<Token__TOKENS__WORD, Int> _value;
 struct Tokenizer {
 String program;
 Int index;
+};
+
+struct Pair__Int__String {
+Int first;
+String second;
 };
 
 struct tokens_and_iterator {

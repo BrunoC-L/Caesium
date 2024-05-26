@@ -1171,25 +1171,43 @@ expected<NodeStructs::Function> realise_function_using_auto(
 	if (stack_params_opt_error.has_value())
 		return stack_params_opt_error.value();
 
-	auto return_tn = deduce_return_type(state, variables, realised.statements);
-	return_if_error(return_tn);
+	if (realised.returnType <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } != std::weak_ordering::equivalent) {
+		auto fn_or_error = transpile(state, realised);
+		return_if_error(fn_or_error);
+		return NodeStructs::Function{
+			.name = realised.name,
+			.name_space = std::nullopt,
+			.returnType = std::move(realised.returnType),
+			.parameters = std::move(realised.parameters),
+			.statements = std::move(realised.statements)
+		};
+	} else {
+		auto return_tn = deduce_return_type(state, variables, realised.statements);
+		return_if_error(return_tn);
 
-	if (return_tn.value().has_value())
-		return NodeStructs::Function{
-			.name = realised.name,
-			.name_space = std::nullopt,
-			.returnType = typename_of_type(state, std::move(return_tn).value().value()).value(),
-			.parameters = std::move(realised.parameters),
-			.statements = std::move(realised.statements)
-		};
-	else
-		return NodeStructs::Function{
-			.name = realised.name,
-			.name_space = std::nullopt,
-			.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
-			.parameters = std::move(realised.parameters),
-			.statements = std::move(realised.statements)
-		};
+		NodeStructs::Function res = [&]() {
+			if (return_tn.value().has_value())
+				return NodeStructs::Function{
+					.name = realised.name,
+					.name_space = std::nullopt,
+					.returnType = typename_of_type(state, std::move(return_tn).value().value()).value(),
+					.parameters = std::move(realised.parameters),
+					.statements = std::move(realised.statements)
+				};
+			else
+				return NodeStructs::Function{
+					.name = realised.name,
+					.name_space = std::nullopt,
+					.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } },
+					.parameters = std::move(realised.parameters),
+					.statements = std::move(realised.statements)
+				};
+		}();
+
+		auto fn_or_error = transpile(state, res);
+		return_if_error(fn_or_error);
+		return res;
+	}
 }
 
 NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t) {

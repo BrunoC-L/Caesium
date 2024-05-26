@@ -1,20 +1,20 @@
 #include "defaults.hpp"
 
 struct Cat;
-struct CatsAndDogs;
 struct Dog;
+struct CatsAndDogs;
 
 struct Cat {
+String name;
+};
+
+struct Dog {
 String name;
 };
 
 struct CatsAndDogs {
 Vector<Cat> cats;
 Vector<Dog> dogs;
-};
-
-struct Dog {
-String name;
 };
 
 

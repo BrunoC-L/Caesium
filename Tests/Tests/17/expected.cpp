@@ -1,14 +1,14 @@
 #include "defaults.hpp"
 
-struct Cat;
 struct Dog;
+struct Cat;
 struct Named;
 
-struct Cat {
+struct Dog {
 String name;
 };
 
-struct Dog {
+struct Cat {
 String name;
 };
 

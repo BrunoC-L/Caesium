@@ -113,5 +113,5 @@ R T::operator()(const Token<INTEGER_NUMBER>& expr) {
 }
 
 R T::operator()(const Token<STRING>& expr) {
-	return "'" + expr.value + "'";
+	return expr.value;
 }

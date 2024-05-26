@@ -1,13 +1,13 @@
 #include "defaults.hpp"
 
-struct A;
 struct B;
+struct A;
+
+struct B {
+};
 
 struct A {
 B b;
-};
-
-struct B {
 };
 
 

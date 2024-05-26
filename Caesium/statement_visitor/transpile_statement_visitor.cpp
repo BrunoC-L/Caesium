@@ -213,7 +213,9 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 		if (!is_assignable_to(state, expected_return_type, expr_info_ok.type.type)) {
 			return error{
 				"user error",
-				"returned expression does not match declared return type"
+				"returned expression does not match declared return type, expression was `"
+				+ expression_original_representation(statement.returnExpr.at(0).expr)
+				+ "`, type was `" + typename_original_representation(typename_of_type(state, expected_return_type).value()) + "`"
 			};
 		}
 		return expr_info_ok.representation;

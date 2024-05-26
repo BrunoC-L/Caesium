@@ -1,12 +1,12 @@
 #include "defaults.hpp"
 
-struct Cat;
 struct Dog;
-
-struct Cat {
-};
+struct Cat;
 
 struct Dog {
+};
+
+struct Cat {
 };
 
 
