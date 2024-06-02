@@ -8,12 +8,12 @@ struct transpile_expression_visitor : ExpressionVisitor<transpile_expression_vis
 	transpilation_state_with_indent state;
 	variables_t& variables;
 
-	using R = transpile_t2;
+	using R = transpile_expression_information_t;
 
 	ExpressionVisitorDeclarations
 };
 
-transpile_t2 transpile_expression(
+transpile_expression_information_t transpile_expression(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const auto& expr

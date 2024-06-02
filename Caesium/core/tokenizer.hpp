@@ -200,17 +200,15 @@ private:
 				throw std::runtime_error("Reached end of file before end of string, parsed so far: " + str);
 			if (program[index] == '\\') {
 				if (index + 1 <= program.size() && program[index + 1] == c) {
-					// backslash with open string character means dont close the string
-					// but all our transpiled strings use " for strings so we just replace that
 					index += 1;
-					str += "\\\"";
+					str += '\\';
+					str += c;
 					continue;
 				}
 				else if(index + 1 <= program.size() && program[index + 1] == '\\') {
-					// backslash with open string character means dont close the string
-					// but all our transpiled strings use " for strings so we just replace that
+					// double backslash stays as a double backslash
 					index += 1;
-					str += "\\";
+					str += "\\\\";
 					continue;
 				}
 			}

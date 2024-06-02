@@ -21,7 +21,7 @@ R T::operator()(const NodeStructs::Type& t) {
 
 	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 		const auto& fn = it->second.back();
-		auto fn_or_e = transpile(state, fn);
+		auto fn_or_e = transpile(state.unindented(), fn);
 		return_if_error(fn_or_e);
 		if (!state.state.traversed_functions.contains(fn)) {
 			state.state.traversed_functions.insert(copy(fn));
@@ -31,7 +31,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		return_if_error(first_param_str);
 		auto first_param = type_of_typename(state, fn.parameters.at(0).typename_);
 		return_if_error(first_param);
-		if (!is_assignable_to(state, first_param.value(), { copy(t) }))
+		if (!std::holds_alternative<directly_assignable>(assigned_to(state, first_param.value(), { copy(t) })._value))
 			return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n" };
 
 		if (arguments.size() + 1 != fn.parameters.size())
@@ -43,12 +43,12 @@ R T::operator()(const NodeStructs::Type& t) {
 		for (int i = 1; i < fn.parameters.size(); ++i) {
 			auto nth_param = type_of_typename(state, fn.parameters.at(i).typename_);
 			return_if_error(nth_param);
-			auto nth_argument = transpile_expression(state, variables, arguments.at(i - 1).expr);
+			auto nth_argument = transpile_arg(state, variables, arguments.at(i - 1));
 			return_if_error(nth_argument);
 			if (!std::holds_alternative<non_type_information>(nth_argument.value()))
 				throw;
 			const non_type_information& nth_argument_ok = std::get<non_type_information>(nth_argument.value());
-			if (!is_assignable_to(state, nth_param.value(), nth_argument_ok.type.type))
+			if (!std::holds_alternative<directly_assignable>(assigned_to(state, nth_param.value(), nth_argument_ok.type)._value))
 				throw;
 			ss << ", " << nth_argument_ok.representation;
 		}
@@ -66,7 +66,7 @@ R T::operator()(const NodeStructs::Type& t) {
 
 	if (auto it = state.state.global_namespace.functions_using_auto.find(property_name); it != state.state.global_namespace.functions_using_auto.end()) {
 		auto args_ = vec_of_expected_to_expected_of_vec(arguments
-			| std::views::transform([&](auto&& arg) { return transpile_expression(state, variables, arg.expr); })
+			| std::views::transform([&](auto&& arg) { return transpile_arg(state, variables, arg); })
 			| to_vec());
 		return_if_error(args_);
 		auto args_ok_maybe_wrong_type = std::move(args_).value();
@@ -77,7 +77,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		auto fn = realise_function_using_auto(
 			state,
 			it->second.back(),
-			args_ok | std::views::transform([](const auto& e) { return copy(e.type.type); }) | to_vec()
+			args_ok | std::views::transform([](const auto& e) { return copy(e.type); }) | to_vec()
 		);
 		return_if_error(fn);
 		auto& vec = state.state.global_namespace.functions[fn.value().name];
@@ -120,12 +120,12 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 		if (property_name == "at") {
 			if (arguments.size() != 1)
 				throw;
-			auto arg_t = transpile_expression(state, variables, arguments.at(0).expr);
+			auto arg_t = transpile_arg(state, variables, arguments.at(0));
 			return_if_error(arg_t);
 			if (!std::holds_alternative<non_type_information>(arg_t.value()))
 				throw;
 			const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
-			if (!is_assignable_to(state, { NodeStructs::PrimitiveType{ int{} } }, arg_t_ok.type.type))
+			if (!std::holds_alternative<directly_assignable>(assigned_to(state, { NodeStructs::PrimitiveType{ int{} } }, arg_t_ok.type)._value))
 				throw;
 			return expression_information{ non_type_information{
 				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { char{} } } },
@@ -178,31 +178,25 @@ R T::operator()(const NodeStructs::Vector& t) {
 }
 
 R T::operator()(const NodeStructs::VectorType& t) {
-	/*auto args_repr = transpile_args(state, arguments);
-	return_if_error(args_repr);*/
-
 	if (property_name == "push") {
 		if (arguments.size() != 1)
 			throw;
 
-		//todo check value cat
-		auto arg_info = transpile_expression(state, variables, arguments.at(0).expr);
+		auto arg_info = transpile_arg(state, variables, arguments.at(0));
 		return_if_error(arg_info);
 		if (!std::holds_alternative<non_type_information>(arg_info.value()))
 			throw;
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
-		auto repr = transpile_arg(state, variables, arguments.at(0));
-		return_if_error(repr);
 
 		//todo check conversion
-		if (!is_assignable_to(state, t.value_type.get(), arg_info_ok.type.type))
+		if (!std::holds_alternative<directly_assignable>(assigned_to(state, t.value_type.get(), arg_info_ok.type)._value))
 			return error{
 				"user error",
 				"wrong type pushed to Vector<T>"
 		};
 		return expression_information{ non_type_information{
 			.type = copy(t),
-			.representation = "push(" + operand_info.representation + ", " + repr.value() + ")",
+			.representation = "push(" + operand_info.representation + ", " + arg_info_ok.representation + ")",
 			.value_category = NodeStructs::Value{}
 		} };
 	}
@@ -217,28 +211,35 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		} };
 	}
 
+	if (property_name == "back") {
+		if (arguments.size() != 0)
+			throw;
+		return expression_information{ non_type_information{
+			.type = copy(t.value_type.get()),
+			.representation = operand_info.representation + ".back()",
+			.value_category = copy(operand_info.value_category)
+		} };
+	}
+
 	if (property_name == "reserve") {
 		if (arguments.size() != 1)
 			throw;
 
-		//todo check value cat
-		auto arg_info = transpile_expression(state, variables, arguments.at(0).expr);
+		auto arg_info = transpile_arg(state, variables, arguments.at(0));
 		return_if_error(arg_info);
 		if (!std::holds_alternative<non_type_information>(arg_info.value()))
 			throw;
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
-		auto repr = transpile_arg(state, variables, arguments.at(0));
-		return_if_error(repr);
 
 		//todo check conversion
-		if (arg_info_ok.type.type <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } }  != std::weak_ordering::equivalent)
+		if (arg_info_ok.type <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } }  != std::weak_ordering::equivalent)
 			return error{
 				"user error",
 				"wrong type for vector reserve"
 			};
 		return expression_information{ non_type_information{
 			.type = NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } },
-			.representation = operand_info.representation + ".reserve(" + repr.value() + ")",
+			.representation = operand_info.representation + ".reserve(" + arg_info_ok.representation + ")",
 			.value_category = NodeStructs::Value{}
 		} };
 	}

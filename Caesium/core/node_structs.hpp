@@ -21,40 +21,6 @@ struct NodeStructs {
 	struct UnionTypename;
 	struct Typename;
 
-	struct TemplatedTypename {
-		NonCopyableBox<Typename> type;
-		std::vector<Typename> templated_with;
-		std::weak_ordering operator<=>(const TemplatedTypename&) const;
-	};
-
-	struct NamespacedTypename {
-		NonCopyableBox<Typename> name_space;
-		std::string name_in_name_space;
-		std::weak_ordering operator<=>(const NamespacedTypename&) const;
-	};
-
-	struct BaseTypename {
-		std::string type;
-		std::weak_ordering operator<=>(const BaseTypename& other) const;
-	};
-
-	struct UnionTypename {
-		std::vector<Typename> ors;
-		std::weak_ordering operator<=>(const UnionTypename& other) const;
-	};
-
-	struct Typename {
-		Variant<TemplatedTypename, NamespacedTypename, BaseTypename, UnionTypename> value;
-		std::weak_ordering operator<=>(const Typename& other) const;
-	};
-
-	struct Alias {
-		std::string aliasFrom;
-		Typename aliasTo;
-		std::optional<Typename> name_space;
-		std::weak_ordering operator<=>(const Alias&) const;
-	};
-
 	struct Statement;
 
 	struct ConditionalExpression;
@@ -74,6 +40,36 @@ struct NodeStructs {
 	struct PropertyAccessExpression;
 	struct ParenArguments;
 	struct BraceArguments;
+
+	struct MetaType;
+
+	struct TemplatedTypename {
+		NonCopyableBox<Typename> type;
+		std::vector<Typename> templated_with;
+	};
+
+	struct NamespacedTypename {
+		NonCopyableBox<Typename> name_space;
+		std::string name_in_name_space;
+	};
+
+	struct BaseTypename {
+		std::string type;
+	};
+
+	struct UnionTypename {
+		std::vector<Typename> ors;
+	};
+
+	struct Typename {
+		Variant<TemplatedTypename, NamespacedTypename, BaseTypename, UnionTypename> value;
+	};
+
+	struct Alias {
+		std::string aliasFrom;
+		Typename aliasTo;
+		std::optional<Typename> name_space;
+	};
 
 	struct Expression {
 		using vt = Variant<
@@ -100,20 +96,15 @@ struct NodeStructs {
 			Token<STRING> // string token like "abc"
 		> ;
 		NonCopyableBox<vt> expression;
-		std::weak_ordering operator<=>(const Expression& other) const;
 	};
 
 	struct Reference {
-		std::weak_ordering operator<=>(const Reference&) const;
 	};
 	struct MutableReference {
-		std::weak_ordering operator<=>(const MutableReference&) const;
 	};
 	struct Move {
-		std::weak_ordering operator<=>(const Move&) const;
 	};
 	struct Value {
-		std::weak_ordering operator<=>(const Value&) const;
 	};
 	using ArgumentCategory = Variant<Reference, MutableReference, Move>;
 	using ParameterCategory = Variant<Reference, MutableReference, Value>;
@@ -121,70 +112,58 @@ struct NodeStructs {
 	struct FunctionArgument {
 		std::optional<ArgumentCategory> category;
 		Expression expr;
-		std::weak_ordering operator<=>(const FunctionArgument&) const;
 	};
 
 	struct BracketArguments {
 		std::vector<FunctionArgument> args;
-		std::weak_ordering operator<=>(const BracketArguments&) const;
 	};
 
 	struct BraceArguments {
 		std::vector<FunctionArgument> args;
-		std::weak_ordering operator<=>(const BraceArguments&) const;
 	};
 
 	struct TemplateArguments {
 		std::vector<Expression> args;
-		std::weak_ordering operator<=>(const TemplateArguments&) const;
 	};
 
 	struct ParenArguments {
 		std::vector<FunctionArgument> args;
-		std::weak_ordering operator<=>(const ParenArguments&) const;
 	};
 
 	struct CallExpression {
 		Expression operand;
 		ParenArguments arguments;
-		std::weak_ordering operator<=>(const CallExpression&) const;
 	};
 
 	struct NamespaceExpression {
 		Expression name_space;
 		std::string name_in_name_space;
-		std::weak_ordering operator<=>(const NamespaceExpression&) const;
 	};
 
 	struct TemplateExpression {
 		Expression operand;
 		TemplateArguments arguments;
-		std::weak_ordering operator<=>(const TemplateExpression&) const;
 	};
 
 	struct ConstructExpression {
 		Typename operand;
 		BraceArguments arguments;
-		std::weak_ordering operator<=>(const ConstructExpression&) const;
 	};
 
 	struct BracketAccessExpression {
 		Expression operand;
 		BracketArguments arguments;
-		std::weak_ordering operator<=>(const BracketAccessExpression&) const;
 	};
 
 	struct PropertyAccessAndCallExpression {
 		Expression operand;
 		std::string property_name;
 		ParenArguments arguments;
-		std::weak_ordering operator<=>(const PropertyAccessAndCallExpression&) const;
 	};
 
 	struct PropertyAccessExpression {
 		Expression operand;
 		std::string property_name;
-		std::weak_ordering operator<=>(const PropertyAccessExpression&) const;
 	};
 
 	struct UnaryExpression {
@@ -194,7 +173,6 @@ struct NodeStructs {
 		>;
 		std::vector<op_types> unary_operators;
 		Expression expr;
-		std::weak_ordering operator<=>(const UnaryExpression&) const;
 	};
 
 	struct MultiplicativeExpression {
@@ -205,7 +183,6 @@ struct NodeStructs {
 			Token<PERCENT>
 		>;
 		std::vector<std::pair<op_types, Expression>> muls;
-		std::weak_ordering operator<=>(const MultiplicativeExpression&) const;
 	};
 
 	struct AdditiveExpression {
@@ -215,7 +192,6 @@ struct NodeStructs {
 			Token<DASH>
 		>;
 		std::vector<std::pair<op_types, Expression>> adds;
-		std::weak_ordering operator<=>(const AdditiveExpression&) const;
 	};
 
 	struct CompareExpression {
@@ -227,7 +203,6 @@ struct NodeStructs {
 			Token<GTEQ>
 		>;
 		std::vector<std::pair<op_types, Expression>> comparisons;
-		std::weak_ordering operator<=>(const CompareExpression&) const;
 	};
 
 	struct EqualityExpression {
@@ -237,45 +212,38 @@ struct NodeStructs {
 			Token<NEQUAL>
 		>;
 		std::vector<std::pair<op_types, Expression>> equals;
-		std::weak_ordering operator<=>(const EqualityExpression&) const;
 	};
 
 	struct AndExpression {
 		Expression expr;
 		std::vector<Expression> ands;
-		std::weak_ordering operator<=>(const AndExpression&) const;
 	};
 
 	struct OrExpression {
 		Expression expr;
 		std::vector<Expression> ors;
-		std::weak_ordering operator<=>(const OrExpression&) const;
 	};
 
 	struct ConditionalExpression {
 		Expression expr;
 		std::optional<std::pair<Expression, Expression>> ifElseExprs;
-		std::weak_ordering operator<=>(const ConditionalExpression&) const;
 	};
 
 	struct VariableDeclaration {
 		Typename type;
 		std::string name;
-		std::weak_ordering operator<=>(const VariableDeclaration&) const;
 	};
 
 	struct VariableDeclarationStatement {
 		Typename type;
 		std::string name;
 		Expression expr;
-		std::weak_ordering operator<=>(const VariableDeclarationStatement&) const;
 	};
 
 	struct ForStatement {
 		Expression collection;
 		std::vector<Variant<VariableDeclaration, std::string>> iterators;
 		std::vector<Statement> statements;
-		std::weak_ordering operator<=>(const ForStatement&) const;
 	};
 
 	struct IForStatement {
@@ -283,58 +251,55 @@ struct NodeStructs {
 		Expression collection;
 		std::vector<Variant<VariableDeclaration, std::string>> iterators;
 		std::vector<Statement> statements;
-		std::weak_ordering operator<=>(const IForStatement&) const;
 	};
 
 	struct IfStatement {
 		Expression ifExpr;
 		std::vector<Statement> ifStatements;
 		std::optional<Variant<NonCopyableBox<IfStatement>, std::vector<Statement>>> elseExprStatements;
-		std::weak_ordering operator<=>(const IfStatement& other) const;
 	};
 
 	struct WhileStatement {
 		Expression whileExpr;
 		std::vector<Statement> statements;
-		std::weak_ordering operator<=>(const WhileStatement&) const;
 	};
 
 	struct MatchCase {
 		std::vector<std::pair<Typename, std::string>> variable_declarations;
 		std::vector<Statement> statements;
-		std::weak_ordering operator<=>(const MatchCase&) const;
 	};
 
 	struct MatchStatement {
 		std::vector<Expression> expressions;
 		std::vector<MatchCase> cases;
-		std::weak_ordering operator<=>(const MatchStatement&) const;
 	};
 
 	struct BreakStatement {
 		std::optional<Expression> ifExpr;
-		std::weak_ordering operator<=>(const BreakStatement&) const;
 	};
 
 	struct ReturnStatement {
 		std::vector<FunctionArgument> returnExpr;
 		std::optional<Expression> ifExpr;
-		std::weak_ordering operator<=>(const ReturnStatement&) const;
+	};
+
+	struct SwitchCase {
+		Expression expr;
+		std::vector<Statement> statements;
 	};
 
 	struct SwitchStatement {
-		std::weak_ordering operator<=>(const SwitchStatement&) const;
+		Expression expr;
+		std::vector<SwitchCase> cases;
 	};
 
-	struct EqualStatement {
+	struct Assignment {
 		Expression left;
 		Expression right;
-		std::weak_ordering operator<=>(const EqualStatement&) const;
 	};
 
 	struct BlockStatement {
 		Typename parametrized_block;
-		std::weak_ordering operator<=>(const BlockStatement&) const;
 	};
 
 	struct Statement {
@@ -350,27 +315,23 @@ struct NodeStructs {
 			BlockStatement,
 			MatchStatement,
 			SwitchStatement,
-			EqualStatement
+			Assignment
 		> statement;
-		std::weak_ordering operator<=>(const Statement&) const;
 	};
 
 	struct MemberVariable {
 		Typename type;
 		std::string name;
-		std::weak_ordering operator<=>(const MemberVariable&) const;
 	};
 
 	struct Import {
 		std::string imported;
-		std::weak_ordering operator<=>(const Import&) const;
 	};
 
 	struct FunctionParameter {
 		Typename typename_;
 		ParameterCategory category;
 		std::string name;
-		std::weak_ordering operator<=>(const FunctionParameter&) const;
 	};
 
 	struct Function {
@@ -379,7 +340,6 @@ struct NodeStructs {
 		Typename returnType;
 		std::vector<FunctionParameter> parameters;
 		std::vector<Statement> statements;
-		std::weak_ordering operator<=>(const Function&) const;
 	};
 
 	struct Type {
@@ -387,7 +347,6 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
-		std::weak_ordering operator<=>(const Type&) const;
 	};
 
 	struct Interface {
@@ -395,39 +354,32 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
-		std::weak_ordering operator<=>(const Interface&) const;
 	};
 
 	struct InterfaceType {
 		std::reference_wrapper<const Interface> interface;
-		std::weak_ordering operator<=>(const InterfaceType&) const;
 	};
 
 	struct NamespaceType {
 		std::reference_wrapper<const Namespace> name_space;
-		std::weak_ordering operator<=>(const NamespaceType&) const;
 	};
 
 	struct FunctionType {
 		std::string name;
 		std::reference_wrapper<const Namespace> name_space;
-		std::weak_ordering operator<=>(const FunctionType&) const;
 	};
 
 	struct TemplateParameter {
 		std::string name;
-		std::weak_ordering operator<=>(const TemplateParameter&) const;
 	};
 
 	struct TemplateParameterWithDefaultValue {
 		std::string name;
 		NodeStructs::Expression value;
-		std::weak_ordering operator<=>(const TemplateParameterWithDefaultValue&) const;
 	};
 
 	struct VariadicTemplateParameter {
 		std::string name;
-		std::weak_ordering operator<=>(const VariadicTemplateParameter&) const;
 	};
 
 	struct Template {
@@ -435,63 +387,49 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Variant<TemplateParameter, TemplateParameterWithDefaultValue, VariadicTemplateParameter>> parameters;
 		std::string templated;
-		std::weak_ordering operator<=>(const Template&) const;
 	};
 
 	struct Builtin {
 		std::string name;
-		std::weak_ordering operator<=>(const Builtin&) const;
 	};
 
 	struct TemplateType {
 		std::string name;
 		std::reference_wrapper<const Namespace> name_space;
-		std::weak_ordering operator<=>(const TemplateType&) const;
 	};
 
-	struct MetaType;
-
 	struct AggregateType {
-		std::vector<std::pair<ArgumentCategory, MetaType>> arguments;
-		std::weak_ordering operator<=>(const AggregateType&) const;
+		std::vector<FunctionArgument> arguments;
+		std::vector<MetaType> arg_types;
 	};
 
 	struct UnionType {
 		std::vector<MetaType> arguments;
-		std::weak_ordering operator<=>(const UnionType&) const;
 	};
 
 	struct Vector {
-		std::weak_ordering operator<=>(const Vector&) const;
 	};
 
 	struct VectorType {
 		NonCopyableBox<MetaType> value_type;
-		std::weak_ordering operator<=>(const VectorType&) const;
 	};
 
 	struct Set {
-		std::weak_ordering operator<=>(const Set&) const;
 	};
 
 	struct SetType {
 		NonCopyableBox<MetaType> value_type;
-		std::weak_ordering operator<=>(const SetType&) const;
 	};
 
 	struct Map {
-		std::weak_ordering operator<=>(const Map&) const;
 	};
 
 	struct MapType {
 		NonCopyableBox<MetaType> key_type;
 		NonCopyableBox<MetaType> value_type;
-		std::weak_ordering operator<=>(const MapType&) const;
 	};
 
-	struct void_t {
-		std::weak_ordering operator<=>(const void_t&) const;
-	};
+	struct void_t {};
 
 	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
@@ -503,7 +441,6 @@ struct NodeStructs {
 			void_t,
 			char
 		> value;
-		std::weak_ordering operator<=>(const PrimitiveType&) const;
 	};
 
 	struct Enum {
@@ -511,18 +448,15 @@ struct NodeStructs {
 		std::vector<std::string> values;
 		std::optional<Typename> name_space;
 
-		std::weak_ordering operator<=>(const Enum&) const;
 	};
 
 	struct EnumType {
 		std::reference_wrapper<const Enum> enum_;
-		std::weak_ordering operator<=>(const EnumType&) const;
 	};
 
 	struct EnumValueType {
 		std::reference_wrapper<const Enum> enum_;
 		std::string value;
-		std::weak_ordering operator<=>(const EnumValueType&) const;
 	};
 
 	struct MetaType {
@@ -536,9 +470,9 @@ struct NodeStructs {
 			UnionType, // ex. type A, type B -> type(A | B)
 			TemplateType, // ex. template X -> type(X)
 			Builtin,
-			EnumType,
-			EnumValueType,
-			AggregateType,
+			EnumType, // ex. enum E -> type(E)
+			EnumValueType, // ex enum E: A, B... -> type(E::A)
+			AggregateType, // type({A, B, C})
 
 			Vector, // type(Vector)
 			VectorType, // type(Vector<Int>)
@@ -548,21 +482,11 @@ struct NodeStructs {
 			MapType // type(Map<Int, Int>)
 		>;
 		vt type;
-		std::weak_ordering operator<=>(const MetaType& other) const;
 	};
-
-	struct ExpressionType {
-		MetaType type;
-		std::weak_ordering operator<=>(const ExpressionType&) const;
-	};
-
-	//using ValueType = Variant<PrimitiveType, ExpressionType>;
-	//using UniversalType = Variant<PrimitiveType, ExpressionType, MetaType>;
 
 	struct Block {
 		std::string name;
 		std::vector<Statement> statements;
-		std::weak_ordering operator<=>(const Block&) const;
 	};
 
 	struct NameSpace {
@@ -583,13 +507,11 @@ struct NodeStructs {
 
 		std::vector<NameSpace> namespaces;
 
-		std::weak_ordering operator<=>(const NameSpace&) const;
 	};
 
 	struct File {
 		std::vector<Import> imports;
 		NameSpace content;
-		std::weak_ordering operator<=>(const File&) const;
 	};
 };
 
@@ -760,13 +682,14 @@ auto cmp11(const T& x1, const T& x2) {
 	return std::weak_ordering::equivalent;
 }
 
-#define CMP0(T) inline std::weak_ordering NodeStructs::T::operator<=>(const T& other) const { return cmp0(*this, other); }
-#define CMP1(T) inline std::weak_ordering NodeStructs::T::operator<=>(const T& other) const { return cmp1(*this, other); }
-#define CMP2(T) inline std::weak_ordering NodeStructs::T::operator<=>(const T& other) const { return cmp2(*this, other); }
-#define CMP3(T) inline std::weak_ordering NodeStructs::T::operator<=>(const T& other) const { return cmp3(*this, other); }
-#define CMP4(T) inline std::weak_ordering NodeStructs::T::operator<=>(const T& other) const { return cmp4(*this, other); }
-#define CMP5(T) inline std::weak_ordering NodeStructs::T::operator<=>(const T& other) const { return cmp5(*this, other); }
-#define CMP11(T) inline std::weak_ordering NodeStructs::T::operator<=>(const T& other) const { return cmp11(*this, other); }
+#define CMP0(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp0(left, right); }
+#define CMP1(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp1(left, right); }
+#define CMP2(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp2(left, right); }
+#define CMP3(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp3(left, right); }
+#define CMP4(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp4(left, right); }
+#define CMP5(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp5(left, right); }
+#define CMP6(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp6(left, right); }
+#define CMP11(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp11(left, right); }
 
 CMP2(TemplatedTypename)
 CMP2(NamespacedTypename)
@@ -789,8 +712,9 @@ CMP2(MatchCase)
 CMP2(MatchStatement)
 CMP1(BreakStatement)
 CMP2(ReturnStatement)
-CMP0(SwitchStatement)
-CMP2(EqualStatement)
+CMP2(SwitchCase)
+CMP2(SwitchStatement)
+CMP2(Assignment)
 CMP1(BlockStatement)
 CMP2(FunctionArgument)
 CMP2(ConditionalExpression)
@@ -812,7 +736,6 @@ CMP1(ParenArguments)
 CMP1(BraceArguments)
 CMP1(BracketArguments)
 CMP1(TemplateArguments)
-CMP1(ExpressionType)
 CMP4(Type)
 CMP3(Alias)
 CMP2(MemberVariable)
@@ -824,7 +747,7 @@ CMP2(TemplateType)
 CMP1(Builtin)
 CMP1(EnumType)
 CMP2(EnumValueType)
-CMP1(AggregateType)
+CMP2(AggregateType)
 CMP0(Vector)
 CMP0(Set)
 CMP0(Map)
@@ -843,27 +766,26 @@ CMP5(Function)
 CMP11(NameSpace)
 CMP2(File)
 CMP1(Import)
-CMP0(void_t)
 
-inline std::weak_ordering NodeStructs::MetaType::operator<=>(const NodeStructs::MetaType& other) const {
-	if (std::holds_alternative<NodeStructs::EnumType>(type._value) &&
-		std::holds_alternative<NodeStructs::EnumValueType>(other.type._value)) {
-		const auto& a = std::get<NodeStructs::EnumType>(type._value);
-		const auto& b = std::get<NodeStructs::EnumValueType>(other.type._value);
+inline std::weak_ordering operator<=>(const NodeStructs::MetaType& left, const NodeStructs::MetaType& right) {
+	if (std::holds_alternative<NodeStructs::EnumType>(left.type._value) &&
+		std::holds_alternative<NodeStructs::EnumValueType>(right.type._value)) {
+		const auto& a = std::get<NodeStructs::EnumType>(left.type._value);
+		const auto& b = std::get<NodeStructs::EnumValueType>(right.type._value);
 		return cmp(a.enum_.get(), b.enum_.get());
 	}
-	if (std::holds_alternative<NodeStructs::EnumValueType>(type._value) &&
-		std::holds_alternative<NodeStructs::EnumType>(other.type._value)) {
-		const auto& a = std::get<NodeStructs::EnumValueType>(type._value);
-		const auto& b = std::get<NodeStructs::EnumType>(other.type._value);
+	if (std::holds_alternative<NodeStructs::EnumValueType>(left.type._value) &&
+		std::holds_alternative<NodeStructs::EnumType>(right.type._value)) {
+		const auto& a = std::get<NodeStructs::EnumValueType>(left.type._value);
+		const auto& b = std::get<NodeStructs::EnumType>(right.type._value);
 		return cmp(a.enum_.get(), b.enum_.get());
 	}
-	return cmp(type._value, other.type._value);
+	return cmp(left.type._value, right.type._value);
 }
 
-inline std::weak_ordering NodeStructs::PrimitiveType::operator<=>(const NodeStructs::PrimitiveType& other) const {
-	const auto& a = value._value;
-	const auto& b = other.value._value;
+inline std::weak_ordering operator<=>(const NodeStructs::PrimitiveType& left, const NodeStructs::PrimitiveType& right) {
+	const auto& a = left.value._value;
+	const auto& b = right.value._value;
 	return cmp(a.index(), b.index());
 }
 
@@ -1040,8 +962,9 @@ COPY2(MatchCase)
 COPY2(MatchStatement)
 COPY1(BreakStatement)
 COPY2(ReturnStatement)
-COPY0(SwitchStatement)
-COPY2(EqualStatement)
+COPY2(SwitchCase)
+COPY2(SwitchStatement)
+COPY2(Assignment)
 COPY1(BlockStatement)
 COPY2(FunctionArgument)
 COPY2(ConditionalExpression)
@@ -1075,7 +998,7 @@ COPY2(TemplateType)
 COPY1(Builtin)
 COPY1(EnumType)
 COPY2(EnumValueType)
-COPY1(AggregateType)
+COPY2(AggregateType)
 COPY0(Vector)
 COPY0(Set)
 COPY0(Map)

@@ -36,7 +36,7 @@ struct IndentToken {
 };
 
 template <typename T>
-struct Indent : public T {
+struct Indent : T {
 	Indent(int n_indent) : T(n_indent + 1) {}
 };
 
@@ -129,22 +129,23 @@ struct KNode {
 
 	// to get `b*` from `(abc)*` for example
 	template <typename U>
-	std::vector<U> get() const {
-		return get_view<U>() | to_vec();
+	decltype(auto) get() const {
+		if constexpr (std::is_same_v<U, T>)
+			return (const std::vector<T>&)nodes;
+		else
+			return get_view<U>() | to_vec();
 	}
-
+	
 	// to get `b*` from `(abc)*` for example
 	template <typename U>
-	auto get_view() const {
+	decltype(auto) get_view() const {
 		if constexpr (std::is_same_v<U, T>)
-			return nodes
-			| std::views::transform([&](auto&& e) { return U{ e }; })
-			;
+			return (const std::vector<T>&)nodes;
 		else if constexpr (is_specialization<T, And>::value)
 			return nodes
 			| std::views::transform([&](auto&& e) { return e.get<U>(); })
 			;
-		else if constexpr (is_specialization<T, Alloc>::value)
+		else if constexpr (std::is_same_v<Alloc<U>, T>)
 			return nodes
 			| std::views::transform([&](auto&& e) { return e.get(); })
 			;
@@ -155,7 +156,7 @@ struct KNode {
 			| std::views::transform([&](auto&& e) { return std::get<U>(e); })
 			;
 		else
-			static_assert(!sizeof(T*), "T is not supported");
+			static_assert(!sizeof(U*), "U is not supported");
 	}
 };
 

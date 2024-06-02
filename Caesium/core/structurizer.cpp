@@ -393,7 +393,7 @@ NodeStructs::FunctionArgument getStruct(const grammar::FunctionArgument& arg) {
 
 NodeStructs::ParenArguments getStruct(const grammar::ParenArguments& args) {
 	return {
-		args.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
+		args.get<CommaStar<grammar::FunctionArgument>>().get_view<grammar::FunctionArgument>()
 			| std::views::transform([&](auto&& e) { return getStruct(e); })
 			| to_vec()
 	};
@@ -401,7 +401,7 @@ NodeStructs::ParenArguments getStruct(const grammar::ParenArguments& args) {
 
 NodeStructs::BracketArguments getStruct(const grammar::BracketArguments& args) {
 	return {
-		args.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
+		args.get<CommaStar<grammar::FunctionArgument>>().get_view<grammar::FunctionArgument>()
 			| std::views::transform([&](auto&& e) { return getStruct(e); })
 			| to_vec()
 	};
@@ -409,7 +409,7 @@ NodeStructs::BracketArguments getStruct(const grammar::BracketArguments& args) {
 
 NodeStructs::BraceArguments getStruct(const grammar::BraceArguments& args) {
 	return {
-		args.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
+		args.get<CommaStar<grammar::FunctionArgument>>().get_view<grammar::FunctionArgument>()
 			| std::views::transform([&](auto&& e) { return getStruct(e); })
 			| to_vec()
 	};
@@ -417,7 +417,7 @@ NodeStructs::BraceArguments getStruct(const grammar::BraceArguments& args) {
 
 NodeStructs::TemplateArguments getStruct(const grammar::TemplateArguments& args) {
 	return {
-		args.get<CommaStar<grammar::Expression>>().get<grammar::Expression>()
+		args.get<CommaStar<grammar::Expression>>().get_view<grammar::Expression>()
 			| std::views::transform([&](auto&& e) { return getExpressionStruct(e); })
 			| to_vec()
 	};
@@ -519,40 +519,6 @@ NodeStructs::Expression getExpressionStruct(const grammar::PostfixExpression& st
 	const auto& postfixes = statement.get<Star<grammar::Postfix>>().get<grammar::Postfix>();
 	auto expr = getExpressionStruct(statement.get<grammar::ParenExpression>());
 	return getExpressionStruct(statement, std::move(expr), postfixes, 0);
-	/*using nodestruct_opts = NodeStructs::PostfixExpression::op_types;
-	return NodeStructs::Expression{ NodeStructs::PostfixExpression {
-		getExpressionStruct(statement.get<ParenExpression>()),
-		postfixes | std::views::transform(
-			[](const auto& e) {
-				return std::visit(
-					overload(overload_default_error,
-						[](const And<Token<DOT>, grammar::Word>& e) {
-							return nodestruct_opts{ e.get<grammar::Word>().value };
-						},
-						[](const ParenArguments& args) {
-							return nodestruct_opts{ getStruct(args) };
-						},
-						[](const BracketArguments& args) {
-							return nodestruct_opts{ getStruct(args) };
-						},
-						[](const BraceArguments& args) {
-							return nodestruct_opts{ getStruct(args) };
-						},
-						[](const grammar::TemplateArguments& args) -> nodestruct_opts {
-							return nodestruct_opts{ getStruct(args) };
-						},
-						[](const Token<PLUSPLUS>& token) {
-							return nodestruct_opts{ token };
-						},
-						[](const Token<MINUSMINUS>& token) {
-							return nodestruct_opts{ token };
-						}
-					),
-					e.value()
-				);
-			})
-		| to_vec()
-	} };*/
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::UnaryExpression& statement) {
@@ -846,7 +812,7 @@ std::vector<NodeStructs::Expression> getExpressions(const std::vector<grammar::E
 
 NodeStructs::ReturnStatement getStatementStruct(const grammar::ReturnStatement& statement) {
 	std::vector<NodeStructs::FunctionArgument> returns = statement.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
-		| std::views::transform([&](auto&& e) { return getStruct(e); })
+		| std::views::transform([](auto&& e) { return getStruct(e); })
 		| to_vec();
 	return {
 		std::move(returns),
@@ -857,10 +823,24 @@ NodeStructs::ReturnStatement getStatementStruct(const grammar::ReturnStatement& 
 }
 
 NodeStructs::SwitchStatement getStatementStruct(const grammar::SwitchStatement& statement) {
-	return {};
+	return NodeStructs::SwitchStatement{
+		.expr = getExpressionStruct(statement.get<grammar::Expression>()),
+		.cases = statement.get<Indent<Star<And<
+			IndentToken,
+			grammar::Expression,
+			grammar::ColonIndentCodeBlock
+		>>>>().get<And<IndentToken, grammar::Expression, grammar::ColonIndentCodeBlock>>()
+		| std::views::transform([](const And<IndentToken, grammar::Expression, grammar::ColonIndentCodeBlock>& switch_case) {
+			return NodeStructs::SwitchCase{
+				getExpressionStruct(switch_case.get<grammar::Expression>()),
+				getStatements(switch_case.get<grammar::ColonIndentCodeBlock>())
+			};
+		})
+		| to_vec()
+	};
 }
 
-NodeStructs::EqualStatement getStatementStruct(const grammar::EqualStatement& statement) {
+NodeStructs::Assignment getStatementStruct(const grammar::Assignment& statement) {
 	return { getExpressionStruct(statement.get<grammar::Expression, 0>()), getExpressionStruct(statement.get<grammar::Expression, 1>()) };
 }
 
@@ -881,6 +861,6 @@ NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 			grammar::BlockStatement,
 			grammar::MatchStatement,
 			grammar::SwitchStatement,
-			grammar::EqualStatement
+			grammar::Assignment
 		>>>().get().value()) };
 }

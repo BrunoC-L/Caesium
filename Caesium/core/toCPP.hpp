@@ -4,9 +4,9 @@
 #include <sstream>
 #include <map>
 #include <set>
+#include <functional>
 #include "../utility/expected.hpp"
 #include "../utility/enumerate.hpp"
-
 #include "node_structs.hpp"
 
 struct variable_info {
@@ -22,14 +22,18 @@ struct type_information{
 };
 
 struct non_type_information{
-	NodeStructs::ExpressionType type;
+	NodeStructs::MetaType type;
 	std::string representation;
 	NodeStructs::ValueCategory value_category;
 };
 
+inline auto copy(const non_type_information& info) {
+	return copy3(info);
+}
+
 using expression_information = std::variant<type_information, non_type_information>;
 using transpile_t = expected<std::string>;
-using transpile_t2 = expected<expression_information>;
+using transpile_expression_information_t = expected<expression_information>;
 
 struct Namespace {
 	std::string name;
@@ -218,16 +222,10 @@ std::optional<error> add_for_iterator_variables(
 	const NodeStructs::MetaType& it_type
 );
 
-transpile_t transpile_arg(
+transpile_expression_information_t transpile_arg(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::FunctionArgument& arg
-);
-
-transpile_t transpile_args(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const std::vector<NodeStructs::FunctionArgument>& args
 );
 
 transpile_t transpile_expressions(
@@ -255,8 +253,14 @@ std::string template_name(
 	const std::vector<NodeStructs::Expression>& arguments
 );
 
-bool is_assignable_to(
-	transpilation_state_with_indent state,
+struct not_assignable {};
+struct directly_assignable {};
+struct requires_conversion {
+	std::move_only_function<transpile_expression_information_t(transpilation_state_with_indent, variables_t&, const NodeStructs::Expression&)> converter;
+};
+
+Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
+	transpilation_state_with_indent state_,
 	const NodeStructs::MetaType& parameter,
 	const NodeStructs::MetaType& argument
 );

@@ -12,17 +12,17 @@ struct transpile_member_call_visitor : TypeCategoryVisitor<transpile_member_call
 	const std::string& property_name;
 	const std::vector<NodeStructs::FunctionArgument>& arguments;
 
-	using R = transpile_t2;
+	using R = transpile_expression_information_t;
 
 	TypeCategoryVisitorDeclarations
 };
 
-transpile_t2 transpile_member_call(
+transpile_expression_information_t transpile_member_call(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const auto& operand_info,
 	const std::string& property_name,
 	const std::vector<NodeStructs::FunctionArgument>& arguments
 ) {
-	return transpile_member_call_visitor{ {}, state, variables, operand_info, property_name, arguments }(operand_info.type.type);
+	return transpile_member_call_visitor{ {}, state, variables, operand_info, property_name, arguments }(operand_info.type);
 }

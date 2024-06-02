@@ -34,7 +34,7 @@ namespace grammar {
 	using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>>;
 	using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
 
-	struct Typename : public And<BaseTypename, Star<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>> {};
+	struct Typename : And<BaseTypename, Star<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>> {};
 
 	using MemberVariable = And<Typename, Word, Newline>;
 	//using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
@@ -85,7 +85,7 @@ namespace grammar {
 	using EqualityExpression = And<CompareExpression, Star<And<Or<Token<EQUALEQUAL>, Token<NEQUAL>>, CompareExpression>>>;
 	using AndExpression = And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>;
 	using OrExpression = And<AndExpression, Star<And<Token<OR>, AndExpression>>>;
-	struct ConditionalExpression : public And<
+	struct ConditionalExpression : And<
 			OrExpression,
 			Opt<And<
 				Token<IF>,
@@ -105,7 +105,7 @@ namespace grammar {
 
 	struct ElseStatement; // we need to explicitly allow `else if <>:` otherwise using `else {ifstatement}` would require indentation
 	using IfStatement = And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>;
-	struct ElseStatement : public And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>> {};
+	struct ElseStatement : And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>> {};
 
 	using BreakStatement = And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
 	using ForStatement = And<
@@ -154,16 +154,16 @@ namespace grammar {
 		Expression,
 		Token<COLON>,
 		Newline,
-		Indent<Plus<And<
+		Indent<Star<And<
 			IndentToken,
 			Expression,
 			ColonIndentCodeBlock
 		>>>
 	>;
 
-	using EqualStatement = And<Expression, Token<EQUAL>, Expression>;
+	using Assignment = And<Expression, Token<EQUAL>, Expression>;
 
-	struct Statement : public And<
+	struct Statement : And<
 		IndentToken,
 		Alloc<Or<
 			VariableDeclarationStatement,
@@ -177,7 +177,7 @@ namespace grammar {
 			BlockStatement,
 			MatchStatement,
 			SwitchStatement,
-			EqualStatement
+			Assignment
 		>>
 	> {};
 
@@ -240,7 +240,7 @@ namespace grammar {
 		Enum
 	>;
 
-	struct NameSpace : public And<
+	struct NameSpace : And<
 		Word,
 		Token<COLON>,
 		Token<NEWLINE>,

@@ -64,7 +64,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::NamespaceExpression& expr) {
-	throw;
+	return operator()(expr.name_space) + "::" + expr.name_in_name_space;
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
@@ -73,7 +73,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 
 R T::operator()(const NodeStructs::ConstructExpression& expr) {
 	std::stringstream ss;
-	ss << typename_original_representation(expr.operand) << "{";
+	ss << typename_original_representation(expr.operand) << "{ ";
 	for (const auto& arg : expr.arguments.args)
 		ss << arg_cat_opt_to_string(arg.category) << operator()(arg.expr) << ", ";
 	ss << "}";
@@ -85,7 +85,12 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
-	throw;
+	std::stringstream ss;
+	ss << operator()(expr.operand) << "." << expr.property_name << "(";
+	for (const auto& arg : expr.arguments.args)
+		ss << arg_cat_opt_to_string(arg.category) << operator()(arg.expr) << ", ";
+	ss << ")";
+	return ss.str();
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
@@ -93,11 +98,21 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
-	throw;
+	std::stringstream ss;
+	ss << "(";
+	for (const auto& arg : expr.args)
+		ss << arg_cat_opt_to_string(arg.category) << operator()(arg.expr) << ", ";
+	ss << ")";
+	return ss.str();
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
-	throw;
+	std::stringstream ss;
+	ss << "{ ";
+	for (const auto& arg : expr.args)
+		ss << arg_cat_opt_to_string(arg.category) << operator()(arg.expr) << ", ";
+	ss << "}";
+	return ss.str();
 }
 
 R T::operator()(const std::string& expr) {

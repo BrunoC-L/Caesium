@@ -7,7 +7,7 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::Type& type) {
 	if (!state.state.traversed_types.contains(type)) {
-		auto opt_e = transpile(state, type);
+		auto opt_e = transpile(state.unindented(), type);
 		return_if_error(opt_e);
 		state.state.traversed_types.insert(copy(type));
 		state.state.types_to_transpile.push_back(copy(type));

@@ -1,9 +1,28 @@
 import grammar
 import tokenizer
 
+
 template build<T>:
     Bool build(auto ref it):
-        return True
+        return False
+
+// template build<T>:
+//     T? build(auto ref it):
+//         return None
+
+//  template build<And<Ts...>>:
+//      And<Ts...>? build(auto ref it):
+//      	bool failed = false;
+//      	auto temp = it;
+//  
+//          for node_t in Ts:
+//              es = match build<node_t>(it):
+//                  node_t val v:
+//                      return v
+//                  None:
+//                      it = temp
+//                      return None
+//      	return And<Ts...>{ move es... }
 
 Int main(Vector<String> ref args):
     Vector<Int>{}.size()
@@ -11,8 +30,8 @@ Int main(Vector<String> ref args):
 	auto t1 = Or<Word, Int>{ Word{ "t1", 1 } }
 	Or<Word, Int> t2 = Word{ 't2', 2 }
 	auto program = "Int f():\n\treturn 0\n\nInt main(Vector<String> ref args):\n\treturn f()\n"
-	auto tokenizer = Tokenizer{ program, 0 }
+	auto tokenizer = Tokenizer{ move program, 0 }
 	auto tokens = (ref! tokenizer).read()
-	tokens_and_iterator g = { tokens, 0 }
+	tokens_and_iterator g = { move tokens, 0 }
 	println(build<File>(ref g.it))
 	return 0

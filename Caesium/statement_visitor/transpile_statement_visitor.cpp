@@ -12,6 +12,32 @@ R T::operator()(const NodeStructs::Expression& statement) {
 	return repr_ok.representation + ";\n";
 }
 
+R f(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::VariableDeclarationStatement& statement,
+	const NodeStructs::MetaType& type,
+	const std::string& type_repr,
+	non_type_information assigned_expression_ok
+) {
+	variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type) });
+
+	if (std::holds_alternative<NodeStructs::UnionType>(assigned_expression_ok.type.type._value)
+		&& (type <=> assigned_expression_ok.type != std::weak_ordering::equivalent)) {
+		std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
+		return type_repr + " " + statement.name + " = "
+			"std::visit([](const auto& " + lambda_var_name + ") -> " + type_repr + " {"
+			" return " + lambda_var_name + "; "
+			"}, " + assigned_expression_ok.representation + ");\n";
+	}
+	else {
+		if (assigned_expression_ok.type <=> type == std::weak_ordering::equivalent)
+			return type_repr + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
+		else
+			return type_repr + " " + statement.name + " = { " + assigned_expression_ok.representation + " };\n";
+	}
+}
+
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 	bool is_aggregate_init = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get()._value);
 	bool is_auto = statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent;
@@ -27,13 +53,13 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 		if (std::holds_alternative<non_type_information>(assigned_expression.value())) {
 			auto assigned_expression_ok = std::get<non_type_information>(std::move(assigned_expression).value());
 
-			auto deduced_typename = typename_of_type(state, assigned_expression_ok.type.type);
+			auto deduced_typename = typename_of_type(state, assigned_expression_ok.type);
 			return_if_error(deduced_typename);
 
 			auto deduced_typename_repr = transpile_typename(state, deduced_typename.value());
 			return_if_error(deduced_typename_repr);
 
-			variables[statement.name].push_back({ NodeStructs::MutableReference{}, std::move(assigned_expression_ok).type.type });
+			variables[statement.name].push_back({ NodeStructs::MutableReference{}, std::move(assigned_expression_ok).type });
 
 			return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 		}
@@ -62,30 +88,31 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 		if (!std::holds_alternative<non_type_information>(assigned_expression.value()))
 			throw;
 
-		const auto& assigned_expression_ok = std::get<non_type_information>(assigned_expression.value());
+		auto& assigned_expression_ok = std::get<non_type_information>(assigned_expression.value());
 
-		if (!is_assignable_to(state, type.value(), assigned_expression_ok.type.type))
-			return error{
-				"user error",
-				"not assignable"
-			};
-
-		variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type.value()) });
-
-		if (std::holds_alternative<NodeStructs::UnionType>(assigned_expression_ok.type.type.type._value)
-			&& (type.value() <=> assigned_expression_ok.type.type != std::weak_ordering::equivalent)) {
-			std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
-			return type_repr.value() + " " + statement.name + " = "
-				"std::visit([](const auto& " + lambda_var_name + ") -> " + type_repr.value() + " {"
-					" return " + lambda_var_name + "; "
-				"}, " + assigned_expression_ok.representation + ");\n";
-		}
-		else {
-			if (assigned_expression_ok.type.type <=> type.value() == std::weak_ordering::equivalent)
-				return type_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
-			else
-				return type_repr.value() + " " + statement.name + " = { " + assigned_expression_ok.representation + " };\n";
-		}
+		auto assignable = assigned_to(state, type.value(), assigned_expression_ok.type)._value;
+		return std::visit(overload(
+			[&](const directly_assignable& assignable) -> R {
+				return f(state, variables, statement, type.value(), type_repr.value(), std::move(assigned_expression_ok));
+			},
+			[&](requires_conversion& assignable) -> R {
+				transpile_expression_information_t converted = assignable.converter(state, variables, statement.expr);
+				return_if_error(converted);
+				if (!std::holds_alternative<non_type_information>(converted.value()))
+					throw;
+				return f(state, variables, statement, type.value(), type_repr.value(), std::get<non_type_information>(std::move(converted).value()));
+			},
+			[&](const not_assignable&) -> R {
+				return error{
+					"user error",
+					"expression not assignable to type, type was `"
+					+ typename_original_representation(statement.type)
+					+ "`, expression was `"
+					+ expression_original_representation(statement.expr)
+					+ "`"
+				};
+			}
+		), assignable);
 	}
 }
 
@@ -104,14 +131,14 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 		if_expr_ok.representation +
 		") {\n" +
 		if_statements.value() +
-		"} else " +
+		indent(state.indent) + "} else " +
 		std::visit(
 			overload(overload_default_error,
 				[&](const NonCopyableBox<NodeStructs::IfStatement>& elseif) {
 					return operator()(elseif.get()).value();
 				},
 				[&](const std::vector<NodeStructs::Statement>& justelse) {
-					return "{" + transpile(state, variables, justelse, expected_return_type).value() + "}";
+					return "{\n" + transpile(state.indented(), variables, justelse, expected_return_type).value() + indent(state.indent) + "}\n";
 				}
 			),
 			statement.elseExprStatements.value()._value
@@ -137,7 +164,7 @@ R T::operator()(const NodeStructs::ForStatement& statement) {
 	if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
 		throw;
 	const auto& coll_type_or_e_ok = std::get<non_type_information>(coll_type_or_e.value());
-	auto it_type = iterator_type(state, coll_type_or_e_ok.type.type);
+	auto it_type = iterator_type(state, coll_type_or_e_ok.type);
 
 	std::stringstream ss;
 	if (statement.iterators.size() > 1) {
@@ -178,14 +205,14 @@ R T::operator()(const NodeStructs::IForStatement& statement) {
 }
 
 R T::operator()(const NodeStructs::WhileStatement& statement) {
-	auto s1 = transpile_expression(state, variables, statement.whileExpr);
-	return_if_error(s1);
-	if (!std::holds_alternative<non_type_information>(s1.value()))
+	auto while_expr_info = transpile_expression(state, variables, statement.whileExpr);
+	return_if_error(while_expr_info);
+	if (!std::holds_alternative<non_type_information>(while_expr_info.value()))
 		throw;
-	const auto& s1_ok = std::get<non_type_information>(s1.value());
-	auto s2 = transpile(state.indented(), variables, statement.statements, expected_return_type);
-	return_if_error(s2);
-	return "while (" + s1_ok.representation + ") {\n" + s2.value() + "}";
+	const auto& while_expr_info_ok = std::get<non_type_information>(while_expr_info.value());
+	auto transpiled_statements = transpile(state.indented(), variables, statement.statements, expected_return_type);
+	return_if_error(transpiled_statements);
+	return "while (" + while_expr_info_ok.representation + ") {\n" + transpiled_statements.value() + indent(state.indent) + "}\n";
 }
 
 R T::operator()(const NodeStructs::BreakStatement& statement) {
@@ -210,7 +237,8 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 		if (!std::holds_alternative<non_type_information>(expr_info.value()))
 			throw;
 		const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
-		if (!is_assignable_to(state, expected_return_type, expr_info_ok.type.type)) {
+		auto assign = assigned_to(state, expected_return_type, expr_info_ok.type)._value;
+		if (std::holds_alternative<not_assignable>(assign)) {
 			return error{
 				"user error",
 				"returned expression does not match declared return type, expression was `"
@@ -218,7 +246,18 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 				+ "`, type was `" + typename_original_representation(typename_of_type(state, expected_return_type).value()) + "`"
 			};
 		}
-		return expr_info_ok.representation;
+		else if (std::holds_alternative<directly_assignable>(assign)) {
+			return expr_info_ok.representation;
+		}
+		else {
+			auto& rc =  std::get<requires_conversion>(assign);
+			auto converted = rc.converter(state, variables, statement.returnExpr.at(0).expr);
+			return_if_error(converted);
+			if (!std::holds_alternative<non_type_information>(converted.value()))
+				throw;
+			const auto& converted_ok = std::get<non_type_information>(converted.value());
+			return converted_ok.representation;
+		}
 	}();
 	return_if_error(return_expression);
 	if (statement.ifExpr.has_value()) {
@@ -242,9 +281,8 @@ R T::operator()(const NodeStructs::BlockStatement& statement) {
 			ss << operator()(statement_in_block).value();
 		return ss.str();
 	}
-	else {
-		throw std::runtime_error("bad block name" + s);
-	}
+	else
+		return error{ "user error", "bad block name" + s };
 }
 
 R T::operator()(const NodeStructs::MatchStatement& statement) {
@@ -258,7 +296,7 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 	if (!std::holds_alternative<non_type_information>(expr_info.value()))
 		throw;
 	const auto& expr_ok = std::get<non_type_information>(expr_info.value());
-	auto tn = typename_of_type(state, expr_ok.type.type);
+	auto tn = typename_of_type(state, expr_ok.type);
 	return_if_error(tn);
 	auto tn_repr = transpile_typename(state, tn.value());
 	return_if_error(tn_repr);
@@ -294,11 +332,85 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 	return ss.str();
 }
 
+bool is_int(const auto& t) {
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) == std::weak_ordering::equivalent;
+}
+
+bool is_floating(const auto& t) {
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) == std::weak_ordering::equivalent;
+}
+
+bool is_char(const auto& t) {
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ char{} } }) == std::weak_ordering::equivalent;
+}
+
+bool is_string(const auto& t) {
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ std::string{} } }) == std::weak_ordering::equivalent;
+}
+
+template <typename T>
+std::string case_fix(std::string case_expr);
+
+template <>
+std::string case_fix<Token<INTEGER_NUMBER>>(std::string case_expr) {
+	return case_expr;
+}
+
+template <>
+std::string case_fix<Token<STRING>>(std::string case_expr) {
+	case_expr[0] = '\'';
+	case_expr[case_expr.length() - 1] = '\'';
+	return case_expr;
+}
+
+template <typename token_string_or_token_int>
+R int_or_char_switch(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::SwitchStatement& statement,
+	const non_type_information& expr_info_ok
+) {
+	std::stringstream ss;
+	ss << "switch (" << expr_info_ok.representation << ") {\n";
+	for (const NodeStructs::SwitchCase& switch_case : statement.cases) {
+		const auto& [switch_expr, switch_statements] = switch_case;
+		if (!std::holds_alternative<token_string_or_token_int>(switch_expr.expression.get()._value))
+			throw;
+		const auto& val = std::get<token_string_or_token_int>(switch_expr.expression.get()._value);
+		ss << indent(state.indent + 1) << "case " << case_fix<token_string_or_token_int>(val.value) << ":\n";
+		if (switch_statements.size() > 0) {
+			auto statements = transpile(state.indented().indented(), variables, switch_statements, expected_return_type);
+			return_if_error(statements);
+			ss << statements.value();
+		}
+	}
+	ss << indent(state.indent) << "}\n";
+	return ss.str();
+}
+
 R T::operator()(const NodeStructs::SwitchStatement& statement) {
+	auto expr_info = transpile_expression(state, variables, statement.expr);
+	return_if_error(expr_info);
+	if (!std::holds_alternative<non_type_information>(expr_info.value()))
+		throw;
+	const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
+	if (is_int(expr_info_ok.type)) {
+		return int_or_char_switch<Token<INTEGER_NUMBER>>(state, variables, expected_return_type, statement, expr_info_ok);
+	}
+	if (is_char(expr_info_ok.type)) {
+		return int_or_char_switch<Token<STRING>>(state, variables, expected_return_type, statement, expr_info_ok);
+	}
+	if (is_floating(expr_info_ok.type)) {
+		throw;
+	}
+	if (is_string(expr_info_ok.type)) {
+		throw;
+	}
 	throw;
 }
 
-R T::operator()(const NodeStructs::EqualStatement& statement) {
+R T::operator()(const NodeStructs::Assignment& statement) {
 	auto left = transpile_expression(state, variables, statement.left);
 	auto right = transpile_expression(state, variables, statement.right);
 	return_if_error(left);
@@ -307,5 +419,5 @@ R T::operator()(const NodeStructs::EqualStatement& statement) {
 		throw;
 	if (!std::holds_alternative<non_type_information>(right.value()))
 		throw;
-	return indent(state.indent) + std::get<non_type_information>(left.value()).representation + " = " + std::get<non_type_information>(right.value()).representation + ";\n";
+	return std::get<non_type_information>(left.value()).representation + " = " + std::get<non_type_information>(right.value()).representation + ";\n";
 }

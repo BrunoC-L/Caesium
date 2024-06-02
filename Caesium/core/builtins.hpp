@@ -16,6 +16,7 @@ struct builtins {
 	NodeStructs::Builtin builtin_map = { "Map" };
 	NodeStructs::Builtin builtin_insert = { "insert" };
 
+	NodeStructs::Builtin builtin_exit = { "exit" };
 	NodeStructs::Builtin builtin_print = { "print" };
 	NodeStructs::Builtin builtin_println = { "println" };
 

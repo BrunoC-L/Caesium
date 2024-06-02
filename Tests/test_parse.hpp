@@ -90,7 +90,7 @@ bool test_parse() {
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "()");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "a  <? b >? c");
 	ok &= test_parse_incorrect<Expression>(__LINE__, 0,                 "Set<Int> x");
-	ok &= test_parse_correct<VariableDeclarationStatement>(__LINE__, 0, "Set<Int> x = {}"); 
+	ok &= test_parse_correct<VariableDeclarationStatement>(__LINE__, 0, "Set<Int> x = {}");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "size<Animal>(animals)");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "size<Animal, Animal>(animals)");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "a<b,c>?d>");
