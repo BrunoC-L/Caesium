@@ -16,6 +16,10 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } } };
 	if (t.type == "Floating")
 		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { double{} } } };
+	if (t.type == "None") {
+		throw;
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { NodeStructs::empty_optional_t{} } } };
+	}
 
 	if (auto it = state.state.global_namespace.types.find(t.type); it != state.state.global_namespace.types.end()) {
 		const auto& types = it->second;
@@ -78,8 +82,26 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 	return type_of_resolution_operator(state, space_t, t.name_in_name_space);
 }
 
-R T::operator()(const NodeStructs::TemplatedTypename& t) {
-	return type_template_of_typename(state, t.templated_with, t.type.get());
+R T::operator()(const NodeStructs::TemplatedTypename& tt) {
+	std::vector<NodeStructs::Typename> templated_with;
+	for (const auto& t : tt.templated_with) {
+		auto arg = operator()(t);
+		return_if_error(arg);
+		auto tn = typename_of_type(state, arg.value());
+		return_if_error(tn);
+		templated_with.push_back(std::move(tn).value());
+	}
+	return type_template_of_typename(state, templated_with, tt.type.get());
+}
+
+R T::operator()(const NodeStructs::OptionalTypename& t) {
+	auto t_or_e = operator()(t.type);
+	return_if_error(t_or_e);
+	return NodeStructs::MetaType{ NodeStructs::OptionalType{ std::move(t_or_e).value() } };
+}
+
+R T::operator()(const NodeStructs::TupleTypename& type) {
+	throw;
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {
@@ -91,4 +113,8 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 		v.push_back(std::move(exp).value());
 	}
 	return NodeStructs::MetaType{ NodeStructs::UnionType{ std::move(v) } };
+}
+
+R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
+	throw;
 }

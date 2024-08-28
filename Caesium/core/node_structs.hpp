@@ -6,7 +6,7 @@
 #include <compare>
 #include <map>
 
-#include "primitives.hpp"
+#include "parse.hpp"
 #include "../utility/box.hpp"
 #include "../utility/overload.hpp"
 
@@ -18,6 +18,8 @@ struct NodeStructs {
 	struct TemplatedTypename;
 	struct NamespacedTypename;
 	struct BaseTypename;
+	struct VariadicExpansionTypename;
+	struct TupleTypename;
 	struct UnionTypename;
 	struct Typename;
 
@@ -57,12 +59,27 @@ struct NodeStructs {
 		std::string type;
 	};
 
+	struct VariadicExpansionTypename {
+		NonCopyableBox<Typename> type;
+	};
+
+	struct TupleTypename {
+		std::vector<Typename> members;
+	};
+
 	struct UnionTypename {
 		std::vector<Typename> ors;
 	};
 
+	/*struct TupleTypename {
+	};*/
+
+	struct OptionalTypename {
+		NonCopyableBox<Typename> type;
+	};
+
 	struct Typename {
-		Variant<TemplatedTypename, NamespacedTypename, BaseTypename, UnionTypename> value;
+		Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, TupleTypename, UnionTypename, VariadicExpansionTypename> value;
 	};
 
 	struct Alias {
@@ -387,6 +404,7 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Variant<TemplateParameter, TemplateParameterWithDefaultValue, VariadicTemplateParameter>> parameters;
 		std::string templated;
+		int indent;
 	};
 
 	struct Builtin {
@@ -404,6 +422,10 @@ struct NodeStructs {
 	};
 
 	struct UnionType {
+		std::vector<MetaType> arguments;
+	};
+
+	struct TupleType {
 		std::vector<MetaType> arguments;
 	};
 
@@ -430,6 +452,7 @@ struct NodeStructs {
 	};
 
 	struct void_t {};
+	struct empty_optional_t {};
 
 	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
@@ -439,7 +462,8 @@ struct NodeStructs {
 			int,
 			bool,
 			void_t,
-			char
+			char,
+			empty_optional_t
 		> value;
 	};
 
@@ -459,6 +483,10 @@ struct NodeStructs {
 		std::string value;
 	};
 
+	struct OptionalType {
+		NonCopyableBox<MetaType> value_type;
+	};
+
 	struct MetaType {
 		using vt = Variant<
 			PrimitiveType, // ex. type(1)
@@ -467,11 +495,13 @@ struct NodeStructs {
 			FunctionType, // ex. Bool has_bone(...) -> type(has_bone)
 			InterfaceType, // ex. interface Animal -> type(Animal)
 			NamespaceType, // ex. namespace std -> type(std)
+			TupleType, // A & B
 			UnionType, // ex. type A, type B -> type(A | B)
 			TemplateType, // ex. template X -> type(X)
 			Builtin,
 			EnumType, // ex. enum E -> type(E)
 			EnumValueType, // ex enum E: A, B... -> type(E::A)
+			OptionalType, // A?
 			AggregateType, // type({A, B, C})
 
 			Vector, // type(Vector)
@@ -509,8 +539,13 @@ struct NodeStructs {
 
 	};
 
+	struct Exists {
+		NameSpace global_exists;
+	};
+
 	struct File {
 		std::vector<Import> imports;
+		std::vector<Exists> exists;
 		NameSpace content;
 	};
 };
@@ -694,7 +729,10 @@ auto cmp11(const T& x1, const T& x2) {
 CMP2(TemplatedTypename)
 CMP2(NamespacedTypename)
 CMP1(BaseTypename)
+CMP1(TupleTypename)
 CMP1(UnionTypename)
+CMP1(OptionalTypename)
+CMP1(VariadicExpansionTypename)
 CMP1(Typename)
 CMP0(Reference)
 CMP0(MutableReference)
@@ -742,7 +780,9 @@ CMP2(MemberVariable)
 CMP2(FunctionType)
 CMP1(InterfaceType)
 CMP1(NamespaceType)
+CMP1(TupleType)
 CMP1(UnionType)
+CMP1(OptionalType)
 CMP2(TemplateType)
 CMP1(Builtin)
 CMP1(EnumType)
@@ -756,7 +796,7 @@ CMP1(SetType)
 CMP2(MapType)
 CMP4(Interface)
 CMP2(Block)
-CMP4(Template)
+CMP5(Template)
 CMP3(Enum)
 CMP1(TemplateParameter)
 CMP2(TemplateParameterWithDefaultValue)
@@ -764,7 +804,8 @@ CMP1(VariadicTemplateParameter)
 CMP3(FunctionParameter)
 CMP5(Function)
 CMP11(NameSpace)
-CMP2(File)
+CMP1(Exists)
+CMP3(File)
 CMP1(Import)
 
 inline std::weak_ordering operator<=>(const NodeStructs::MetaType& left, const NodeStructs::MetaType& right) {
@@ -787,6 +828,10 @@ inline std::weak_ordering operator<=>(const NodeStructs::PrimitiveType& left, co
 	const auto& a = left.value._value;
 	const auto& b = right.value._value;
 	return cmp(a.index(), b.index());
+}
+
+inline int copy(int i) {
+	return i;
 }
 
 inline std::string copy(const std::string& str) {
@@ -944,7 +989,10 @@ T copy11(const T& x) {
 COPY2(TemplatedTypename)
 COPY2(NamespacedTypename)
 COPY1(BaseTypename)
+COPY1(TupleTypename)
 COPY1(UnionTypename)
+COPY1(OptionalTypename)
+COPY1(VariadicExpansionTypename)
 COPY1(Typename)
 COPY0(Reference)
 COPY0(MutableReference)
@@ -993,7 +1041,9 @@ COPY2(MemberVariable)
 COPY2(FunctionType)
 COPY1(InterfaceType)
 COPY1(NamespaceType)
+COPY1(TupleType)
 COPY1(UnionType)
+COPY1(OptionalType)
 COPY2(TemplateType)
 COPY1(Builtin)
 COPY1(EnumType)
@@ -1007,7 +1057,7 @@ COPY1(SetType)
 COPY2(MapType)
 COPY4(Interface)
 COPY2(Block)
-COPY4(Template)
+COPY5(Template)
 COPY3(Enum)
 COPY1(TemplateParameter)
 COPY2(TemplateParameterWithDefaultValue)
@@ -1015,5 +1065,6 @@ COPY1(VariadicTemplateParameter)
 COPY3(FunctionParameter)
 COPY5(Function)
 COPY11(NameSpace)
-COPY2(File)
+COPY1(Exists)
+COPY3(File)
 COPY1(Import)

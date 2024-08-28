@@ -7,10 +7,7 @@ struct typename_for_template_visitor : TypenameVisitor<typename_for_template_vis
 
 	using R = std::string;
 
-	R operator()(const NodeStructs::BaseTypename& t);
-	R operator()(const NodeStructs::NamespacedTypename& t);
-	R operator()(const NodeStructs::TemplatedTypename& t);
-	R operator()(const NodeStructs::UnionTypename& t);
+	TypenameVisitorDeclarations
 };
 
 std::string typename_for_template(

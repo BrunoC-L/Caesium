@@ -10,14 +10,14 @@ struct Cat {
 };
 
 
-Int f__Animal(const Vector<Variant<Cat, Dog>>& vec);
+Int f__Animal(const Vector<Union<Cat, Dog>>& vec);
 Int _redirect_main(const Vector<String>& s);
 
-Int f__Animal(const Vector<Variant<Cat, Dog>>& vec) {
+Int f__Animal(const Vector<Union<Cat, Dog>>& vec) {
 	return 0;
 };
 Int _redirect_main(const Vector<String>& s) {
-	Vector<Variant<Cat, Dog>> animals = Vector<Variant<Cat, Dog>>{};
+	Vector<Union<Cat, Dog>> animals = Vector<Union<Cat, Dog>>{};
 	return f__Animal(animals);
 };
 

@@ -29,4 +29,5 @@ static void print_first_diff(std::string_view s1, std::string_view s2, size_t fi
 			++it;
 		}
 	}
+	std::cout << "\n";
 }

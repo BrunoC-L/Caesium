@@ -10,7 +10,8 @@ bool test_single_argument() {
 			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 				NodeStructs::TemplateParameter{.name = "A" }
 			}),
-			.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
@@ -38,7 +39,8 @@ bool test_single_argument() {
 				.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 					NodeStructs::TemplateParameter{.name = "A" }
 					}),
-				.templated = "\nInt f2():\n"
+				.templated = "\nInt f2():\n",
+				.indent = 1
 			});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
@@ -56,7 +58,8 @@ bool test_single_argument() {
 			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 			}),
-			.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
@@ -74,7 +77,8 @@ bool test_single_argument() {
 			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 				}),
-			.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 		},
 		NodeStructs::Template{
 			.name = "f",
@@ -82,7 +86,8 @@ bool test_single_argument() {
 			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 				NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::Expression{ "arg" } }
 				}),
-			.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
@@ -100,7 +105,8 @@ bool test_single_argument() {
 			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 				}),
-		.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 			},
 			NodeStructs::Template{
 				.name = "f",
@@ -108,8 +114,10 @@ bool test_single_argument() {
 				.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 					NodeStructs::TemplateParameter{.name = "A" }
 					}),
-	.templated = "\nInt f():\n"
-			});
+			.templated = "\nInt f():\n",
+			.indent = 1
+			}
+		);
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
 		auto res = find_best_template(
@@ -130,7 +138,8 @@ bool test_full_variadic_vs_split() {
 			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 			}),
-			.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 		},
 		NodeStructs::Template{
 			.name = "f",
@@ -146,7 +155,8 @@ bool test_full_variadic_vs_split() {
 					NodeStructs::VariadicTemplateParameter{.name = "Cs" }
 				}
 			),
-			.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
@@ -164,7 +174,8 @@ bool test_full_variadic_vs_split() {
 			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 				NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::Expression{ "arg" } },
 				}),
-		.templated = "\nInt f():\n"
+			.templated = "\nInt f():\n",
+			.indent = 1
 			},
 			NodeStructs::Template{
 				.name = "f",
@@ -179,8 +190,10 @@ bool test_full_variadic_vs_split() {
 					Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 						NodeStructs::VariadicTemplateParameter{.name = "Cs" }
 					}),
-				.templated = "\nInt f():\n"
-			});
+				.templated = "\nInt f():\n",
+				.indent = 1
+			}
+		);
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
 		auto res = find_best_template(

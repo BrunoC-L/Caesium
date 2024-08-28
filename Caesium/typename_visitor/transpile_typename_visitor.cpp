@@ -33,29 +33,40 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& type) {
-	if (!std::holds_alternative<NodeStructs::BaseTypename>(type.name_space.get().value._value))
-		throw;
-	const std::string& ns_str = std::get<NodeStructs::BaseTypename>(type.name_space.get().value._value).type;
-	if (auto it = state.state.global_namespace.namespaces.find(ns_str); it != state.state.global_namespace.namespaces.end()) {
-		if (auto it2 = it->second.types.find(type.name_in_name_space); it2 != it->second.types.end())
-			return operator()(type.name_space.get()).value() + "__" + type.name_in_name_space;
-		if (auto it2 = it->second.aliases.find(type.name_in_name_space); it2 != it->second.aliases.end())
-			return operator()(it2->second);
-		throw;
-	}
-	else if (auto it = state.state.global_namespace.enums.find(ns_str); it != state.state.global_namespace.enums.end()) {
-		if (it->second.size() != 1)
+	auto type_of_namespace_or_e = type_of_typename(state, type.name_space.get());
+	return_if_error(type_of_namespace_or_e);
+	const auto& type_of_namespace = type_of_namespace_or_e.value();
+
+	auto repr_of_typename_or_e = operator()(type.name_space.get());
+	return_if_error(repr_of_typename_or_e);
+	const auto& repr_of_typename = repr_of_typename_or_e.value();
+
+	return std::visit(overload(
+		[](const auto& e) -> R {
 			throw;
-		const auto& enum_ = it->second.back();
-		if (auto it = std::find(enum_.values.begin(), enum_.values.end(), type.name_in_name_space); it != enum_.values.end())
-			return ns_str + "__" + type.name_in_name_space;
-		throw;
-	}
-	throw;
+		},
+		[&](const NodeStructs::EnumType& e) -> R {
+			const auto& _enum = e.enum_.get();
+			if (auto it = std::find(_enum.values.begin(), _enum.values.end(), type.name_in_name_space); it != _enum.values.end())
+				return _enum.name + "__" + type.name_in_name_space;
+			throw;
+		},
+		[&](const NodeStructs::NamespaceType& e) -> R {
+			if (auto it = e.name_space.get().types.find(type.name_in_name_space); it != e.name_space.get().types.end())
+				return repr_of_typename + "__" + type.name_in_name_space;
+			if (auto it = e.name_space.get().aliases.find(type.name_in_name_space); it != e.name_space.get().aliases.end())
+				return operator()(it->second);
+			if (auto it = e.name_space.get().namespaces.find(type.name_in_name_space); it != e.name_space.get().namespaces.end())
+				return repr_of_typename + "__" + type.name_in_name_space;
+			if (auto it = e.name_space.get().templates.find(type.name_in_name_space); it != e.name_space.get().templates.end())
+				return repr_of_typename + "__" + type.name_in_name_space;
+			throw;
+		}
+	), type_of_namespace.type._value);
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
-	bool is_variant = type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Variant" } } == std::weak_ordering::equivalent;
+	bool is_variant = type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Union" } } == std::weak_ordering::equivalent;
 	bool is_vec_or_set =
 		type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } } == std::weak_ordering::equivalent
 		|| type.type.get() <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "Set" } } == std::weak_ordering::equivalent;
@@ -120,9 +131,35 @@ void swap(NodeStructs::Typename& a, NodeStructs::Typename& b) {
 	new (&b) NodeStructs::Typename(std::move(c));
 }
 
+R T::operator()(const NodeStructs::OptionalTypename& type) {
+	auto inner_or_e = operator()(type.type);
+	return_if_error(inner_or_e);
+	return "Optional<" + std::move(inner_or_e).value() + ">";
+}
+
+R T::operator()(const NodeStructs::TupleTypename& type) {
+	std::stringstream ss;
+	ss << "Tuple<";
+	auto ts = copy(type.members);
+	if (ts.size() == 0)
+		throw;
+	bool first = true;
+	for (const auto& t : ts) {
+		if (first)
+			first = false;
+		else
+			ss << ", ";
+		auto res = operator()(t);
+		return_if_error(res);
+		ss << res.value();
+	}
+	ss << ">";
+	return ss.str();
+}
+
 R T::operator()(const NodeStructs::UnionTypename& type) {
 	std::stringstream ss;
-	ss << "Variant<";
+	ss << "Union<";
 	auto ts = copy(type.ors);
 	if (ts.size() == 0)
 		throw;
@@ -139,4 +176,8 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 	}
 	ss << ">";
 	return ss.str();
+}
+
+R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
+	throw;
 }

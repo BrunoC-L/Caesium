@@ -10,10 +10,7 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 
 	using R = expected<NodeStructs::MetaType>;
 
-	R operator()(const NodeStructs::BaseTypename& t);
-	R operator()(const NodeStructs::NamespacedTypename& t);
-	R operator()(const NodeStructs::TemplatedTypename& t);
-	R operator()(const NodeStructs::UnionTypename& t);
+	TypenameVisitorDeclarations
 };
 
 expected<NodeStructs::MetaType> type_template_of_typename(

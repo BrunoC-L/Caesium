@@ -13,8 +13,8 @@ struct B {
 Int _redirect_main(const Vector<String>& s);
 
 Int _redirect_main(const Vector<String>& s) {
-	Variant<A, B> v1 = Variant<A, B>{A{}};
-	Variant<A, B> v2 = Variant<A, B>{B{}};
+	Union<A, B> v1 = Union<A, B>{A{}};
+	Union<A, B> v2 = Union<A, B>{B{}};
 };
 
 int main(int argc, char** argv) {

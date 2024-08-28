@@ -2,5 +2,5 @@ type A:
 type B:
 
 Int main(Vector<String> ref s):
-    Variant<A, B> v1 = {A{}}
+    Union<A, B> v1 = {A{}}
     B | A v2 = {B{}}

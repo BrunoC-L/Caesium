@@ -3,7 +3,6 @@
 #include "core/toCpp.hpp"
 #include "core/structurizer.hpp"
 #include "utility/colored_text.hpp"
-#include "core/structurizer.hpp"
 #include "utility/as_vec.hpp"
 
 template <bool exp_ok, typename T>
@@ -133,7 +132,8 @@ bool test_structurize_equals() {
 				Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
 					NodeStructs::TemplateParameter{.name = "T" }
 				}),
-			.templated = "\tInt f(Vector<`T`> ref vec):\n\t\treturn 0"
+			.templated = "\tInt f(Vector<`T`> ref vec):\n\t\treturn 0",
+			.indent = 1
 		});
 
 	ok &= test_structurize_equals<Function>(__LINE__, 0, "A f(A ref a):\n\tprintln(a)\n",

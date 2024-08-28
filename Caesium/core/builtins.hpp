@@ -4,7 +4,8 @@
 #include "../utility/as_map.hpp"
 
 struct builtins {
-	NodeStructs::Builtin builtin_variant = { "Variant" };
+	NodeStructs::Builtin builtin_union = { "Union" };
+	NodeStructs::Builtin builtin_tuple = { "Tuple" };
 
 	//vec
 	NodeStructs::Builtin builtin_vector = { "Vector" };

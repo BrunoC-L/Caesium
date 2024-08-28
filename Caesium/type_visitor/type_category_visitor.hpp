@@ -26,11 +26,13 @@ struct TypeCategoryVisitor {
 	R operator()(const NodeStructs::InterfaceType& t);\
 	R operator()(const NodeStructs::NamespaceType& t);\
 	R operator()(const NodeStructs::Builtin& t);\
+	R operator()(const NodeStructs::TupleType& t);\
 	R operator()(const NodeStructs::UnionType& t);\
 	R operator()(const NodeStructs::TemplateType& t);\
 	R operator()(const NodeStructs::EnumType& t);\
 	R operator()(const NodeStructs::EnumValueType& t);\
 	R operator()(const NodeStructs::AggregateType& t);\
+	R operator()(const NodeStructs::OptionalType& t);\
 \
 	R operator()(const NodeStructs::Vector& t);\
 	R operator()(const NodeStructs::VectorType& t);\

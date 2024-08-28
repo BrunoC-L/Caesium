@@ -25,7 +25,7 @@ template And<Ands...>:
 
 template Or<Ors...>:
     type Or:
-        Variant<`Ors...`> _value
+        Union<`Ors...`> _value
 
 type TemplateBody:
 	Int n_indent

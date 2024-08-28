@@ -420,11 +420,11 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			const NodeStructs::Function& fn = *expected_f.value().value();
 			if (!state.state.traversed_functions.contains(fn)) {
 				state.state.traversed_functions.insert(copy(fn));
-				state.state.functions_to_transpile.insert(copy(fn));
 				auto transpiled_f = transpile(state.unindented(), fn);
 				return_if_error(transpiled_f);
 				if (uses_auto(fn))
 					throw;
+				state.state.functions_to_transpile.insert(copy(fn));
 			}
 			auto args_repr = [&]() {
 				std::stringstream ss;
@@ -592,7 +592,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		}
 
 		{
-			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
+			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(f, g.it)) {
@@ -622,7 +622,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			}
 		}
 		{
-			And<IndentToken, grammar::Type, Token<END>> t{ 1 };
+			And<IndentToken, grammar::Type, Token<END>> t{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(t, g.it)) {
@@ -722,7 +722,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			if (expr.arguments.args.size() != tt.member_variables.size())
 				return error{
 					"user error",
-					"expected `" + std::to_string(tt.member_variables.size()) + "` arguments but received `" + std::to_string(expr.arguments.args.size()) + "`"
+					"expected `" + std::to_string(tt.member_variables.size()) + "` arguments but received `" + std::to_string(expr.arguments.args.size()) + "` for type `" + tt.name + "`"
 			};
 			auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args
 				| std::views::transform([&](auto&& arg) -> R {

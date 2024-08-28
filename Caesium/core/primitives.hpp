@@ -8,6 +8,16 @@
 #include "../utility/is_specialization.hpp"
 #include "../utility/box.hpp"
 
+struct parse_error {
+	std::string name_of_rule;
+	std::vector<TOKENVALUE>::iterator beg;
+};
+
+namespace grammar {
+	template <typename T>
+	constexpr std::string name_of_rule();
+}
+
 template <int _token>
 struct Token {
 	static constexpr auto token = _token;
@@ -39,6 +49,23 @@ template <typename T>
 struct Indent : T {
 	Indent(int n_indent) : T(n_indent + 1) {}
 };
+
+template <typename T>
+struct Commit : T {
+	Commit(int n_indent) : T(n_indent) {}
+};
+
+template <typename T>
+struct Expect : T {
+	Expect(int n_indent) : T(n_indent) {}
+};
+
+//
+//template <typename T>
+//struct Expect {
+//	T expected;
+//	Expect(int n_indent) : expected(n_indent) {}
+//};
 
 template <typename T>
 struct Alloc {
@@ -185,191 +212,3 @@ using Plus = KNode<T, PlusCnd, std::false_type>;
 
 template <typename T>
 using CommaPlus = KNode<T, PlusCnd, std::true_type>;
-
-
-
-
-
-
-
-
-
-inline void parse_whitespaces(Iterator& it) {
-	while (it->first == TAB || it->first == SPACE)
-		it++;
-}
-
-template <int token>
-bool build_end_token(Token<token>& t, Iterator& it) {
-	bool ok = it->first == token;
-	if (ok)
-		it++;
-	return ok;
-}
-
-inline bool build_newline_token(Iterator& it) {
-	auto beg = it;
-	auto checkpoint = it;
-	while (true) {
-		parse_whitespaces(it);
-		bool ok = it->first == NEWLINE;
-		if (ok) {
-			it++;
-			checkpoint = it;
-		}
-		else {
-			it = checkpoint;
-			break;
-		}
-	}
-	return it != beg;
-}
-
-template <int token>
-bool build_normal_token(Token<token>& t, Iterator& it) {
-	bool ok = it->first == token;
-	if (ok) {
-		t.value = it->second;
-		it++;
-		parse_whitespaces(it);
-	}
-	return ok;
-}
-
-template <int token>
-bool build(Token<token>& t, Iterator& it) {
-	if constexpr (token == END)
-		return build_end_token(t, it);
-	else if constexpr (token == NEWLINE)
-		return build_newline_token(it);
-	else
-		return build_normal_token(t, it);
-}
-
-template <typename T>
-bool build(Until<T>& until, Iterator& it) {
-	T t{ until.n_indent };
-	auto save = it;
-	while (it->first != END) {
-		if (build(t, it))
-			return true;
-		++it;
-	}
-	it = save;
-	return false;
-}
-
-inline bool build(IndentToken& indent, Iterator& it) {
-	bool correct = true;
-	for (int i = 0; i < indent.n_indent; ++i) {
-		correct &= it->first == TAB;
-		if (it->first == END)
-			return false;
-		it++;
-	}
-	correct &= it->first != TAB && it->first != NEWLINE && it->first != SPACE;
-	return correct;
-}
-
-template <typename T>
-bool build(Alloc<T>& alloc, Iterator& it) {
-	T t(alloc.n_indent);
-	if (build(t, it)) {
-		alloc.value = std::move(t);
-		return true;
-	}
-	return false;
-}
-
-template <typename T>
-bool build(Opt<T>& opt, Iterator& it) {
-	T _node(opt.n_indent);
-	bool parsed = build(_node, it);
-	if (parsed)
-		opt.node.emplace(std::move(_node));
-	return true;
-}
-
-template <typename... Ands>
-bool build(And<Ands...>& and_, Iterator& it) {
-	bool failed = false;
-	auto temp = it;
-	for_each(and_.value, [&](auto& node) {
-		if (failed)
-			return;
-		if (!build(node, it)) {
-			it = temp;
-			failed = true;
-		}
-	});
-	return !failed;
-}
-
-template <typename... Ors>
-bool build(Or<Ors...>& or_, Iterator& it) {
-	bool populated = false;
-	([&] {
-		if (populated)
-			return;
-		Ors node = Ors(or_.n_indent);
-		bool built = build(node, it);
-		if (built) {
-			or_._value.emplace(std::move(node));
-			populated = true;
-		}
-	}(), ...);
-	return populated;
-}
-
-inline bool parse_empty_line(Iterator& it) {
-	auto newline = Token<NEWLINE>{ 0 };
-	return build(newline, it);
-}
-
-inline bool parse_indented_line(TemplateBody& body, Iterator& it) {
-	_ASSERT(body.n_indent == 0); // change code later to accomodate if needed but recursive templates or templates inside interfaces are not on the menu
-	bool is_indented = it->first != END && it->first == TAB;
-	if (!is_indented)
-		return false;
-	auto until_newline = Until<Token<NEWLINE>>{ body.n_indent };
-	bool has_newline = build(until_newline, it);
-	_ASSERT(has_newline); // if that doesnt work something is just wrong with the tokenizer.
-	return true;
-}
-
-inline bool parse_one_line(TemplateBody& body, Iterator& it) {
-	return parse_empty_line(it) || parse_indented_line(body, it);
-}
-
-inline bool build(TemplateBody& body, Iterator& it) {
-	// look for first line that isnt just spaces/tabs/newline and doesnt begin with a tab, leave the iterator at the beginning of that line
-	auto beg = it;
-	while (parse_one_line(body, it));
-
-	std::stringstream ss;
-	while (beg != it) {
-		ss << beg->second;
-		++beg;
-	}
-
-	body.value = std::move(ss).str();
-	return true;
-}
-
-template <typename T, typename CND, typename requiresComma>
-bool build(KNode<T, CND, requiresComma>& knode, Iterator& it) {
-	while (true) {
-		auto node = T(knode.n_indent);
-		bool parsed = build(node, it);
-		if (parsed) {
-			knode.nodes.push_back(std::move(node));
-			if constexpr (requiresComma::value) {
-				auto comma = Token<COMMA>(0);
-				parsed = build(comma, it);
-			}
-		}
-		if (!parsed)
-			break;
-	}
-	return CND::cnd(knode.nodes);
-}

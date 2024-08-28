@@ -6,40 +6,8 @@
 using T = type_template_of_typename_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::BaseTypename& t) {
-	if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end()) {
-		if (t.type == "Vector") {
-			auto x = type_of_typename(state, templated_with.at(0));
-			return_if_error(x);
-			return NodeStructs::MetaType{ NodeStructs::VectorType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
-		}
-		if (t.type == "Set") {
-			auto x = type_of_typename(state, templated_with.at(0));
-			return_if_error(x);
-			return NodeStructs::MetaType{ NodeStructs::SetType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
-		}
-		if (t.type == "Map") {
-			auto k = type_of_typename(state, templated_with.at(0));
-			return_if_error(k);
-			auto v = type_of_typename(state, templated_with.at(1));
-			return_if_error(v);
-			return NodeStructs::MetaType{ NodeStructs::MapType{
-				NonCopyableBox<NodeStructs::MetaType>{ std::move(k).value() },
-				NonCopyableBox<NodeStructs::MetaType>{ std::move(v).value() }
-			} };
-		}
-		if (t.type == "Variant") {
-			auto ts = vec_of_expected_to_expected_of_vec(templated_with
-				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
-				| to_vec());
-			return_if_error(ts);
-			return NodeStructs::MetaType{ NodeStructs::UnionType{
-				std::move(ts).value()
-			} };
-		}
-		throw;
-	}
-	if (auto it = state.state.global_namespace.templates.find(t.type); it != state.state.global_namespace.templates.end()) {
+R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typename>& templated_with, const std::string& name_to_find, const Namespace& ns) {
+	if (auto it = ns.templates.find(name_to_find); it != ns.templates.end()) {
 		const auto& templates = it->second;
 
 		// todo check if already traversed
@@ -61,8 +29,8 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				}
 			}
 			return ss.str();
-		};
-		auto args = vec_of_expected_to_expected_of_vec(templated_with 
+			};
+		auto args = vec_of_expected_to_expected_of_vec(templated_with
 			| std::views::transform([&](auto&& tn) { return transpile_typename(state, tn); })
 			| to_vec());
 		return_if_error(args);
@@ -94,7 +62,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			);
 		}
 		{
-			And<IndentToken, grammar::Function, Token<END>> f{ 1 };
+			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(f, g.it)) {
@@ -115,7 +83,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 			}
 		}
 		{
-			And<IndentToken, grammar::Type> t{ 1 };
+			And<IndentToken, grammar::Type> t{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			auto ok = build(t, g.it);
@@ -128,10 +96,23 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 					| to_vec());
 				return_if_error(templated_with_reprs);
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
+				// if exists 
+				// template <typename T> using `tmplname` = `actual exists name somehow?`<T>;
 				auto opt_error = traverse_type(state, structured_t);
 				if (opt_error.has_value())
 					return opt_error.value();
 				return NodeStructs::MetaType{ std::move(structured_t) };
+			}
+		}
+		{
+			And<IndentToken, grammar::Typename> tn{ tmpl.indent };
+			auto tokens = Tokenizer(replaced).read();
+			tokens_and_iterator g{ tokens, tokens.begin() };
+			auto ok = build(tn, g.it);
+			while (parse_empty_line(g.it));
+			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
+				auto structured_tn = getStruct(tn.get<grammar::Typename>());
+				return type_of_typename(state, structured_tn);
 			}
 		}
 		return error{
@@ -142,12 +123,61 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	else
 		return error{
 			"user error",
-			"Template not found `" + t.type + "`"
-		};
+			"Template not found `" + name_to_find + "`"
+	};
+}
+
+R T::operator()(const NodeStructs::BaseTypename& t) {
+	if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end()) {
+		if (t.type == "Vector") {
+			auto x = type_of_typename(state, templated_with.at(0));
+			return_if_error(x);
+			return NodeStructs::MetaType{ NodeStructs::VectorType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
+		}
+		if (t.type == "Set") {
+			auto x = type_of_typename(state, templated_with.at(0));
+			return_if_error(x);
+			return NodeStructs::MetaType{ NodeStructs::SetType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
+		}
+		if (t.type == "Map") {
+			auto k = type_of_typename(state, templated_with.at(0));
+			return_if_error(k);
+			auto v = type_of_typename(state, templated_with.at(1));
+			return_if_error(v);
+			return NodeStructs::MetaType{ NodeStructs::MapType{
+				NonCopyableBox<NodeStructs::MetaType>{ std::move(k).value() },
+				NonCopyableBox<NodeStructs::MetaType>{ std::move(v).value() }
+			} };
+		}
+		if (t.type == "Union") {
+			auto ts = vec_of_expected_to_expected_of_vec(templated_with
+				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
+				| to_vec());
+			return_if_error(ts);
+			return NodeStructs::MetaType{ NodeStructs::UnionType{
+				std::move(ts).value()
+			} };
+		}
+		if (t.type == "Tuple") {
+			auto ts = vec_of_expected_to_expected_of_vec(templated_with
+				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
+				| to_vec());
+			return_if_error(ts);
+			return NodeStructs::MetaType{ NodeStructs::TupleType{
+				std::move(ts).value()
+			} };
+		}
+		throw;
+	}
+	return f(state, templated_with, t.type, state.state.global_namespace);
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& t) {
-	throw;
+	auto ns_or_e = type_of_typename(state, t.name_space);
+	return_if_error(ns_or_e);
+	if (!std::holds_alternative<NodeStructs::NamespaceType>(ns_or_e.value().type._value))
+		throw;
+	return f(state, templated_with, t.name_in_name_space, std::get<NodeStructs::NamespaceType>(ns_or_e.value().type._value).name_space.get());
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
@@ -161,6 +191,18 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 	} };*/
 }
 
+R T::operator()(const NodeStructs::OptionalTypename& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::TupleTypename& type) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionTypename& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
 	throw;
 }

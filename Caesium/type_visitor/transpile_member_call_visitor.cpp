@@ -153,6 +153,10 @@ R T::operator()(const NodeStructs::Builtin& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::TupleType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
@@ -166,6 +170,10 @@ R T::operator()(const NodeStructs::EnumType& t) {
 }
 
 R T::operator()(const NodeStructs::EnumValueType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::OptionalType& t) {
 	throw;
 }
 

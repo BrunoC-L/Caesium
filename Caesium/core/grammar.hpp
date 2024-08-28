@@ -13,31 +13,32 @@ namespace grammar {
 	using String = Token<STRING>;
 	using Newline = Token<NEWLINE>;
 
-	using Enum = And<Token<ENUM>, Word, Token<COLON>, Newline, Star<Indent<And<IndentToken, Word, Newline>>>>;
+	using Enum = And<Commit<Token<ENUM>>, Word, Token<COLON>, Newline, Star<Indent<And<IndentToken, Word, Newline>>>>;
 
 	using Expression = ConditionalExpression;
-	using Import = And<Star<Token<NEWLINE>>, Token<IMPORT>, Or<Word, String>, Newline>;
-	using Alias = And<Token<USING>, Word, Token<EQUAL>, Typename, Newline>;
+	using Import = And<Commit<Token<IMPORT>>, Or<Word, String>, Newline>;
+	using Alias = And<Commit<Token<USING>>, Word, Token<EQUAL>, Typename, Newline>;
 	using ParameterCategory = Or<Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	using ArgumentCategory = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
-	using FunctionParameter = And<Typename, ParameterCategory, Word>;
+	using FunctionParameter = And<Commit<Typename>, ParameterCategory, Word>;
 	using FunctionParameters = CommaStar<FunctionParameter>;
-	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Statement>>>>;
-	using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
-	using ParenArguments = And<Token<PARENOPEN>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
-	using BraceArguments = And<Token<BRACEOPEN>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
-	using BracketArguments = And<Token<BRACKETOPEN>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
+	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement>>>>>;
+	using Function = And<Typename, Opt<ParameterCategory>, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+	using ParenArguments = And<Commit<Token<PARENOPEN>>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
+	using BraceArguments = And<Commit<Token<BRACEOPEN>>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
+	using BracketArguments = And< Commit<Token<BRACKETOPEN>>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
 	using TemplateArguments = And<Token<LT>, CommaStar<Expression>, Token<GT>>;
 
-	using BaseTypename = Or<Token<AUTO>, Word>;
-	using NamespaceTypenameExtension = And<Token<NS>, BaseTypename>;
+	using VariadicExpansionTypename = And<Word, Token<DOTS>>;
+	using NamespaceTypenameExtension = And<Token<NS>, Word>;
 	using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>>;
 	using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
+	using OptionalTypenameExtension = Token<QUESTION>;
+	using NonAutoTypename = And<Or<VariadicExpansionTypename, Word>, Star<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension, OptionalTypenameExtension>>>;
 
-	struct Typename : And<BaseTypename, Star<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension>>> {};
+	struct Typename : Or<Token<AUTO>, NonAutoTypename> {};
 
-	using MemberVariable = And<Typename, Word, Newline>;
-	//using Constructor = And<Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+	using MemberVariable = And<Typename, Opt<ParameterCategory>, Word, Newline>;
 	using TypeElement = Or<Alias/*, Function*/, MemberVariable/*, Constructor*/>;
 
 	using Construct = And<Typename, BraceArguments>;
@@ -162,24 +163,22 @@ namespace grammar {
 	>;
 
 	using Assignment = And<Expression, Token<EQUAL>, Expression>;
+	using StatementOpts = Alloc<Or<
+		VariableDeclarationStatement,
+		ExpressionStatement,
+		IfStatement,
+		ForStatement,
+		IForStatement,
+		WhileStatement,
+		BreakStatement,
+		ReturnStatement,
+		BlockStatement,
+		MatchStatement,
+		SwitchStatement,
+		Assignment
+	>>;
 
-	struct Statement : And<
-		IndentToken,
-		Alloc<Or<
-			VariableDeclarationStatement,
-			ExpressionStatement,
-			IfStatement,
-			ForStatement,
-			IForStatement,
-			WhileStatement,
-			BreakStatement,
-			ReturnStatement,
-			BlockStatement,
-			MatchStatement,
-			SwitchStatement,
-			Assignment
-		>>
-	> {};
+	struct Statement : And<IndentToken, StatementOpts> {};
 
 	using Interface = And<
 		Token<INTERFACE>,
@@ -196,7 +195,7 @@ namespace grammar {
 	>;
 
 	using Type = And<
-		Token<TYPE>,
+		Commit<Token<TYPE>>,
 		Word,
 		Token<COLON>,
 		Newline,
@@ -207,7 +206,7 @@ namespace grammar {
 	>;
 
 	using Template = And<
-		Token<TEMPLATE>,
+		Commit<Token<TEMPLATE>>,
 		Word,
 		Token<LT>,
 		CommaStar<Or<
@@ -247,9 +246,35 @@ namespace grammar {
 		Indent<Star<Or<Token<NEWLINE>, And<IndentToken, Named>>>>
 	> {};
 
+	using Exists = And<
+		Token<EXISTS>,
+		Token<COLON>,
+		Token<NEWLINE>,
+		Indent<Star<Or<Token<NEWLINE>, And<IndentToken, Named>>>>
+	>;
+
 	using File = And<
 		Star<Import>,
-		Star<Or<Token<NEWLINE>, Named>>,
+		Star<Or<Token<NEWLINE>, Named, Exists>>,
 		Token<END>
 	>;
+
+	template <typename T>
+	constexpr std::string name_of_rule() {
+	#define CASE(type, value)  if constexpr (std::is_same_v<T, type>) return value; else
+	CASE(Type, "Type")
+	CASE(Template, "Template")
+	CASE(Enum, "Enum")
+	CASE(Import, "Import")
+	CASE(Alias, "Alias")
+	CASE(ParenArguments, "ParenArguments")
+	CASE(BraceArguments, "BraceArguments")
+	CASE(BracketArguments, "BracketArguments")
+	CASE(FunctionParameter, "FunctionParameter")
+	CASE(Statement, "Statement")
+	if constexpr (std::is_same_v<T, And<Commit<IndentToken>, Alloc<Or<VariableDeclarationStatement, ExpressionStatement, IfStatement, ForStatement, IForStatement, WhileStatement, BreakStatement, ReturnStatement, BlockStatement, MatchStatement, SwitchStatement, Assignment>>>>) return "Statement"; else
+#undef CASE
+	static_assert(!(sizeof(T*)), "missing name for T");
+	}
 }
+

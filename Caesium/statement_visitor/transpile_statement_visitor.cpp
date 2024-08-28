@@ -69,14 +69,17 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 		auto type = type_of_typename(state, statement.type);
 		return_if_error(type);
 
-		auto type_repr = transpile_typename(state, statement.type);
+		auto tn = typename_of_type(state, type.value());
+		return_if_error(tn);
+
+		auto type_repr = transpile_typename(state, tn.value());
 		return_if_error(type_repr);
 
-		auto assigned_expression = [&](){
+		auto assigned_expression = [&]() {
 			if (is_aggregate_init) {
 				const auto& aggregate = std::get<NodeStructs::BraceArguments>(statement.expr.expression.get()._value);
 				auto as_construct = NodeStructs::ConstructExpression{
-					.operand = copy(statement.type),
+					.operand = copy(tn.value()),
 					.arguments = copy(aggregate.args)
 				};
 				return transpile_expression(state, variables, as_construct);
@@ -358,6 +361,8 @@ std::string case_fix<Token<INTEGER_NUMBER>>(std::string case_expr) {
 
 template <>
 std::string case_fix<Token<STRING>>(std::string case_expr) {
+	if (case_expr == "\"\\\"\"") return "'\"'";  // "\"" -> '"'
+	if (case_expr == "\"'\"")    return "'\\''"; // "'"  -> '\''
 	case_expr[0] = '\'';
 	case_expr[case_expr.length() - 1] = '\'';
 	return case_expr;

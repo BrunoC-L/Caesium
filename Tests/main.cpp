@@ -4,7 +4,6 @@
 #include "test_template_selection.hpp"
 
 int main(int argc, char** argv) {
-
 	constexpr auto bad_exit = 1;
 
 	if (argc == 1) {

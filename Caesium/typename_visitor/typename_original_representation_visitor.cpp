@@ -20,6 +20,14 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 	return ss.str();
 }
 
+R T::operator()(const NodeStructs::OptionalTypename& type) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::TupleTypename& type) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionTypename& type) {
 	std::stringstream ss;
 	bool has_prev = false;
@@ -31,4 +39,8 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 		ss << operator()(tn);
 	}
 	return ss.str();
+}
+
+R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
+	throw;
 }

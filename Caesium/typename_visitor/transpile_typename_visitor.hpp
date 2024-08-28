@@ -9,10 +9,7 @@ struct transpile_typename_visitor : TypenameVisitor<transpile_typename_visitor> 
 
 	using R = transpile_t;
 
-	R operator()(const NodeStructs::BaseTypename& t);
-	R operator()(const NodeStructs::NamespacedTypename& t);
-	R operator()(const NodeStructs::TemplatedTypename& t);
-	R operator()(const NodeStructs::UnionTypename& t);
+	TypenameVisitorDeclarations
 };
 
 transpile_t transpile_typename(

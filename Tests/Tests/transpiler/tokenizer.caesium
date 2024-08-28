@@ -36,7 +36,6 @@ Vector<TOKENVALUE> read(Tokenizer ref! tk):
 		out.push(TOKENVALUE{TOKENS::END, ""})
 	return out
 
-
 Bool isNum(Char ref c):
     return c >=? '0' and c <=? '9'
 
@@ -103,12 +102,13 @@ TOKENVALUE readToken(String ref program, Int ref! index):
             // else assume the backslash makes sense in context
             return { TOKENS::BACKSLASH, "\\" }
         // string begin
-        '\'':
+        "'":
         '`':
         '"':
             while True:
                 index = index + 1
                 if index == program.size():
+                    exit(1)
                     //throw std::runtime_error("Reached end of file before end of string, parsed so far: " + str)
                 if program.at(index) == '\\' and index + 1 <=? program.size() and program.at(index + 1) == c:
                     // backslash with open string character means dont close the string
@@ -368,7 +368,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
         
 	String num = parseInt(program, ref! index)
 	if !num.size():
-		//throw std::exception()
+		exit(1)
 	if index != program.size() and program.at(index) == '.':
 		index = index + 1
 		String part2 = parseInt(program, ref! index)

@@ -65,6 +65,7 @@ enum TOKENS {
 	FROM,
 	USING,
 	STATIC,
+	EXISTS,
 
 	RETURN,
 	FOR,
@@ -95,6 +96,7 @@ enum TOKENS {
 	VARIANT,
 	VIRTUAL,
 	BOX,
+	NONE,
 };
 
 using TOKENVALUE = std::pair<TOKENS, std::string>;
@@ -518,6 +520,7 @@ private:
 				return_token(do, DO);
 				return_token(else, ELSE);
 				return_token(enum, ENUM);
+				return_token(exists, EXISTS);
 				return_token(for, FOR);
 				return_token(if, IF);
 				return_token(interface, INTERFACE);

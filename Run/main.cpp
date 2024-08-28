@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <filesystem>
 
-#include "core/grammar.hpp"
 #include "core/structurizer.hpp"
 #include "core/toCpp.hpp"
 

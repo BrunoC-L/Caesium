@@ -59,6 +59,10 @@ R T::operator()(const NodeStructs::Builtin& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::TupleType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
@@ -67,11 +71,18 @@ R T::operator()(const NodeStructs::TemplateType& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::EnumType& tmpl) {
-	throw;
+R T::operator()(const NodeStructs::EnumType& e) {
+	for (const auto& val : e.enum_.get().values)
+		if (val == accessed)
+			return NodeStructs::MetaType{ NodeStructs::EnumValueType{.enum_ = e.enum_, .value = accessed } };
+	return error{ "user error" , "Missing enum value `" + accessed + "` in enum `" + e.enum_.get().name + "`" };
 }
 
 R T::operator()(const NodeStructs::EnumValueType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::OptionalType& t) {
 	throw;
 }
 

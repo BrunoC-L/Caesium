@@ -18,10 +18,13 @@ struct TypenameVisitor {
 			t.value._value
 		);
 	}
-	/*
-	R operator()(const NodeStructs::BaseTypename& t);
-	R operator()(const NodeStructs::NamespacedTypename& t);
-	R operator()(const NodeStructs::TemplatedTypename& t);
-	R operator()(const NodeStructs::UnionTypename& t);
-	*/
+
+#define TypenameVisitorDeclarations \
+	R operator()(const NodeStructs::BaseTypename& t);\
+	R operator()(const NodeStructs::NamespacedTypename& t);\
+	R operator()(const NodeStructs::TemplatedTypename& t);\
+	R operator()(const NodeStructs::TupleTypename& t);\
+	R operator()(const NodeStructs::UnionTypename& t);\
+	R operator()(const NodeStructs::OptionalTypename& t);\
+	R operator()(const NodeStructs::VariadicExpansionTypename& t);
 };

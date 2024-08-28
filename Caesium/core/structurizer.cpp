@@ -31,51 +31,97 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 	if (i == exts.size())
 		return std::move(res);
 	const auto& ext = exts.at(i);
-	return getStruct(t, exts, std::visit(overload(overload_default_error,
-		[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
-			return { NodeStructs::NamespacedTypename{ std::move(res), word_or_auto(e.get<Or<Token<AUTO>, grammar::Word>>()) } };
-		},
-		[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
-			return { NodeStructs::TemplatedTypename{
-				std::move(res),
-				e.get<CommaStar<Alloc<grammar::Typename>>>().get<Alloc<grammar::Typename>>()
-				| std::views::transform([&](auto&& e) { return e.get(); })
-				| std::views::transform([&](auto&& e) { return getStruct(e); })
-				| to_vec()
-			} };
-		},
-		[&](const grammar::UnionTypenameExtension& ext) -> NodeStructs::Typename {
-			auto temp = getStruct(ext.get<Alloc<grammar::Typename>>().get());
-			if (std::holds_alternative<NodeStructs::UnionTypename>(res.value._value)) {
-				if (std::holds_alternative<NodeStructs::UnionTypename>(temp.value._value))
+	return std::visit(overload(
+		[&](const NodeStructs::VariadicExpansionTypename&) {
+			return getStruct(t, exts, std::visit(overload(overload_default_error,
+				[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
+					return { NodeStructs::VariadicExpansionTypename {
+						NodeStructs::NamespacedTypename{ std::get<NodeStructs::VariadicExpansionTypename>(std::move(res).value._value).type, e.get<grammar::Word>().value }
+					} };
+				},
+				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
+					return { NodeStructs::VariadicExpansionTypename { NodeStructs::TemplatedTypename {
+						std::get<NodeStructs::VariadicExpansionTypename>(std::move(res).value._value).type,
+						e.get<CommaStar<Alloc<grammar::Typename>>>().get<Alloc<grammar::Typename>>()
+						| std::views::transform([&](auto&& e) { return e.get(); })
+						| std::views::transform([&](auto&& e) { return getStruct(e); })
+						| to_vec()
+					} } };
+				},
+				[&](const grammar::UnionTypenameExtension& ext) -> NodeStructs::Typename {
+					// variadics dont support unions
 					throw;
-				std::get<NodeStructs::UnionTypename>(res.value._value).ors.push_back(std::move(temp));
-				return std::move(res);
-			}
-			if (std::holds_alternative<NodeStructs::UnionTypename>(temp.value._value)) {
-				auto& ut = std::get<NodeStructs::UnionTypename>(temp.value._value);
-				std::vector<NodeStructs::Typename> v;
-				v.reserve(ut.ors.size());
-				v.push_back(std::move(res));
-				for (auto& o : ut.ors)
-					v.push_back(std::move(o));
-				std::swap(ut.ors, v);
-				return temp;
-			}
-			std::vector<NodeStructs::Typename> v;
-			v.push_back(std::move(res));
-			v.push_back(std::move(temp));
-			return { NodeStructs::UnionTypename{
-				std::move(v)
-			} };
+				},
+				[&](const grammar::OptionalTypenameExtension& ext) -> NodeStructs::Typename {
+					throw;
+				}
+			), ext.value()), i + 1);
+		},
+		[&](const auto&) { // just checking its not a variadic expansion
+			return getStruct(t, exts, std::visit(overload(overload_default_error,
+				[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
+					return { NodeStructs::NamespacedTypename{ std::move(res), e.get<grammar::Word>().value } };
+				},
+				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
+					return { NodeStructs::TemplatedTypename{
+						std::move(res),
+						e.get<CommaStar<Alloc<grammar::Typename>>>().get<Alloc<grammar::Typename>>()
+						| std::views::transform([&](auto&& e) { return e.get(); })
+						| std::views::transform([&](auto&& e) { return getStruct(e); })
+						| to_vec()
+					} };
+				},
+				[&](const grammar::UnionTypenameExtension& ext) -> NodeStructs::Typename {
+					auto temp = getStruct(ext.get<Alloc<grammar::Typename>>().get());
+					if (std::holds_alternative<NodeStructs::UnionTypename>(res.value._value)) {
+						if (std::holds_alternative<NodeStructs::UnionTypename>(temp.value._value))
+							throw;
+						std::get<NodeStructs::UnionTypename>(res.value._value).ors.push_back(std::move(temp));
+						return std::move(res);
+					}
+					if (std::holds_alternative<NodeStructs::UnionTypename>(temp.value._value)) {
+						auto& ut = std::get<NodeStructs::UnionTypename>(temp.value._value);
+						std::vector<NodeStructs::Typename> v;
+						v.reserve(ut.ors.size());
+						v.push_back(std::move(res));
+						for (auto& o : ut.ors)
+							v.push_back(std::move(o));
+						std::swap(ut.ors, v);
+						return temp;
+					}
+					std::vector<NodeStructs::Typename> v;
+					v.push_back(std::move(res));
+					v.push_back(std::move(temp));
+					return { NodeStructs::UnionTypename{
+						std::move(v)
+					} };
+				},
+				[&](const grammar::OptionalTypenameExtension& ext) -> NodeStructs::Typename {
+					return { NodeStructs::OptionalTypename{ std::move(res) } };
+				}
+			), ext.value()), i + 1);
 		}
-	), ext.value()), i + 1);
+	), res.value._value);
 }
 
 NodeStructs::Typename getStruct(const grammar::Typename& t) {
-	NodeStructs::Typename res = { NodeStructs::BaseTypename{ word_or_auto(t.get<Or<Token<AUTO>, grammar::Word>>()) } };
-	using opts = Or<grammar::NamespaceTypenameExtension, grammar::TemplateTypenameExtension, grammar::UnionTypenameExtension>;
-	return getStruct(t, t.get<Star<opts>>().get<opts>(), std::move(res), 0);
+	return std::visit(overload(
+		[&](const Token<AUTO>&) -> NodeStructs::Typename {
+			return { NodeStructs::BaseTypename{ "auto" } };
+		},
+		[&](const grammar::NonAutoTypename& e) -> NodeStructs::Typename {
+			NodeStructs::Typename res = std::visit(overload(
+				[&](const grammar::Word& w) -> NodeStructs::Typename {
+					return { NodeStructs::BaseTypename{ w.value } };
+				},
+				[&](const grammar::VariadicExpansionTypename& vetn) -> NodeStructs::Typename {
+					return { NodeStructs::VariadicExpansionTypename { NodeStructs::BaseTypename{ vetn.get<grammar::Word>().value}}};
+				}
+			), e.get<Or<grammar::VariadicExpansionTypename, grammar::Word>>().value());
+			using opts = Or<grammar::NamespaceTypenameExtension, grammar::TemplateTypenameExtension, grammar::UnionTypenameExtension, grammar::OptionalTypenameExtension>;
+			return getStruct(t, e.get<Star<opts>>().get<opts>(), std::move(res), 0);
+		}
+	),t.value());
 }
 
 NodeStructs::ParameterCategory getStruct(const grammar::ParameterCategory& vc) {
@@ -103,9 +149,9 @@ NodeStructs::Function getStruct(const grammar::Function& f, std::optional<NodeSt
 		.name = f.get<grammar::Word>().value,
 		.name_space = std::move(name_space),
 		.returnType = getStruct(f.get<grammar::Typename>()),
-		.parameters = f.get<grammar::FunctionParameters>().get<And<grammar::Typename, grammar::ParameterCategory, grammar::Word>>()
+		.parameters = f.get<grammar::FunctionParameters>().get<And<Commit<grammar::Typename>, grammar::ParameterCategory, grammar::Word>>()
 			| std::views::transform([&](auto&& type_and_name) { return NodeStructs::FunctionParameter{
-					getStruct(type_and_name.get<grammar::Typename>()),
+					getStruct(type_and_name.get<Commit<grammar::Typename>>()),
 					getStruct(type_and_name.get<grammar::ParameterCategory>()),
 					type_and_name.get<grammar::Word>().value
 				};
@@ -166,7 +212,8 @@ NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeSt
 		.parameters = t.get<parameters_t>().get<parameter_t>()
 			| std::views::transform([&](auto&& e) { return getTemplateParameter(e); })
 			| to_vec(),
-		.templated = t.get<TemplateBody>().value
+		.templated = t.get<TemplateBody>().value,
+		.indent = t.n_indent + 1
 	};
 }
 
@@ -185,11 +232,11 @@ NodeStructs::Alias getStruct(const grammar::Alias& f, std::optional<NodeStructs:
 	};
 }
 
-NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::Typename> name_space) {
-	auto elems = cl.get<Indent<Star<And<IndentToken, grammar::TypeElement>>>>().get_view<grammar::TypeElement>()
+NodeStructs::Type getStruct(const grammar::Type& t, std::optional<NodeStructs::Typename> name_space) {
+	auto elems = t.get<Indent<Star<And<IndentToken, grammar::TypeElement>>>>().get_view<grammar::TypeElement>()
 		| std::views::transform([&](auto&& e) { return e.value(); });
 	return {
-		.name = cl.get<grammar::Word>().value,
+		.name = t.get<grammar::Word>().value,
 		.name_space = copy(name_space),
 		.aliases = elems
 			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Alias>(e); })
@@ -244,7 +291,9 @@ NodeStructs::Enum getStruct(const grammar::Enum& e, std::optional<NodeStructs::T
 
 bool uses_auto(const NodeStructs::Function& fn);
 
-NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<NodeStructs::Typename> name_space) {
+NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<NodeStructs::Typename> name_space);
+
+NodeStructs::NameSpace getNamespaceStruct(const auto& indent_named_range, std::optional<NodeStructs::Typename> name_space, std::optional<std::string> name) {
 	std::vector<NodeStructs::Type> types;
 	std::vector<NodeStructs::Function> functions;
 	std::vector<NodeStructs::Interface> interfaces;
@@ -252,37 +301,51 @@ NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<Nod
 	std::vector<NodeStructs::Alias> aliases;
 	std::vector<NodeStructs::NameSpace> namespaces;
 	std::vector<NodeStructs::Enum> enums;
-	for (const And<IndentToken, grammar::Named>& named : ns.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get_view<And<IndentToken, grammar::Named>>()) {
+
+	std::optional<NodeStructs::Typename> composed_ns = [&]() {
+		if (name.has_value())
+			return std::optional<NodeStructs::Typename>{
+				name_space.has_value() ?
+					NodeStructs::Typename{ NodeStructs::NamespacedTypename{
+						std::move(name_space).value(),
+						name.value(),
+					} } :
+					NodeStructs::Typename{ NodeStructs::BaseTypename{ name.value() } }
+			};
+		else
+			return std::move(name_space);
+	}();
+
+	for (const And<IndentToken, grammar::Named>& named : indent_named_range) {
 		std::visit(
 			overload(
 				[&](const grammar::Type& e) {
-					types.push_back(getStruct(e, copy(name_space)));
+					types.push_back(getStruct(e, copy(composed_ns)));
 				},
 				[&](const grammar::Function& e) {
-					functions.push_back(getStruct(e, copy(name_space)));
+					functions.push_back(getStruct(e, copy(composed_ns)));
 				},
 				[&](const grammar::Interface& e) {
-					interfaces.push_back(getStruct(e, copy(name_space)));
+					interfaces.push_back(getStruct(e, copy(composed_ns)));
 				},
 				[&](const grammar::Template& e) {
-					templates.push_back(getStruct(e, copy(name_space)));
+					templates.push_back(getStruct(e, copy(composed_ns)));
 				},
 				[&](const grammar::Alias& e) {
-					aliases.push_back(getStruct(e, copy(name_space)));
+					aliases.push_back(getStruct(e, copy(composed_ns)));
 				},
 				[&](const grammar::NameSpace& e) {
-					namespaces.push_back(getStruct(e, copy(name_space)));
+					namespaces.push_back(getStruct(e, copy(composed_ns)));
 				},
 				[&](const grammar::Enum& e) {
-					enums.push_back(getStruct(e, copy(name_space)));
+					enums.push_back(getStruct(e, copy(composed_ns)));
 				}
 			), named.get<grammar::Named>().value()
 		);
 	}
 
-
 	return {
-		.name = ns.get<grammar::Word>().value,
+		.name = name.has_value() ? std::move(name).value() : "UNNAMED_NAMESPACE",
 		.name_space = copy(name_space),
 		.functions = functions
 		| std::views::filter([&](auto&& f) { return !uses_auto(f); })
@@ -302,8 +365,26 @@ NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<Nod
 	};
 }
 
+NodeStructs::NameSpace getStruct(const grammar::NameSpace& ns, std::optional<NodeStructs::Typename> name_space) {
+	return getNamespaceStruct(
+		ns.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get<And<IndentToken, grammar::Named>>(),
+		std::move(name_space),
+		ns.get<grammar::Word>().value
+	);
+}
+
+NodeStructs::Exists getStruct(const grammar::Exists& e) {
+	return NodeStructs::Exists{
+		getNamespaceStruct(
+			e.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get<And<IndentToken, grammar::Named>>(),
+			std::nullopt,
+			std::nullopt
+		)
+	};
+}
+
 NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
-	using T = Star<Or<Token<NEWLINE>, grammar::Named>>;
+	using T = Star<Or<Token<NEWLINE>, grammar::Named, grammar::Exists>>;
 	auto t = f.get<T>().get_view<grammar::Named>()
 		| std::views::transform([&](auto&& e) { return e.value(); })
 		;
@@ -316,6 +397,9 @@ NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName) {
 
 	return NodeStructs::File{
 		.imports = f.get<Star<grammar::Import>>().get<grammar::Import>()
+			| std::views::transform([&](auto&& e) { return getStruct(e); })
+			| to_vec(),
+		.exists = f.get<T>().get_view<grammar::Exists>()
 			| std::views::transform([&](auto&& e) { return getStruct(e); })
 			| to_vec(),
 		.content = NodeStructs::NameSpace{
@@ -675,16 +759,21 @@ NodeStructs::Expression getStatementStruct(const grammar::ExpressionStatement& s
 	return getExpressionStruct(statement);
 }
 
+auto getStatementStruct(const Expect<grammar::Statement>& statement) {
+	const grammar::Statement& st = statement;
+	return getStatementStruct(st);
+}
+
 NodeStructs::VariableDeclarationStatement getStatementStruct(const grammar::VariableDeclarationStatement& statement) {
 	return { getStruct(statement.get<grammar::Typename>()), statement.get<grammar::Word>().value, getExpressionStruct(statement.get<grammar::Expression>()) };
 }
 
 std::vector<NodeStructs::Statement> getStatements(const grammar::ColonIndentCodeBlock& code) {
-	return code.get<Indent<Star<Or<Token<NEWLINE>, grammar::Statement>>>>().get<Or<Token<NEWLINE>, grammar::Statement>>()
+	return code.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement>>>>>().get<Or<Token<NEWLINE>, Expect<grammar::Statement>>>()
 		| std::views::transform([&](auto&& e) { return e.value(); })
-		| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Statement>(e); })
-		| std::views::transform([&](auto&& e) { return std::get<grammar::Statement>(e); })
-		| std::views::transform([&](auto&& e) { return getStatementStruct(e); })
+		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement>>(e); })
+		| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement>>(e); })
+		| std::views::transform([&](const Expect<grammar::Statement>& e) { return getStatementStruct(e); })
 		| to_vec();
 }
 
@@ -763,8 +852,8 @@ NodeStructs::MatchCase getCase(const auto& typenames, const auto& statements) {
 		| to_vec(),
 		statements
 		| std::views::transform([&](auto&& e) { return e.value(); })
-		| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Statement>(e); })
-		| std::views::transform([&](auto&& e) { return std::get<grammar::Statement>(e); })
+		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement>>(e); })
+		| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement>>(e); })
 		| std::views::transform([&](auto&& e) { return getStatementStruct(e); })
 		| to_vec()
 	};
@@ -777,7 +866,7 @@ std::vector<NodeStructs::MatchCase> getCases(const Indent<Plus<And<IndentToken, 
 		const auto& [_, typenames, statements] = and_node.value;
 		res.push_back(getCase(
 			typenames.nodes,
-			statements.get<Indent<Star<Or<Token<NEWLINE>, grammar::Statement>>>>().get_view<Or<Token<NEWLINE>, grammar::Statement>>()
+			statements.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement>>>>>().get_view<Or<Token<NEWLINE>, Expect<grammar::Statement>>>()
 		));
 	}
 	return res;
@@ -849,18 +938,5 @@ NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 		[](const auto& statement) -> NodeStructs::Statement {
 			return { getStatementStruct(statement) };
 		},
-		statement.get<Alloc<Or<
-			grammar::VariableDeclarationStatement,
-			grammar::ExpressionStatement,
-			grammar::IfStatement,
-			grammar::ForStatement,
-			grammar::IForStatement,
-			grammar::WhileStatement,
-			grammar::BreakStatement,
-			grammar::ReturnStatement,
-			grammar::BlockStatement,
-			grammar::MatchStatement,
-			grammar::SwitchStatement,
-			grammar::Assignment
-		>>>().get().value()) };
+		statement.get<grammar::StatementOpts>().get().value()) };
 }

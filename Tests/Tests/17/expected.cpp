@@ -13,7 +13,7 @@ String name;
 };
 
 struct Named {
-	Variant<Dog, Cat> value;
+	Union<Dog, Cat> value;
 };
 
 Int _redirect_main(const Vector<String>& s);

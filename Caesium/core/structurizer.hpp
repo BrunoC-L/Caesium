@@ -1,6 +1,6 @@
 #pragma once
 #include "node_structs.hpp"
-#include "grammar.hpp"
+#include "parse.hpp"
 #include "../utility/overload.hpp"
 
 NodeStructs::Import getStruct(const grammar::Import& f);
@@ -60,8 +60,6 @@ NodeStructs::Expression getExpressionStruct(const grammar::OrExpression& stateme
 NodeStructs::Expression getExpressionStruct(const grammar::ConditionalExpression& statement);
 
 NodeStructs::Expression getExpressionStruct(const grammar::ExpressionStatement& statement);
-
-NodeStructs::Statement getStatementStruct(const grammar::Statement& statement);
 
 NodeStructs::Expression getStatementStruct(const grammar::ExpressionStatement& statement);
 

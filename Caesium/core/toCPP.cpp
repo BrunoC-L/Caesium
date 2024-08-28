@@ -3,12 +3,18 @@
 #include "../utility/overload.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 #include "../utility/vec_of_variant_to_optional_vector_single_type.hpp"
+#include "../utility/replace_all.hpp"
 
 #include "toCPP.hpp"
 #include "builtins.hpp"
 #include "default_includes.hpp"
 
 #include <iostream>
+
+//template <typename T>
+//T& get(std::reference_wrapper<T> ref) {
+//	return ref.get();
+//};
 
 void add_impl(auto& v, auto&& e) {
 	if (std::find_if(v.begin(), v.end(), [&](const auto& x) { return cmp(x, e) == std::weak_ordering::equivalent; }) != v.end())
@@ -57,7 +63,8 @@ void add(Namespace& name_space, Namespace&& ns) {
 void add_builtins(Namespace& name_space) {
 	builtins _builtins;
 
-	add(name_space, std::move(_builtins.builtin_variant));
+	add(name_space, std::move(_builtins.builtin_tuple));
+	add(name_space, std::move(_builtins.builtin_union));
 
 	add(name_space, std::move(_builtins.builtin_vector));
 	add(name_space, std::move(_builtins.builtin_set));
@@ -108,8 +115,11 @@ std::optional<error> insert_all_named_recursive_with_imports(
 	for (const auto& e : to_insert.templates)
 		add(named, copy(e));
 
-	for (const auto& e : to_insert.namespaces)
-		insert_all_named_recursive_with_imports(named.namespaces.at(e.name), e);
+	for (const auto& e : to_insert.namespaces) {
+		Namespace ns{};
+		insert_all_named_recursive_with_imports(ns, e);
+		named.namespaces[e.name] = std::move(ns);
+	}
 
 	for (const auto& e : to_insert.enums)
 		add(named, copy(e));
@@ -145,6 +155,11 @@ std::optional<error> insert_all_named_recursive_with_imports(
 			auto x = insert_all_named_recursive_with_imports(named, file.content);
 			if (x.has_value())
 				return x.value();
+			for (const auto& exists : file.exists) {
+				auto x = insert_all_named_recursive_with_imports(named, exists.global_exists);
+				if (x.has_value())
+					return x.value();
+			}
 
 			for (const auto& i : file.imports) {
 				auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, i.imported , inserted);
@@ -203,6 +218,66 @@ std::optional<error> insert_aliases_recursive_with_imports(
 	};
 }
 
+void mark_exists_as_traversed(transpilation_state& state, const NodeStructs::NameSpace& exists, std::stringstream& ss) {
+	for (const auto& e : exists.types) {
+		if (e.name_space.has_value()) {
+			auto str_or_e = transpile_typename({ state }, e.name_space.value());
+			if (str_or_e.has_error())
+				throw;
+			ss << "using " << str_or_e.value() << "__" << e.name << " = ";
+			std::string aliases_to = replace_all(std::move(str_or_e).value(), "__", "::");
+			ss << aliases_to << "::" << e.name << ";\n";
+		}
+		state.traversed_types.insert(copy(e));
+	}
+
+	for (const auto& e : exists.templates) {
+		bool is_type = true;
+		if (is_type) {
+			if (e.name_space.has_value()) {
+				auto str_or_e = transpile_typename({ state }, e.name_space.value());
+				if (str_or_e.has_error())
+					throw;
+				ss << "using " << str_or_e.value() << "__" << e.name << " = ";
+				std::string aliases_to = replace_all(std::move(str_or_e).value(), "__", "::");
+				ss << aliases_to << "::" << e.name << "<Ts...>;\n";
+			}
+		}
+		else { // assume function
+			if (e.name_space.has_value()) {
+				auto str_or_e = transpile_typename({ state }, e.name_space.value());
+				if (str_or_e.has_error())
+					throw;
+				ss << "decltype(auto) " << str_or_e.value() << "__" << e.name << "(auto&&... args) { return ";
+				std::string aliases_to = replace_all(std::move(str_or_e).value(), "__", "::");
+				ss << aliases_to << "::" << e.name << "(std::forward<decltype(args)...>(args...)); }\n";
+			}
+		}
+	}
+
+	for (const auto& e : exists.functions)
+		state.traversed_functions.insert(copy(e));
+
+	for (const auto& e : exists.functions_using_auto)
+		throw;
+
+	for (const auto& e : exists.interfaces)
+		state.traversed_interfaces.insert(copy(e));
+
+	for (const auto& e : exists.blocks)
+		throw;
+
+	for (const auto& e : exists.enums)
+		throw;
+	
+	for (const auto& e : exists.namespaces)
+		mark_exists_as_traversed(state, e, ss);
+}
+
+void mark_exists_as_traversed(transpilation_state& state, const NodeStructs::Exists& exists, std::stringstream& ss) {
+	mark_exists_as_traversed(state, exists.global_exists, ss);
+}
+
 transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 	for (const auto& file : project)
 		for (const auto& fn : file.content.functions)
@@ -232,11 +307,17 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 
 				traverse_builtins(state);
 
+				std::stringstream exists_aliases;
+
+				for (const auto& file : project)
+					for (const auto& exists : file.exists)
+						mark_exists_as_traversed(state, exists, exists_aliases);
+
 				transpile_declaration_definition_t main_transpilation_result = transpile_main({ state, 0 }, fn);
 				return_if_error(main_transpilation_result);
 
 				std::stringstream cpp;
-				cpp <<  "#include \"defaults.hpp\"\n\n";
+				cpp << "#include \"defaults.hpp\"\n\n" << exists_aliases.str();
 
 				{
 					std::stringstream declarations;
@@ -274,7 +355,7 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 						auto members_repr = transpile_typenames(unindented, v.value());
 						return_if_error(members_repr);
 						declarations << "struct " << i.name << ";\n";
-						definitions << "struct " << i.name << " {\n\tVariant<" << members_repr.value() << "> value;\n};\n";
+						definitions << "struct " << i.name << " {\n\tUnion<" << members_repr.value() << "> value;\n};\n";
 					}
 					cpp << declarations.str() << "\n"
 						<< definitions.str() << "\n";
@@ -387,6 +468,12 @@ transpile_declaration_definition_t transpile(
 				{ NodeStructs::PrimitiveType{ false } }
 			}
 		);
+		variables["None"].push_back(
+			{
+				NodeStructs::Value{},
+				{ NodeStructs::PrimitiveType{ NodeStructs::empty_optional_t{} } }
+			}
+		);
 	}
 	auto return_typename = transpile_typename(state, fn.returnType);
 	return_if_error(return_typename);
@@ -419,8 +506,10 @@ transpile_declaration_definition_t transpile(
 ) {
 	std::stringstream h, cpp;
 	if (type.name_space.has_value()) {
-		h << "struct " << transpile_typename(state, type.name_space.value()).value() << "__" << type.name << ";\n";
-		cpp << "struct " << transpile_typename(state, type.name_space.value()).value() << "__" << type.name << " {\n";
+		auto ns_repr_or_e = transpile_typename(state, type.name_space.value());
+		return_if_error(ns_repr_or_e);
+		h << "struct " << ns_repr_or_e.value() << "__" << type.name << ";\n";
+		cpp << "struct " << ns_repr_or_e.value() << "__" << type.name << " {\n";
 	}
 	else {
 		h << "struct " << type.name << ";\n";
@@ -656,7 +745,6 @@ std::string template_name(std::string original_name, const std::vector<NodeStruc
 		| to_vec());
 }
 
-
 Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 	transpilation_state_with_indent state_,
 	const NodeStructs::MetaType& parameter,
@@ -666,6 +754,83 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 	return std::visit(
 		overload(
 			[&](const auto& e, const auto& u, const auto& state) -> R {
+				throw;
+			},
+			[&](const NodeStructs::OptionalType& e, const auto& u, const auto& state) -> R {
+				return assigned_to(state_, e.value_type, { copy(u) });
+			},
+			[&](const NodeStructs::OptionalType& e, const NodeStructs::PrimitiveType& u, const auto& state) -> R {
+				if (std::holds_alternative<NodeStructs::empty_optional_t>(u.value._value))
+					return directly_assignable{};
+				return assigned_to(state_, e.value_type, { copy(u) });
+			},
+			[&](const NodeStructs::TupleType& e, const NodeStructs::TupleType& u, const auto& state) -> R {
+				throw;
+			},
+			[&](const NodeStructs::TupleType& e, const NodeStructs::AggregateType& u, const auto& state) -> R {
+				auto tn_or_e = typename_of_type(state, e);
+				if (tn_or_e.has_error())
+					throw;
+				auto name_or_e = transpile_typename(state, tn_or_e.value());
+				if (name_or_e.has_error())
+					throw;
+
+				if (e.arguments.size() != u.arguments.size())
+					return not_assignable{};
+				std::vector<R> assign_ts;
+				assign_ts.reserve(e.arguments.size());
+				bool is_directly_assignable = true;
+				for (size_t i = 0; i < e.arguments.size(); ++i) {
+					auto assign_t = assigned_to(state, e.arguments.at(i), u.arg_types.at(i))._value;
+					if (std::holds_alternative<not_assignable>(assign_t))
+						return not_assignable{};
+					else if (std::holds_alternative<requires_conversion>(assign_t))
+						is_directly_assignable = false;
+					assign_ts.push_back(std::move(assign_t));
+				}
+				if (is_directly_assignable)
+					return directly_assignable{};
+				else {
+					return requires_conversion{
+						[T = copy(e), s = name_or_e.value(), assign_ts = std::move(assign_ts)]
+						(transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
+							if (!std::holds_alternative<NodeStructs::BraceArguments>(expr.expression.get()._value))
+								throw;
+							const auto& assumed_aggregate = std::get<NodeStructs::BraceArguments>(expr.expression.get()._value);
+							std::stringstream ss;
+							std::vector<R>& non_const_assign_ts = const_cast<std::vector<R>&>(assign_ts);
+							for (int i = 0; i < assign_ts.size(); ++i) {
+								R& assign_t = non_const_assign_ts.at(i);
+								const NodeStructs::FunctionArgument& expr = assumed_aggregate.args.at(i);
+								std::visit(overload(
+									[&](auto& assignable) -> transpile_expression_information_t {
+										auto expr_info = [&]() {
+											if constexpr (std::is_same_v<std::remove_cvref_t<decltype(assignable)>, requires_conversion>)
+												return assignable.converter(state, variables, expr.expr); // todo doesnt use expr.cat
+											else
+												return transpile_arg(state, variables, expr);
+										}();
+										return_if_error(expr_info);
+										if (!std::holds_alternative<non_type_information>(expr_info.value()))
+											throw;
+										const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
+										ss << expr_info_ok.representation << ", ";
+									},
+									[](not_assignable&) -> transpile_expression_information_t {
+										throw;
+									}
+								), assign_t._value);
+							}
+							return expression_information{ non_type_information{
+								.type = { std::move(const_cast<decltype(T)&>(T))},
+								.representation = s + "{" + ss.str() + "}",
+								.value_category = NodeStructs::Value{}
+							} };
+						}
+					};
+				}
+			},
+			[&](const NodeStructs::TupleType& e, const NodeStructs::Type& u, const auto& state) -> R {
 				throw;
 			},
 			[&](const NodeStructs::Type& e, const NodeStructs::AggregateType& u, const auto& state) -> R {
@@ -719,7 +884,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 								), assign_t._value);
 							}
 							return expression_information{ non_type_information{
-								.type = { std::move(const_cast<NodeStructs::Type&>(T)) },
+								.type = { std::move(const_cast<decltype(T)&>(T)) },
 								.representation = s + "{" + ss.str() + "}",
 								.value_category = NodeStructs::Value{}
 							} };
@@ -939,6 +1104,9 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 				},
 				[&](const NodeStructs::void_t&) -> std::string {
 					return "String(\"Void\")";
+				},
+				[&](const NodeStructs::empty_optional_t&) -> std::string {
+					return "String(\"None\")";
 				}
 			),
 			primitive_type.value._value
@@ -995,6 +1163,24 @@ static bool uses_auto(const NodeStructs::UnionTypename& t) {
 		if (uses_auto(param))
 			return true;
 	return false;
+}
+
+static bool uses_auto(const NodeStructs::TupleTypename& t) {
+	for (const auto& param : t.members)
+		if (uses_auto(param))
+			return true;
+	return false;
+}
+
+static bool uses_auto(const NodeStructs::OptionalTypename& t) {
+	return uses_auto(t.type.get());
+}
+
+static bool uses_auto(const NodeStructs::VariadicExpansionTypename& t) {
+	auto res = uses_auto(t.type.get());
+	if (res)
+		throw;
+	return res;
 }
 
 bool uses_auto(const NodeStructs::Typename& t) {
@@ -1271,6 +1457,9 @@ NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& pr
 		},
 		[&](const NodeStructs::void_t&) {
 			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" } };
+		},
+		[&](const NodeStructs::empty_optional_t&) {
+			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "None" } };
 		},
 		[&](const char&) {
 			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Char" } };

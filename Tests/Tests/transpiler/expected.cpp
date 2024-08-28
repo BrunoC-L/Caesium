@@ -99,7 +99,7 @@ Int n_indent;
 };
 
 struct Or__Token__TOKENS__WORD__Int {
-Variant<Token__TOKENS__WORD, Int> _value;
+Union<Token__TOKENS__WORD, Int> _value;
 };
 
 struct Tokenizer {
@@ -204,10 +204,11 @@ Pair__Int__String readToken(const String& program, Int& index) {
 			return Pair__Int__String{TOKENS__BACKSLASH, String{Char{ '\\' }}, };
 		case '\'':
 		case '`':
-		case '\"':
+		case '"':
 			while (True) {
 				index = (index + 1);
 				if (index == program.size()) {
+					exit(1);
 				}
 				if (program.at(index) == Char{ '\\' } || (index + 1) <= program.size() || program.at((index + 1)) == c) {
 					index = (index + 1);
@@ -520,6 +521,7 @@ Pair__Int__String readToken(const String& program, Int& index) {
 	}
 	String num = parseInt(program, index);
 	if (!num.size()) {
+		exit(1);
 	}
 	if (index != program.size() || program.at(index) == Char{ '.' }) {
 		index = (index + 1);

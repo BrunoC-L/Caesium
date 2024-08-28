@@ -22,6 +22,14 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 	return ss.str();
 }
 
+R T::operator()(const NodeStructs::OptionalTypename& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::TupleTypename& type) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionTypename& t) {
 	throw;
 	auto args = t.ors
@@ -30,4 +38,8 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 	for (const auto& arg : args)
 		ss << "_" << arg;
 	return ss.str();
+}
+
+R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
+	throw;
 }

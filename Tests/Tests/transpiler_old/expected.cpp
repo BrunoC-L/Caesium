@@ -3,16 +3,16 @@
 
 
 Bool test_parse();
-Bool test_transpile_all_folders(const Vector<Variant<builtin_filesystem_directory, builtin_filesystem_file>>& folders);
+Bool test_transpile_all_folders(const Vector<Union<builtin_filesystem_directory, builtin_filesystem_file>>& folders);
 Bool test_transpile_folder(const builtin_filesystem_directory& dir);
 Int _redirect_main(const Vector<String>& args);
 
 Bool test_parse() {
 	return False;
 };
-Bool test_transpile_all_folders(const Vector<Variant<builtin_filesystem_directory, builtin_filesystem_file>>& folders) {
+Bool test_transpile_all_folders(const Vector<Union<builtin_filesystem_directory, builtin_filesystem_file>>& folders) {
 	for (auto&& entry : folders) {
-		const Variant<builtin_filesystem_directory, builtin_filesystem_file>& matchval4 = entry;
+		const Union<builtin_filesystem_directory, builtin_filesystem_file>& matchval4 = entry;
 		if (std::holds_alternative<builtin_filesystem_directory>(matchval4)) {
 			const builtin_filesystem_directory& dir = std::get<builtin_filesystem_directory>(matchval4);
 			return test_transpile_folder(dir);

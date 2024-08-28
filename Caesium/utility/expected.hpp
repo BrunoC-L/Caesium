@@ -20,9 +20,8 @@ struct error {
 	error(std::string error_class, std::string message) :
 		error_class(std::move(error_class)), message(std::move(message)), cause(std::nullopt) {}
 
-	template <typename E>
-	error(std::string error_class, std::string message, E&& cause) :
-		error_class(std::move(error_class)), message(std::move(message)), cause(std::forward<E>(cause)) {}
+	error(std::string error_class, std::string message, error cause) :
+		error_class(std::move(error_class)), message(std::move(message)), cause(std::move(cause)) {}
 
 	bool has_underlying_error() const {
 		return cause.has_value();
@@ -37,11 +36,11 @@ struct error {
 	}
 
 	error wrap(std::string error_class, std::string message) && {
-		return error{ error_class, message, std::move(*this) };
+		return error{ std::move(error_class), std::move(message), std::move(*this) };
 	}
 
 	error wrap(std::string error_class, std::string message) const& {
-		return error{ error_class, message, error{ *this } };
+		return error{ std::move(error_class), std::move(message), *this };
 	}
 };
 
@@ -77,42 +76,37 @@ public:
 		return !has_value();
 	}
 
-	/*template <typename Self>
-	decltype(auto) raw(this Self&& self) {
-		return std::forward<Self>(self).value_or_error;
-	}*/
-
 	template <typename Self>
 	decltype(auto) value(this Self&& self) {
 		return std::get<value_type>(std::forward<Self>(self).value_or_error);
 	}
-
-	/*value_type& value()& {
-		return std::get<value_type>(value_or_error);
-	}
-
-	const value_type& value() const& {
-		return std::get<value_type>(value_or_error);
-	}
-
-	value_type value()&& {
-		return std::get<value_type>(std::move(value_or_error));
-	}*/
 
 	template <typename Self>
 	decltype(auto) error(this Self&& self) {
 		return std::get<error_type>(std::forward<Self>(self).value_or_error);
 	}
 
-	decltype(auto) transform(auto&& f) {
+	template <bool, typename, typename>
+	struct select;
+
+	template <typename T, typename U>
+	struct select<true, T, U> {
+		using type = T;
+	};
+
+	template <typename T, typename U>
+	struct select<false, T, U> {
+		using type = U;
+	};
+
+	template <typename Self>
+	decltype(auto) transform(this Self&& self, auto&& f) {
 		using transform_return_type = decltype(f(std::declval<value_type>()));
-		if constexpr (is_specialization<transform_return_type, expected>::value) {
-			using return_type = transform_return_type;
-			return has_value() ? return_type{ f(value()) } : return_type{ error() };
-		}
-		else {
-			using return_type = expected<transform_return_type>;
-			return has_value() ? return_type{ f(value()) } : return_type{ error() };
-		}
+		using return_type = select<
+			is_specialization<transform_return_type, expected>::value,
+			transform_return_type,
+			expected<transform_return_type>
+		>::type;
+		return std::forward<Self>(self).has_value() ? return_type{ f(std::forward<Self>(self).value()) } : return_type{ std::forward<Self>(self).error() };
 	}
 };

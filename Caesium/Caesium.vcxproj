@@ -168,6 +168,7 @@
   <ItemGroup>
     <ClInclude Include="core\builtins.hpp" />
     <ClInclude Include="core\default_includes.hpp" />
+    <ClInclude Include="core\parse.hpp" />
     <ClInclude Include="expression_visitor\expression_original_representation_visitor.hpp" />
     <ClInclude Include="typename_visitor\typename_for_template_visitor.hpp" />
     <ClInclude Include="typename_visitor\typename_original_representation_visitor.hpp" />

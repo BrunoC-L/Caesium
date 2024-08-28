@@ -10,7 +10,7 @@ R T::operator()(const NodeStructs::Type& t) {
 			[&](const auto& m) { return m.name == property_name; }
 		); it != t.member_variables.end())
 		return type_of_typename(state, it->type)
-			.transform([](auto&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
+			.transform([](NodeStructs::MetaType&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 		const auto& fn = it->second.back();
 		throw;
@@ -61,6 +61,10 @@ R T::operator()(const NodeStructs::Builtin& t) {
 	throw;
 }
 
+R T::operator()(const NodeStructs::TupleType& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }
@@ -74,6 +78,10 @@ R T::operator()(const NodeStructs::EnumType& tmpl) {
 }
 
 R T::operator()(const NodeStructs::EnumValueType& tmpl) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::OptionalType& t) {
 	throw;
 }
 

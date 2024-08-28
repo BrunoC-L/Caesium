@@ -76,6 +76,11 @@ bool test_parse() {
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E<E<E<E < E<   E,>>,  > >,E < E < E<  E< E ,> >,>>>");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E<F<H,I>>::G");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "A | B");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "A?");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "std::reference_wrapper?");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "std::reference_wrapper<DB> ?");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "Tuple<std::reference_wrapper<DB> ?>");
+
 
 	ok &= test_parse_correct<TemplateTypenameExtension>(__LINE__, 0, "<>");
 	ok &= test_parse_correct<TemplateTypenameExtension>(__LINE__, 0, "<E>");
@@ -102,8 +107,8 @@ bool test_parse() {
 	ok &= test_parse_correct<Indent<Star<Statement>>>(__LINE__, 0, "\tx");
 	ok &= test_parse_correct<Indent<And<IndentToken, Word>>>(__LINE__, 0, "\tx");
 	ok &= test_parse_correct<IndentToken, Word>(__LINE__, 1, "\tx");
-	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n");
 	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n\tb");
+	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n");
 	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n\tb\nelse:\n\tc\n");
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for a in b:\n\tif a:\n\t\tb\n");
 	ok &= test_parse_correct<ForStatement>(__LINE__, 0, "for i in arr:\n");
@@ -132,6 +137,20 @@ bool test_parse() {
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tE<F<H,I>>::G member1");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type B:");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type Token:\n\tString value\n\tInt n_indent\n");
+	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tT services");
+	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider:\n\tTuple<std::reference_wrapper<DB>> services");
+	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tTuple<std::reference_wrapper<DB>> services");
+	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tstd::reference_wrapper<DB> services");
+	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tstd::reference_wrapper<DB> ? services");
+	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tTuple<std::reference_wrapper<DB> ?> services");
+
+	
+	
+
+	ok &= test_parse_correct<Exists>(__LINE__, 0, "exists:\n");
+	ok &= test_parse_correct<Exists>(__LINE__, 0, "exists:\n\tsf:\n");
+	ok &= test_parse_correct<Exists>(__LINE__, 0, "exists:\n\tsf:\n\t\ttype sf_time:\n");
+	ok &= test_parse_correct<NameSpace>(__LINE__, 0, "sf:\n");
 
 	ok &= test_parse_correct<File>(__LINE__, 0, "type A:\n\nInt main(Vector<String> ref s):\n");
 	ok &= test_parse_correct<File>(__LINE__, 0, "\nint main():\n");

@@ -5,7 +5,6 @@
 #include <sstream>
 
 #include "core/structurizer.hpp"
-#include "core/grammar.hpp"
 #include "core/toCpp.hpp"
 #include "first_diff.hpp"
 
@@ -24,27 +23,70 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 	std::vector<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = grammar::File(0);
-	bool nodeBuilt = build(file, g.it);
-	bool programReadEntirely = g.it == g.tokens.end();
-	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
-		programReadEntirely = ++g.it == g.tokens.end();
+	try {
+		bool nodeBuilt = build(file, g.it);
+		bool programReadEntirely = g.it == g.tokens.end();
+		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
+			programReadEntirely = ++g.it == g.tokens.end();
 
-	if (nodeBuilt && programReadEntirely)
-		return getStruct(file, filename);
-	else {
-		std::cout << folder_name
-			<< " built: " << colored_text_from_bool(nodeBuilt)
-			<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
+		if (nodeBuilt && programReadEntirely)
+			return getStruct(file, filename);
+		else {
+			std::cout << folder_name
+				<< " built: " << colored_text_from_bool(nodeBuilt)
+				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
-		std::cout << caesiumProgram << "\n\n";
-		auto it = g.tokens.begin();
-		while (it != g.it) {
-			std::cout << it->second << " ";
-			++it;
+			std::cout << caesiumProgram << "\n\n";
+			auto it = g.tokens.begin();
+			while (it != g.it) {
+				std::cout << it->second << " ";
+				++it;
+			}
+			std::cout << "\n";
+			return std::nullopt;
 		}
-		std::cout << "\n";
-		return std::nullopt;
 	}
+	catch (const parse_error& e) {
+		size_t line = 1;
+		{
+			auto it = g.tokens.begin();
+			while (it != e.beg) {
+				for (const char& c : it->second)
+					if (c == '\n')
+						++line;
+				++it;
+			}
+		}
+		std::stringstream ss;
+		ss << "Unable to parse "
+			<< e.name_of_rule
+			<< "\nin file '" << folder_name << '/' << filename
+			<< "'\non line " << line
+			<< "\nContent was: \n";
+		auto it = e.beg;
+		while (it != g.it)
+			ss << (it++)->second;
+		ss << "\n";
+		throw std::runtime_error(ss.str());
+	}
+}
+
+bool test_transpile_error_parse_error(const std::filesystem::path& folder, const std::runtime_error& e) {
+	auto folder_name = folder.filename().string();
+	auto expected_error_opt = open_read(folder / "expected_error.txt");
+	if (!expected_error_opt.has_value())
+		throw;
+	const auto& expected_error = expected_error_opt.value();
+
+	std::string_view error = e.what();
+	auto first_diff_error = first_diff(error, expected_error);
+	bool error_ok = error.size() == expected_error.size() && error.size() == first_diff_error;
+	if (!error_ok) {
+		std::cout << folder_name << " transpiled: " << colored_text_from_bool(false) << "\n";
+		auto e_file = std::ofstream{ folder / "produced_error.txt" };
+		e_file << error;
+	}
+	return error_ok;
 }
 
 bool test_transpile_error(const std::filesystem::path& folder) {
@@ -55,10 +97,15 @@ bool test_transpile_error(const std::filesystem::path& folder) {
 			auto caesium_opt = open_read(file.path());
 			if (!caesium_opt.has_value())
 				return false;
-			auto file_opt = create_file_struct(folder.filename().string(), caesium_opt.value(), file.path().filename().string());
-			if (!file_opt.has_value())
-				return false;
-			vec.push_back(std::move(file_opt).value());
+			try {
+				auto file_opt = create_file_struct(folder.filename().string(), caesium_opt.value(), file.path().filename().string());
+				if (!file_opt.has_value())
+					return false;
+				vec.push_back(std::move(file_opt).value());
+			}
+			catch (const std::runtime_error& e) {
+				return test_transpile_error_parse_error(folder, e);
+			}
 		}
 
 	if (vec.size() == 0) {
@@ -94,6 +141,15 @@ bool test_transpile_error(const std::filesystem::path& folder) {
 	}
 }
 
+bool test_transpile_no_error_parse_error(const std::filesystem::path& folder, const std::runtime_error& e) {
+	auto folder_name = folder.filename().string();
+	std::string_view err = e.what();
+	auto e_file = std::ofstream{ folder / "produced_error.txt" };
+	e_file << err;
+	std::cout << folder_name << " transpiled: " << colored_text_from_bool(false) << "\n";
+	return false;
+}
+
 bool test_transpile_no_error(const std::filesystem::path& folder) {
 	auto folder_name = folder.filename().string();
 	std::vector<NodeStructs::File> vec;
@@ -102,10 +158,15 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 			auto caesium_opt = open_read(file.path());
 			if (!caesium_opt.has_value())
 				return false;
-			auto file_opt = create_file_struct(folder.filename().string(), caesium_opt.value(), file.path().filename().string());
-			if (!file_opt.has_value())
-				return false;
-			vec.push_back(std::move(file_opt).value());
+			try {
+				auto file_opt = create_file_struct(folder.filename().string(), caesium_opt.value(), file.path().filename().string());
+				if (!file_opt.has_value())
+					return false;
+				vec.push_back(std::move(file_opt).value());
+			}
+			catch (const std::runtime_error& e) {
+				return test_transpile_no_error_parse_error(folder, e);
+			}
 		}
 
 	if (vec.size() == 0) {
@@ -137,6 +198,7 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 		bool ok = /*header_ok && */cpp_ok;
 		if (!ok) {
 			std::cout << folder_name << " transpiled: " << colored_text_from_bool(ok) << "\n";
+			print_first_diff(expected_cpp, cpp, first_diff_cpp);
 			/*if (!header_ok) {
 				auto h_file = std::ofstream{ folder / "produced.hpp" };
 				h_file << header;

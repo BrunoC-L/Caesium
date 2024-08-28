@@ -12,7 +12,7 @@ using Void = void;
 using Floating = double;
 template <typename First, typename Second> using Pair = std::pair<First, Second>;
 #include <variant>
-template <typename... Ts> using Variant = std::variant<Ts...>;
+template <typename... Ts> using Union = std::variant<Ts...>;
 #include <vector>
 template <typename T> using Vector = std::vector<T>;
 #include <string>
@@ -83,8 +83,8 @@ struct builtin_filesystem_directory {
 	std::filesystem::directory_entry e;
 };
 
-Vector<Variant<builtin_filesystem_file, builtin_filesystem_directory>> filesystem__entries(const builtin_filesystem_directory& dir) {
-	Vector<Variant<builtin_filesystem_file, builtin_filesystem_directory>> res{};
+Vector<Union<builtin_filesystem_file, builtin_filesystem_directory>> filesystem__entries(const builtin_filesystem_directory& dir) {
+	Vector<Union<builtin_filesystem_file, builtin_filesystem_directory>> res{};
 	for (const auto& file_or_folder : std::filesystem::directory_iterator(dir.e.path()))
 		if (file_or_folder.is_directory())
 			res.push_back(builtin_filesystem_directory{ file_or_folder });
