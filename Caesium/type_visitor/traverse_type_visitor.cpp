@@ -7,8 +7,12 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::Type& type) {
 	if (!state.state.traversed_types.contains(type)) {
+		state.state.traversed_types.insert(copy(type));
 		auto opt_e = transpile(state.unindented(), type);
-		return_if_error(opt_e);
+		if (opt_e.has_error()) {
+			state.state.traversed_types.erase(type);
+			return std::move(opt_e).error();
+		}
 		state.state.traversed_types.insert(copy(type));
 		state.state.types_to_transpile.push_back(copy(type));
 	}

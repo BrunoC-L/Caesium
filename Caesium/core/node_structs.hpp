@@ -11,6 +11,7 @@
 #include "../utility/overload.hpp"
 
 template <typename... Ts> using Variant = caesium_lib::variant::type<Ts...>;
+template <typename T> using Optional = caesium_lib::optional::type<T>;
 
 struct Namespace;
 
@@ -44,6 +45,14 @@ struct NodeStructs {
 	struct BraceArguments;
 
 	struct MetaType;
+
+	struct Reference {};
+	struct MutableReference {};
+	struct Move {};
+	struct Value {};
+	using ArgumentCategory = Variant<Reference, MutableReference, Move>;
+	using ParameterCategory = Variant<Reference, MutableReference, Value>;
+	using ValueCategory = Variant<Reference, MutableReference, Value>;
 
 	struct TemplatedTypename {
 		NonCopyableBox<Typename> type;
@@ -80,6 +89,7 @@ struct NodeStructs {
 
 	struct Typename {
 		Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, TupleTypename, UnionTypename, VariadicExpansionTypename> value;
+		Optional<ParameterCategory> category;
 	};
 
 	struct Alias {
@@ -114,18 +124,6 @@ struct NodeStructs {
 		> ;
 		NonCopyableBox<vt> expression;
 	};
-
-	struct Reference {
-	};
-	struct MutableReference {
-	};
-	struct Move {
-	};
-	struct Value {
-	};
-	using ArgumentCategory = Variant<Reference, MutableReference, Move>;
-	using ParameterCategory = Variant<Reference, MutableReference, Value>;
-	using ValueCategory = Variant<Reference, MutableReference, Value>;
 	struct FunctionArgument {
 		std::optional<ArgumentCategory> category;
 		Expression expr;
@@ -347,7 +345,6 @@ struct NodeStructs {
 
 	struct FunctionParameter {
 		Typename typename_;
-		ParameterCategory category;
 		std::string name;
 	};
 
@@ -567,6 +564,9 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 			return first;
 		return cmp(a.second, b.second);
 	}
+	else if constexpr (is_specialization<T, caesium_lib::optional::type>::value) {
+		return cmp(a._value, b._value);
+	}
 	else if constexpr (is_specialization<T, std::optional>::value) {
 		return a.has_value() && b.has_value() ? cmp(a.value(), b.value()) : cmp(a.has_value(), b.has_value());
 	}
@@ -583,9 +583,6 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 			},
 			a
 		);
-	}
-	else if constexpr (is_specialization<T, caesium_lib::variant::type>::value) {
-		return cmp(a._value, b._value);
 	}
 	else if constexpr (is_specialization<T, Box>::value) {
 		return cmp(a.get(), b.get());
@@ -733,7 +730,7 @@ CMP1(TupleTypename)
 CMP1(UnionTypename)
 CMP1(OptionalTypename)
 CMP1(VariadicExpansionTypename)
-CMP1(Typename)
+CMP2(Typename)
 CMP0(Reference)
 CMP0(MutableReference)
 CMP0(Move)
@@ -801,7 +798,7 @@ CMP3(Enum)
 CMP1(TemplateParameter)
 CMP2(TemplateParameterWithDefaultValue)
 CMP1(VariadicTemplateParameter)
-CMP3(FunctionParameter)
+CMP2(FunctionParameter)
 CMP5(Function)
 CMP11(NameSpace)
 CMP1(Exists)
@@ -849,6 +846,11 @@ std::optional<T> copy(const std::optional<T>& x) {
 template <typename... Ts>
 Variant<Ts...> copy(const Variant<Ts...>& x) {
 	return std::visit([](const auto& u) { return Variant<Ts...>{ copy(u) }; }, x._value);
+}
+
+template <typename T>
+Optional<T> copy(const Optional<T>& x) {
+	return Optional<T>{ copy(x._value) };
 }
 
 template <typename T>
@@ -993,7 +995,7 @@ COPY1(TupleTypename)
 COPY1(UnionTypename)
 COPY1(OptionalTypename)
 COPY1(VariadicExpansionTypename)
-COPY1(Typename)
+COPY2(Typename)
 COPY0(Reference)
 COPY0(MutableReference)
 COPY0(Move)
@@ -1062,7 +1064,7 @@ COPY3(Enum)
 COPY1(TemplateParameter)
 COPY2(TemplateParameterWithDefaultValue)
 COPY1(VariadicTemplateParameter)
-COPY3(FunctionParameter)
+COPY2(FunctionParameter)
 COPY5(Function)
 COPY11(NameSpace)
 COPY1(Exists)

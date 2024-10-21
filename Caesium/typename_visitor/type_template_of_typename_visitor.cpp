@@ -66,7 +66,7 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typena
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(f, g.it)) {
-				auto structured_f = getStruct(f.get<grammar::Function>(), std::nullopt);
+				auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
 				structured_f.name = tmpl_name;
 				if (uses_auto(structured_f)) {
 					state.state.global_namespace.functions_using_auto[tmpl_name].push_back(std::move(structured_f));
@@ -111,7 +111,7 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typena
 			auto ok = build(tn, g.it);
 			while (parse_empty_line(g.it));
 			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
-				auto structured_tn = getStruct(tn.get<grammar::Typename>());
+				auto structured_tn = getStruct(tn.get<grammar::Typename>(), tag_allow_value_category_or_empty{});
 				return type_of_typename(state, structured_tn);
 			}
 		}

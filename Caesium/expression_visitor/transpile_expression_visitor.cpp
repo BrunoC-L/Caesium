@@ -331,7 +331,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			auto& vec = state.state.global_namespace.functions[fn.value().name];
 			bool found = false;
 			for (const auto& f : vec)
-				if (f <=> fn.value() == std::weak_ordering::equivalent)
+				if (cmp(f, fn.value()) == std::weak_ordering::equivalent)
 					found = true;
 			if (!found)
 				vec.push_back(std::move(fn).value());
@@ -596,7 +596,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
 			if (build(f, g.it)) {
-				auto structured_f = getStruct(f.get<grammar::Function>(), std::nullopt);
+				auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
 				structured_f.name = tmpl_name;
 				if (uses_auto(structured_f)) {
 					state.state.global_namespace.functions_using_auto[structured_f.name].push_back(std::move(structured_f));
@@ -662,7 +662,7 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 		| to_vec();
 	if (i2 == v2.size())
 		return std::nullopt;
-	if (v1.at(i1) <=> v2.at(i2).type == std::weak_ordering::equivalent) {
+	if (cmp(v1.at(i1), v2.at(i2).type) == std::weak_ordering::equivalent) {
 		mappings.push_back(i2);
 		return rearrange_if_possible(v1, std::move(v2), i1 + 1, 0, std::move(mappings));
 	}
@@ -802,7 +802,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				throw;
 			const non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
 			for (const auto& T : union_t.arguments) {
-				if (T <=> expr_info_ok.type == std::weak_ordering::equivalent)
+				if (cmp(T, expr_info_ok.type) == std::weak_ordering::equivalent)
 					return expression_information{ non_type_information{
 						.type = copy(union_t),
 						.representation = typename_repr.value() + "{" + expr_info_ok.representation + "}",
@@ -836,7 +836,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				throw;
 			const non_type_information& arg_info_ok = std::get<non_type_information>(arg_info.value());
-			if (arg_info_ok.type <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } } != std::weak_ordering::equivalent)
+			if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } }) != std::weak_ordering::equivalent)
 				throw;
 			return expression_information{ non_type_information{
 				.type = std::move(vt).value_type,
@@ -850,7 +850,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				throw;
 			const non_type_information& arg_info_ok = std::get<non_type_information>(arg_info.value());
-			if (arg_info_ok.type <=> vt.key_type.get() != std::weak_ordering::equivalent)
+			if (cmp(arg_info_ok.type, vt.key_type.get()) != std::weak_ordering::equivalent)
 				throw;
 			return expression_information{ non_type_information{
 				.type = std::move(vt).value_type,

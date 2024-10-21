@@ -23,7 +23,7 @@ R f(
 	variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type) });
 
 	if (std::holds_alternative<NodeStructs::UnionType>(assigned_expression_ok.type.type._value)
-		&& (type <=> assigned_expression_ok.type != std::weak_ordering::equivalent)) {
+		&& (cmp(type, assigned_expression_ok.type) != std::weak_ordering::equivalent)) {
 		std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
 		return type_repr + " " + statement.name + " = "
 			"std::visit([](const auto& " + lambda_var_name + ") -> " + type_repr + " {"
@@ -31,7 +31,7 @@ R f(
 			"}, " + assigned_expression_ok.representation + ");\n";
 	}
 	else {
-		if (assigned_expression_ok.type <=> type == std::weak_ordering::equivalent)
+		if (cmp(assigned_expression_ok.type, type) == std::weak_ordering::equivalent)
 			return type_repr + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 		else
 			return type_repr + " " + statement.name + " = { " + assigned_expression_ok.representation + " };\n";
@@ -40,7 +40,7 @@ R f(
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 	bool is_aggregate_init = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get()._value);
-	bool is_auto = statement.type <=> NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" } } == std::weak_ordering::equivalent;
+	bool is_auto = cmp(statement.type.value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) == std::weak_ordering::equivalent;
 	if (is_auto) {
 		if (is_aggregate_init)
 			return error{

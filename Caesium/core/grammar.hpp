@@ -20,10 +20,10 @@ namespace grammar {
 	using Alias = And<Commit<Token<USING>>, Word, Token<EQUAL>, Typename, Newline>;
 	using ParameterCategory = Or<Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	using ArgumentCategory = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
-	using FunctionParameter = And<Commit<Typename>, ParameterCategory, Word>;
+	using FunctionParameter = And<Commit<Typename>, Word>;
 	using FunctionParameters = CommaStar<FunctionParameter>;
 	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement>>>>>;
-	using Function = And<Typename, Opt<ParameterCategory>, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+	using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 	using ParenArguments = And<Commit<Token<PARENOPEN>>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 	using BraceArguments = And<Commit<Token<BRACEOPEN>>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
 	using BracketArguments = And< Commit<Token<BRACKETOPEN>>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
@@ -36,9 +36,13 @@ namespace grammar {
 	using OptionalTypenameExtension = Token<QUESTION>;
 	using NonAutoTypename = And<Or<VariadicExpansionTypename, Word>, Star<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension, OptionalTypenameExtension>>>;
 
-	struct Typename : Or<Token<AUTO>, NonAutoTypename> {};
+	struct Typename : And<
+		Or<Token<AUTO>, NonAutoTypename>,
+		Opt<ParameterCategory>,
+		Opt<Token<QUESTION>>
+	> {};
 
-	using MemberVariable = And<Typename, Opt<ParameterCategory>, Word, Newline>;
+	using MemberVariable = And<Typename, Word, Newline>;
 	using TypeElement = Or<Alias/*, Function*/, MemberVariable/*, Constructor*/>;
 
 	using Construct = And<Typename, BraceArguments>;

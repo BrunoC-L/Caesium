@@ -1,13 +1,15 @@
 #pragma once
 #include "core/toCPP.hpp"
-#include "utility//as_vec.hpp"
+#include "utility/as_vec.hpp"
+
+using Parameter = Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>;
 
 bool test_single_argument() {
 	{
 		auto templates = as_vec(NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::TemplateParameter{.name = "A" }
 			}),
 			.templated = "\nInt f():\n",
@@ -21,14 +23,14 @@ bool test_single_argument() {
 				NodeStructs::Expression{ "arg" }
 			)
 		);
-		if (res.has_error() || res.value().tmpl.get() <=> templates.at(0) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
 			return false;
 	}
 	{
 		auto templates = as_vec(NodeStructs::Template{
 			.name = "f1",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::TemplateParameter{.name = "A" }
 			}),
 			.templated = "\nInt f1():\n"
@@ -36,7 +38,7 @@ bool test_single_argument() {
 			NodeStructs::Template{
 				.name = "f2",
 				.name_space = std::nullopt,
-				.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+				.parameters = as_vec(Parameter{
 					NodeStructs::TemplateParameter{.name = "A" }
 					}),
 				.templated = "\nInt f2():\n",
@@ -55,7 +57,7 @@ bool test_single_argument() {
 		auto templates = as_vec(NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 			}),
 			.templated = "\nInt f():\n",
@@ -67,14 +69,14 @@ bool test_single_argument() {
 			templates,
 			as_vec(NodeStructs::Expression{ "arg" })
 		);
-		if (res.has_error() || res.value().tmpl.get() <=> templates.at(0) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
 			return false;
 	}
 	{
 		auto templates = as_vec(NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 				}),
 			.templated = "\nInt f():\n",
@@ -83,7 +85,7 @@ bool test_single_argument() {
 		NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::Expression{ "arg" } }
 				}),
 			.templated = "\nInt f():\n",
@@ -95,14 +97,14 @@ bool test_single_argument() {
 			templates,
 			as_vec(NodeStructs::Expression{ "arg" })
 		);
-		if (res.has_error() || res.value().tmpl.get() <=> templates.at(1) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
 			return false;
 	}
 	{
 		auto templates = as_vec(NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 				}),
 			.templated = "\nInt f():\n",
@@ -111,7 +113,7 @@ bool test_single_argument() {
 			NodeStructs::Template{
 				.name = "f",
 				.name_space = std::nullopt,
-				.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+				.parameters = as_vec(Parameter{
 					NodeStructs::TemplateParameter{.name = "A" }
 					}),
 			.templated = "\nInt f():\n",
@@ -124,7 +126,7 @@ bool test_single_argument() {
 			templates,
 			as_vec(NodeStructs::Expression{ "arg" })
 		);
-		if (res.has_error() || res.value().tmpl.get() <=> templates.at(1) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
 			return false;
 	}
 	return true;
@@ -135,7 +137,7 @@ bool test_full_variadic_vs_split() {
 		auto templates = as_vec(NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::VariadicTemplateParameter{.name = "As" }
 			}),
 			.templated = "\nInt f():\n",
@@ -145,13 +147,13 @@ bool test_full_variadic_vs_split() {
 			.name = "f",
 			.name_space = std::nullopt,
 			.parameters = as_vec(
-				Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+				Parameter{
 					NodeStructs::VariadicTemplateParameter{.name = "As" }
 				},
-				Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+				Parameter{
 					NodeStructs::TemplateParameterWithDefaultValue{.name = "B", .value = NodeStructs::Expression{ "arg" } }
 				},
-				Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+				Parameter{
 					NodeStructs::VariadicTemplateParameter{.name = "Cs" }
 				}
 			),
@@ -164,14 +166,14 @@ bool test_full_variadic_vs_split() {
 			templates,
 			as_vec(NodeStructs::Expression{ "arg" })
 		);
-		if (res.has_error() || res.value().tmpl.get() <=> templates.at(1) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
 			return false;
 	}
 	{
 		auto templates = as_vec(NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
-			.parameters = as_vec(Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+			.parameters = as_vec(Parameter{
 				NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::Expression{ "arg" } },
 				}),
 			.templated = "\nInt f():\n",
@@ -181,13 +183,13 @@ bool test_full_variadic_vs_split() {
 				.name = "f",
 				.name_space = std::nullopt,
 				.parameters = as_vec(
-					Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+					Parameter{
 						NodeStructs::VariadicTemplateParameter{.name = "As" }
 					},
-					Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+					Parameter{
 						NodeStructs::TemplateParameterWithDefaultValue{.name = "B", .value = NodeStructs::Expression{ "arg" } }
 					},
-					Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter>{
+					Parameter{
 						NodeStructs::VariadicTemplateParameter{.name = "Cs" }
 					}),
 				.templated = "\nInt f():\n",
@@ -200,7 +202,7 @@ bool test_full_variadic_vs_split() {
 			templates,
 			as_vec(NodeStructs::Expression{ "arg" })
 		);
-		if (res.has_error() || res.value().tmpl.get() <=> templates.at(0) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
 			return false;
 	}
 	return true;

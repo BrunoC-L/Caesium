@@ -23,7 +23,10 @@ exists:
 
 template ServerServiceProvider<Ts...>:
     type ServerServiceProvider:
-        Tuple<std::reference_wrapper<`Ts...`/*<`Ts...`>*/> ?> services
+        Tuple<std::reference_wrapper<`Ts...`>?> services
+
+type ServerServiceProvider2:
+    Tuple<std::reference_wrapper<DB>?> services
 
 template provide<Ts..., U>:
     Void provide(ServerServiceProvider<`Ts...`> ref! provider, `U` ref service):
@@ -36,7 +39,7 @@ template provide<Ts..., U>:
             # error()
 
 template request<Ts..., U>:
-    U ref request(ServerServiceProvider<`Ts...`> ref! provider):
+    `U` ref request(ServerServiceProvider<`Ts...`> ref provider):
         #Bool found = False
         #ifor i, T in `Ts...`:
             #if T == `U`/*<`Ts...`>*/:
@@ -45,9 +48,10 @@ template request<Ts..., U>:
         #if !found:
             #error()
 
-template DB<Ts...>:
-    type DB:
-        ServerServiceProvider<`Ts...`> ref provider
+using ServerServiceProviderImpl = ServerServiceProvider<DB>
+
+type DB:
+    ServerServiceProviderImpl ref provider
 
 // type ObjectFactory:
 // type Map:
@@ -62,8 +66,8 @@ template DB<Ts...>:
 Int main(Vector<String> ref args):
 	// srand(time(NULL));
 
-	ServerServiceProvider<DB> provider = { { None } }
-    DB<DB> db = { provider }
+	ServerServiceProviderImpl provider = { { None } }
+    DB db = { provider }
 
     provide<DB, DB<DB>>(provider, db)
     provider.provide<DB, DB<DB>>(db)

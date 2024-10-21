@@ -3,15 +3,23 @@
 #include "parse.hpp"
 #include "../utility/overload.hpp"
 
+struct tag_expect_value_category {};
+struct tag_expect_empty_category {};
+struct tag_allow_value_category_or_empty {};
+
 NodeStructs::Import getStruct(const grammar::Import& f);
 
-NodeStructs::Typename getStruct(const grammar::Typename& t);
+NodeStructs::Typename getStruct(const grammar::Typename& t, tag_expect_value_category);
+NodeStructs::Typename getStruct(const grammar::Typename& t, tag_expect_empty_category);
+NodeStructs::Typename getStruct(const grammar::Typename& t, tag_allow_value_category_or_empty);
 
 NodeStructs::Typename extend(NodeStructs::Typename&&, const grammar::NamespaceTypenameExtension&);
 
-NodeStructs::ParameterCategory getStruct(const grammar::ParameterCategory& vc);
+NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_expect_value_category);
+NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_expect_empty_category);
+NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_allow_value_category_or_empty);
 
-NodeStructs::Function getStruct(const grammar::Function& f, std::optional<NodeStructs::Typename> name_space);
+NodeStructs::Function structurize_function(const grammar::Function& f, std::optional<NodeStructs::Typename> name_space);
 
 NodeStructs::Template getStruct(const grammar::Template& t);
 

@@ -83,7 +83,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		auto& vec = state.state.global_namespace.functions[fn.value().name];
 		bool found = false;
 		for (const auto& f : vec)
-			if (f <=> fn.value() == std::weak_ordering::equivalent)
+			if (cmp(f, fn.value()) == std::weak_ordering::equivalent)
 				found = true;
 		if (!found)
 			vec.push_back(std::move(fn).value());
@@ -240,7 +240,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
-		if (arg_info_ok.type <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } }  != std::weak_ordering::equivalent)
+		if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } })  != std::weak_ordering::equivalent)
 			return error{
 				"user error",
 				"wrong type for vector reserve"

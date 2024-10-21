@@ -35,7 +35,9 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 			if constexpr (std::is_same_v<DT, NodeStructs::Expression>)
 				return getExpressionStruct(node);
 			else if constexpr (std::is_same_v<DT, NodeStructs::Function>)
-				return getStruct(node, std::nullopt);
+				return structurize_function(node, std::nullopt);
+			else if constexpr (std::is_same_v<DT, NodeStructs::Typename>)
+				return getStruct(node, tag_allow_value_category_or_empty{});
 			else
 				return getStruct(node);
 		}();
@@ -79,25 +81,32 @@ bool test_structurize_equals() {
 		NodeStructs::Typename{
 			NodeStructs::NamespacedTypename{
 				NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-					NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" } },
+					NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{} },
 					"b"
-				} },
+				}, NodeStructs::Value{} },
 				"c"
-			}
+			}, NodeStructs::Value{}
 		});
 
 	ok &= test_structurize_equals<Typename>(__LINE__, 0, "a | b",
 		NodeStructs::Typename{
 			NodeStructs::UnionTypename{
-				as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" } }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "b" } })
-			}
+				as_vec(
+					NodeStructs::Typename{
+						NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{}
+					},
+					NodeStructs::Typename{
+						NodeStructs::BaseTypename{ "b" }, NodeStructs::Value{}
+					}
+				)
+			}, NodeStructs::Value{}
 		});
 
 	ok &= test_structurize_equals<Typename>(__LINE__, 0, "a | b | c",
 		NodeStructs::Typename{
 			NodeStructs::UnionTypename{
-				as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" } }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "b" } }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "c" } })
-			}
+				as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{} }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "b" }, NodeStructs::Value{} }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "c" }, NodeStructs::Value{} })
+			}, NodeStructs::Value{}
 		});
 
 	ok &= test_structurize_equals<Expression>(__LINE__, 0, "a.b.c",
@@ -140,10 +149,9 @@ bool test_structurize_equals() {
 		NodeStructs::Function{
 			.name = "f",
 			.name_space = std::nullopt,
-			.returnType = NodeStructs::BaseTypename{ "A" },
+			.returnType = { NodeStructs::BaseTypename{ "A" }, NodeStructs::Value{} },
 			.parameters = as_vec(NodeStructs::FunctionParameter{
-				.typename_ = NodeStructs::BaseTypename{ "A" },
-				.category = NodeStructs::Reference{},
+				.typename_ = { NodeStructs::BaseTypename{ "A" }, NodeStructs::Reference{} },
 				.name = "a",
 			}),
 			.statements = as_vec(NodeStructs::Statement{

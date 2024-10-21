@@ -6,9 +6,9 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::Type& t) {
 	if (t.name_space.has_value())
-		return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name}};
+		return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name}, NodeStructs::Value{} };
 	else
-		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name } };
+		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
@@ -16,19 +16,19 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {
-	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name } };
+	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::InterfaceType& t) {
-	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.interface.get().name } };
+	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.interface.get().name }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::NamespaceType& t) {
-	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name_space.get().name } };
+	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name_space.get().name }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::Builtin& t) {
-	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name } };
+	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::TupleType& t) {
@@ -39,7 +39,7 @@ R T::operator()(const NodeStructs::TupleType& t) {
 	return_if_error(vec);
 	return NodeStructs::Typename{ NodeStructs::TupleTypename{
 		std::move(vec).value()
-	} };
+	}, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {
@@ -50,28 +50,32 @@ R T::operator()(const NodeStructs::UnionType& t) {
 	return_if_error(vec);
 	return NodeStructs::Typename{ NodeStructs::UnionTypename{
 		std::move(vec).value()
-	} };
+	}, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::TemplateType& t) {
 	if (t.name_space.get().name != "")
 		throw; // return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name} };
 	else
-		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name } };
+		return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.name }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::EnumType& t) {
-	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.enum_.get().name } };
+	return NodeStructs::Typename{ NodeStructs::BaseTypename{ t.enum_.get().name }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::EnumValueType& t) {
-	return NodeStructs::Typename{ NodeStructs::NamespacedTypename{ NodeStructs::Typename{ NodeStructs::BaseTypename{ t.enum_.get().name } }, t.value } };
+	return NodeStructs::Typename{
+		NodeStructs::NamespacedTypename{
+			NodeStructs::Typename{ NodeStructs::BaseTypename{ t.enum_.get().name }, NodeStructs::Value{} },
+			t.value
+	}, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::OptionalType& t) {
 	auto tn_or_e = operator()(t.value_type);
 	return_if_error(tn_or_e);
-	return NodeStructs::Typename{ NodeStructs::OptionalTypename{ std::move(tn_or_e).value() } };
+	return NodeStructs::Typename{ NodeStructs::OptionalTypename{ std::move(tn_or_e).value() }, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::AggregateType& t) {
@@ -90,9 +94,9 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		v.push_back(std::move(inner).value());
 	}
 	return NodeStructs::Typename{ NodeStructs::TemplatedTypename{
-		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" } },
+		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{} },
 		.templated_with = std::move(v)
-	} };
+	}, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::Set& t) {
@@ -107,9 +111,9 @@ R T::operator()(const NodeStructs::SetType& t) {
 		v.push_back(std::move(inner).value());
 	}
 	return NodeStructs::Typename{ NodeStructs::TemplatedTypename{
-		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Set" } },
+		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Set" }, NodeStructs::Value{} },
 		.templated_with = std::move(v)
-	} };
+	}, NodeStructs::Value{} };
 }
 
 R T::operator()(const NodeStructs::Map& t) {
@@ -129,7 +133,7 @@ R T::operator()(const NodeStructs::MapType& t) {
 		v.push_back(std::move(inner).value());
 	}
 	return NodeStructs::Typename{ NodeStructs::TemplatedTypename{
-		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Map" } },
+		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Map" }, NodeStructs::Value{} },
 		.templated_with = std::move(v)
-	} };
+	}, NodeStructs::Value{} };
 }
