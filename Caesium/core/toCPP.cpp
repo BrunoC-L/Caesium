@@ -411,7 +411,7 @@ transpile_declaration_definition_t transpile_main(
 
 	const auto& [type, name] = fn.parameters.at(0);
 	auto vector_str = NodeStructs::Typename{ NodeStructs::TemplatedTypename{
-		NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, std::nullopt },
+		NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{} },
 		as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" }, NodeStructs::Value{} })
 	}, NodeStructs::Reference{} };
 	if (cmp(type, vector_str) != std::weak_ordering::equivalent)
@@ -439,14 +439,16 @@ std::optional<error> stack(
 		return_if_error(t);
 	}
 	for (auto&& [type_name, name] : parameters) {
+		const auto& cat = type_name.category;
+		if (!cat._value.has_value())
+			throw;
 		auto t = type_of_typename(state, type_name);
 		if (t.has_error())
 			throw;
-		throw;
-		/*if (std::holds_alternative<NodeStructs::Value>(value_cat._value))
+		if (std::holds_alternative<NodeStructs::Value>(cat._value.value()._value))
 			variables[name].push_back({ NodeStructs::MutableReference{}, std::move(t).value() });
 		else
-			variables[name].push_back({ copy(value_cat), std::move(t).value() });*/
+			variables[name].push_back({ copy(cat._value.value()), std::move(t).value() });
 	}
 	return std::nullopt;
 }
@@ -548,21 +550,23 @@ transpile_t transpile(
 	std::stringstream ss;
 	bool first = true;
 	for (const auto& [type, name] : parameters) {
-		throw;
-		/*auto tn = transpile_typename(state, type);
+		const auto& cat = type.category;
+		if (!cat._value.has_value())
+			throw;
+		auto tn = transpile_typename(state, type);
 		return_if_error(tn);
 		auto s = tn.value();
-		if (std::holds_alternative<NodeStructs::Reference>(cat._value))
+		if (std::holds_alternative<NodeStructs::Reference>(cat._value.value()._value))
 			s = "const " + std::move(s) + "&";
-		else if (std::holds_alternative<NodeStructs::MutableReference>(cat._value))
+		else if (std::holds_alternative<NodeStructs::MutableReference>(cat._value.value()._value))
 			s = std::move(s) + "&";
-		else if (std::holds_alternative<NodeStructs::Value>(cat._value))
+		else if (std::holds_alternative<NodeStructs::Value>(cat._value.value()._value))
 			s = std::move(s) + "&&";
 		if (first)
 			first = false;
 		else
 			ss << ", ";
-		ss << s << " " << name;*/
+		ss << s << " " << name;
 	}
 	return ss.str();
 }
@@ -980,7 +984,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 						}
 				}
 				auto& interfacemembers = state.state.interface_symbol_to_members[
-					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name }, std::nullopt }
+					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name }, NodeStructs::Value{} }
 				];
 				auto new_member = NodeStructs::MetaType{ copy(u) };
 				for (const auto& member : interfacemembers)
@@ -1370,11 +1374,11 @@ expected<NodeStructs::Function> realise_function_using_auto(
 
 	for (const auto& [index, param] : enumerate(fn_using_auto.parameters))
 		if (uses_auto(param)) {
-			if (cmp(param.typename_.value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) == std::weak_ordering::equivalent) {
+			if (cmp(param.typename_.value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "auto" } }) == std::weak_ordering::equivalent) {
 				auto tn = typename_of_type(state, arg_types.at(index));
 				return_if_error(tn);
 				auto del = std::move(realised.parameters.at(index).typename_);
-				new (&realised.parameters.at(index).typename_) NodeStructs::Typename(std::move(tn).value());
+				new (&realised.parameters.at(index).typename_) NodeStructs::Typename{ std::move(tn).value().value, copy(param.typename_.category) };
 			}
 			else
 				throw;

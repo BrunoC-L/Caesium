@@ -88,7 +88,8 @@ struct NodeStructs {
 	};
 
 	struct Typename {
-		Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, TupleTypename, UnionTypename, VariadicExpansionTypename> value;
+		using Variant_ = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, TupleTypename, UnionTypename, VariadicExpansionTypename>;
+		Variant_ value;
 		Optional<ParameterCategory> category;
 	};
 

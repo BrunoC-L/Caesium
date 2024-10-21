@@ -66,11 +66,11 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
-	bool is_variant = cmp(type.type.get().value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "Union" }, std::nullopt }.value) == std::weak_ordering::equivalent;
+	bool is_variant = cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Union" } }) == std::weak_ordering::equivalent;
 	bool is_vec_or_set =
-		cmp(type.type.get().value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, std::nullopt }.value) == std::weak_ordering::equivalent
-		|| cmp(type.type.get().value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "Set" }, std::nullopt }.value) == std::weak_ordering::equivalent;
-		bool is_map = cmp(type.type.get().value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "Map" }, std::nullopt }.value) == std::weak_ordering::equivalent;
+		cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Vector" } }) == std::weak_ordering::equivalent
+		|| cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Set" } }) == std::weak_ordering::equivalent;
+	bool is_map = cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Map" } }) == std::weak_ordering::equivalent;
 	if (is_vec_or_set || is_map || is_variant) {
 		if (is_vec_or_set && type.templated_with.size() != 1)
 			throw;

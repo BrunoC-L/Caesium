@@ -1,5 +1,6 @@
 #pragma once
 #include "structurizer.hpp"
+#include <iostream>
 
 static std::string word_or_auto(const Or<Token<AUTO>, grammar::Word>& tk) {
 	return std::visit(
@@ -134,19 +135,20 @@ NodeStructs::Typename get_typename_struct(const grammar::Typename& t) {
 		[&](const grammar::NonAutoTypename& e) -> NodeStructs::Typename {
 			NodeStructs::Typename res = std::visit(overload(
 				[&](const grammar::Word& w) -> NodeStructs::Typename {
-					return { NodeStructs::BaseTypename{ w.value }, std::move(value_cat) };
+					return { NodeStructs::BaseTypename{ w.value }, NodeStructs::Value{} };
 				},
 				[&](const grammar::VariadicExpansionTypename& vetn) -> NodeStructs::Typename {
 					return NodeStructs::Typename{
 						NodeStructs::VariadicExpansionTypename {
 							NodeStructs::Typename{ NodeStructs::BaseTypename{ vetn.get<grammar::Word>().value }, NodeStructs::Value{} }
 						},
-						std::move(value_cat)
+						NodeStructs::Value{}
 					};
 				}
 			), e.get<Or<grammar::VariadicExpansionTypename, grammar::Word>>().value());
 			using opts = Or<grammar::NamespaceTypenameExtension, grammar::TemplateTypenameExtension, grammar::UnionTypenameExtension, grammar::OptionalTypenameExtension>;
-			return getStruct(t, e.get<Star<opts>>().get<opts>(), std::move(res), 0);
+			auto res2 = getStruct(t, e.get<Star<opts>>().get<opts>(), std::move(res), 0);
+			return { std::move(res2.value), std::move(value_cat) };
 		}
 	), auto_or_tn.value());
 }
@@ -210,10 +212,13 @@ NodeStructs::Function structurize_function(const grammar::Function& f, std::opti
 		.returnType = getStruct(f.get<grammar::Typename>(), tag_allow_value_category_or_empty{}),
 		.parameters = f.get<grammar::FunctionParameters>().get<And<Commit<grammar::Typename>, grammar::Word>>()
 			| std::views::transform([&](const grammar::FunctionParameter& type_and_name) -> NodeStructs::FunctionParameter {
-				return NodeStructs::FunctionParameter{
+				auto res = NodeStructs::FunctionParameter{
 					getStruct(type_and_name.get<Commit<grammar::Typename>>(), tag_expect_value_category{}),
 					type_and_name.get<grammar::Word>().value
 				};
+				if (!res.typename_.category._value.has_value())
+					throw;
+				return res;
 			})
 			| to_vec(),
 		.statements = getStatements(f.get<grammar::ColonIndentCodeBlock>())
