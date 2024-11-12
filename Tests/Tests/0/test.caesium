@@ -1,0 +1,2 @@
+type ServerServiceProvider2:
+    Tuple<reference_wrapper<DB> ?> services

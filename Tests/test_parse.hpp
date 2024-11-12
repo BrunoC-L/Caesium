@@ -80,7 +80,10 @@ bool test_parse() {
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "std::reference_wrapper?");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "std::reference_wrapper<DB> ?");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "Tuple<std::reference_wrapper<DB> ?>");
-
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "DB ?");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "DB ref");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "DB ? ref");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "DB ref ?");
 
 	ok &= test_parse_correct<TemplateTypenameExtension>(__LINE__, 0, "<>");
 	ok &= test_parse_correct<TemplateTypenameExtension>(__LINE__, 0, "<E>");
@@ -142,9 +145,8 @@ bool test_parse() {
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tTuple<std::reference_wrapper<DB>> services");
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tstd::reference_wrapper<DB> services");
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tstd::reference_wrapper<DB> ? services");
-	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tTuple<std::reference_wrapper<DB> ?> services");
-
-	
+	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider:\n\tTuple<std::reference_wrapper<DB> ?> services");
+	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider2 :\n\tTuple<DB ref ?> services");
 	
 
 	ok &= test_parse_correct<Exists>(__LINE__, 0, "exists:\n");
@@ -158,6 +160,10 @@ bool test_parse() {
 	ok &= test_parse_correct<File>(__LINE__, 0, "Int main(Vector<String> ref args):\n\tCat cat = {}\n");
 	ok &= test_parse_correct<File>(__LINE__, 0, "import OS");
 	ok &= test_parse_correct<File>(__LINE__, 0, "type B:");
+	ok &= test_parse_correct<File>(__LINE__, 0, "type ServerServiceProvider:\n\tTuple<std::reference_wrapper<DB> ?> services");
+	ok &= test_parse_correct<File>(__LINE__, 0, "type ServerServiceProvider:\n\tTuple<std::reference_wrapper<DB>?> services");
+	ok &= test_parse_correct<File>(__LINE__, 0, "type ServerServiceProvider2 :\n\tTuple<DB ref ?> services");
+
 
 	ok &= test_parse_correct<FunctionParameter>(__LINE__, 0, "T ref t");
 	ok &= test_parse_correct<FunctionParameter>(__LINE__, 0, "T ref! t");
@@ -187,5 +193,14 @@ bool test_parse() {
 	ok &= test_parse_incorrect<Type>(__LINE__, 1, "type A:\n\tA a\n\tA a\n\tA a\n\tA a\n");
 	ok &= test_parse_incorrect<Type>(__LINE__, 0, "type A:\n\t\tA a\n\t\tA a\n\t\tA a\n\t\tA a\n");
 	ok &= test_parse_incorrect<ForStatement>(__LINE__, 0, "for i in arr:\n\t\ti");
-	return ok;
+
+
+	ok &= test_parse_correct<Typename, Token<GT>>(__LINE__, 0, "X>");
+	ok &= test_parse_correct<Typename, Token<GTQ>>(__LINE__, 0, "X>?");
+	ok &= test_parse_correct<Typename, Token<GTQ>>(__LINE__, 0, "X>?");
+	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<X>? a");
+	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<Tuple<X>?> a");
+	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<reference_wrapper<DB>?> services");
+	return ok;    
+
 }

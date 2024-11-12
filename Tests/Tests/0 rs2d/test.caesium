@@ -1,92 +1,92 @@
-exists:
-    sf:
-        type sf_time:
-        type clock:
-        sf_time getElapsedTime(clock ref _):
-        Int asMicroseconds(sf_time ref _):
-        Void restart(clock ref _):
-
-        type TcpSocket:
-        type TcpListener:
-        type SocketSelector:
-        type Socket:
-        type SocketStatus:
-
-exists:
-    std:
-        template reference_wrapper<T>:
-            type reference_wrapper:
-                `T` ref _
-    template get<T>:
-        `T` ref get(std::reference_wrapper<`T`> ref _):
-
-
-template ServerServiceProvider<Ts...>:
-    type ServerServiceProvider:
-        Tuple<std::reference_wrapper<`Ts...`>?> services
-
-type ServerServiceProvider2:
-    Tuple<std::reference_wrapper<DB>?> services
-
-template provide<Ts..., U>:
-    Void provide(ServerServiceProvider<`Ts...`> ref! provider, `U` ref service):
-        #Bool found = False
-        #ifor i, T in `Ts...`:
-            #if T == `U`/*<`Ts...`>*/:
-                #found = True
-                provider.services[i] = std::reference_wrapper(service)
-        #if !found:
-            # error()
-
-template request<Ts..., U>:
-    `U` ref request(ServerServiceProvider<`Ts...`> ref provider):
-        #Bool found = False
-        #ifor i, T in `Ts...`:
-            #if T == `U`/*<`Ts...`>*/:
-                #found = True
-                return provider.services[i].get()
-        #if !found:
-            #error()
-
-using ServerServiceProviderImpl = ServerServiceProvider<DB>
-
-type DB:
-    ServerServiceProviderImpl ref provider
-
-// type ObjectFactory:
-// type Map:
-// type UserService:
-// type PlayerActionService:
-// type SocketServerService:
-// type ClockTickScheduler:
-// type TaskScheduler:
-// type ObjectService:
-// type App:
-
-Int main(Vector<String> ref args):
-	// srand(time(NULL));
-
-	ServerServiceProviderImpl provider = { { None } }
-    DB db = { provider }
-
-    provide<DB, DB<DB>>(provider, db)
-    provider.provide<DB, DB<DB>>(db)
-    db.provide<DB, DB<DB>>(provider)
-    (provider, db).provide<DB, DB<DB>>()
-
-    auto db_ref = provider.request<DB>()
-
-	// DB db(&provider, 5);
-	// ObjectFactory objf;
-	// Map map(&provider, objf);
-	// UserService userService(&provider);
-	// PlayerActionService playerActionService(&provider);
-	// SocketServerService server(&provider, 38838);
-	// ClockTickScheduler tickScheduler;
-	// TaskScheduler scheduler(&provider);
-	// ObjectService os(&provider);
-	// App app(&provider, &tickScheduler);
-	// app.init();
-	// app.start();
-
-    return 0
+//-exists:
+//-    sf:
+//-        type sf_time:
+//-        type clock:
+//-        sf_time getElapsedTime(clock ref _):
+//-        Int asMicroseconds(sf_time ref _):
+//-        Void restart(clock ref _):
+//-
+//-        type TcpSocket:
+//-        type TcpListener:
+//-        type SocketSelector:
+//-        type Socket:
+//-        type SocketStatus:
+//-
+//-exists:
+//-    std:
+//-        template reference_wrapper<T>:
+//-            type reference_wrapper:
+//-                `T` ref _
+//-    template get<T>:
+//-        `T` ref get(std::reference_wrapper<`T`> ref _):
+//-
+//-template ServerServiceProvider<Ts...>:
+//-    type ServerServiceProvider:
+//-        Tuple<std::reference_wrapper<`Ts...`>?> services
+//-
+//-type ServerServiceProvider2:
+//-    Tuple<std::reference_wrapper<DB>?> services
+//-
+//-template provide<Ts..., U>:
+//-    Void provide(ServerServiceProvider<`Ts...`> ref! provider, `U` ref service):
+//-        #Bool found = False
+//-        #ifor i, T in `Ts...`:
+//-            #if T == `U`/*<`Ts...`>*/:
+//-                #found = True
+//-                provider.services[i] = std::reference_wrapper(service)
+//-        #if !found:
+//-            # error()
+//-
+//-template request<Ts..., U>:
+//-    `U` ref request(ServerServiceProvider<`Ts...`> ref provider):
+//-        #Bool found = False
+//-        #ifor i, T in `Ts...`:
+//-            #if T == `U`/*<`Ts...`>*/:
+//-                #found = True
+//-                return provider.services[i].get()
+//-        #if !found:
+//-            #error()
+//-
+//-using ServerServiceProviderImpl = ServerServiceProvider<DB>
+//-
+//-type DB:
+//-    ServerServiceProviderImpl ref provider
+//-
+//-// type ObjectFactory:
+//-// type Map:
+//-// type UserService:
+//-// type PlayerActionService:
+//-// type SocketServerService:
+//-// type ClockTickScheduler:
+//-// type TaskScheduler:
+//-// type ObjectService:
+//-// type App:
+//-
+//-Int main(Vector<String> ref args):
+//-	// srand(time(NULL));
+//-
+//-	ServerServiceProviderImpl provider = { { None } }
+//-    DB db = { provider }
+//-
+//-    provide<DB, DB<DB>>(provider, db)
+//-    provider.provide<DB, DB<DB>>(db)
+//-    db.provide<DB, DB<DB>>(provider)
+//-    (provider, db).provide<DB, DB<DB>>()
+//-
+//-    auto db_ref = provider.request<DB>()
+//-
+//-	// DB db(&provider, 5);
+//-	// ObjectFactory objf;
+//-	// Map map(&provider, objf);
+//-	// UserService userService(&provider);
+//-	// PlayerActionService playerActionService(&provider);
+//-	// SocketServerService server(&provider, 38838);
+//-	// ClockTickScheduler tickScheduler;
+//-	// TaskScheduler scheduler(&provider);
+//-	// ObjectService os(&provider);
+//-	// App app(&provider, &tickScheduler);
+//-	// app.init();
+//-	// app.start();
+//-
+//-    return 0
+//-
