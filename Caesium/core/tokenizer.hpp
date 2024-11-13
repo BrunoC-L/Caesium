@@ -34,13 +34,9 @@ enum TOKENS {
 	EQUAL,
 	EQUALQ,
 	LT,
-	LTQ,
 	LTE,
-	LTEQ,
 	GT,
-	GTQ,
 	GTE,
-	GTEQ,
 	DASH,
 	NOT,
 	CARET,
@@ -99,22 +95,22 @@ enum TOKENS {
 	NONE,
 };
 
-using TOKENVALUE = std::pair<TOKENS, std::string>;
-using Iterator = std::vector<TOKENVALUE>::iterator;
+using TokenValue = std::pair<TOKENS, std::string>;
+
 struct tokens_and_iterator {
-	std::vector<TOKENVALUE>& tokens;
-	std::vector<TOKENVALUE>::iterator it;
+	std::vector<TokenValue>& tokens;
+	std::vector<TokenValue>::iterator it;
 };
 
 struct Tokenizer {
 	std::string program;
 	unsigned index = 0;
 
-	std::vector<TOKENVALUE> read() {
-		std::vector<TOKENVALUE> out;
+	std::vector<TokenValue> read() {
+		std::vector<TokenValue> out;
 		out.reserve(program.size());
 		if (program.size() != 0) {
-			TOKENVALUE t;
+			TokenValue t;
 			do {
 				t = readToken();
 				out.push_back(t);
@@ -123,11 +119,11 @@ struct Tokenizer {
 			// this allows for files not to end with a new line, we add it manually so we can later act as if all files end with a new line
 			if (out.size() > 1 && out.at(out.size() - 2).first != NEWLINE) {
 				out.back().first = NEWLINE; // replace END with newline
-				out.push_back(TOKENVALUE(END, "")); // add the new END
+				out.push_back(TokenValue(END, "")); // add the new END
 			}
 		}
 		else {
-			out.push_back(TOKENVALUE(END, ""));
+			out.push_back(TokenValue(END, ""));
 		}
 		return out;
 	}
@@ -177,7 +173,7 @@ private:
 	TOKENS peek() {
 		unsigned peekFrom = index;
 		while (true) {
-			TOKENVALUE v = readToken();
+			TokenValue v = readToken();
 			if (v.first == SPACE || v.first == TAB || v.first == NEWLINE)
 				continue;
 			index = peekFrom;
@@ -194,7 +190,7 @@ private:
 		return v;
 	}
 
-	TOKENVALUE string_case(auto c, auto& index) {
+	TokenValue string_case(auto c, auto& index) {
 		std::string str = "";
 		while (true) {
 			index += 1;
@@ -260,7 +256,7 @@ private:
 				index += 1;
 	}
 
-	TOKENVALUE readToken() {
+	TokenValue readToken() {
 		while (true) {
 			if (index == program.length())
 				return { END, "" };
@@ -363,17 +359,7 @@ private:
 				if (index < program.size()) {
 					if (program[index] == '=') {
 						index += 1;
-						if (index < program.size()) {
-							if (program[index] == '?') {
-								index += 1;
-								return { LTEQ, "<=?" };
-							}
-						}
 						return { LTE, "<=" };
-					}
-					if (program[index] == '?') {
-						index += 1;
-						return { LTQ, "<?" };
 					}
 				}
 				return { LT, "<" };
@@ -382,17 +368,7 @@ private:
 				if (index < program.size()) {
 					if (program[index] == '=') {
 						index += 1;
-						if (index < program.size()) {
-							if (program[index] == '?') {
-								index += 1;
-								return { GTEQ, ">=?" };
-							}
-						}
 						return { GTE, ">=" };
-					}
-					if (program[index] == '?') {
-						index += 1;
-						return { GTQ, ">?" };
 					}
 				}
 				return { GT, ">" };

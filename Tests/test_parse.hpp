@@ -104,7 +104,10 @@ bool test_parse() {
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "a<b,c>?d>");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "c >=? '0' and c <=? '9'");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "'\\\\'");
-	
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "a >? b");
+	ok &= test_parse_correct<VariableDeclarationStatement>(__LINE__, 0, "Bool c = a >? c");
+	ok &= test_parse_correct<CompareOperator>(__LINE__, 0, ">?");
+
 	ok &= test_parse_correct<And<Token<COLON>, Newline, Indent<Star<Statement>>>>(__LINE__, 0, ":\n\tx");
 	ok &= test_parse_correct<And<Newline, Indent<Star<Statement>>>>(__LINE__, 0, "\n\tx");
 	ok &= test_parse_correct<Indent<Star<Statement>>>(__LINE__, 0, "\tx");
@@ -196,8 +199,6 @@ bool test_parse() {
 
 
 	ok &= test_parse_correct<Typename, Token<GT>>(__LINE__, 0, "X>");
-	ok &= test_parse_correct<Typename, Token<GTQ>>(__LINE__, 0, "X>?");
-	ok &= test_parse_correct<Typename, Token<GTQ>>(__LINE__, 0, "X>?");
 	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<X>? a");
 	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<Tuple<X>?> a");
 	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<reference_wrapper<DB>?> services");

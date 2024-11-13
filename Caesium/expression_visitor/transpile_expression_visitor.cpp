@@ -3,6 +3,7 @@
 #include "../core/structurizer.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 #include "../utility/vec_of_variant_to_optional_vector_single_type.hpp"
+#include <iostream>
 #include <algorithm>
 
 using T = transpile_expression_visitor;
@@ -595,30 +596,36 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
 			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (build(f, g.it)) {
-				auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
-				structured_f.name = tmpl_name;
-				if (uses_auto(structured_f)) {
-					state.state.global_namespace.functions_using_auto[structured_f.name].push_back(std::move(structured_f));
-					return expression_information{ type_information{
-						.type = NodeStructs::FunctionType{
-							tmpl_name, state.state.global_namespace
-						},
-						.representation = tmpl_name
-					} };
+			try {
+				if (build(f, g.it)) {
+					auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
+					structured_f.name = tmpl_name;
+					if (uses_auto(structured_f)) {
+						state.state.global_namespace.functions_using_auto[structured_f.name].push_back(std::move(structured_f));
+						return expression_information{ type_information{
+							.type = NodeStructs::FunctionType{
+								tmpl_name, state.state.global_namespace
+							},
+							.representation = tmpl_name
+						} };
+					}
+					else {
+						state.state.global_namespace.functions[structured_f.name].push_back(copy(structured_f));
+						// TODO VERIFY
+						state.state.traversed_functions.insert(copy(structured_f));
+						state.state.functions_to_transpile.insert(std::move(structured_f));
+						return expression_information{ type_information{
+							.type = NodeStructs::FunctionType{
+								tmpl_name, state.state.global_namespace
+							},
+							.representation = tmpl_name
+						} };
+					}
 				}
-				else {
-					state.state.global_namespace.functions[structured_f.name].push_back(copy(structured_f));
-					// TODO VERIFY
-					state.state.traversed_functions.insert(copy(structured_f));
-					state.state.functions_to_transpile.insert(std::move(structured_f));
-					return expression_information{ type_information{
-						.type = NodeStructs::FunctionType{
-							tmpl_name, state.state.global_namespace
-						},
-						.representation = tmpl_name
-					} };
-				}
+			}
+			catch (...) {
+				std::cout << "TEMPLATE WAS\n\n" << replaced << "\n\n";
+				throw;
 			}
 		}
 		{

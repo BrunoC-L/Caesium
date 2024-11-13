@@ -7,30 +7,30 @@ using sf__TcpListener = sf::TcpListener;
 using sf__SocketSelector = sf::SocketSelector;
 using sf__Socket = sf::Socket;
 using sf__SocketStatus = sf::SocketStatus;
-struct A;
-struct B;
-struct a__b__c;
+using std__reference_wrapper = std::reference_wrapper<Ts...>;
+struct reference_wrapper__DB;
+struct ServerServiceProvider__DB;
+struct DB;
 
-struct A {
+struct reference_wrapper__DB {
+DB _;
 };
 
-struct B {
-Int a;
+struct ServerServiceProvider__DB {
+Tuple__Optional<std__reference_wrapper__DB> services;
 };
 
-struct a__b__c {
+struct DB {
+ServerServiceProvider__DB provider;
 };
 
 
 Int _redirect_main(const Vector<String>& args);
 
 Int _redirect_main(const Vector<String>& args) {
-	B x = B{0};
-	A y = A{};
-	B z = B{0};
-	sf__clock clock = sf__clock{};
-	a__b__c d = a__b__c{};
-	return z.a;
+	ServerServiceProvider__DB provider = ServerServiceProvider__DB{{ None, }};
+	DB db = DB{provider};
+	return 0;
 };
 
 int main(int argc, char** argv) {

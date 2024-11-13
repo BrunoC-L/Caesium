@@ -732,7 +732,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::AdditiveExpression& s
 
 NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& statement) {
 	using op_add = And<grammar::CompareOperator, grammar::AdditiveExpression>;
-	using VT = Variant<Token<LTQ>, Token<LTEQ>, Token<GTQ>, Token<GTEQ>>;
+	using VT = Variant<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>;
 	const auto& comparisons = statement.get<Star<op_add>>().get<op_add>();
 	if (comparisons.size() == 0)
 		return getExpressionStruct(statement.get<grammar::AdditiveExpression>());
@@ -740,9 +740,9 @@ NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& st
 		return NodeStructs::Expression{ NodeStructs::CompareExpression{
 			getExpressionStruct(statement.get<grammar::AdditiveExpression>()),
 			comparisons
-				| std::views::transform([&](auto&& op_exp) {
+				| std::views::transform([&](const op_add& op_exp) {
 					return std::pair{
-						VT{ op_exp.get<grammar::CompareOperator>().value() },
+						VT{ op_exp.get<grammar::CompareOperator>().get<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>>().value() },
 						getExpressionStruct(op_exp.get<grammar::AdditiveExpression>())
 					};
 				})

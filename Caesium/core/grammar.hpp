@@ -85,7 +85,7 @@ namespace grammar {
 	using UnaryExpression = Alloc<And<Star<unary_operators>, PostfixExpression>>;
 	using MultiplicativeExpression = And<UnaryExpression, Star<And<Or<Token<ASTERISK>, Token<SLASH>, Token<PERCENT>>, UnaryExpression>>>;
 	using AdditiveExpression = And<MultiplicativeExpression, Star<And<Or<Token<PLUS>, Token<DASH>>, MultiplicativeExpression>>>;
-	using CompareOperator = Or<Token<LTQ>, Token<LTEQ>, Token<GTQ>, Token<GTEQ>>;
+	using CompareOperator = And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, Token<QUESTION>>;
 	using CompareExpression = And<AdditiveExpression, Star<And<CompareOperator, AdditiveExpression>>>;
 	using EqualityExpression = And<CompareExpression, Star<And<Or<Token<EQUALEQUAL>, Token<NEQUAL>>, CompareExpression>>>;
 	using AndExpression = And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>;

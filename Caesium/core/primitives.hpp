@@ -10,7 +10,7 @@
 
 struct parse_error {
 	std::string name_of_rule;
-	std::vector<TOKENVALUE>::iterator beg;
+	std::vector<TokenValue>::iterator beg;
 };
 
 namespace grammar {

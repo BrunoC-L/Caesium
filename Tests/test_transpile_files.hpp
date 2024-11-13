@@ -20,7 +20,7 @@ std::optional<std::string> open_read(const std::filesystem::path& file) {
 }
 
 std::optional<NodeStructs::File> create_file_struct(const std::string& folder_name, std::string_view caesiumProgram, std::string_view filename) {
-	std::vector<TOKENVALUE> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
+	std::vector<TokenValue> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
 	tokens_and_iterator g{ tokens, tokens.begin() };
 	auto file = grammar::File(0);
 	try {

@@ -213,10 +213,10 @@ struct NodeStructs {
 	struct CompareExpression {
 		Expression expr;
 		using op_types = Variant<
-			Token<LTQ>,
-			Token<LTEQ>,
-			Token<GTQ>,
-			Token<GTEQ>
+			Token<LT>,
+			Token<LTE>,
+			Token<GT>,
+			Token<GTE>
 		>;
 		std::vector<std::pair<op_types, Expression>> comparisons;
 	};

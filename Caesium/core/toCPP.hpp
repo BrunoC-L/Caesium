@@ -107,10 +107,10 @@ static constexpr std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::NOT) return "!";
 	if constexpr (token == TOKENS::EQUALEQUAL) return "==";
 	if constexpr (token == TOKENS::NEQUAL) return "!=";
-	if constexpr (token == TOKENS::LTQ) return "<";
-	if constexpr (token == TOKENS::GTQ) return ">";
-	if constexpr (token == TOKENS::LTEQ) return "<=";
-	if constexpr (token == TOKENS::GTEQ) return ">=";
+	if constexpr (token == TOKENS::LT) return "<";
+	if constexpr (token == TOKENS::GT) return ">";
+	if constexpr (token == TOKENS::LTE) return "<=";
+	if constexpr (token == TOKENS::GTE) return ">=";
 }
 
 template <size_t token>
