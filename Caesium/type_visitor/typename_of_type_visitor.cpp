@@ -137,3 +137,7 @@ R T::operator()(const NodeStructs::MapType& t) {
 		.templated_with = std::move(v)
 	}, NodeStructs::Value{} };
 }
+
+R T::operator()(const NodeStructs::CompileTimeType& t) {
+	throw;
+}

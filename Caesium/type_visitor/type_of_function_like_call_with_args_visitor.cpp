@@ -95,3 +95,7 @@ R T::operator()(const NodeStructs::Map& t) {
 R T::operator()(const NodeStructs::MapType& t) {
 	throw;
 }
+
+R T::operator()(const NodeStructs::CompileTimeType& t) {
+	throw;
+}

@@ -873,7 +873,7 @@ NodeStructs::IfStatement getStatementStruct(const grammar::IfStatement& statemen
 	};
 }
 
-NodeStructs::ForStatement getStatementStruct(const grammar::ForStatement& statement) {
+NodeStructs::ForStatement getForStatementStruct(const auto& statement) {
 	return {
 		.collection = getExpressionStruct(statement.get<grammar::Expression>()),
 		.iterators = statement.get<CommaPlus<Or<grammar::VariableDeclaration, grammar::Word>>>().get<Or<grammar::VariableDeclaration, grammar::Word>>()
@@ -895,19 +895,15 @@ NodeStructs::ForStatement getStatementStruct(const grammar::ForStatement& statem
 	};
 }
 
-NodeStructs::IForStatement getStatementStruct(const grammar::IForStatement&) {
-	throw;
-	/*NodeStructs::IForStatement res {
+NodeStructs::ForStatement getStatementStruct(const grammar::ForStatement& statement) {
+	return getForStatementStruct(statement);
+}
+
+NodeStructs::IForStatement getStatementStruct(const grammar::IForStatement& statement) {
+	return {
 		statement.get<grammar::Word>().value,
-		getExpressionStruct(statement.get<Expression>())
+		getForStatementStruct(statement)
 	};
-	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, grammar::Word>>>().get<grammar::Word>())
-		res.iterators.push_back({ it.value });
-	for (const auto& it : statement.get<CommaPlus<Or<VariableDeclaration, grammar::Word>>>().get<VariableDeclaration>())
-		res.iterators.push_back(NodeStructs::VariableDeclaration{ getStruct(it.get<Typename>()), it.get<grammar::Word>().value });
-	for (const auto& statement : statement.get<ColonIndentCodeBlock>().get<Indent<Star<Statement>>>().get<Statement>())
-		res.statements.push_back(getStatementStruct(statement));
-	return res;*/
 }
 
 NodeStructs::WhileStatement getStatementStruct(const grammar::WhileStatement& statement) {
@@ -1010,9 +1006,13 @@ NodeStructs::Assignment getStatementStruct(const grammar::Assignment& statement)
 }
 
 NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
-	return NodeStructs::Statement{ std::visit(
-		[](const auto& statement) -> NodeStructs::Statement {
-			return { getStatementStruct(statement) };
-		},
-		statement.get<grammar::StatementOpts>().get().value()) };
+	return NodeStructs::Statement{
+		std::visit(
+			[](const auto& statement) -> NodeStructs::Statement::VT {
+				return { getStatementStruct(statement) };
+			},
+			statement.get<grammar::StatementOpts>().get().value()
+		),
+		statement.get<Opt<Token<POUND>>>().has_value()
+	};
 }

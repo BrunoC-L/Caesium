@@ -263,10 +263,8 @@ struct NodeStructs {
 	};
 
 	struct IForStatement {
-		std::string index;
-		Expression collection;
-		std::vector<Variant<VariableDeclaration, std::string>> iterators;
-		std::vector<Statement> statements;
+		std::string index_iterator;
+		ForStatement for_statement;
 	};
 
 	struct IfStatement {
@@ -319,7 +317,7 @@ struct NodeStructs {
 	};
 
 	struct Statement {
-		Variant<
+		using VT = Variant<
 			Expression,
 			VariableDeclarationStatement,
 			IfStatement,
@@ -332,7 +330,9 @@ struct NodeStructs {
 			MatchStatement,
 			SwitchStatement,
 			Assignment
-		> statement;
+		>;
+		VT statement;
+		bool is_compile_time;
 	};
 
 	struct MemberVariable {
@@ -485,6 +485,10 @@ struct NodeStructs {
 		NonCopyableBox<MetaType> value_type;
 	};
 
+	struct CompileTimeType {
+		NonCopyableBox<MetaType> type;
+	};
+
 	struct MetaType {
 		using vt = Variant<
 			PrimitiveType, // ex. type(1)
@@ -507,7 +511,9 @@ struct NodeStructs {
 			Set, // type(Set)
 			SetType, // type(Set<Int>)
 			Map, // type(Map)
-			MapType // type(Map<Int, Int>)
+			MapType, // type(Map<Int, Int>)
+
+			CompileTimeType // type of a variable declared with #type var = ...
 		>;
 		vt type;
 	};
@@ -736,13 +742,13 @@ CMP0(Reference)
 CMP0(MutableReference)
 CMP0(Move)
 CMP0(Value)
-CMP1(Statement)
+CMP2(Statement)
 CMP1(Expression)
 CMP2(VariableDeclaration)
 CMP3(VariableDeclarationStatement)
 CMP3(IfStatement)
 CMP3(ForStatement)
-CMP4(IForStatement)
+CMP2(IForStatement)
 CMP2(WhileStatement)
 CMP2(MatchCase)
 CMP2(MatchStatement)
@@ -792,6 +798,7 @@ CMP0(Map)
 CMP1(VectorType)
 CMP1(SetType)
 CMP2(MapType)
+CMP1(CompileTimeType)
 CMP4(Interface)
 CMP2(Block)
 CMP5(Template)
@@ -830,6 +837,10 @@ inline std::weak_ordering operator<=>(const NodeStructs::PrimitiveType& left, co
 
 inline int copy(int i) {
 	return i;
+}
+
+inline bool copy(bool b) {
+	return b;
 }
 
 inline std::string copy(const std::string& str) {
@@ -1001,13 +1012,13 @@ COPY0(Reference)
 COPY0(MutableReference)
 COPY0(Move)
 COPY0(Value)
-COPY1(Statement)
+COPY2(Statement)
 COPY1(Expression)
 COPY2(VariableDeclaration)
 COPY3(VariableDeclarationStatement)
 COPY3(IfStatement)
 COPY3(ForStatement)
-COPY4(IForStatement)
+COPY2(IForStatement)
 COPY2(WhileStatement)
 COPY2(MatchCase)
 COPY2(MatchStatement)
@@ -1058,6 +1069,7 @@ COPY0(Map)
 COPY1(VectorType)
 COPY1(SetType)
 COPY2(MapType)
+COPY1(CompileTimeType)
 COPY4(Interface)
 COPY2(Block)
 COPY5(Template)

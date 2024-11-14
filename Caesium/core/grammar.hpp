@@ -182,7 +182,7 @@ namespace grammar {
 		Assignment
 	>>;
 
-	struct Statement : And<IndentToken, StatementOpts> {};
+	struct Statement : And<IndentToken, Opt<Token<POUND>>, StatementOpts> {};
 
 	using Interface = And<
 		Token<INTERFACE>,

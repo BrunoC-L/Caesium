@@ -498,16 +498,12 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
-	auto test = operator()(expr.operand);
-	return_if_error(test);
-	if (!std::holds_alternative<type_information>(test.value()))
-		throw;
-	const auto& test_ok = std::get<type_information>(test.value());
-	if (!std::holds_alternative<NodeStructs::TemplateType>(test_ok.type.type._value))
-		throw;
-
 	if (!std::holds_alternative<std::string>(expr.operand.expression.get()._value))
 		throw;
+	const auto& test_ok = std::get<std::string>(expr.operand.expression.get()._value);
+
+	throw;
+
 
 	if (auto it = state.state.global_namespace.templates.find(std::get<std::string>(expr.operand.expression.get()._value));
 		it != state.state.global_namespace.templates.end()) {
@@ -522,30 +518,6 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		size_t max_params = it->second.at(0).parameters.size();
 		for (unsigned i = 1; i < it->second.size(); ++i)
 			max_params = std::max(max_params, it->second.at(i).parameters.size());
-
-		if (tmpl.templated == "BUILTIN") {
-			/*if (tmpl.name == "Vector") {
-				auto x = type_of_typename(state, templated_with.at(0));
-				return_if_error(x);
-				return NodeStructs::MetaType{ NodeStructs::VectorType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
-			}
-			if (tmpl.name == "Set") {
-				auto x = type_of_typename(state, templated_with.at(0));
-				return_if_error(x);
-				return NodeStructs::MetaType{ NodeStructs::SetType{ Box<NodeStructs::MetaType>{ std::move(x).value() } } };
-			}
-			if (tmpl.name == "Map") {
-				auto x = type_of_typename(state, templated_with.at(0));
-				auto y = type_of_typename(state, templated_with.at(1));
-				return_if_error(x);
-				return_if_error(y);
-				return NodeStructs::MetaType{ NodeStructs::MapType{
-					Box<NodeStructs::MetaType>{ std::move(x).value() },
-					Box<NodeStructs::MetaType>{ std::move(y).value() }
-				} };
-			}*/
-			throw;
-		}
 
 		const auto& arg_placements = t.value().arg_placements;
 		auto grab_nth_with_commas = [&](size_t i) {
@@ -611,8 +583,11 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 					}
 					else {
 						state.state.global_namespace.functions[structured_f.name].push_back(copy(structured_f));
-						// TODO VERIFY
 						state.state.traversed_functions.insert(copy(structured_f));
+						auto transpiled_f = transpile(state.unindented(), structured_f);
+						return_if_error(transpiled_f);
+						if (uses_auto(structured_f))
+							throw;
 						state.state.functions_to_transpile.insert(std::move(structured_f));
 						return expression_information{ type_information{
 							.type = NodeStructs::FunctionType{
@@ -785,7 +760,10 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 		},
 		[&](const NodeStructs::VectorType& vec_t) -> R {
 			if (expr.arguments.args.size() != 0)
-				throw;
+				return error{
+					"user error",
+					"vectors construction is done without arguments, expression was: `" + expression_original_representation(expr) + "`"
+				};
 			return expression_information{ non_type_information{
 				.type = copy(vec_t),
 				.representation = typename_repr.value() + "{}",
@@ -797,12 +775,12 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				return error{
 					"user error",
 					"unions require at least one argument, union type was `" + typename_original_representation(typename_of_type(state, union_t).value()) + "`, expression was: `" + expression_original_representation(expr) + "`"
-			};
+				};
 			if (expr.arguments.args.size() > 1)
 				return error{
 					"user error",
 					"unions require at most one argument, union type was `" + typename_original_representation(typename_of_type(state, union_t).value()) + "`, expression was: `" + expression_original_representation(expr) + "`"
-			};
+				};
 			auto expr_info = transpile_arg(state, variables, expr.arguments.args.at(0));
 			return_if_error(expr_info);
 			if (!std::holds_alternative<non_type_information>(expr_info.value()))

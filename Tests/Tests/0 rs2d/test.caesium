@@ -30,22 +30,22 @@ type ServerServiceProvider2:
 template provide<Ts..., U>:
     Void provide(ServerServiceProvider<`Ts...`> ref! provider, `U` ref service):
         #Bool found = False
-        #ifor i, T in `Ts...`:
+        #ifor i, T in type_list<`Ts...`>:
             #if T == `U`/*<`Ts...`>*/:
                 #found = True
                 provider.services[i] = std::reference_wrapper(service)
         #if !found:
-            # error()
+            #compile_time_error()
 
 template request<Ts..., U>:
     `U` ref request(ServerServiceProvider<`Ts...`> ref provider):
         #Bool found = False
-        #ifor i, T in `Ts...`:
-            #if T == `U`/*<`Ts...`>*/:
+        #ifor i, T in type_list<`Ts...`>:
+            #if T == `U`:
                 #found = True
                 return provider.services[i].get()
         #if !found:
-            #error()
+            #compile_time_error()
 
 using ServerServiceProviderImpl = ServerServiceProvider<DB>
 
@@ -68,12 +68,12 @@ Int main(Vector<String> ref args):
 	ServerServiceProviderImpl provider = { { None } }
     DB db = { provider }
 
-//    provide<DB, DB<DB>>(provider, db)
-//    provider.provide<DB, DB<DB>>(db)
-//    db.provide<DB, DB<DB>>(provider)
-//    (provider, db).provide<DB, DB<DB>>()
+    provide<DB, DB>(provider, db)
+//    provider.provide<DB, DB>(db)
+//    db.provide<DB, DB>(provider)
+//    (provider, db).provide<DB, DB>()
 
-//    auto db_ref = provider.request<DB>()
+//    auto db_ref = provider.request()
 
 //    Int a = 0
 //    Int b = 1

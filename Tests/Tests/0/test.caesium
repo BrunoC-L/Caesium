@@ -1,0 +1,4 @@
+Int main(Vector<String> ref args):
+    auto x = Vector<String>()
+    #Int a = 0
+    return a

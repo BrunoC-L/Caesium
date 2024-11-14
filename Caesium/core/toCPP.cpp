@@ -63,6 +63,10 @@ void add(Namespace& name_space, Namespace&& ns) {
 void add_builtins(Namespace& name_space) {
 	builtins _builtins;
 
+	add(name_space, std::move(_builtins.builtin_compile_time_error));
+	add(name_space, std::move(_builtins.builtin_type_list));
+
+
 	add(name_space, std::move(_builtins.builtin_tuple));
 	add(name_space, std::move(_builtins.builtin_union));
 
@@ -578,7 +582,7 @@ transpile_t transpile(
 	const NodeStructs::MetaType& expected_return_type
 ) {
 	std::stringstream ss;
-	for (const auto& statement : statements) {
+	for (const NodeStructs::Statement& statement : statements) {
 		auto k = transpile_statement(state, variables, statement, expected_return_type);
 		if (k.has_value())
 			ss << indent(state.indent) << k.value();
@@ -757,9 +761,33 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 	const NodeStructs::MetaType& argument
 ) {
 	using R = Variant<not_assignable, directly_assignable, requires_conversion>;
+
+	if (std::holds_alternative<NodeStructs::CompileTimeType>(argument.type._value)) {
+		const auto& arg = std::get<NodeStructs::CompileTimeType>(argument.type._value);
+		auto res = assigned_to(state_, parameter, arg.type.get());
+
+		if (std::holds_alternative<NodeStructs::PrimitiveType>(arg.type.get().type._value)) {
+			const auto& x = std::get<NodeStructs::PrimitiveType>(arg.type.get().type._value);
+			return requires_conversion{
+				[&](transpilation_state_with_indent, variables_t&, const NodeStructs::Expression&) -> transpile_expression_information_t {
+					std::string representation = [&]() {
+						std::stringstream ss;
+						std::visit(overload(
+							[&](const auto& val) { ss << val; },
+							[&](const NodeStructs::void_t& val) { ss << "void_t{}"; },
+							[&](const NodeStructs::empty_optional_t& val) { ss << "empty_optional_t{}"; }
+						), x.value._value);
+						return ss.str();
+					}();
+					return non_type_information{ .type = copy(x), .representation = std::move(representation), .value_category = NodeStructs::Value{} };
+				}
+			};
+		}
+		throw;
+	}
 	return std::visit(
 		overload(
-			[&](const auto& e, const auto& u, const auto& state) -> R {
+			[&](const auto& param, const auto& arg, const auto& state) -> R {
 				throw;
 			},
 			[&](const NodeStructs::OptionalType& e, const auto& u, const auto& state) -> R {
@@ -1204,6 +1232,7 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	variables_t& variables,
 	const NodeStructs::Statement& statement
 ) {
+	bool is_compile_time = statement.is_compile_time;
 	return std::visit(
 		overload(
 			overload_default_error,
@@ -1222,13 +1251,14 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 				return std::nullopt;
 			},
 			[&](const NodeStructs::VariableDeclarationStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-				auto t = transpile_statement(
+				auto t = transpile_statement_visitor{ {},
 					state,
 					variables,
-					statement,
-					NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::void_t{} } }
-				);
+					NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::void_t{} } },
+					is_compile_time
+				}(statement);
 				return_if_error(t);
+				throw;
 			},
 			[&](const NodeStructs::IfStatement& statement) -> expected<std::optional<NodeStructs::MetaType>> {
 				auto if_res_t = deduce_return_type(state, variables, statement.ifStatements);
@@ -1818,6 +1848,10 @@ static expected<std::optional<const NodeStructs::Function*>> find_best_function0
 		// TODO VERIFY
 		if (!state.state.traversed_functions.contains(fn_ok)) {
 			state.state.traversed_functions.insert(copy(fn_ok));
+			auto transpiled_f = transpile(state.unindented(), fn_ok);
+			return_if_error(transpiled_f);
+			if (uses_auto(fn_ok))
+				throw;
 			state.state.functions_to_transpile.insert(copy(fn_ok));
 		}
 

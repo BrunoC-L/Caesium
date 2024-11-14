@@ -74,10 +74,14 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typena
 					throw;
 				}
 				else {
-					// TODO VERIFY
 					state.state.global_namespace.functions[tmpl_name].push_back(copy(structured_f));
 					state.state.traversed_functions.insert(copy(structured_f));
+					auto transpiled_f = transpile(state.unindented(), structured_f);
+					return_if_error(transpiled_f);
+					if (uses_auto(structured_f))
+						throw;
 					state.state.functions_to_transpile.insert(std::move(structured_f));
+
 					return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name, state.state.global_namespace } };
 				}
 			}

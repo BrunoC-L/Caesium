@@ -4,6 +4,10 @@
 #include "../utility/as_map.hpp"
 
 struct builtins {
+	NodeStructs::Builtin builtin_compile_time_error = { "compile_time_error" };
+	NodeStructs::Builtin builtin_type_list = { "type_list" };
+
+
 	NodeStructs::Builtin builtin_union = { "Union" };
 	NodeStructs::Builtin builtin_tuple = { "Tuple" };
 
