@@ -3,9 +3,8 @@
 
 namespace grammar {
 	// forward declare recursive rules
-	struct Typename; // typenames contain typenames
 	struct Statement; // statements contain statements
-	struct ConditionalExpression; // expressions contain expressions
+	struct OptionalExpression; // expressions contain expressions
 	struct FunctionArgument; // expressions use function arguments and function arguments use expressions
 
 	// alias the most used tokens
@@ -15,41 +14,44 @@ namespace grammar {
 
 	using Enum = And<Commit<Token<ENUM>>, Word, Token<COLON>, Newline, Star<Indent<And<IndentToken, Word, Newline>>>>;
 
-	using Expression = ConditionalExpression;
+	using Expression = OptionalExpression;
 	using Import = And<Commit<Token<IMPORT>>, Or<Word, String>, Newline>;
-	using Alias = And<Commit<Token<USING>>, Word, Token<EQUAL>, Typename, Newline>;
+	using Alias = And<Commit<Token<USING>>, Word, Token<EQUAL>, Expression, Newline>;
 	using ParameterCategory = Or<Token<VAL>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	using ArgumentCategory = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
-	using FunctionParameter = And<Commit<Typename>, Word>;
+	using FunctionParameter = And<Commit<Expression>, Word>;
 	using FunctionParameters = CommaStar<FunctionParameter>;
 	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement>>>>>;
-	using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+	using Function = And<Expression, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 	using ParenArguments = And<Commit<Token<PARENOPEN>>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 	using BraceArguments = And<Commit<Token<BRACEOPEN>>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
 	using BracketArguments = And< Commit<Token<BRACKETOPEN>>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
 	using TemplateArguments = And<Token<LT>, CommaStar<Expression>, Token<GT>>;
 
-	using VariadicExpansionTypename = And<Word, Token<DOTS>>;
-	using NamespaceTypenameExtension = And<Token<NS>, Word>;
-	using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<Typename>>, Token<GT>>;
-	using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
-	using OptionalTypenameExtension = Token<QUESTION>;
-	using NonAutoTypename = And<Or<VariadicExpansionTypename, Word>, Star<Or<NamespaceTypenameExtension, TemplateTypenameExtension, UnionTypenameExtension, OptionalTypenameExtension>>>;
+	using MemberVariable = And<Expression, Word, Newline>;
+	using TypeElement = Or<Alias, MemberVariable>;
 
-	struct Typename : And<
-		Or<Token<AUTO>, NonAutoTypename>,
-		Opt<ParameterCategory>,
-		Opt<Token<QUESTION>>
-	> {};
+	using VariadicExpansionExpression = And<Word, Token<DOTS>>;
+	using NamespaceExpressionExtension = And<Token<NS>, Word>;
+	using TemplateExpressionExtension = And<Token<LT>, CommaStar<Alloc<Expression>>, Token<GT>>;
+	using UnionExpressionExtension = And<Token<BITOR>, Alloc<Expression>>;
+	using OptionalExpressionExtension = Token<QUESTION>;
+	using NonAutoExpression = And<
+		Or<VariadicExpansionExpression, Word>,
+		Star<Or<
+			NamespaceExpressionExtension,
+			TemplateExpressionExtension,
+			UnionExpressionExtension,
+			OptionalExpressionExtension
+		>>
+	>;
 
-	using MemberVariable = And<Typename, Word, Newline>;
-	using TypeElement = Or<Alias/*, Function*/, MemberVariable/*, Constructor*/>;
-
-	using Construct = And<Typename, BraceArguments>;
+	using Construct = And<Expression, BraceArguments>;
 
 	using ParenExpression = Or<
 		Construct,
 		Word,
+		Token<AUTO>,
 		Token<FLOATING_POINT_NUMBER>,
 		Token<INTEGER_NUMBER>,
 		Token<STRING>,
@@ -90,7 +92,7 @@ namespace grammar {
 	using EqualityExpression = And<CompareExpression, Star<And<Or<Token<EQUALEQUAL>, Token<NEQUAL>>, CompareExpression>>>;
 	using AndExpression = And<EqualityExpression, Star<And<Token<AND>, EqualityExpression>>>;
 	using OrExpression = And<AndExpression, Star<And<Token<OR>, AndExpression>>>;
-	struct ConditionalExpression : And<
+	using ConditionalExpression = And<
 			OrExpression,
 			Opt<And<
 				Token<IF>,
@@ -98,15 +100,19 @@ namespace grammar {
 				Token<ELSE>,
 				OrExpression
 			>>
-		> {};
+		>;
+
+	using ParameterCategorizedExpression = And<ConditionalExpression, Opt<ParameterCategory>>;
+	using ArgumentCategorizedExpression = And<Opt<ArgumentCategory>, ParameterCategorizedExpression>;
+	struct OptionalExpression : And<ArgumentCategorizedExpression, Opt<Token<QUESTION>>> {};
 
 	struct FunctionArgument : And<Opt<ArgumentCategory>, Expression> {};
 
 	using ExpressionStatement = And<Expression, Newline>;
 	using BlockDeclaration = And<Token<BLOCK>, ColonIndentCodeBlock>;
-	using BlockStatement = And<Token<BLOCK>, Typename>;
-	using VariableDeclaration = And<Typename, Word>;
-	using VariableDeclarationStatement = And<Typename, Word, Token<EQUAL>, Expression, Newline>;
+	using BlockStatement = And<Token<BLOCK>, Expression>;
+	using VariableDeclaration = And<Expression, Word>;
+	using VariableDeclarationStatement = And<Expression, Word, Token<EQUAL>, Expression, Newline>;
 
 	struct ElseStatement; // we need to explicitly allow `else if <>:` otherwise using `else {ifstatement}` would require indentation
 	using IfStatement = And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>;

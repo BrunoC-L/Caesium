@@ -21,6 +21,12 @@ struct ExpressionVisitor {
 };
 
 #define ExpressionExpands_(Expand) \
+	Expand(NodeStructs::TemplatedExpression)\
+	Expand(NodeStructs::NamespacedExpression)\
+	Expand(NodeStructs::OptionalExpression)\
+	Expand(NodeStructs::ParameterCategorizedExpression)\
+	Expand(NodeStructs::ArgumentCategorizedExpression)\
+\
 	Expand(NodeStructs::ConditionalExpression)\
 	Expand(NodeStructs::OrExpression)\
 	Expand(NodeStructs::AndExpression)\

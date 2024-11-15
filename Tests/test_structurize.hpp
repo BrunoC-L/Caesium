@@ -36,7 +36,7 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 				return getExpressionStruct(node);
 			else if constexpr (std::is_same_v<DT, NodeStructs::Function>)
 				return structurize_function(node, std::nullopt);
-			else if constexpr (std::is_same_v<DT, NodeStructs::Typename>)
+			else if constexpr (std::is_same_v<DT, NodeStructs::Expression>)
 				return getStruct(node, tag_allow_value_category_or_empty{});
 			else
 				return getStruct(node);
@@ -78,10 +78,10 @@ bool test_structurize_equals() {
 	bool ok = true;
 
 	ok &= test_structurize_equals<Typename>(__LINE__, 0, "a::b::c",
-		NodeStructs::Typename{
+		NodeStructs::Expression{
 			NodeStructs::NamespacedTypename{
-				NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-					NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{} },
+				NodeStructs::Expression{ NodeStructs::NamespacedTypename{
+					NodeStructs::Expression{ NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{} },
 					"b"
 				}, NodeStructs::Value{} },
 				"c"
@@ -89,13 +89,13 @@ bool test_structurize_equals() {
 		});
 
 	ok &= test_structurize_equals<Typename>(__LINE__, 0, "a | b",
-		NodeStructs::Typename{
+		NodeStructs::Expression{
 			NodeStructs::UnionTypename{
 				as_vec(
-					NodeStructs::Typename{
+					NodeStructs::Expression{
 						NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{}
 					},
-					NodeStructs::Typename{
+					NodeStructs::Expression{
 						NodeStructs::BaseTypename{ "b" }, NodeStructs::Value{}
 					}
 				)
@@ -103,9 +103,9 @@ bool test_structurize_equals() {
 		});
 
 	ok &= test_structurize_equals<Typename>(__LINE__, 0, "a | b | c",
-		NodeStructs::Typename{
+		NodeStructs::Expression{
 			NodeStructs::UnionTypename{
-				as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{} }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "b" }, NodeStructs::Value{} }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "c" }, NodeStructs::Value{} })
+				as_vec(NodeStructs::Expression{ NodeStructs::BaseTypename{ "a" }, NodeStructs::Value{} }, NodeStructs::Expression{ NodeStructs::BaseTypename{ "b" }, NodeStructs::Value{} }, NodeStructs::Expression{ NodeStructs::BaseTypename{ "c" }, NodeStructs::Value{} })
 			}, NodeStructs::Value{}
 		});
 

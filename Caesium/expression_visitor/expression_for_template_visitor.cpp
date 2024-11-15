@@ -5,6 +5,26 @@
 using T = expression_for_template_visitor;
 using R = T::R;
 
+R T::operator()(const NodeStructs::TemplatedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::NamespacedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::OptionalExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::ParameterCategorizedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::ArgumentCategorizedExpression& expr) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 	throw;
 	if (expr.ifElseExprs.has_value()) {

@@ -9,8 +9,15 @@
 #include "../utility/enumerate.hpp"
 #include "node_structs.hpp"
 
+struct Reference {};
+struct MutableReference {};
+struct Value {};
+struct Uncategorizable {};
+
+using ValueCategory = Variant<Reference, MutableReference, Value, Uncategorizable>;
+
 struct variable_info {
-	NodeStructs::ValueCategory value_category;
+	ValueCategory value_category;
 	NodeStructs::MetaType type;
 };
 using variables_t = std::map<std::string, std::vector<variable_info>>;
@@ -24,7 +31,7 @@ struct type_information{
 struct non_type_information{
 	NodeStructs::MetaType type;
 	std::string representation;
-	NodeStructs::ValueCategory value_category;
+	ValueCategory value_category;
 };
 
 inline auto copy(const non_type_information& info) {
@@ -49,7 +56,7 @@ struct Namespace {
 	map_to_vec<NodeStructs::Template> templates;
 
 	map_to_vec<NodeStructs::Block> blocks;
-	std::map<std::string, NodeStructs::Typename> aliases;
+	std::map<std::string, NodeStructs::Expression> aliases;
 	map_to_vec<NodeStructs::Enum> enums;
 
 	std::map<std::string, Namespace> namespaces;
@@ -80,7 +87,7 @@ struct transpilation_state {
 	std::set<NodeStructs::Interface> interfaces_to_transpile;
 	std::set<NodeStructs::Enum> enums_to_transpile;
 
-	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
+	std::map<NodeStructs::Expression, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
 };
 
 struct transpilation_state_with_indent {
@@ -134,15 +141,15 @@ static std::string indent(size_t n) {
 	return res;
 };
 
-static NodeStructs::ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory& cat) {
+static ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory& cat) {
 	return std::visit(overload(
-		[](const NodeStructs::Reference&) -> NodeStructs::ValueCategory {
+		[](const NodeStructs::Reference&) -> ValueCategory {
 			return NodeStructs::Reference{};
 		},
-		[](const NodeStructs::MutableReference&) -> NodeStructs::ValueCategory {
+		[](const NodeStructs::MutableReference&) -> ValueCategory {
 			return NodeStructs::MutableReference{};
 		},
-		[](const NodeStructs::Move&) -> NodeStructs::ValueCategory {
+		[](const NodeStructs::Move&) -> ValueCategory {
 			return NodeStructs::Value{};
 		}
 	), cat._value);
@@ -150,7 +157,7 @@ static NodeStructs::ValueCategory argument_category_to_value_category(const Node
 
 std::optional<error> validate_templates(const std::vector<NodeStructs::Template>& templates);
 
-static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory>& cat) {
+static ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory>& cat) {
 	if (cat.has_value())
 		return argument_category_to_value_category(cat.value());
 	else
@@ -233,11 +240,6 @@ transpile_t transpile_expressions(
 	const std::vector<NodeStructs::Expression>& args
 );
 
-transpile_t transpile_typenames(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Typename>& args
-);
-
 NodeStructs::MetaType iterator_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::MetaType& type
@@ -274,7 +276,7 @@ transpile_t expr_to_printable(
 bool uses_auto(const NodeStructs::Function& fn);
 bool uses_auto(const NodeStructs::FunctionParameter& param);
 bool uses_auto(const NodeStructs::Statement& param);
-bool uses_auto(const NodeStructs::Typename& t);
+bool uses_auto(const NodeStructs::Expression& t);
 
 //#include "../type_visitor/transpile_type_visitor.hpp"
 #include "../type_visitor/traverse_type_visitor.hpp"
@@ -290,11 +292,11 @@ bool uses_auto(const NodeStructs::Typename& t);
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
 
-#include "../typename_visitor/transpile_typename_visitor.hpp"
-#include "../typename_visitor/type_of_typename_visitor.hpp"
-#include "../typename_visitor/type_template_of_typename_visitor.hpp"
-#include "../typename_visitor/typename_for_template_visitor.hpp"
-#include "../typename_visitor/typename_original_representation_visitor.hpp"
+//#include "../typename_visitor/transpile_typename_visitor.hpp"
+//#include "../typename_visitor/type_of_typename_visitor.hpp"
+//#include "../typename_visitor/type_template_of_typename_visitor.hpp"
+//#include "../typename_visitor/typename_for_template_visitor.hpp"
+//#include "../typename_visitor/typename_original_representation_visitor.hpp"
 
 
 expected<NodeStructs::Function> realise_function_using_auto(
@@ -303,7 +305,7 @@ expected<NodeStructs::Function> realise_function_using_auto(
 	const std::vector<NodeStructs::MetaType>& arg_types
 );
 
-NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t);
+NodeStructs::Expression typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t);
 
 struct Arrangement {
 	std::reference_wrapper<const NodeStructs::Template> tmpl;
@@ -320,7 +322,7 @@ expected<Arrangement> find_best_template(
 
 expected<Arrangement> find_best_template(
 	const std::vector<NodeStructs::Template>& templates,
-	const std::vector<NodeStructs::Typename>& args
+	const std::vector<NodeStructs::Expression>& args
 );
 
 expected<std::optional<const NodeStructs::Function*>> find_best_function(

@@ -3,94 +3,60 @@
 #include "parse.hpp"
 #include "../utility/overload.hpp"
 
-struct tag_expect_value_category {};
+struct tag_expect_parameter_category {};
 struct tag_expect_empty_category {};
-struct tag_allow_value_category_or_empty {};
+struct tag_allow_parameter_category_or_empty {};
 
 NodeStructs::Import getStruct(const grammar::Import& f);
 
-NodeStructs::Typename getStruct(const grammar::Typename& t, tag_expect_value_category);
-NodeStructs::Typename getStruct(const grammar::Typename& t, tag_expect_empty_category);
-NodeStructs::Typename getStruct(const grammar::Typename& t, tag_allow_value_category_or_empty);
+NodeStructs::Expression getStruct(const grammar::Expression& t, tag_expect_parameter_category);
+NodeStructs::Expression getStruct(const grammar::Expression& t, tag_expect_empty_category);
+NodeStructs::Expression getStruct(const grammar::Expression& t, tag_allow_parameter_category_or_empty);
 
-NodeStructs::Typename extend(NodeStructs::Typename&&, const grammar::NamespaceTypenameExtension&);
+NodeStructs::Expression extend(NodeStructs::Expression&&, const grammar::NamespaceExpressionExtension&);
 
-NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_expect_value_category);
+NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_expect_parameter_category);
 NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_expect_empty_category);
-NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_allow_value_category_or_empty);
+NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_allow_parameter_category_or_empty);
 
-NodeStructs::Function structurize_function(const grammar::Function& f, std::optional<NodeStructs::Typename> name_space);
+NodeStructs::Function structurize_function(const grammar::Function& f, std::optional<NodeStructs::Expression> name_space);
 
 NodeStructs::Template getStruct(const grammar::Template& t);
-
-NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeStructs::Typename> name_space);
-
+NodeStructs::Template getStruct(const grammar::Template& t, std::optional<NodeStructs::Expression> name_space);
 NodeStructs::MemberVariable getStruct(const grammar::MemberVariable& f);
-
-NodeStructs::Alias getStruct(const grammar::Alias& f, std::optional<NodeStructs::Typename> name_space);
-
-NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::Typename> name_space);
-
+NodeStructs::Alias getStruct(const grammar::Alias& f, std::optional<NodeStructs::Expression> name_space);
+NodeStructs::Type getStruct(const grammar::Type& cl, std::optional<NodeStructs::Expression> name_space);
 NodeStructs::File getStruct(const grammar::File& f, std::string_view fileName);
-
 NodeStructs::ArgumentCategory getStruct(const Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>& t);
-
 NodeStructs::FunctionArgument getStruct(const grammar::FunctionArgument& arg);
-
 NodeStructs::ParenArguments getStruct(const grammar::ParenArguments& args);
-
 NodeStructs::BracketArguments getStruct(const grammar::BracketArguments& args);
-
 NodeStructs::BraceArguments getStruct(const grammar::BraceArguments& args);
-
 NodeStructs::TemplateArguments getStruct(const grammar::TemplateArguments& args);
 
 NodeStructs::Expression getExpressionStruct(const grammar::BraceArguments&);
-
 NodeStructs::Expression getExpressionStruct(const grammar::ParenExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::PostfixExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::UnaryExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::MultiplicativeExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::AdditiveExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::EqualityExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::AndExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::OrExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::ConditionalExpression& statement);
-
 NodeStructs::Expression getExpressionStruct(const grammar::ExpressionStatement& statement);
 
 NodeStructs::Expression getStatementStruct(const grammar::ExpressionStatement& statement);
-
 NodeStructs::VariableDeclarationStatement getStatementStruct(const grammar::VariableDeclarationStatement& statement);
-
 std::vector<NodeStructs::Statement> getStatements(const grammar::ColonIndentCodeBlock& code);
-
 NodeStructs::BlockStatement getStatementStruct(const grammar::BlockStatement& statement);
-
 NodeStructs::IfStatement getStatementStruct(const grammar::IfStatement& statement);
-
 NodeStructs::ForStatement getStatementStruct(const grammar::ForStatement& statement);
-
 NodeStructs::IForStatement getStatementStruct(const grammar::IForStatement&);
-
 NodeStructs::WhileStatement getStatementStruct(const grammar::WhileStatement& statement);
-
 NodeStructs::BreakStatement getStatementStruct(const grammar::BreakStatement& statement);
-
 std::vector<NodeStructs::Expression> getExpressions(const std::vector<grammar::Expression>& vec);
-
 NodeStructs::ReturnStatement getStatementStruct(const grammar::ReturnStatement& statement);
-
 NodeStructs::MatchStatement getStatementStruct(const grammar::MatchStatement& statement);
-
 NodeStructs::Statement getStatementStruct(const grammar::Statement& statement);

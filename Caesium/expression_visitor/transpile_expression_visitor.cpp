@@ -9,6 +9,26 @@
 using T = transpile_expression_visitor;
 using R = T::R;
 
+R T::operator()(const NodeStructs::TemplatedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::NamespacedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::OptionalExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::ParameterCategorizedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::ArgumentCategorizedExpression& expr) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 	if (expr.ifElseExprs.has_value()) {
 		// x if first else second
@@ -723,7 +743,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 
 			auto param_ts = vec_of_expected_to_expected_of_vec(
 				tt.member_variables
-				| std::views::transform([](const NodeStructs::MemberVariable& mem) -> const NodeStructs::Typename& { return mem.type; })
+				| std::views::transform([](const NodeStructs::MemberVariable& mem) -> const NodeStructs::Expression& { return mem.type; })
 				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
 				| to_vec()
 			);

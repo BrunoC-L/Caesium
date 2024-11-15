@@ -7,12 +7,12 @@ struct typename_of_type_visitor : TypeCategoryVisitor<typename_of_type_visitor> 
 
 	transpilation_state_with_indent state;
 
-	using R = expected<NodeStructs::Typename>;
+	using R = expected<NodeStructs::Expression>;
 
 	TypeCategoryVisitorDeclarations
 };
 
-expected<NodeStructs::Typename> typename_of_type(
+expected<NodeStructs::Expression> typename_of_type(
 	transpilation_state_with_indent state,
 	const auto& type
 ) {

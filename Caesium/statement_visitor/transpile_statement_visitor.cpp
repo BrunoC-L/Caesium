@@ -52,7 +52,7 @@ R f(
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 	bool is_aggregate_init = std::holds_alternative<NodeStructs::BraceArguments>(statement.expr.expression.get()._value);
-	bool is_auto = cmp(statement.type.value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) == std::weak_ordering::equivalent;
+	bool is_auto = cmp(statement.type.value, NodeStructs::Expression{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) == std::weak_ordering::equivalent;
 	if (is_auto) {
 		if (is_aggregate_init)
 			return error{

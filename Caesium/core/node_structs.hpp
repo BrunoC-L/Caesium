@@ -16,13 +16,13 @@ template <typename T> using Optional = caesium_lib::optional::type<T>;
 struct Namespace;
 
 struct NodeStructs {
-	struct TemplatedTypename;
-	struct NamespacedTypename;
-	struct BaseTypename;
-	struct VariadicExpansionTypename;
-	struct TupleTypename;
-	struct UnionTypename;
-	struct Typename;
+	struct TemplatedExpression;
+	struct NamespacedExpression;
+	struct BaseExpression;
+	struct VariadicExpansionExpression;
+	struct TupleExpression;
+	struct UnionExpression;
+	struct Expression;
 
 	struct Statement;
 
@@ -52,55 +52,58 @@ struct NodeStructs {
 	struct Value {};
 	using ArgumentCategory = Variant<Reference, MutableReference, Move>;
 	using ParameterCategory = Variant<Reference, MutableReference, Value>;
-	using ValueCategory = Variant<Reference, MutableReference, Value>;
 
-	struct TemplatedTypename {
-		NonCopyableBox<Typename> type;
-		std::vector<Typename> templated_with;
+	struct TemplatedExpression {
+		NonCopyableBox<Expression> type;
+		std::vector<Expression> templated_with;
 	};
 
-	struct NamespacedTypename {
-		NonCopyableBox<Typename> name_space;
+	struct NamespacedExpression {
+		NonCopyableBox<Expression> name_space;
 		std::string name_in_name_space;
 	};
 
-	struct BaseTypename {
+	struct BaseExpression {
 		std::string type;
 	};
 
-	struct VariadicExpansionTypename {
-		NonCopyableBox<Typename> type;
+	struct VariadicExpansionExpression {
+		NonCopyableBox<Expression> type;
 	};
 
-	struct TupleTypename {
-		std::vector<Typename> members;
+	struct TupleExpression {
+		std::vector<Expression> members;
 	};
 
-	struct UnionTypename {
-		std::vector<Typename> ors;
+	struct UnionExpression {
+		std::vector<Expression> ors;
 	};
 
-	/*struct TupleTypename {
-	};*/
-
-	struct OptionalTypename {
-		NonCopyableBox<Typename> type;
+	struct OptionalExpression {
+		NonCopyableBox<Expression> expr;
 	};
 
-	struct Typename {
-		using Variant_ = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, TupleTypename, UnionTypename, VariadicExpansionTypename>;
-		Variant_ value;
-		Optional<ParameterCategory> category;
+	struct ParameterCategorizedExpression {
+		NonCopyableBox<Expression> expr;
+		ParameterCategory category;
 	};
 
-	struct Alias {
-		std::string aliasFrom;
-		Typename aliasTo;
-		std::optional<Typename> name_space;
+	struct ArgumentCategorizedExpression {
+		NonCopyableBox<Expression> expr;
+		ArgumentCategory category;
 	};
 
 	struct Expression {
 		using vt = Variant<
+			TemplatedExpression,
+			NamespacedExpression,
+			OptionalExpression,
+			ParameterCategorizedExpression,
+			ArgumentCategorizedExpression,
+
+			TupleExpression,
+			UnionExpression,
+			VariadicExpansionExpression,
 			ConditionalExpression,
 			OrExpression,
 			AndExpression,
@@ -123,8 +126,15 @@ struct NodeStructs {
 			Token<INTEGER_NUMBER>,
 			Token<STRING> // string token like "abc"
 		> ;
-		NonCopyableBox<vt> expression;
+		NonCopyableBox<vt> value;
 	};
+
+	struct Alias {
+		std::string aliasFrom;
+		Expression aliasTo;
+		std::optional<Expression> name_space;
+	};
+
 	struct FunctionArgument {
 		std::optional<ArgumentCategory> category;
 		Expression expr;
@@ -162,7 +172,7 @@ struct NodeStructs {
 	};
 
 	struct ConstructExpression {
-		Typename operand;
+		Expression operand;
 		BraceArguments arguments;
 	};
 
@@ -246,12 +256,12 @@ struct NodeStructs {
 	};
 
 	struct VariableDeclaration {
-		Typename type;
+		Expression type;
 		std::string name;
 	};
 
 	struct VariableDeclarationStatement {
-		Typename type;
+		Expression type;
 		std::string name;
 		Expression expr;
 	};
@@ -279,7 +289,7 @@ struct NodeStructs {
 	};
 
 	struct MatchCase {
-		std::vector<std::pair<Typename, std::string>> variable_declarations;
+		std::vector<std::pair<Expression, std::string>> variable_declarations;
 		std::vector<Statement> statements;
 	};
 
@@ -313,7 +323,7 @@ struct NodeStructs {
 	};
 
 	struct BlockStatement {
-		Typename parametrized_block;
+		Expression parametrized_block;
 	};
 
 	struct Statement {
@@ -336,7 +346,7 @@ struct NodeStructs {
 	};
 
 	struct MemberVariable {
-		Typename type;
+		Expression type;
 		std::string name;
 	};
 
@@ -345,28 +355,29 @@ struct NodeStructs {
 	};
 
 	struct FunctionParameter {
-		Typename typename_;
+		Expression typename_;
+		ParameterCategory category;
 		std::string name;
 	};
 
 	struct Function {
 		std::string name;
-		std::optional<Typename> name_space;
-		Typename returnType;
+		std::optional<Expression> name_space;
+		Expression returnType;
 		std::vector<FunctionParameter> parameters;
 		std::vector<Statement> statements;
 	};
 
 	struct Type {
 		std::string name;
-		std::optional<Typename> name_space;
+		std::optional<Expression> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
 	};
 
 	struct Interface {
 		std::string name;
-		std::optional<Typename> name_space;
+		std::optional<Expression> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
 	};
@@ -399,7 +410,7 @@ struct NodeStructs {
 
 	struct Template {
 		std::string name;
-		std::optional<Typename> name_space;
+		std::optional<Expression> name_space;
 		std::vector<Variant<TemplateParameter, TemplateParameterWithDefaultValue, VariadicTemplateParameter>> parameters;
 		std::string templated;
 		int indent;
@@ -468,7 +479,7 @@ struct NodeStructs {
 	struct Enum {
 		std::string name;
 		std::vector<std::string> values;
-		std::optional<Typename> name_space;
+		std::optional<Expression> name_space;
 
 	};
 
@@ -525,7 +536,7 @@ struct NodeStructs {
 
 	struct NameSpace {
 		std::string name;
-		std::optional<Typename> name_space;
+		std::optional<Expression> name_space;
 
 		std::vector<Function> functions;
 		std::vector<Function> functions_using_auto;
@@ -721,98 +732,6 @@ auto cmp11(const T& x1, const T& x2) {
 	return std::weak_ordering::equivalent;
 }
 
-#define CMP0(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp0(left, right); }
-#define CMP1(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp1(left, right); }
-#define CMP2(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp2(left, right); }
-#define CMP3(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp3(left, right); }
-#define CMP4(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp4(left, right); }
-#define CMP5(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp5(left, right); }
-#define CMP6(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp6(left, right); }
-#define CMP11(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp11(left, right); }
-
-CMP2(TemplatedTypename)
-CMP2(NamespacedTypename)
-CMP1(BaseTypename)
-CMP1(TupleTypename)
-CMP1(UnionTypename)
-CMP1(OptionalTypename)
-CMP1(VariadicExpansionTypename)
-CMP2(Typename)
-CMP0(Reference)
-CMP0(MutableReference)
-CMP0(Move)
-CMP0(Value)
-CMP2(Statement)
-CMP1(Expression)
-CMP2(VariableDeclaration)
-CMP3(VariableDeclarationStatement)
-CMP3(IfStatement)
-CMP3(ForStatement)
-CMP2(IForStatement)
-CMP2(WhileStatement)
-CMP2(MatchCase)
-CMP2(MatchStatement)
-CMP1(BreakStatement)
-CMP2(ReturnStatement)
-CMP2(SwitchCase)
-CMP2(SwitchStatement)
-CMP2(Assignment)
-CMP1(BlockStatement)
-CMP2(FunctionArgument)
-CMP2(ConditionalExpression)
-CMP2(OrExpression)
-CMP2(AndExpression)
-CMP2(EqualityExpression)
-CMP2(CompareExpression)
-CMP2(AdditiveExpression)
-CMP2(MultiplicativeExpression)
-CMP2(UnaryExpression)
-CMP2(CallExpression)
-CMP2(NamespaceExpression)
-CMP2(TemplateExpression)
-CMP2(ConstructExpression)
-CMP2(BracketAccessExpression)
-CMP3(PropertyAccessAndCallExpression)
-CMP2(PropertyAccessExpression)
-CMP1(ParenArguments)
-CMP1(BraceArguments)
-CMP1(BracketArguments)
-CMP1(TemplateArguments)
-CMP4(Type)
-CMP3(Alias)
-CMP2(MemberVariable)
-CMP2(FunctionType)
-CMP1(InterfaceType)
-CMP1(NamespaceType)
-CMP1(TupleType)
-CMP1(UnionType)
-CMP1(OptionalType)
-CMP2(TemplateType)
-CMP1(Builtin)
-CMP1(EnumType)
-CMP2(EnumValueType)
-CMP2(AggregateType)
-CMP0(Vector)
-CMP0(Set)
-CMP0(Map)
-CMP1(VectorType)
-CMP1(SetType)
-CMP2(MapType)
-CMP1(CompileTimeType)
-CMP4(Interface)
-CMP2(Block)
-CMP5(Template)
-CMP3(Enum)
-CMP1(TemplateParameter)
-CMP2(TemplateParameterWithDefaultValue)
-CMP1(VariadicTemplateParameter)
-CMP2(FunctionParameter)
-CMP5(Function)
-CMP11(NameSpace)
-CMP1(Exists)
-CMP3(File)
-CMP1(Import)
-
 inline std::weak_ordering operator<=>(const NodeStructs::MetaType& left, const NodeStructs::MetaType& right) {
 	if (std::holds_alternative<NodeStructs::EnumType>(left.type._value) &&
 		std::holds_alternative<NodeStructs::EnumValueType>(right.type._value)) {
@@ -992,6 +911,15 @@ T copy11(const T& x) {
 	};
 }
 
+#define CMP0(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp0(left, right); }
+#define CMP1(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp1(left, right); }
+#define CMP2(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp2(left, right); }
+#define CMP3(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp3(left, right); }
+#define CMP4(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp4(left, right); }
+#define CMP5(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp5(left, right); }
+#define CMP6(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp6(left, right); }
+#define CMP11(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp11(left, right); }
+
 #define COPY0(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy0(tn); }
 #define COPY1(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy1(tn); }
 #define COPY2(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy2(tn); }
@@ -1000,86 +928,88 @@ T copy11(const T& x) {
 #define COPY5(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy5(tn); }
 #define COPY11(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy11(tn); }
 
-COPY2(TemplatedTypename)
-COPY2(NamespacedTypename)
-COPY1(BaseTypename)
-COPY1(TupleTypename)
-COPY1(UnionTypename)
-COPY1(OptionalTypename)
-COPY1(VariadicExpansionTypename)
-COPY2(Typename)
-COPY0(Reference)
-COPY0(MutableReference)
-COPY0(Move)
-COPY0(Value)
-COPY2(Statement)
-COPY1(Expression)
-COPY2(VariableDeclaration)
-COPY3(VariableDeclarationStatement)
-COPY3(IfStatement)
-COPY3(ForStatement)
-COPY2(IForStatement)
-COPY2(WhileStatement)
-COPY2(MatchCase)
-COPY2(MatchStatement)
-COPY1(BreakStatement)
-COPY2(ReturnStatement)
-COPY2(SwitchCase)
-COPY2(SwitchStatement)
-COPY2(Assignment)
-COPY1(BlockStatement)
-COPY2(FunctionArgument)
-COPY2(ConditionalExpression)
-COPY2(OrExpression)
-COPY2(AndExpression)
-COPY2(EqualityExpression)
-COPY2(CompareExpression)
-COPY2(AdditiveExpression)
-COPY2(MultiplicativeExpression)
-COPY2(UnaryExpression)
-COPY2(CallExpression)
-COPY2(NamespaceExpression)
-COPY2(TemplateExpression)
-COPY2(ConstructExpression)
-COPY2(BracketAccessExpression)
-COPY3(PropertyAccessAndCallExpression)
-COPY2(PropertyAccessExpression)
-COPY1(ParenArguments)
-COPY1(BraceArguments)
-COPY1(BracketArguments)
-COPY1(TemplateArguments)
-COPY1(MetaType)
-COPY4(Type)
-COPY3(Alias)
-COPY2(MemberVariable)
-COPY2(FunctionType)
-COPY1(InterfaceType)
-COPY1(NamespaceType)
-COPY1(TupleType)
-COPY1(UnionType)
-COPY1(OptionalType)
-COPY2(TemplateType)
-COPY1(Builtin)
-COPY1(EnumType)
-COPY2(EnumValueType)
-COPY2(AggregateType)
-COPY0(Vector)
-COPY0(Set)
-COPY0(Map)
-COPY1(VectorType)
-COPY1(SetType)
-COPY2(MapType)
-COPY1(CompileTimeType)
-COPY4(Interface)
-COPY2(Block)
-COPY5(Template)
-COPY3(Enum)
-COPY1(TemplateParameter)
-COPY2(TemplateParameterWithDefaultValue)
-COPY1(VariadicTemplateParameter)
-COPY2(FunctionParameter)
-COPY5(Function)
-COPY11(NameSpace)
-COPY1(Exists)
-COPY3(File)
-COPY1(Import)
+#define CMP_COPY_N(N, T) CMP##N(T) COPY##N(T)
+
+CMP_COPY_N(2,TemplatedExpression)
+CMP_COPY_N(2,NamespacedExpression)
+CMP_COPY_N(1,BaseExpression)
+CMP_COPY_N(1,TupleExpression)
+CMP_COPY_N(1,UnionExpression)
+CMP_COPY_N(1,OptionalExpression)
+CMP_COPY_N(2,ParameterCategorizedExpression)
+CMP_COPY_N(2,ArgumentCategorizedExpression)
+CMP_COPY_N(1,VariadicExpansionExpression)
+CMP_COPY_N(1,Expression)
+CMP_COPY_N(0,Reference)
+CMP_COPY_N(0,MutableReference)
+CMP_COPY_N(0,Move)
+CMP_COPY_N(0,Value)
+CMP_COPY_N(2,Statement)
+CMP_COPY_N(2,VariableDeclaration)
+CMP_COPY_N(3,VariableDeclarationStatement)
+CMP_COPY_N(3,IfStatement)
+CMP_COPY_N(3,ForStatement)
+CMP_COPY_N(2,IForStatement)
+CMP_COPY_N(2,WhileStatement)
+CMP_COPY_N(2,MatchCase)
+CMP_COPY_N(2,MatchStatement)
+CMP_COPY_N(1,BreakStatement)
+CMP_COPY_N(2,ReturnStatement)
+CMP_COPY_N(2,SwitchCase)
+CMP_COPY_N(2,SwitchStatement)
+CMP_COPY_N(2,Assignment)
+CMP_COPY_N(1,BlockStatement)
+CMP_COPY_N(2,FunctionArgument)
+CMP_COPY_N(2,ConditionalExpression)
+CMP_COPY_N(2,OrExpression)
+CMP_COPY_N(2,AndExpression)
+CMP_COPY_N(2,EqualityExpression)
+CMP_COPY_N(2,CompareExpression)
+CMP_COPY_N(2,AdditiveExpression)
+CMP_COPY_N(2,MultiplicativeExpression)
+CMP_COPY_N(2,UnaryExpression)
+CMP_COPY_N(2,CallExpression)
+CMP_COPY_N(2,NamespaceExpression)
+CMP_COPY_N(2,TemplateExpression)
+CMP_COPY_N(2,ConstructExpression)
+CMP_COPY_N(2,BracketAccessExpression)
+CMP_COPY_N(3,PropertyAccessAndCallExpression)
+CMP_COPY_N(2,PropertyAccessExpression)
+CMP_COPY_N(1,ParenArguments)
+CMP_COPY_N(1,BraceArguments)
+CMP_COPY_N(1,BracketArguments)
+CMP_COPY_N(1,TemplateArguments)
+CMP_COPY_N(4,Type)
+CMP_COPY_N(3,Alias)
+CMP_COPY_N(2,MemberVariable)
+CMP_COPY_N(2,FunctionType)
+CMP_COPY_N(1,InterfaceType)
+CMP_COPY_N(1,NamespaceType)
+CMP_COPY_N(1,TupleType)
+CMP_COPY_N(1,UnionType)
+CMP_COPY_N(1,OptionalType)
+CMP_COPY_N(2,TemplateType)
+CMP_COPY_N(1,Builtin)
+CMP_COPY_N(1,EnumType)
+CMP_COPY_N(2,EnumValueType)
+CMP_COPY_N(2,AggregateType)
+CMP_COPY_N(0,Vector)
+CMP_COPY_N(0,Set)
+CMP_COPY_N(0,Map)
+CMP_COPY_N(1,VectorType)
+CMP_COPY_N(1,SetType)
+CMP_COPY_N(2,MapType)
+CMP_COPY_N(1,CompileTimeType)
+CMP_COPY_N(4,Interface)
+CMP_COPY_N(2,Block)
+CMP_COPY_N(5,Template)
+CMP_COPY_N(3,Enum)
+CMP_COPY_N(1,TemplateParameter)
+CMP_COPY_N(2,TemplateParameterWithDefaultValue)
+CMP_COPY_N(1,VariadicTemplateParameter)
+CMP_COPY_N(3,FunctionParameter)
+CMP_COPY_N(5,Function)
+CMP_COPY_N(11,NameSpace)
+CMP_COPY_N(1,Exists)
+CMP_COPY_N(3,File)
+CMP_COPY_N(1,Import)

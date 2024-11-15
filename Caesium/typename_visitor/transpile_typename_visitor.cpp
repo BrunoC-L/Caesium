@@ -66,11 +66,11 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
-	bool is_variant = cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Union" } }) == std::weak_ordering::equivalent;
+	bool is_variant = cmp(type.type.get().value, NodeStructs::Expression::Variant_{ NodeStructs::BaseTypename{ "Union" } }) == std::weak_ordering::equivalent;
 	bool is_vec_or_set =
-		cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Vector" } }) == std::weak_ordering::equivalent
-		|| cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Set" } }) == std::weak_ordering::equivalent;
-	bool is_map = cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Map" } }) == std::weak_ordering::equivalent;
+		cmp(type.type.get().value, NodeStructs::Expression::Variant_{ NodeStructs::BaseTypename{ "Vector" } }) == std::weak_ordering::equivalent
+		|| cmp(type.type.get().value, NodeStructs::Expression::Variant_{ NodeStructs::BaseTypename{ "Set" } }) == std::weak_ordering::equivalent;
+	bool is_map = cmp(type.type.get().value, NodeStructs::Expression::Variant_{ NodeStructs::BaseTypename{ "Map" } }) == std::weak_ordering::equivalent;
 	if (is_vec_or_set || is_map || is_variant) {
 		if (is_vec_or_set && type.templated_with.size() != 1)
 			throw;
@@ -125,10 +125,10 @@ void bubble_sort_swap(std::vector<T>& arr) {
 				swap(arr.at(j), arr.at(j + 1));
 }
 
-void swap(NodeStructs::Typename& a, NodeStructs::Typename& b) {
-	NodeStructs::Typename c = std::move(a);
-	new (&a) NodeStructs::Typename(std::move(b));
-	new (&b) NodeStructs::Typename(std::move(c));
+void swap(NodeStructs::Expression& a, NodeStructs::Expression& b) {
+	NodeStructs::Expression c = std::move(a);
+	new (&a) NodeStructs::Expression(std::move(b));
+	new (&b) NodeStructs::Expression(std::move(c));
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& type) {

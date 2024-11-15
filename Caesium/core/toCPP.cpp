@@ -349,7 +349,7 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 						if (members.size() == 0)
 							throw;
 						auto unindented = transpilation_state_with_indent{ state, 0 };
-						/*auto interface_repr = transpile_typename(unindented, NodeStructs::Typename{ NodeStructs::BaseTypename{ i.name } });
+						/*auto interface_repr = transpile_typename(unindented, NodeStructs::Expression{ NodeStructs::BaseTypename{ i.name } });
 						return_if_error(interface_repr);*/
 						auto k = members
 							| std::views::transform([&](auto&& T) { return typename_of_type(unindented, T); })
@@ -414,9 +414,9 @@ transpile_declaration_definition_t transpile_main(
 		return error{ "user error","\"main\" function requires 1 argument of type `Vector<String> ref`" };
 
 	const auto& [type, name] = fn.parameters.at(0);
-	auto vector_str = NodeStructs::Typename{ NodeStructs::TemplatedTypename{
-		NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{} },
-		as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" }, NodeStructs::Value{} })
+	auto vector_str = NodeStructs::Expression{ NodeStructs::TemplatedTypename{
+		NodeStructs::Expression{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{} },
+		as_vec(NodeStructs::Expression{ NodeStructs::BaseTypename{ "String" }, NodeStructs::Value{} })
 	}, NodeStructs::Reference{} };
 	if (cmp(type, vector_str) != std::weak_ordering::equivalent)
 		return error{ "user error","\"main\" function using 1 argument must be of `Vector<String> ref` type" };
@@ -726,7 +726,7 @@ transpile_t transpile_expressions(transpilation_state_with_indent state, variabl
 	return ss.str();
 }
 
-transpile_t transpile_typenames(transpilation_state_with_indent state, const std::vector<NodeStructs::Typename>& args) {
+transpile_t transpile_typenames(transpilation_state_with_indent state, const std::vector<NodeStructs::Expression>& args) {
 	if (args.size() == 0)
 		return "";
 	auto vec = vec_of_expected_to_expected_of_vec(args
@@ -1012,7 +1012,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 						}
 				}
 				auto& interfacemembers = state.state.interface_symbol_to_members[
-					NodeStructs::Typename{ NodeStructs::BaseTypename{ e.interface.get().name }, NodeStructs::Value{} }
+					NodeStructs::Expression{ NodeStructs::BaseTypename{ e.interface.get().name }, NodeStructs::Value{} }
 				];
 				auto new_member = NodeStructs::MetaType{ copy(u) };
 				for (const auto& member : interfacemembers)
@@ -1152,7 +1152,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 }
 
 bool uses_auto(const NodeStructs::Function& fn) {
-	if (cmp(fn.returnType.value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) == std::weak_ordering::equivalent)
+	if (cmp(fn.returnType.value, NodeStructs::Expression{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) == std::weak_ordering::equivalent)
 		return true;
 	for (const auto& param : fn.parameters)
 		if (uses_auto(param))
@@ -1217,7 +1217,7 @@ static bool uses_auto(const NodeStructs::VariadicExpansionTypename& t) {
 	return res;
 }
 
-bool uses_auto(const NodeStructs::Typename& t) {
+bool uses_auto(const NodeStructs::Expression& t) {
 	return std::visit([](const auto& t_) { return uses_auto(t_); }, t.value._value);
 }
 
@@ -1404,11 +1404,11 @@ expected<NodeStructs::Function> realise_function_using_auto(
 
 	for (const auto& [index, param] : enumerate(fn_using_auto.parameters))
 		if (uses_auto(param)) {
-			if (cmp(param.typename_.value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "auto" } }) == std::weak_ordering::equivalent) {
+			if (cmp(param.typename_.value, NodeStructs::Expression::Variant_{ NodeStructs::BaseTypename{ "auto" } }) == std::weak_ordering::equivalent) {
 				auto tn = typename_of_type(state, arg_types.at(index));
 				return_if_error(tn);
 				auto del = std::move(realised.parameters.at(index).typename_);
-				new (&realised.parameters.at(index).typename_) NodeStructs::Typename{ std::move(tn).value().value, copy(param.typename_.category) };
+				new (&realised.parameters.at(index).typename_) NodeStructs::Expression{ std::move(tn).value().value, copy(param.typename_.category) };
 			}
 			else
 				throw;
@@ -1438,7 +1438,7 @@ expected<NodeStructs::Function> realise_function_using_auto(
 	if (stack_params_opt_error.has_value())
 		return stack_params_opt_error.value();
 
-	if (cmp(realised.returnType.value, NodeStructs::Typename{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) != std::weak_ordering::equivalent) {
+	if (cmp(realised.returnType.value, NodeStructs::Expression{ NodeStructs::BaseTypename{ "auto" }, std::nullopt }.value) != std::weak_ordering::equivalent) {
 		auto fn_or_error = transpile(state, realised);
 		return_if_error(fn_or_error);
 		return NodeStructs::Function{
@@ -1465,7 +1465,7 @@ expected<NodeStructs::Function> realise_function_using_auto(
 				return NodeStructs::Function{
 					.name = realised.name,
 					.name_space = std::nullopt,
-					.returnType = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" }, std::nullopt },
+					.returnType = NodeStructs::Expression{ NodeStructs::BaseTypename{ "Void" }, std::nullopt },
 					.parameters = std::move(realised.parameters),
 					.statements = std::move(realised.statements)
 				};
@@ -1477,28 +1477,28 @@ expected<NodeStructs::Function> realise_function_using_auto(
 	}
 }
 
-NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t) {
+NodeStructs::Expression typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t) {
 	return std::visit(overload(overload_default_error,
 		[&](const std::string&) {
-			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" }, NodeStructs::Value{} };
+			return NodeStructs::Expression{ NodeStructs::BaseTypename{ "String" }, NodeStructs::Value{} };
 		},
 		[&](const double&) {
-			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Floating" }, NodeStructs::Value{} };
+			return NodeStructs::Expression{ NodeStructs::BaseTypename{ "Floating" }, NodeStructs::Value{} };
 		},
 		[&](const int&) {
-			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Int" }, NodeStructs::Value{} };
+			return NodeStructs::Expression{ NodeStructs::BaseTypename{ "Int" }, NodeStructs::Value{} };
 		},
 		[&](const bool&) {
-			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Bool" }, NodeStructs::Value{} };
+			return NodeStructs::Expression{ NodeStructs::BaseTypename{ "Bool" }, NodeStructs::Value{} };
 		},
 		[&](const NodeStructs::void_t&) {
-			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Void" }, NodeStructs::Value{} };
+			return NodeStructs::Expression{ NodeStructs::BaseTypename{ "Void" }, NodeStructs::Value{} };
 		},
 		[&](const NodeStructs::empty_optional_t&) {
-			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "None" }, NodeStructs::Value{} };
+			return NodeStructs::Expression{ NodeStructs::BaseTypename{ "None" }, NodeStructs::Value{} };
 		},
 		[&](const char&) {
-			return NodeStructs::Typename{ NodeStructs::BaseTypename{ "Char" }, NodeStructs::Value{} };
+			return NodeStructs::Expression{ NodeStructs::BaseTypename{ "Char" }, NodeStructs::Value{} };
 		}
 	), primitive_t.value._value);
 }
@@ -1790,7 +1790,7 @@ expected<Arrangement> find_best_template(
 
 expected<Arrangement> find_best_template(
 	const std::vector<NodeStructs::Template>& templates,
-	const std::vector<NodeStructs::Typename>& args
+	const std::vector<NodeStructs::Expression>& args
 ) {
 	return _find_best_template(templates, args);
 }

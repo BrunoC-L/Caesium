@@ -83,7 +83,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& tt) {
-	std::vector<NodeStructs::Typename> templated_with;
+	std::vector<NodeStructs::Expression> templated_with;
 	for (const auto& t : tt.templated_with) {
 		auto arg = operator()(t);
 		return_if_error(arg);

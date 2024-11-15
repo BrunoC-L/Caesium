@@ -31,17 +31,17 @@ struct builtins {
 	NodeStructs::Function entries_dir = {
 		.name = "entries",
 		.name_space = std::nullopt,
-		.returnType = NodeStructs::Typename{ NodeStructs::TemplatedTypename {
-			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{} },
+		.returnType = NodeStructs::Expression{ NodeStructs::TemplatedExpression {
+			.type = NodeStructs::Expression{ NodeStructs::BaseExpression{ "Vector" }, NodeStructs::Reference{} },
 			.templated_with = as_vec(
-				NodeStructs::Typename{ NodeStructs::UnionTypename{
+				NodeStructs::Expression{ NodeStructs::UnionExpression{
 					as_vec(
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+						NodeStructs::Expression{ NodeStructs::NamespacedExpression{
+							.name_space = NodeStructs::Expression{ NodeStructs::BaseExpression{ "filesystem" }, NodeStructs::Reference{} },
 							.name_in_name_space = "file"
 						}, NodeStructs::Reference{} },
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+						NodeStructs::Expression{ NodeStructs::NamespacedExpression{
+							.name_space = NodeStructs::Expression{ NodeStructs::BaseExpression{ "filesystem" }, NodeStructs::Reference{} },
 							.name_in_name_space = "directory"
 						}, NodeStructs::Reference{} }
 					)
@@ -54,8 +54,8 @@ struct builtins {
 		},
 		.parameters = as_vec(
 			NodeStructs::FunctionParameter{
-				.typename_ = NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-					.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+				.typename_ = NodeStructs::Expression{ NodeStructs::NamespacedExpression{
+					.name_space = NodeStructs::Expression{ NodeStructs::BaseExpression{ "filesystem" }, NodeStructs::Reference{} },
 					.name_in_name_space = "directory"
 				}, NodeStructs::Reference{} },
 			//.category = NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
@@ -68,17 +68,17 @@ struct builtins {
 	NodeStructs::Function entries_str = {
 		.name = "entries",
 		.name_space = std::nullopt,
-		.returnType = NodeStructs::Typename{ NodeStructs::TemplatedTypename {
-			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{} },
+		.returnType = NodeStructs::Expression{ NodeStructs::TemplatedExpression {
+			.type = NodeStructs::Expression{ NodeStructs::BaseExpression{ "Vector" }, NodeStructs::Reference{} },
 			.templated_with = as_vec(
-				NodeStructs::Typename{ NodeStructs::UnionTypename{
+				NodeStructs::Expression{ NodeStructs::UnionExpression{
 					as_vec(
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+						NodeStructs::Expression{ NodeStructs::NamespacedExpression{
+							.name_space = NodeStructs::Expression{ NodeStructs::BaseExpression{ "filesystem" }, NodeStructs::Reference{} },
 							.name_in_name_space = "file"
 						}, NodeStructs::Reference{} },
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+						NodeStructs::Expression{ NodeStructs::NamespacedExpression{
+							.name_space = NodeStructs::Expression{ NodeStructs::BaseExpression{ "filesystem" }, NodeStructs::Reference{} },
 							.name_in_name_space = "directory"
 						}, NodeStructs::Reference{} }
 					)
@@ -87,7 +87,7 @@ struct builtins {
 		}, NodeStructs::Reference{} },
 		.parameters = as_vec(
 			NodeStructs::FunctionParameter{
-				.typename_ = NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" }, NodeStructs::Reference{} },
+				.typename_ = NodeStructs::Expression{ NodeStructs::BaseExpression{ "String" }, NodeStructs::Reference{} },
 				//.category = NodeStructs::ParameterCategory{ NodeStructs::Reference{} },
 				.name = "dir"
 			}
@@ -99,8 +99,8 @@ struct builtins {
 		.name = "filesystem",
 		.functions = as_map(std::pair{ entries_str.name, as_vec(copy(entries_str), copy(entries_dir)) }),
 		.aliases = as_map(
-			std::pair{ std::string{ "file" }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "builtin_filesystem_file" }, NodeStructs::Reference{} } },
-			std::pair{ std::string{ "directory" }, NodeStructs::Typename{ NodeStructs::BaseTypename{ "builtin_filesystem_directory" }, NodeStructs::Reference{} } }
+			std::pair{ std::string{ "file" }, NodeStructs::Expression{ NodeStructs::BaseExpression{ "builtin_filesystem_file" }, NodeStructs::Reference{} } },
+			std::pair{ std::string{ "directory" }, NodeStructs::Expression{ NodeStructs::BaseExpression{ "builtin_filesystem_directory" }, NodeStructs::Reference{} } }
 		),
 	};
 };

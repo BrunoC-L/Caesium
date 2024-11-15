@@ -27,6 +27,26 @@ inline std::string arg_cat_opt_to_string(const std::optional<NodeStructs::Argume
 		return "";
 }
 
+R T::operator()(const NodeStructs::TemplatedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::NamespacedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::OptionalExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::ParameterCategorizedExpression& expr) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::ArgumentCategorizedExpression& expr) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 	throw;
 }

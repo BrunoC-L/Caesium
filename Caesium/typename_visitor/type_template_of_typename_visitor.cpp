@@ -6,7 +6,7 @@
 using T = type_template_of_typename_visitor;
 using R = T::R;
 
-R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typename>& templated_with, const std::string& name_to_find, const Namespace& ns) {
+R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Expression>& templated_with, const std::string& name_to_find, const Namespace& ns) {
 	if (auto it = ns.templates.find(name_to_find); it != ns.templates.end()) {
 		const auto& templates = it->second;
 
