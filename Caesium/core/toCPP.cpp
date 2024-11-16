@@ -9,13 +9,6 @@
 #include "builtins.hpp"
 #include "default_includes.hpp"
 
-#include <iostream>
-
-//template <typename T>
-//T& get(std::reference_wrapper<T> ref) {
-//	return ref.get();
-//};
-
 void add_impl(auto& v, auto&& e) {
 	if (std::find_if(v.begin(), v.end(), [&](const auto& x) { return cmp(x, e) == std::weak_ordering::equivalent; }) != v.end())
 		return;
@@ -416,7 +409,7 @@ transpile_declaration_definition_t transpile_main(
 	const auto& [type, name] = fn.parameters.at(0);
 	auto vector_str = NodeStructs::Typename{ NodeStructs::TemplatedTypename{
 		NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{} },
-		as_vec(NodeStructs::Typename{ NodeStructs::BaseTypename{ "String" }, NodeStructs::Value{} })
+		as_vec(NodeStructs::WordTypenameOrExpression{ "String" })
 	}, NodeStructs::Reference{} };
 	if (cmp(type, vector_str) != std::weak_ordering::equivalent)
 		return error{ "user error","\"main\" function using 1 argument must be of `Vector<String> ref` type" };
@@ -749,9 +742,9 @@ std::string template_name(std::string original_name, const std::vector<std::stri
 	return ss.str();
 }
 
-std::string template_name(std::string original_name, const std::vector<NodeStructs::Expression>& arguments) {
+std::string template_name(std::string original_name, const std::vector<NodeStructs::WordTypenameOrExpression>& arguments) {
 	return template_name(original_name, arguments
-		| std::views::transform([&](auto&& e) { return expression_for_template(e); })
+		| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(e); })
 		| to_vec());
 }
 
@@ -1187,9 +1180,17 @@ static bool uses_auto(const NodeStructs::TemplatedTypename& t) {
 	if (uses_auto(t.type.get()))
 		return true;
 	for (const auto& param : t.templated_with)
-		if (uses_auto(param))
+		if (std::holds_alternative<NodeStructs::Typename>(param.value._value)
+			&& uses_auto(std::get<NodeStructs::Typename>(param.value._value)))
+			return true;
+		else if (std::holds_alternative<NodeStructs::Expression>(param.value._value)
+				&& uses_auto(std::get<NodeStructs::Expression>(param.value._value)))
 			return true;
 	return false;
+}
+
+static bool uses_auto(const NodeStructs::Expression& t) {
+	throw;
 }
 
 static bool uses_auto(const NodeStructs::UnionTypename& t) {
@@ -1603,7 +1604,7 @@ static std::vector<Arrangement> arrangements(
 						return {};
 				}
 				else {
-					if (expression_for_template(non_variadic.value) == typename_for_template(args.at(arg_index))) {
+					if (word_typename_or_expression_for_template(non_variadic.value) == word_typename_or_expression_for_template(args.at(arg_index))) {
 						current.arg_placements.push_back(param_index);
 						return arrangements(args, std::move(current), arg_index + 1, param_index + 1);
 					}
@@ -1698,10 +1699,9 @@ bool nth_arrangement_has_reason_to_be_picked_over_all_others(
 	return true;
 }
 
-template <typename T>
-expected<Arrangement> _find_best_template(
+expected<Arrangement> find_best_template(
 	const std::vector<NodeStructs::Template>& templates,
-	const std::vector<T>& args
+	const std::vector<NodeStructs::WordTypenameOrExpression>& args
 ) {
 	std::vector<const NodeStructs::Template*> candidates = matching_size_candidates(args.size(), templates);
 	if (candidates.size() == 0)
@@ -1738,12 +1738,7 @@ expected<Arrangement> _find_best_template(
 		if (has_prev_args)
 			args_ss << ", ";
 		has_prev_args = true;
-		if constexpr (std::is_same_v<T, NodeStructs::Expression>) {
-			args_ss << expression_for_template(arg);
-		}
-		else {
-			args_ss << typename_for_template(arg);
-		}
+		args_ss << word_typename_or_expression_for_template(arg);
 	}
 	std::stringstream templates_ss;
 	bool has_prev_templates = false;
@@ -1779,20 +1774,6 @@ expected<Arrangement> _find_best_template(
 		" matched the provided arguments [" + args_ss.str() + "]"
 		", contenders were [" + templates_ss.str() + "]"
 	};
-}
-
-expected<Arrangement> find_best_template(
-	const std::vector<NodeStructs::Template>& templates,
-	const std::vector<NodeStructs::Expression>& args
-) {
-	return _find_best_template(templates, args);
-}
-
-expected<Arrangement> find_best_template(
-	const std::vector<NodeStructs::Template>& templates,
-	const std::vector<NodeStructs::Typename>& args
-) {
-	return _find_best_template(templates, args);
 }
 
 static expected<std::optional<const NodeStructs::Function*>> find_best_function100(
@@ -1957,4 +1938,55 @@ expected<std::optional<const NodeStructs::Function*>> find_best_function(
 				return find_best_function001(state, arg_types, templates->second);
 			else
 				throw;
+}
+
+std::string word_typename_or_expression_for_template(const NodeStructs::WordTypenameOrExpression& value) {
+	return std::visit(overload(
+		[](const std::string& s) {
+			return s;
+		},
+		[](const NodeStructs::Typename& tn) {
+			return typename_for_template(tn);
+		},
+		[](const NodeStructs::Expression& e) {
+			return expression_for_template(e);
+		}
+	), value.value._value);
+}
+
+expected<NodeStructs::MetaType> type_of_typename(
+	transpilation_state_with_indent state,
+	const NodeStructs::WordTypenameOrExpression& tn_or_expr
+) {
+	return std::visit(overload(
+		[&](const NodeStructs::Expression&) -> expected<NodeStructs::MetaType> {
+			throw;
+		},
+		[&](const NodeStructs::Typename& tn) -> expected<NodeStructs::MetaType> {
+			auto x = type_of_typename(state, tn);
+			return_if_error(x);
+			return std::move(x).value();
+		},
+		[&](const std::string& tn) -> expected<NodeStructs::MetaType> {
+			auto x = type_of_typename(state, NodeStructs::BaseTypename{ tn });
+			return_if_error(x);
+			return std::move(x).value();
+		}
+	), tn_or_expr.value._value);
+}
+
+std::string expression_original_representation(
+	const NodeStructs::WordTypenameOrExpression& tn_or_expr
+) {
+	return std::visit(overload(
+		[&](const NodeStructs::Expression& expr) -> std::string {
+			return expression_original_representation(expr);
+		},
+		[&](const NodeStructs::Typename& tn) -> std::string {
+			throw;
+		},
+		[&](const std::string& str) -> std::string {
+			return str;
+		}
+	), tn_or_expr.value._value);
 }

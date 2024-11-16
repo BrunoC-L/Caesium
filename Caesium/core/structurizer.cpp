@@ -28,6 +28,47 @@ NodeStructs::Import getStruct(const grammar::Import& f) {
 	) };
 }
 
+template <typename tag_t>
+NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& tn_or_expr, const tag_t& tag) {
+	return std::visit(overload(
+		[&](const grammar::Typename& tn) -> NodeStructs::WordTypenameOrExpression {
+			bool has_to_be_interpreted_as_typename_because_of_category_or_optional =
+				tn.get<Opt<grammar::ParameterCategory>>().has_value() || tn.get<Opt<Token<QUESTION>>>().has_value();
+			if (has_to_be_interpreted_as_typename_because_of_category_or_optional)
+				return { getStruct(tn, tag) };
+			else
+				return std::visit(overload(
+					[&](const Token<AUTO>&) -> NodeStructs::WordTypenameOrExpression { // auto is a typename
+						return { getStruct(tn, tag) };
+					},
+					[&](const grammar::NonAutoTypename& non_auto_typename) -> NodeStructs::WordTypenameOrExpression {
+						bool has_to_be_interpreted_as_typename_because_of_extensions =
+							non_auto_typename.get<Star<Or<
+							grammar::NamespaceTypenameExtension,
+							grammar::TemplateTypenameExtension,
+							grammar::UnionTypenameExtension,
+							grammar::OptionalTypenameExtension
+						>>>().nodes.size() > 0;
+						if (has_to_be_interpreted_as_typename_because_of_extensions)
+							return { getStruct(tn, tag) };
+
+						return std::visit(overload(
+							[&](const grammar::VariadicExpansionTypename&) -> NodeStructs::WordTypenameOrExpression { // X... is a typename
+								return { getStruct(tn, tag) };
+							},
+							[&](const grammar::Word& word) -> NodeStructs::WordTypenameOrExpression {
+								return { word.value };
+							}
+						), non_auto_typename.get<Or<grammar::VariadicExpansionTypename, grammar::Word>>().value());
+					}
+				), tn.get<Or<Token<AUTO>, grammar::NonAutoTypename>>().value());
+		},
+		[&](const grammar::Expression& expr) -> NodeStructs::WordTypenameOrExpression {
+			return { getExpressionStruct(expr) };
+		}
+	), tn_or_expr.value());
+}
+
 NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, NodeStructs::Typename res, size_t i) {
 	if (i == exts.size())
 		return std::move(res);
@@ -37,19 +78,6 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 			return getStruct(t, exts, std::visit(overload(overload_default_error,
 				[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
 					throw;
-					/*return NodeStructs::Typename{ NodeStructs::VariadicExpansionTypename {
-						NodeStructs::Typename{
-							NodeStructs::NamespacedTypename{
-								NodeStructs::Typename{
-									std::get<NodeStructs::VariadicExpansionTypename>(std::move(res).value._value).type,
-									NodeStructs::Value{}
-								},
-								e.get<grammar::Word>().value
-							},
-							NodeStructs::Value{}
-						}
-					}, NodeStructs::Value{}
-					};*/
 				},
 				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
 					return NodeStructs::Typename{
@@ -57,9 +85,9 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 							NodeStructs::Typename{
 								NodeStructs::TemplatedTypename {
 									std::get<NodeStructs::VariadicExpansionTypename>(std::move(res).value._value).type,
-									e.get<CommaStar<Alloc<grammar::Typename>>>().get<Alloc<grammar::Typename>>()
-									| std::views::transform([&](auto&& e) { return e.get(); })
-									| std::views::transform([&](auto&& e) { return getStruct(e, tag_expect_empty_category{}); })
+									e.get<CommaStar<Alloc<grammar::TypenameOrExpression>>>().get<Alloc<grammar::TypenameOrExpression>>()
+									| std::views::transform([&](const Alloc<grammar::TypenameOrExpression>& e) { return e.get(); })
+									| std::views::transform([&](const grammar::TypenameOrExpression& e) { return getStruct(e, tag_expect_empty_category{}); })
 									| to_vec()
 								}, NodeStructs::Value{}
 							}
@@ -83,7 +111,7 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
 					return { NodeStructs::TemplatedTypename{
 						std::move(res),
-						e.get<CommaStar<Alloc<grammar::Typename>>>().get<Alloc<grammar::Typename>>()
+						e.get<CommaStar<Alloc<grammar::TypenameOrExpression>>>().get<Alloc<grammar::TypenameOrExpression>>()
 						| std::views::transform([&](auto&& e) { return e.get(); })
 						| std::views::transform([&](auto&& e) { return getStruct(e, tag_allow_value_category_or_empty{}); })
 						| to_vec()
@@ -566,7 +594,7 @@ NodeStructs::BraceArguments getStruct(const grammar::BraceArguments& args) {
 NodeStructs::TemplateArguments getStruct(const grammar::TemplateArguments& args) {
 	return {
 		args.get<CommaStar<grammar::Expression>>().get_view<grammar::Expression>()
-			| std::views::transform([&](auto&& e) { return getExpressionStruct(e); })
+			| std::views::transform([&](auto&& e) { return NodeStructs::WordTypenameOrExpression{ getExpressionStruct(e) }; })
 			| to_vec()
 	};
 }

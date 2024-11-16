@@ -34,20 +34,21 @@ struct builtins {
 		.returnType = NodeStructs::Typename{ NodeStructs::TemplatedTypename {
 			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{} },
 			.templated_with = as_vec(
-				NodeStructs::Typename{ NodeStructs::UnionTypename{
-					as_vec(
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
-							.name_in_name_space = "file"
-						}, NodeStructs::Reference{} },
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
-							.name_in_name_space = "directory"
-						}, NodeStructs::Reference{} }
-					)
-				},
-				NodeStructs::Reference{}
-				}
+				NodeStructs::WordTypenameOrExpression{ NodeStructs::Typename{
+					NodeStructs::UnionTypename{
+						as_vec(
+							NodeStructs::Typename{ NodeStructs::NamespacedTypename{
+								.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+								.name_in_name_space = "file"
+							}, NodeStructs::Reference{} },
+							NodeStructs::Typename{ NodeStructs::NamespacedTypename{
+								.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+								.name_in_name_space = "directory"
+							}, NodeStructs::Reference{} }
+						)
+					},
+					NodeStructs::Reference{}
+				} }
 			)
 		},
 		NodeStructs::Reference{}
@@ -71,18 +72,20 @@ struct builtins {
 		.returnType = NodeStructs::Typename{ NodeStructs::TemplatedTypename {
 			.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{} },
 			.templated_with = as_vec(
-				NodeStructs::Typename{ NodeStructs::UnionTypename{
-					as_vec(
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
-							.name_in_name_space = "file"
-						}, NodeStructs::Reference{} },
-						NodeStructs::Typename{ NodeStructs::NamespacedTypename{
-							.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
-							.name_in_name_space = "directory"
-						}, NodeStructs::Reference{} }
-					)
-				}, NodeStructs::Reference{} }
+				NodeStructs::WordTypenameOrExpression{ NodeStructs::Typename{
+					NodeStructs::UnionTypename{
+						as_vec(
+							NodeStructs::Typename{ NodeStructs::NamespacedTypename{
+								.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+								.name_in_name_space = "file"
+							}, NodeStructs::Reference{} },
+							NodeStructs::Typename{ NodeStructs::NamespacedTypename{
+								.name_space = NodeStructs::Typename{ NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{} },
+								.name_in_name_space = "directory"
+							}, NodeStructs::Reference{} }
+						)
+					}, NodeStructs::Reference{}
+				} }
 			)
 		}, NodeStructs::Reference{} },
 		.parameters = as_vec(

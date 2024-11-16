@@ -88,9 +88,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 				first = false;
 			else
 				ss << ", ";
-			auto res = operator()(t);
-			return_if_error(res);
-			ss << res.value();
+			ss << word_typename_or_expression_for_template(t);
 		}
 		ss << ">";
 		return ss.str();
@@ -108,9 +106,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 				first = false;
 			else
 				ss << "__";
-			auto res = operator()(t);
-			return_if_error(res);
-			ss << res.value();
+			ss << word_typename_or_expression_for_template(t);
 		}
 		return ss.str();
 	}

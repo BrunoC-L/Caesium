@@ -12,12 +12,13 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
-	std::stringstream ss;
+	throw;
+	/*std::stringstream ss;
 	ss << operator()(type.type.get()) << "<";
 	for (const auto& tn : type.templated_with)
 		ss << operator()(tn) << ", ";
 	ss << ">";
-	return ss.str();
+	return ss.str();*/
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& type) {

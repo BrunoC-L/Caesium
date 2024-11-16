@@ -6,7 +6,7 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 	using TypenameVisitor<type_template_of_typename_visitor>::operator();
 
 	transpilation_state_with_indent state;
-	const std::vector<NodeStructs::Typename>& templated_with;
+	const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with;
 
 	using R = expected<NodeStructs::MetaType>;
 
@@ -15,7 +15,7 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 
 expected<NodeStructs::MetaType> type_template_of_typename(
 	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Typename>& templated_with,
+	const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with,
 	const auto& tn
 ) {
 	return type_template_of_typename_visitor{ {}, state, templated_with }(tn);

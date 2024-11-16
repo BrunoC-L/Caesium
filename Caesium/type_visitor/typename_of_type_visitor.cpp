@@ -87,11 +87,11 @@ R T::operator()(const NodeStructs::Vector& t) {
 }
 
 R T::operator()(const NodeStructs::VectorType& t) {
-	std::vector<NodeStructs::Typename> v;
+	std::vector<NodeStructs::WordTypenameOrExpression> v;
 	{
 		auto inner = operator()(t.value_type.get());
 		return_if_error(inner);
-		v.push_back(std::move(inner).value());
+		v.push_back(NodeStructs::WordTypenameOrExpression{ std::move(inner).value() });
 	}
 	return NodeStructs::Typename{ NodeStructs::TemplatedTypename{
 		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{} },
@@ -104,11 +104,11 @@ R T::operator()(const NodeStructs::Set& t) {
 }
 
 R T::operator()(const NodeStructs::SetType& t) {
-	std::vector<NodeStructs::Typename> v;
+	std::vector<NodeStructs::WordTypenameOrExpression> v;
 	{
 		auto inner = operator()(t.value_type.get());
 		return_if_error(inner);
-		v.push_back(std::move(inner).value());
+		v.push_back(NodeStructs::WordTypenameOrExpression{ std::move(inner).value() });
 	}
 	return NodeStructs::Typename{ NodeStructs::TemplatedTypename{
 		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Set" }, NodeStructs::Value{} },
@@ -121,16 +121,16 @@ R T::operator()(const NodeStructs::Map& t) {
 }
 
 R T::operator()(const NodeStructs::MapType& t) {
-	std::vector<NodeStructs::Typename> v;
+	std::vector<NodeStructs::WordTypenameOrExpression> v;
 	{
 		auto inner = operator()(t.key_type.get());
 		return_if_error(inner);
-		v.push_back(std::move(inner).value());
+		v.push_back(NodeStructs::WordTypenameOrExpression{ std::move(inner).value() });
 	}
 	{
 		auto inner = operator()(t.value_type.get());
 		return_if_error(inner);
-		v.push_back(std::move(inner).value());
+		v.push_back(NodeStructs::WordTypenameOrExpression{ std::move(inner).value() });
 	}
 	return NodeStructs::Typename{ NodeStructs::TemplatedTypename{
 		.type = NodeStructs::Typename{ NodeStructs::BaseTypename{ "Map" }, NodeStructs::Value{} },

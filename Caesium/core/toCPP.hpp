@@ -250,7 +250,7 @@ std::string template_name(
 
 std::string template_name(
 	std::string original_name,
-	const std::vector<NodeStructs::Expression>& arguments
+	const std::vector<NodeStructs::WordTypenameOrExpression>& arguments
 );
 
 struct not_assignable {};
@@ -275,6 +275,7 @@ bool uses_auto(const NodeStructs::Function& fn);
 bool uses_auto(const NodeStructs::FunctionParameter& param);
 bool uses_auto(const NodeStructs::Statement& param);
 bool uses_auto(const NodeStructs::Typename& t);
+bool uses_auto(const NodeStructs::Expression& t);
 
 //#include "../type_visitor/transpile_type_visitor.hpp"
 #include "../type_visitor/traverse_type_visitor.hpp"
@@ -296,6 +297,16 @@ bool uses_auto(const NodeStructs::Typename& t);
 #include "../typename_visitor/typename_for_template_visitor.hpp"
 #include "../typename_visitor/typename_original_representation_visitor.hpp"
 
+std::string word_typename_or_expression_for_template(const NodeStructs::WordTypenameOrExpression& value);
+
+std::string expression_original_representation(
+	const NodeStructs::WordTypenameOrExpression& tn_or_expr
+);
+
+expected<NodeStructs::MetaType> type_of_typename(
+	transpilation_state_with_indent state,
+	const NodeStructs::WordTypenameOrExpression& tn_or_expr
+);
 
 expected<NodeStructs::Function> realise_function_using_auto(
 	transpilation_state_with_indent state,
@@ -315,12 +326,7 @@ struct Arrangement {
 
 expected<Arrangement> find_best_template(
 	const std::vector<NodeStructs::Template>& templates,
-	const std::vector<NodeStructs::Expression>& args
-);
-
-expected<Arrangement> find_best_template(
-	const std::vector<NodeStructs::Template>& templates,
-	const std::vector<NodeStructs::Typename>& args
+	const std::vector<NodeStructs::WordTypenameOrExpression>& args
 );
 
 expected<std::optional<const NodeStructs::Function*>> find_best_function(

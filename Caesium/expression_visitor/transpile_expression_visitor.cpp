@@ -502,16 +502,13 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		throw;
 	const auto& test_ok = std::get<std::string>(expr.operand.expression.get()._value);
 
-	throw;
-
-
 	if (auto it = state.state.global_namespace.templates.find(std::get<std::string>(expr.operand.expression.get()._value));
 		it != state.state.global_namespace.templates.end()) {
 		auto t = find_best_template(it->second, expr.arguments.args);
 		return_if_error(t);
 		const auto& tmpl = t.value().tmpl.get();
 		std::vector<std::string> args = expr.arguments.args
-			| std::views::transform([&](auto&& e) { return expression_for_template(e); })
+			| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(e); })
 			| to_vec();
 		std::string tmpl_name = template_name(it->first, expr.arguments.args);
 

@@ -6,7 +6,7 @@
 using T = type_template_of_typename_visitor;
 using R = T::R;
 
-R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typename>& templated_with, const std::string& name_to_find, const Namespace& ns) {
+R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with, const std::string& name_to_find, const Namespace& ns) {
 	if (auto it = ns.templates.find(name_to_find); it != ns.templates.end()) {
 		const auto& templates = it->second;
 
@@ -21,7 +21,7 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typena
 			for (size_t j = 0; j < arg_placements.size(); ++j) {
 				size_t k = arg_placements.at(j);
 				if (k == i) {
-					const auto& arg = typename_for_template(templated_with.at(j));
+					const auto& arg = word_typename_or_expression_for_template(templated_with.at(j));
 					if (has_previous)
 						ss << ", ";
 					has_previous = true;
@@ -30,12 +30,10 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typena
 			}
 			return ss.str();
 			};
-		auto args = vec_of_expected_to_expected_of_vec(templated_with
-			| std::views::transform([&](auto&& tn) { return transpile_typename(state, tn); })
-			| to_vec());
-		return_if_error(args);
-		const auto& args_ok = args.value();
-		std::string tmpl_name = template_name(it->first, args_ok);
+		auto args = templated_with
+			| std::views::transform([&](auto&& tn) { return word_typename_or_expression_for_template(tn); })
+			| to_vec();
+		std::string tmpl_name = template_name(it->first, args);
 		// todo check if exists
 		if (auto it = state.state.global_namespace.types.find(tmpl_name); it != state.state.global_namespace.types.end()) {
 			const auto& types = it->second;
@@ -95,10 +93,6 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::Typena
 			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
 				auto structured_t = getStruct(t.get<grammar::Type>(), std::nullopt);
 				structured_t.name = tmpl_name;
-				auto templated_with_reprs = vec_of_expected_to_expected_of_vec(templated_with
-					| std::views::transform([&](auto&& tn) { return transpile_typename(state, tn); })
-					| to_vec());
-				return_if_error(templated_with_reprs);
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
 				// if exists 
 				// template <typename T> using `tmplname` = `actual exists name somehow?`<T>;

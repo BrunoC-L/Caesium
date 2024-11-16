@@ -83,13 +83,13 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& tt) {
-	std::vector<NodeStructs::Typename> templated_with;
+	std::vector<NodeStructs::WordTypenameOrExpression> templated_with;
 	for (const auto& t : tt.templated_with) {
-		auto arg = operator()(t);
+		auto arg = type_of_typename(state, t);
 		return_if_error(arg);
 		auto tn = typename_of_type(state, arg.value());
 		return_if_error(tn);
-		templated_with.push_back(std::move(tn).value());
+		templated_with.push_back({ std::move(tn).value() });
 	}
 	return type_template_of_typename(state, templated_with, tt.type.get());
 }
