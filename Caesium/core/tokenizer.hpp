@@ -97,9 +97,9 @@ enum TOKENS {
 
 using TokenValue = std::pair<TOKENS, std::string>;
 
-struct tokens_and_iterator {
-	std::vector<TokenValue>& tokens;
-	std::vector<TokenValue>::iterator it;
+struct Iterator {
+	std::vector<TokenValue>& vec;
+	unsigned index;
 };
 
 struct Tokenizer {

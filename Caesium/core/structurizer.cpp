@@ -29,17 +29,17 @@ NodeStructs::Import getStruct(const grammar::Import& f) {
 }
 
 template <typename tag_t>
-NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& tn_or_expr, const tag_t& tag) {
+NodeStructs::WordTypenameOrExpression getTypenameOrExpressionStruct(const grammar::TypenameOrExpression& tn_or_expr) {
 	return std::visit(overload(
 		[&](const grammar::Typename& tn) -> NodeStructs::WordTypenameOrExpression {
 			bool has_to_be_interpreted_as_typename_because_of_category_or_optional =
 				tn.get<Opt<grammar::ParameterCategory>>().has_value() || tn.get<Opt<Token<QUESTION>>>().has_value();
 			if (has_to_be_interpreted_as_typename_because_of_category_or_optional)
-				return { getStruct(tn, tag) };
+				return { getStruct(tn, tag_t{}) };
 			else
 				return std::visit(overload(
 					[&](const Token<AUTO>&) -> NodeStructs::WordTypenameOrExpression { // auto is a typename
-						return { getStruct(tn, tag) };
+						return { getStruct(tn, tag_t{}) };
 					},
 					[&](const grammar::NonAutoTypename& non_auto_typename) -> NodeStructs::WordTypenameOrExpression {
 						bool has_to_be_interpreted_as_typename_because_of_extensions =
@@ -47,14 +47,14 @@ NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpress
 							grammar::NamespaceTypenameExtension,
 							grammar::TemplateTypenameExtension,
 							grammar::UnionTypenameExtension,
-							grammar::OptionalTypenameExtension
+							Token<QUESTION>
 						>>>().nodes.size() > 0;
 						if (has_to_be_interpreted_as_typename_because_of_extensions)
-							return { getStruct(tn, tag) };
+							return { getStruct(tn, tag_t{}) };
 
 						return std::visit(overload(
 							[&](const grammar::VariadicExpansionTypename&) -> NodeStructs::WordTypenameOrExpression { // X... is a typename
-								return { getStruct(tn, tag) };
+								return { getStruct(tn, tag_t{}) };
 							},
 							[&](const grammar::Word& word) -> NodeStructs::WordTypenameOrExpression {
 								return { word.value };
@@ -98,14 +98,14 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 					// variadics dont support unions
 					throw;
 				},
-				[&](const grammar::OptionalTypenameExtension& ext) -> NodeStructs::Typename {
+				[&](const Token<QUESTION>& ext) -> NodeStructs::Typename {
 					throw;
 				}
-			), ext.value()), i + 1);
+	), ext.value()), i + 1);
 		},
 		[&](const auto&) { // just checking its not a variadic expansion
 			return getStruct(t, exts, std::visit(overload(overload_default_error,
-				[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
+			[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
 					return { NodeStructs::NamespacedTypename{ std::move(res), e.get<grammar::Word>().value }, NodeStructs::Value{} };
 				},
 				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
@@ -142,10 +142,10 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 						std::move(v)
 					}, NodeStructs::Value{} };
 				},
-				[&](const grammar::OptionalTypenameExtension& ext) -> NodeStructs::Typename {
+				[&](const Token<QUESTION>& ext) -> NodeStructs::Typename {
 					return { NodeStructs::OptionalTypename{ std::move(res) }, NodeStructs::Value{} };
 				}
-			), ext.value()), i + 1);
+	), ext.value()), i + 1);
 		}
 	), res.value._value);
 }
@@ -155,7 +155,7 @@ NodeStructs::Typename get_typename_struct(const grammar::Typename& t) {
 	const auto& auto_or_tn = t.get<Or<Token<AUTO>, grammar::NonAutoTypename>>();
 	NodeStructs::ParameterCategory value_cat = getStruct(t.get<Opt<grammar::ParameterCategory>>(), tag{});
 	const auto& optional = t.get<Opt<Token<QUESTION>>>();
-	
+
 	return std::visit(overload(
 		[&](const Token<AUTO>&) -> NodeStructs::Typename {
 			return { NodeStructs::BaseTypename{ "auto" }, std::move(value_cat) };
@@ -174,7 +174,7 @@ NodeStructs::Typename get_typename_struct(const grammar::Typename& t) {
 					};
 				}
 			), e.get<Or<grammar::VariadicExpansionTypename, grammar::Word>>().value());
-			using opts = Or<grammar::NamespaceTypenameExtension, grammar::TemplateTypenameExtension, grammar::UnionTypenameExtension, grammar::OptionalTypenameExtension>;
+			using opts = Or<grammar::NamespaceTypenameExtension, grammar::TemplateTypenameExtension, grammar::UnionTypenameExtension, Token<QUESTION>>;
 			auto res2 = getStruct(t, e.get<Star<opts>>().get<opts>(), std::move(res), 0);
 			return { std::move(res2.value), std::move(value_cat) };
 		}
@@ -1043,4 +1043,16 @@ NodeStructs::Statement getStatementStruct(const grammar::Statement& statement) {
 		),
 		statement.get<Opt<Token<POUND>>>().has_value()
 	};
+}
+
+NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& t, tag_expect_value_category) {
+	return getTypenameOrExpressionStruct<tag_expect_value_category>(t);
+}
+
+NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& t, tag_expect_empty_category) {
+	return getTypenameOrExpressionStruct<tag_expect_empty_category>(t);
+}
+
+NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& t, tag_allow_value_category_or_empty) {
+	return getTypenameOrExpressionStruct<tag_allow_value_category_or_empty>(t);
 }

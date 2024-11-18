@@ -2,10 +2,11 @@
 
 
 
-Int _redirect_main(const Vector<String>& args);
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& s);
 
-Int _redirect_main(const Vector<String>& args) {
-		return 0;
+Int _redirect_main(const Vector_String_& s) {
+	Int a = Int{ 0 };
 };
 
 int main(int argc, char** argv) {

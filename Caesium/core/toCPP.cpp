@@ -380,6 +380,10 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 							if (std::find_if(v.begin(), v.end(), [&](const auto& e) { return cmp(f, e) == std::weak_ordering::equivalent; }) == v.end())
 								puts(f.name.c_str());
 					}
+					{
+						for (const std::pair<std::string, std::string>& alias : state.aliases_to_transpile)
+							declarations << "using " + alias.first + " = " + alias.second + ";\n";
+					}
 					declarations << main_transpilation_result.value().first;
 					definitions << main_transpilation_result.value().second;
 					cpp << declarations.str() << "\n"

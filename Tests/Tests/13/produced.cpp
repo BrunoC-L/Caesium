@@ -2,11 +2,15 @@
 
 
 
+Int f__Int();
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& args);
 
+Int f__Int() {
+	return 0;
+};
 Int _redirect_main(const Vector_String_& args) {
-		return 0;
+	return f__Int();
 };
 
 int main(int argc, char** argv) {

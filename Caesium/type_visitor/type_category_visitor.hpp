@@ -40,6 +40,9 @@ struct TypeCategoryVisitor {
 	R operator()(const NodeStructs::SetType& t);\
 	R operator()(const NodeStructs::Map& t);\
 	R operator()(const NodeStructs::MapType& t);\
+	R operator()(const NodeStructs::TypeList& t);\
+	R operator()(const NodeStructs::TypeListType& t);\
+	R operator()(const NodeStructs::TypeToken& t);\
 \
 	R operator()(const NodeStructs::CompileTimeType& t);
 };

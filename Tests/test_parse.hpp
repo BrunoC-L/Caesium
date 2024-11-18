@@ -7,7 +7,7 @@
 template <bool expected_to_built, typename... Ts>
 bool test_parse(int line, int n_indent, std::string program) {
 	auto tokens = Tokenizer(program).read();
-	tokens_and_iterator g{ tokens, tokens.begin() };
+	Iterator it = { tokens, 0 };
 	And node = [&]() {
 		if constexpr (expected_to_built)
 			return And<Ts...>(n_indent);
@@ -16,25 +16,47 @@ bool test_parse(int line, int n_indent, std::string program) {
 			// otherwise they might succeed by skipping tokens at the end with Star or Opts
 			return And<Ts..., Token<END>>(n_indent);
 	}();
-	bool nodeBuilt = build(node, g.it);
+	try {
+		bool nodeBuilt = build(node, it);
 
-	bool programReadEntirely = g.it == g.tokens.end();
-	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
-		programReadEntirely = ++g.it == g.tokens.end();
+		bool programReadEntirely = it.index == it.vec.size();
+		while (!programReadEntirely && (it.vec[it.index].first == NEWLINE || it.vec[it.index].first == END))
+			programReadEntirely = ++it.index == it.vec.size();
 
-	if ((nodeBuilt && programReadEntirely) != expected_to_built) {
-		std::cout << "LINE " << line << (line < 100 ? " : " : ": ")
-			<< "built: " << colored_text_from_bool(nodeBuilt)
-			<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
+		if ((nodeBuilt && programReadEntirely) != expected_to_built) {
+			std::cout << "LINE " << line << (line < 100 ? " : " : ": ")
+				<< "built: " << colored_text_from_bool(nodeBuilt)
+				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
-		std::cout << program << "\n\n";
-		auto it = g.tokens.begin();
-		while (it != g.it) {
-			std::cout << it->second << " ";
-			++it;
+			std::cout << program << "\n\n";
+			auto index = it.index;
+			while (index != it.index)
+				std::cout << it.vec[index++].second << " ";
+			std::cout << "\n";
+			return false;
 		}
-		std::cout << "\n";
-		return false;
+	}
+	catch (const parse_error& e) {
+		size_t line = 1;
+		{
+			auto index = it.index;
+			while (index != e.beg_offset) {
+				for (const char& c : it.vec[index].second)
+					if (c == '\n')
+						++line;
+				++index;
+			}
+		}
+		std::stringstream ss;
+		ss << "Unable to parse in test "
+			<< e.name_of_rule
+			<< "\nContent was: \n";
+		auto index = e.beg_offset;
+		while (index != it.index)
+			ss << it.vec[index++].second;
+		ss << "\n";
+		std::cout << ss.str();
+		throw std::runtime_error(ss.str());
 	}
 	return true;
 }
@@ -64,6 +86,12 @@ bool test_parse() {
 	ok &= test_parse_correct<Import>(__LINE__, 0, "import a");
 
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E");
+	ok &= test_parse_correct<And<TypenameOrExpression>>(__LINE__, 0, "E");
+	ok &= test_parse_correct<And<TypenameOrExpression, Token<GT>>>(__LINE__, 0, "E>");
+	ok &= test_parse_correct<And<Token<LT>, TypenameOrExpression, Token<GT>>>(__LINE__, 0, "<E>");
+	ok &= test_parse_correct<And<Token<LT>, Alloc<TypenameOrExpression>, Token<GT>>>(__LINE__, 0, "<E>");
+	ok &= test_parse_correct<And<Token<LT>, CommaStar<Alloc<TypenameOrExpression>>, Token<GT>>>(__LINE__, 0, "<E>");
+	ok &= test_parse_correct<TemplateTypenameExtension>(__LINE__, 0, "<E>");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E<E>");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E::E");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E::E<F>");
@@ -96,6 +124,7 @@ bool test_parse() {
 	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "a  <? b >? c");
 	ok &= test_parse_correct<CompareExpression>(__LINE__, 0, "Set<?Int>? x");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "()");
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "x.x");
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "a  <? b >? c");
 	ok &= test_parse_incorrect<Expression>(__LINE__, 0,                 "Set<Int> x");
 	ok &= test_parse_correct<VariableDeclarationStatement>(__LINE__, 0, "Set<Int> x = {}");
@@ -147,6 +176,15 @@ bool test_parse() {
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider:\n\tTuple<std::reference_wrapper<DB>> services");
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tTuple<std::reference_wrapper<DB>> services");
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tstd::reference_wrapper<DB> services");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "std::reference_wrapper");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "std::reference_wrapper<DB>");
+	ok &= test_parse_correct<Typename>(__LINE__, 0, "std::reference_wrapper<DB> ?");
+	ok &= test_parse_incorrect<Typename>(__LINE__, 0, "std::reference_wrapper<DB> x");
+	ok &= test_parse_incorrect<Typename>(__LINE__, 0, "std::reference_wrapper<DB> ? services");
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "DB>? services");
+	ok &= test_parse_incorrect<Expression>(__LINE__, 0, "DB> ? services");
+	ok &= test_parse_correct<MemberVariable>(__LINE__, 0, "std::reference_wrapper<DB> ? services");
+	ok &= test_parse_correct<And<Typename, Word>>(__LINE__, 0, "std::reference_wrapper<DB> ? services");
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tstd::reference_wrapper<DB> ? services");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider:\n\tTuple<std::reference_wrapper<DB> ?> services");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider2 :\n\tTuple<DB ref ?> services");
@@ -199,7 +237,7 @@ bool test_parse() {
 
 
 	ok &= test_parse_correct<Typename, Token<GT>>(__LINE__, 0, "X>");
-	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<X>? a");
+	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<X> ? a");
 	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<Tuple<X>?> a");
 	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<reference_wrapper<DB>?> services");
 	return ok;    

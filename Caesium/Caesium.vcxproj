@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="core\parse.cpp" />
     <ClCompile Include="expression_visitor\expression_for_template_visitor.cpp" />
     <ClCompile Include="core\structurizer.cpp" />
     <ClCompile Include="expression_visitor\expression_original_representation_visitor.cpp" />

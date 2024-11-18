@@ -120,9 +120,15 @@ struct NodeStructs {
 			Token<FLOATING_POINT_NUMBER>,
 			Token<INTEGER_NUMBER>,
 			Token<STRING> // string token like "abc"
-		> ;
+		>;
 		NonCopyableBox<vt> expression;
 	};
+
+	NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr) {
+		if (std::holds_alternative<std::string>(expr._value) && std::get<std::string>(expr._value) == "DB")
+			throw;
+		return { std::move(expr) };
+	}
 
 	struct WordTypenameOrExpression {
 		Variant<std::string, Typename, Expression> value;
@@ -452,6 +458,16 @@ struct NodeStructs {
 		NonCopyableBox<MetaType> value_type;
 	};
 
+	struct TypeToken {
+	};
+
+	struct TypeList {
+	};
+
+	struct TypeListType {
+		std::vector<MetaType> types;
+	};
+
 	struct void_t {};
 	struct empty_optional_t {};
 
@@ -515,6 +531,9 @@ struct NodeStructs {
 			SetType, // type(Set<Int>)
 			Map, // type(Map)
 			MapType, // type(Map<Int, Int>)
+			TypeList, // type(type_list)
+			TypeListType, // type(type_list<Int, String, Cat>)
+			TypeToken, // type(type)
 
 			CompileTimeType // type of a variable declared with #type var = ...
 		>;
@@ -993,6 +1012,9 @@ CMP_COPY_N(0, Map)
 CMP_COPY_N(1, VectorType)
 CMP_COPY_N(1, SetType)
 CMP_COPY_N(2, MapType)
+CMP_COPY_N(0, TypeToken)
+CMP_COPY_N(0, TypeList)
+CMP_COPY_N(1, TypeListType)
 CMP_COPY_N(1, CompileTimeType)
 CMP_COPY_N(4, Interface)
 CMP_COPY_N(2, Block)

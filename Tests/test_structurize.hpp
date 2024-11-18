@@ -8,13 +8,13 @@
 template <bool exp_ok, typename T>
 bool test_structurize(int line, int n_indent, std::string program, auto&& expected) {
 	auto tokens = Tokenizer(program).read();
-	tokens_and_iterator g{ tokens, tokens.begin() };
+	Iterator it = { tokens, 0 };
 	T node(n_indent);
-	bool nodeBuilt = build(node, g.it);
+	bool nodeBuilt = build(node, it);
 
-	bool programReadEntirely = g.it == g.tokens.end();
-	while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
-		programReadEntirely = ++g.it == g.tokens.end();
+	bool programReadEntirely = it.index == it.vec.size();
+	while (!programReadEntirely && (it.vec[it.index].first == NEWLINE || it.vec[it.index].first == END))
+		programReadEntirely = ++it.index == it.vec.size();
 
 	if (!nodeBuilt || !programReadEntirely) {
 		std::cout << "LINE " << line << (line < 100 ? " : " : ": ")
@@ -22,11 +22,9 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 			<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 		std::cout << program << "\n\n";
-		auto it = g.tokens.begin();
-		while (it != g.it) {
-			std::cout << it->second << " ";
-			++it;
-		}
+		auto index = it.index;
+		while (index != index)
+			std::cout << it.vec[index++].second << " ";
 		std::cout << "\n";
 		return false;
 	}
@@ -38,17 +36,17 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 				return structurize_function(node, std::nullopt);
 			else if constexpr (std::is_same_v<DT, NodeStructs::Typename>)
 				return getStruct(node, tag_allow_value_category_or_empty{});
+			else if constexpr (std::is_same_v<DT, NodeStructs::WordTypenameOrExpression>)
+				return getStruct(node, tag_allow_value_category_or_empty{});
 			else
 				return getStruct(node);
 		}();
 	bool ok = expected <=> structurized == std::weak_ordering::equivalent;
 	if (ok != exp_ok) {
 		std::cout << "Comparison " << colored_text_with_bool(exp_ok ? "FAILED" : "WORKED", false) << " for LINE " << line << "\n" << program << "\n\n";
-		auto it = g.tokens.begin();
-		while (it != g.it) {
-			std::cout << it->second << " ";
-			++it;
-		}
+		auto index = it.index;
+		while (index != index)
+			std::cout << it.vec[index++].second << " ";
 		std::cout << "\n";
 		return false;
 	}
@@ -67,9 +65,9 @@ bool test_structurize_equals(auto&&... args) {
 
 Token<STRING> str_parse(std::string s) {
 	auto tokens = Tokenizer(s).read();
-	tokens_and_iterator g{ tokens, tokens.begin() };
+	Iterator it = { tokens, 0 };
 	Token<STRING> res{ 0 };
-	build(res, g.it);
+	build(res, it);
 	return res;
 }
 
@@ -168,5 +166,27 @@ bool test_structurize_equals() {
 				}
 			})
 		});
+
+	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x",
+		NodeStructs::WordTypenameOrExpression{
+			.value = { std::string{ "x" } }
+		});
+
+	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x.x",
+		NodeStructs::WordTypenameOrExpression{
+			.value = NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ { std::string{ "x" } },  std::string{"x"} } }
+		});
+
+	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x::x",
+		NodeStructs::WordTypenameOrExpression{
+			.value = NodeStructs::Typename{
+				NodeStructs::NamespacedTypename{
+					NodeStructs::Typename{ NodeStructs::BaseTypename{ std::string{ "x" } }, NodeStructs::Value{} },
+					std::string{"x"}
+				},
+				NodeStructs::Value{}
+			}
+		});
+
 	return ok;
 }

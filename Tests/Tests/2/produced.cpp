@@ -3,10 +3,13 @@
 
 
 using Vector_String_ = Vector<String>;
-Int _redirect_main(const Vector_String_& args);
+Int _redirect_main(const Vector_String_& cli_args);
 
-Int _redirect_main(const Vector_String_& args) {
-		return 0;
+Int _redirect_main(const Vector_String_& cli_args) {
+	for (auto&& arg : cli_args) {
+		(Void)(std::cout << ('"' + arg + '"') << "\n");
+	}
+	return 0;
 };
 
 int main(int argc, char** argv) {

@@ -100,11 +100,11 @@ Int n_indent;
 };
 
 struct Or__Token__TOKENS__WORD__Int {
-Union<Token__TOKENS__WORD, Int> _value;
+Union_Token__TOKENS__WORD_Int_ _value;
 };
 
 struct Or__Word__Int {
-Union<Word, Int> _value;
+Union_Word_Int_ _value;
 };
 
 struct Tokenizer {
@@ -118,7 +118,7 @@ String second;
 };
 
 struct tokens_and_iterator {
-Vector<TOKENVALUE> tokens;
+Vector_TOKENVALUE_ tokens;
 Int it;
 };
 
@@ -129,9 +129,15 @@ Bool isPartWord(const Char& c);
 Bool isStartOfWord(const Char& c);
 String parseInt(const String& program, Int& index);
 String parseWord(const String& program, Int& index);
-Vector<TOKENVALUE> read(Tokenizer& tk);
+Vector_TOKENVALUE_ read(Tokenizer& tk);
 Pair__TOKENS__String readToken(const String& program, Int& index);
-Int _redirect_main(const Vector<String>& args);
+using Union_Token__TOKENS__WORD_Int_ = Union<Token__TOKENS__WORD, Int>;
+using Union_Word_Int_ = Union<Word, Int>;
+using Vector_Int_ = Vector<Int>;
+using Vector_Pair__TOKENS__String_ = Vector<Pair__TOKENS__String>;
+using Vector_String_ = Vector<String>;
+using Vector_TOKENVALUE_ = Vector<TOKENVALUE>;
+Int _redirect_main(const Vector_String_& args);
 
 Bool build__File(const Int& it) {
 	return False;
@@ -174,8 +180,8 @@ String parseWord(const String& program, Int& index) {
 	}
 	return out;
 };
-Vector<TOKENVALUE> read(Tokenizer& tk) {
-	Vector<Pair__TOKENS__String> out = Vector<Pair__TOKENS__String>{};
+Vector_TOKENVALUE_ read(Tokenizer& tk) {
+	Vector_Pair__TOKENS__String_ out = Vector_Pair__TOKENS__String_{};
 	out.reserve(tk.program.size());
 	if (tk.program.size() != 0) {
 		while (True) {
@@ -537,14 +543,14 @@ Pair__TOKENS__String readToken(const String& program, Int& index) {
 	}
 	return { TOKENS__INTEGER_NUMBER, num, };
 };
-Int _redirect_main(const Vector<String>& args) {
-	Vector<Int>{}.size();
+Int _redirect_main(const Vector_String_& args) {
+	Vector_Int_{}.size();
 	Token__TOKENS__WORD w = Token__TOKENS__WORD{String{"hi"}, 0};
 	Or__Token__TOKENS__WORD__Int t1 = Or__Word__Int{Token__TOKENS__WORD{String{"t1"}, 1}};
 	Or__Token__TOKENS__WORD__Int t2 = { Or__Token__TOKENS__WORD__Int{Token__TOKENS__WORD{String{"t2"}, 2}} };
 	String program = String{"Int f():\n\treturn 0\n\nInt main(Vector<String> ref args):\n\treturn f()\n"};
 	Tokenizer tokenizer = Tokenizer{std::move(program), 0};
-	Vector<Pair__TOKENS__String> tokens = read(tokenizer);
+	Vector_Pair__TOKENS__String_ tokens = read(tokenizer);
 	tokens_and_iterator g = tokens_and_iterator{std::move(tokens), 0};
 	(Void)(std::cout << String{build__File(g.it) ? "True" : "False"} << "\n");
 	return 0;

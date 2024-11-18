@@ -138,6 +138,18 @@ R T::operator()(const NodeStructs::MapType& t) {
 	}, NodeStructs::Value{} };
 }
 
+R T::operator()(const NodeStructs::TypeList& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::TypeListType& t) {
+	throw;
+}
+
+R T::operator()(const NodeStructs::TypeToken& t) {
+	throw;
+}
+
 R T::operator()(const NodeStructs::CompileTimeType& t) {
 	throw;
 }

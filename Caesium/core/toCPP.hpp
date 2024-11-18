@@ -81,6 +81,7 @@ struct transpilation_state {
 	std::set<NodeStructs::Enum> enums_to_transpile;
 
 	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
+	std::set<std::pair<std::string, std::string>> aliases_to_transpile;
 };
 
 struct transpilation_state_with_indent {

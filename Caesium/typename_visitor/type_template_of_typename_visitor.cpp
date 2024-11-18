@@ -62,8 +62,8 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 		{
 			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (build(f, g.it)) {
+			Iterator it{ tokens, 0 };
+			if (build(f, it)) {
 				auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
 				structured_f.name = tmpl_name;
 				if (uses_auto(structured_f)) {
@@ -87,10 +87,10 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 		{
 			And<IndentToken, grammar::Type> t{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			tokens_and_iterator g{ tokens, tokens.begin() };
-			auto ok = build(t, g.it);
-			while (parse_empty_line(g.it));
-			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
+			Iterator it{ tokens, 0 };
+			auto ok = build(t, it);
+			while (parse_empty_line(it));
+			if (ok && (it.index == it.vec.size() || it.vec[it.index].first == END)) {
 				auto structured_t = getStruct(t.get<grammar::Type>(), std::nullopt);
 				structured_t.name = tmpl_name;
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
@@ -105,10 +105,10 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 		{
 			And<IndentToken, grammar::Typename> tn{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			tokens_and_iterator g{ tokens, tokens.begin() };
-			auto ok = build(tn, g.it);
-			while (parse_empty_line(g.it));
-			if (ok && (g.it == g.tokens.end() || g.it->first == END)) {
+			Iterator it{ tokens, 0 };
+			auto ok = build(tn, it);
+			while (parse_empty_line(it));
+			if (ok && (it.index == it.vec.size() || it.vec[it.index].first == END)) {
 				auto structured_tn = getStruct(tn.get<grammar::Typename>(), tag_allow_value_category_or_empty{});
 				return type_of_typename(state, structured_tn);
 			}

@@ -13,6 +13,10 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, tag_expect_value_cat
 NodeStructs::Typename getStruct(const grammar::Typename& t, tag_expect_empty_category);
 NodeStructs::Typename getStruct(const grammar::Typename& t, tag_allow_value_category_or_empty);
 
+NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& t, tag_expect_value_category);
+NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& t, tag_expect_empty_category);
+NodeStructs::WordTypenameOrExpression getStruct(const grammar::TypenameOrExpression& t, tag_allow_value_category_or_empty);
+
 NodeStructs::Typename extend(NodeStructs::Typename&&, const grammar::NamespaceTypenameExtension&);
 
 NodeStructs::ParameterCategory getStruct(const Opt<grammar::ParameterCategory>& vc, tag_expect_value_category);

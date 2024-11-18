@@ -21,13 +21,13 @@ std::optional<std::string> open_read(const std::filesystem::path& file) {
 
 std::optional<NodeStructs::File> create_file_struct(const std::string& folder_name, std::string_view caesiumProgram, std::string_view filename) {
 	std::vector<TokenValue> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
-	tokens_and_iterator g{ tokens, tokens.begin() };
+	Iterator it = { tokens, 0 };
 	auto file = grammar::File(0);
 	try {
-		bool nodeBuilt = build(file, g.it);
-		bool programReadEntirely = g.it == g.tokens.end();
-		while (!programReadEntirely && (g.it->first == NEWLINE || g.it->first == END))
-			programReadEntirely = ++g.it == g.tokens.end();
+		bool nodeBuilt = build(file, it);
+		bool programReadEntirely = it.index == it.vec.size();
+		while (!programReadEntirely && (it.vec[it.index].first == NEWLINE || it.vec[it.index].first == END))
+			programReadEntirely = ++it.index == it.vec.size();
 
 		if (nodeBuilt && programReadEntirely)
 			return getStruct(file, filename);
@@ -37,10 +37,10 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 			std::cout << caesiumProgram << "\n\n";
-			auto it = g.tokens.begin();
-			while (it != g.it) {
-				std::cout << it->second << " ";
-				++it;
+			auto index = it.index;
+			while (index != it.index) {
+				std::cout << it.vec[index].second << " ";
+				++index;
 			}
 			std::cout << "\n";
 			return std::nullopt;
@@ -49,12 +49,12 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 	catch (const parse_error& e) {
 		size_t line = 1;
 		{
-			auto it = g.tokens.begin();
-			while (it != e.beg) {
-				for (const char& c : it->second)
+			auto index = it.index;
+			while (index != e.beg_offset) {
+				for (const char& c : it.vec[index].second)
 					if (c == '\n')
 						++line;
-				++it;
+				++index;
 			}
 		}
 		std::stringstream ss;
@@ -63,9 +63,9 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 			<< "\nin file '" << folder_name << '/' << filename
 			<< "'\non line " << line
 			<< "\nContent was: \n";
-		auto it = e.beg;
-		while (it != g.it)
-			ss << (it++)->second;
+		auto index = e.beg_offset;
+		while (index != it.index)
+			ss << it.vec[index++].second;
 		ss << "\n";
 		throw std::runtime_error(ss.str());
 	}

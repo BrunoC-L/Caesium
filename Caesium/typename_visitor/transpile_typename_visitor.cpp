@@ -76,22 +76,29 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 			throw;
 		if (is_map && type.templated_with.size() != 2)
 			throw;
-		std::stringstream ss;
+		std::stringstream single_word, with_brackets;
 		auto tmpl = type_template_of_typename(state, type.templated_with, type.type);
 		return_if_error(tmpl);
 		auto t = operator()(type.type);
 		return_if_error(t);
-		ss << t.value() << "<";
+
+		single_word << t.value() << "_";
+		with_brackets << t.value() << "<";
 		bool first = true;
 		for (const auto& t : type.templated_with) {
 			if (first)
 				first = false;
-			else
-				ss << ", ";
-			ss << word_typename_or_expression_for_template(t);
+			else {
+				single_word << "_";
+				with_brackets << ", ";
+			}
+			single_word << word_typename_or_expression_for_template(t);
+			with_brackets << word_typename_or_expression_for_template(t);
 		}
-		ss << ">";
-		return ss.str();
+		single_word << "_";
+		with_brackets << ">";
+		state.state.aliases_to_transpile.insert({ single_word.str(), with_brackets.str() });
+		return single_word.str();
 	}
 	else {
 		std::stringstream ss;

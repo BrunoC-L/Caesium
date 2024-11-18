@@ -10,7 +10,7 @@
 
 struct parse_error {
 	std::string name_of_rule;
-	std::vector<TokenValue>::iterator beg;
+	unsigned beg_offset;
 };
 
 namespace grammar {
@@ -23,6 +23,8 @@ struct Token {
 	static constexpr auto token = _token;
 	static_assert(token != TAB, "Using Token<TAB> will not work, trailing tabs are ignored, use IndentNode");
 	static_assert(token != SPACE, "Using Token<SPACE> will not work, trailing spaces are ignored");
+	unsigned beg_offset;
+	unsigned end_offset;
 
 	std::string value;
 	int n_indent;
@@ -39,38 +41,43 @@ struct Token {
 template <typename T>
 struct Until {
 	int n_indent;
+	unsigned beg_offset;
+	unsigned end_offset;
 };
 
 struct IndentToken {
 	int n_indent;
+	unsigned beg_offset;
+	unsigned end_offset;
 };
 
 template <typename T>
 struct Indent : T {
 	Indent(int n_indent) : T(n_indent + 1) {}
+	unsigned beg_offset;
+	unsigned end_offset;
 };
 
 template <typename T>
 struct Commit : T {
 	Commit(int n_indent) : T(n_indent) {}
+	unsigned beg_offset;
+	unsigned end_offset;
 };
 
 template <typename T>
 struct Expect : T {
 	Expect(int n_indent) : T(n_indent) {}
+	unsigned beg_offset;
+	unsigned end_offset;
 };
-
-//
-//template <typename T>
-//struct Expect {
-//	T expected;
-//	Expect(int n_indent) : expected(n_indent) {}
-//};
 
 template <typename T>
 struct Alloc {
 	std::optional<Box<T>> value = std::nullopt;
 	int n_indent;
+	unsigned beg_offset;
+	unsigned end_offset;
 	Alloc(int n_indent) : n_indent(n_indent) {}
 
 	const T& get() const {
@@ -82,6 +89,8 @@ template <typename T>
 struct Opt {
 	std::optional<T> node;
 	int n_indent;
+	unsigned beg_offset;
+	unsigned end_offset;
 	Opt(int n_indent) : n_indent(n_indent) {}
 
 	bool has_value() const {
@@ -116,6 +125,8 @@ struct And {
 	using tuple_t = std::tuple<Ands...>;
 
 	tuple_t value;
+	unsigned beg_offset;
+	unsigned end_offset;
 
 	And(int n_indent) : n_indent(n_indent), value({ Ands(n_indent)... }) {}
 
@@ -134,7 +145,11 @@ template <typename... Ors>
 struct Or {
 	int n_indent;
 	using variant_t = std::variant<Ors...>;
+
 	std::optional<variant_t> _value;
+	unsigned beg_offset;
+	unsigned end_offset;
+
 	Or(int n_indent) : n_indent(n_indent) {};
 
 	const variant_t& value() const {
@@ -145,6 +160,8 @@ struct Or {
 struct TemplateBody {
 	int n_indent;
 	std::string value;
+	unsigned beg_offset;
+	unsigned end_offset;
 	TemplateBody(int n_indent) : n_indent(n_indent) {};
 };
 
@@ -152,6 +169,8 @@ template <typename T, typename CND, typename requiresComma>
 struct KNode {
 	std::vector<T> nodes;
 	int n_indent;
+	unsigned beg_offset;
+	unsigned end_offset;
 	KNode(int n_indent) : n_indent(n_indent) {}
 
 	// to get `b*` from `(abc)*` for example

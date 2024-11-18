@@ -35,14 +35,13 @@ namespace grammar {
 	using NamespaceTypenameExtension = And<Token<NS>, Word>;
 	using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<TypenameOrExpression>>, Token<GT>>;
 	using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
-	using OptionalTypenameExtension = Token<QUESTION>;
 	using NonAutoTypename = And<
 		Or<VariadicExpansionTypename, Word>,
 		Star<Or<
 			NamespaceTypenameExtension,
 			TemplateTypenameExtension,
 			UnionTypenameExtension,
-			OptionalTypenameExtension
+		Token<QUESTION>
 		>>
 	>;
 

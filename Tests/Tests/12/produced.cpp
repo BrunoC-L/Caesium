@@ -1,27 +1,21 @@
 #include "defaults.hpp"
 
-struct Dog;
-struct Cat;
+struct B;
+struct A;
 
-struct Dog {
+struct B {
 };
 
-struct Cat {
+struct A {
+B b;
 };
 
 
-Int f__Animal(const Vector_Animal_& vec);
-using Vector_Animal_ = Vector<Animal>;
 using Vector_String_ = Vector<String>;
-using Vector_union__Dog_Cat_ = Vector<union__Dog_Cat>;
 Int _redirect_main(const Vector_String_& s);
 
-Int f__Animal(const Vector_Animal_& vec) {
-	return 0;
-};
 Int _redirect_main(const Vector_String_& s) {
-	Vector_union__Dog_Cat_ animals = Vector_union__Dog_Cat_{};
-	return f__Animal(animals);
+	A a = A{B{}};
 };
 
 int main(int argc, char** argv) {

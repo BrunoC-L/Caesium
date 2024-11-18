@@ -20,7 +20,7 @@ bool test_single_argument() {
 		auto res = find_best_template(
 			templates,
 			as_vec(
-				NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } }
+				NodeStructs::WordTypenameOrExpression{ { "arg" } }
 			)
 		);
 		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
@@ -48,7 +48,7 @@ bool test_single_argument() {
 			return false;
 		auto res = find_best_template(
 			templates,
-			as_vec(NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } })
+			as_vec(NodeStructs::WordTypenameOrExpression{ { "arg" } })
 		);
 		if (!res.has_error())
 			return false;
@@ -67,7 +67,7 @@ bool test_single_argument() {
 			return false;
 		auto res = find_best_template(
 			templates,
-			as_vec(NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } })
+			as_vec(NodeStructs::WordTypenameOrExpression{ { "arg" } })
 		);
 		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
 			return false;
@@ -86,7 +86,7 @@ bool test_single_argument() {
 				.name = "f",
 				.name_space = std::nullopt,
 				.parameters = as_vec(Parameter{
-					NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } } }
+					NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::WordTypenameOrExpression{ { "arg" } } }
 				}),
 			.templated = "\nInt f():\n",
 			.indent = 1
@@ -95,7 +95,7 @@ bool test_single_argument() {
 			return false;
 		auto res = find_best_template(
 			templates,
-			as_vec(NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } })
+			as_vec(NodeStructs::WordTypenameOrExpression{ { "arg" } })
 		);
 		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
 			return false;
@@ -124,7 +124,7 @@ bool test_single_argument() {
 			return false;
 		auto res = find_best_template(
 			templates,
-			as_vec(NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } })
+			as_vec(NodeStructs::WordTypenameOrExpression{ { "arg" } })
 		);
 		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
 			return false;
@@ -151,7 +151,7 @@ bool test_full_variadic_vs_split() {
 					NodeStructs::VariadicTemplateParameter{.name = "As" }
 				},
 				Parameter{
-					NodeStructs::TemplateParameterWithDefaultValue{.name = "B", .value = NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } } }
+					NodeStructs::TemplateParameterWithDefaultValue{.name = "B", .value = NodeStructs::WordTypenameOrExpression{ { "arg" } } }
 				},
 				Parameter{
 					NodeStructs::VariadicTemplateParameter{.name = "Cs" }
@@ -164,7 +164,7 @@ bool test_full_variadic_vs_split() {
 			return false;
 		auto res = find_best_template(
 			templates,
-			as_vec(NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } })
+			as_vec(NodeStructs::WordTypenameOrExpression{ { "arg" } })
 		);
 		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
 			return false;
@@ -174,7 +174,7 @@ bool test_full_variadic_vs_split() {
 			.name = "f",
 			.name_space = std::nullopt,
 			.parameters = as_vec(Parameter{
-				NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } } },
+				NodeStructs::TemplateParameterWithDefaultValue{.name = "A", .value = NodeStructs::WordTypenameOrExpression{ { "arg" } } },
 				}),
 			.templated = "\nInt f():\n",
 			.indent = 1
@@ -187,7 +187,7 @@ bool test_full_variadic_vs_split() {
 						NodeStructs::VariadicTemplateParameter{.name = "As" }
 					},
 					Parameter{
-						NodeStructs::TemplateParameterWithDefaultValue{.name = "B", .value = NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } } }
+						NodeStructs::TemplateParameterWithDefaultValue{.name = "B", .value = NodeStructs::WordTypenameOrExpression{ { "arg" } } }
 					},
 					Parameter{
 						NodeStructs::VariadicTemplateParameter{.name = "Cs" }
@@ -200,7 +200,7 @@ bool test_full_variadic_vs_split() {
 			return false;
 		auto res = find_best_template(
 			templates,
-			as_vec(NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{ "arg" } })
+			as_vec(NodeStructs::WordTypenameOrExpression{ { "arg" } })
 		);
 		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
 			return false;

@@ -500,9 +500,9 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
 	if (!std::holds_alternative<std::string>(expr.operand.expression.get()._value))
 		throw;
-	const auto& test_ok = std::get<std::string>(expr.operand.expression.get()._value);
+	const auto& operand = std::get<std::string>(expr.operand.expression.get()._value);
 
-	if (auto it = state.state.global_namespace.templates.find(std::get<std::string>(expr.operand.expression.get()._value));
+	if (auto it = state.state.global_namespace.templates.find(operand);
 		it != state.state.global_namespace.templates.end()) {
 		auto t = find_best_template(it->second, expr.arguments.args);
 		return_if_error(t);
@@ -531,7 +531,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 				}
 			}
 			return ss.str();
-			};
+		};
 		std::string replaced = tmpl.templated;
 		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
 			replaced = replace_all(
@@ -564,9 +564,9 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		{
 			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			tokens_and_iterator g{ tokens, tokens.begin() };
+			Iterator it{ tokens, 0 };
 			try {
-				if (build(f, g.it)) {
+				if (build(f, it)) {
 					auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
 					structured_f.name = tmpl_name;
 					if (uses_auto(structured_f)) {
@@ -603,8 +603,8 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		{
 			And<IndentToken, grammar::Type, Token<END>> t{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			tokens_and_iterator g{ tokens, tokens.begin() };
-			if (build(t, g.it)) {
+			Iterator it{ tokens, 0 };
+			if (build(t, it)) {
 				auto structured_t = NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
 				structured_t.name = tmpl_name;
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
@@ -622,6 +622,32 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			"Template expansion does not result in a type or function: |begin|\n" + replaced + "\n|end|"
 		};
 	}
+
+	if (operand == "type_list") {
+		std::vector<NodeStructs::MetaType> types;
+		for (const auto& arg : expr.arguments.args) {
+			expected<NodeStructs::MetaType> arg_t = std::visit(overload(
+				[&](const std::string& e) -> expected<NodeStructs::MetaType> {
+					return type_of_typename(state, NodeStructs::BaseTypename{ e });
+				},
+				[&](const NodeStructs::Typename& t) -> expected<NodeStructs::MetaType> {
+					return type_of_typename(state, t);
+				},
+				[&](const NodeStructs::Expression& e) -> expected<NodeStructs::MetaType> {
+					return error{
+						"user error",
+						"not a typename `" + expression_original_representation(e) + "`"
+					};
+				}
+			), arg.value._value);
+			return_if_error(arg_t);
+		}
+		return expression_information{ type_information{
+			.type = NodeStructs::MetaType{ NodeStructs::TypeListType{ .types = std::move(types) } },
+			.representation = "compile time do not transpile"
+		} };
+	}
+
 	return error{
 		"user error",
 		"not a template"

@@ -1,27 +1,24 @@
 #include "defaults.hpp"
 
-struct Dog;
-struct Cat;
-
-struct Dog {
-};
-
-struct Cat {
-};
 
 
-Int f__Animal(const Vector_Animal_& vec);
-using Vector_Animal_ = Vector<Animal>;
+Int f__Int__String();
+Int f__String__Int();
+Int f__String__String();
 using Vector_String_ = Vector<String>;
-using Vector_union__Dog_Cat_ = Vector<union__Dog_Cat>;
 Int _redirect_main(const Vector_String_& s);
 
-Int f__Animal(const Vector_Animal_& vec) {
+Int f__Int__String() {
 	return 0;
 };
+Int f__String__Int() {
+	return 1;
+};
+Int f__String__String() {
+	return 2;
+};
 Int _redirect_main(const Vector_String_& s) {
-	Vector_union__Dog_Cat_ animals = Vector_union__Dog_Cat_{};
-	return f__Animal(animals);
+	return (f__String__String() + f__String__Int() + f__Int__String());
 };
 
 int main(int argc, char** argv) {
