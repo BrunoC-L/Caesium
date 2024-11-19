@@ -877,7 +877,7 @@ auto rewire(const NodeStructs::PropertyAccessAndCallExpression& expr, const auto
 	for (const auto& arg : expr.arguments.args)
 		joined.push_back(copy(arg));
 	return NodeStructs::CallExpression{
-		.operand = NodeStructs::Expression{ expr.property_name },
+		.operand = make_expression({ expr.property_name }),
 		.arguments = std::move(joined)
 	};
 }

@@ -96,7 +96,7 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
 	throw;
 	/*auto args = expr.arguments.args
-		| std::views::transform([&](auto&& e) { return NodeStructs::Expression{ copy(e.expression.get()) }; })
+		| std::views::transform([&](auto&& e) { return make_expression({ copy(e.expression.get()) }); })
 		| std::views::transform([&](auto&& e) { return operator()(e); });
 	auto operand_repr = operator()(expr.operand);
 	std::stringstream ss;

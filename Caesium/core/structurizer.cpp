@@ -610,47 +610,47 @@ NodeStructs::Expression getExpressionStruct(const grammar::BraceArguments&) {
 NodeStructs::Expression getExpressionStruct(const grammar::ParenExpression& statement) {
 	return std::visit(overload(overload_default_error,
 		[](const grammar::Construct& e) -> NodeStructs::Expression {
-			return { NodeStructs::ConstructExpression{
+			return make_expression({ NodeStructs::ConstructExpression{
 				.operand = getStruct(e.get<grammar::Typename>(), tag_expect_empty_category{} ),
 				.arguments = e.get<grammar::BraceArguments>().get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
 				| std::views::transform([&](auto&& e) { return getStruct(e); })
 				| to_vec()
-			} };
+			} });
 		},
 		[](const grammar::ParenArguments& e) -> NodeStructs::Expression {
-			return { NodeStructs::ParenArguments{
+			return make_expression({ NodeStructs::ParenArguments{
 				.args = e.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
 				| std::views::transform([&](auto&& e) { return getStruct(e); })
 				| to_vec()
-			} };
+			} });
 		},
 		[](const grammar::BracketArguments& /*e*/) -> NodeStructs::Expression {
 			//const auto& args = e.get<CommaStar<FunctionArgument>>().get<FunctionArgument>();
 			throw;
 			//auto res = getExpressionStruct(e);
-			//return NodeStructs::Expression{ std::move(res) };
+			//return make_expression({ std::move(res) });
 		},
 		[](const grammar::BraceArguments& e) -> NodeStructs::Expression {
 			const auto& args = e.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>();
-			return { NodeStructs::BraceArguments{
+			return make_expression({ NodeStructs::BraceArguments{
 				args
 				| std::views::transform([&](auto&& e) { return getStruct(e); })
 				| to_vec()
-			} };
+			} });
 			//auto res = getExpressionStruct(e);
-			//return NodeStructs::Expression{ std::move(res) };
+			//return make_expression({ std::move(res) });
 		},
 		[](const grammar::Word& e) {
-			return NodeStructs::Expression{ e.value };
+			return make_expression(e.value);
 		},
 		[](const Token<INTEGER_NUMBER>& e) {
-			return NodeStructs::Expression{ e };
+			return make_expression(e);
 		},
 		[](const Token<FLOATING_POINT_NUMBER>& e) {
-			return NodeStructs::Expression{ e };
+			return make_expression(e);
 		},
 		[](const Token<STRING>& e) {
-			return NodeStructs::Expression{ e };
+			return make_expression(e);
 		}
 	),
 		statement.value()
@@ -661,25 +661,25 @@ NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& exp
 	return std::visit(
 		overload(overload_default_error,
 			[&](const And<Token<DOT>, grammar::Word, grammar::ParenArguments>& e) {
-				return NodeStructs::Expression{ NodeStructs::PropertyAccessAndCallExpression{ std::move(expr), e.get<grammar::Word>().value, getStruct(e.get<grammar::ParenArguments>()) } };
+				return make_expression({ NodeStructs::PropertyAccessAndCallExpression{ std::move(expr), e.get<grammar::Word>().value, getStruct(e.get<grammar::ParenArguments>()) } });
 			},
 			[&](const And<Token<DOT>, grammar::Word>& e) {
-				return NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ std::move(expr), e.get<grammar::Word>().value } };
+				return make_expression({ NodeStructs::PropertyAccessExpression{ std::move(expr), e.get<grammar::Word>().value } });
 			},
 			[&](const And<Token<NS>, grammar::Word>& e) {
-				return NodeStructs::Expression{ NodeStructs::NamespaceExpression{ std::move(expr), e.get<grammar::Word>().value } };
+				return make_expression({ NodeStructs::NamespaceExpression{ std::move(expr), e.get<grammar::Word>().value } });
 			},
 			[&](const grammar::ParenArguments& args) {
-				return NodeStructs::Expression{ NodeStructs::CallExpression{ std::move(expr), getStruct(args) } };
+				return make_expression({ NodeStructs::CallExpression{ std::move(expr), getStruct(args) } });
 			},
 			[&](const grammar::BracketArguments& args) {
-				return NodeStructs::Expression{ NodeStructs::BracketAccessExpression{ std::move(expr), getStruct(args) } };
+				return make_expression({ NodeStructs::BracketAccessExpression{ std::move(expr), getStruct(args) } });
 			},
 			/*[&](const BraceArguments& args) {
-				return NodeStructs::Expression{ NodeStructs::ConstructExpression{ std::move(expr), getStruct(args) } };
+				return make_expression({ NodeStructs::ConstructExpression{ std::move(expr), getStruct(args) } });
 			},*/
 			[&](const grammar::TemplateArguments& args) {
-				return NodeStructs::Expression{ NodeStructs::TemplateExpression{ std::move(expr), getStruct(args) } };
+				return make_expression({ NodeStructs::TemplateExpression{ std::move(expr), getStruct(args) } });
 			}
 		),
 		postfix.value()
@@ -702,7 +702,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::UnaryExpression& stat
 	if (prefixes.size() == 0)
 		return getExpressionStruct(statement.get().get<grammar::PostfixExpression>());
 	else {
-		return NodeStructs::Expression{ NodeStructs::UnaryExpression {
+		return make_expression({ NodeStructs::UnaryExpression {
 			.unary_operators = prefixes | std::views::transform(
 				[](const auto& e) {
 					return std::visit(
@@ -714,7 +714,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::UnaryExpression& stat
 				})
 			| to_vec(),
 			.expr = getExpressionStruct(statement.get().get<grammar::PostfixExpression>())
-		} };
+		} });
 	}
 }
 
@@ -725,7 +725,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::MultiplicativeExpress
 	if (multiplications.size() == 0)
 		return getExpressionStruct(statement.get<grammar::UnaryExpression>());
 	else
-		return NodeStructs::Expression{ NodeStructs::MultiplicativeExpression{
+		return make_expression({ NodeStructs::MultiplicativeExpression{
 			getExpressionStruct(statement.get<grammar::UnaryExpression>()),
 			multiplications
 				| std::views::transform([&](auto&& op_exp) {
@@ -735,7 +735,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::MultiplicativeExpress
 					};
 				})
 				| to_vec()
-		} };
+		} });
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::AdditiveExpression& statement) {
@@ -745,7 +745,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::AdditiveExpression& s
 	if (additions.size() == 0)
 		return getExpressionStruct(statement.get<grammar::MultiplicativeExpression>());
 	else
-		return NodeStructs::Expression{ NodeStructs::AdditiveExpression{
+		return make_expression({ NodeStructs::AdditiveExpression{
 			getExpressionStruct(statement.get<grammar::MultiplicativeExpression>()),
 			additions
 				| std::views::transform([&](auto&& op_exp) {
@@ -755,7 +755,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::AdditiveExpression& s
 					};
 				})
 				| to_vec()
-		} };
+		} });
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& statement) {
@@ -765,7 +765,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& st
 	if (comparisons.size() == 0)
 		return getExpressionStruct(statement.get<grammar::AdditiveExpression>());
 	else
-		return NodeStructs::Expression{ NodeStructs::CompareExpression{
+		return make_expression({ NodeStructs::CompareExpression{
 			getExpressionStruct(statement.get<grammar::AdditiveExpression>()),
 			comparisons
 				| std::views::transform([&](const op_add& op_exp) {
@@ -775,7 +775,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::CompareExpression& st
 					};
 				})
 				| to_vec()
-		} };
+		} });
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::EqualityExpression& statement) {
@@ -785,7 +785,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::EqualityExpression& s
 	if (equals.size() == 0)
 		return getExpressionStruct(statement.get<grammar::CompareExpression>());
 	else
-		return NodeStructs::Expression{ NodeStructs::EqualityExpression{
+		return make_expression({ NodeStructs::EqualityExpression{
 			getExpressionStruct(statement.get<grammar::CompareExpression>()),
 			equals
 				| std::views::transform([&](auto&& op_exp) {
@@ -795,7 +795,7 @@ NodeStructs::Expression getExpressionStruct(const grammar::EqualityExpression& s
 					};
 				})
 				| to_vec()
-		} };
+		} });
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::AndExpression& statement) {
@@ -803,12 +803,12 @@ NodeStructs::Expression getExpressionStruct(const grammar::AndExpression& statem
 	if (ands.size() == 0)
 		return getExpressionStruct(statement.get<grammar::EqualityExpression>());
 	else
-		return NodeStructs::Expression{ NodeStructs::AndExpression{
+		return make_expression({ NodeStructs::AndExpression{
 			getExpressionStruct(statement.get<grammar::EqualityExpression>()),
 			ands
 				| std::views::transform([&](auto& e) { return getExpressionStruct(e); })
 				| to_vec()
-		} };
+		} });
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::OrExpression& statement) {
@@ -816,12 +816,12 @@ NodeStructs::Expression getExpressionStruct(const grammar::OrExpression& stateme
 	if (ors.size() == 0)
 		return getExpressionStruct(statement.get<grammar::AndExpression>());
 	else
-		return NodeStructs::Expression{ NodeStructs::OrExpression{
+		return make_expression({ NodeStructs::OrExpression{
 			getExpressionStruct(statement.get<grammar::AndExpression>()),
 			ors
 				| std::views::transform([&](auto& e) { return getExpressionStruct(e); })
 				| to_vec()
-		} };
+		} });
 }
 
 NodeStructs::Expression getExpressionStruct(const grammar::ConditionalExpression& statement) {
@@ -832,13 +832,13 @@ NodeStructs::Expression getExpressionStruct(const grammar::ConditionalExpression
 		grammar::OrExpression
 		>>>();
 	if (ifElseExpr.has_value())
-		return NodeStructs::Expression{ NodeStructs::ConditionalExpression{
+		return make_expression({ NodeStructs::ConditionalExpression{
 			getExpressionStruct(statement.get<grammar::OrExpression>()),
 			std::pair{
 				getExpressionStruct(ifElseExpr.value().get<grammar::OrExpression, 0>()),
 				getExpressionStruct(ifElseExpr.value().get<grammar::OrExpression, 1>())
 			}
-		} };
+		} });
 	else
 		return getExpressionStruct(statement.get<grammar::OrExpression>());
 }
@@ -865,7 +865,11 @@ NodeStructs::VariableDeclarationStatement getStatementStruct(const grammar::Vari
 
 std::vector<NodeStructs::Statement> getStatements(const grammar::ColonIndentCodeBlock& code) {
 	return code.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement>>>>>().get<Or<Token<NEWLINE>, Expect<grammar::Statement>>>()
-		| std::views::transform([&](const Or<Token<NEWLINE>, Expect<grammar::Statement>>& e) { return e.value(); })
+		| std::views::transform(
+			[&](const Or<Token<NEWLINE>, Expect<grammar::Statement>>& e)
+			-> const std::variant<Token<NEWLINE>, Expect<grammar::Statement>>& {
+				return e.value();
+			})
 		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement>>(e); })
 		| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement>>(e); })
 		| std::views::transform([&](const Expect<grammar::Statement>& e) { return getStatementStruct(e); })

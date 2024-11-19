@@ -5,6 +5,7 @@
 #include <optional>
 #include <compare>
 #include <map>
+#include <iostream>
 
 #include "parse.hpp"
 #include "../utility/box.hpp"
@@ -123,12 +124,6 @@ struct NodeStructs {
 		>;
 		NonCopyableBox<vt> expression;
 	};
-
-	NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr) {
-		if (std::holds_alternative<std::string>(expr._value) && std::get<std::string>(expr._value) == "DB")
-			throw;
-		return { std::move(expr) };
-	}
 
 	struct WordTypenameOrExpression {
 		Variant<std::string, Typename, Expression> value;
@@ -399,7 +394,7 @@ struct NodeStructs {
 
 	struct TemplateParameterWithDefaultValue {
 		std::string name;
-		NodeStructs::WordTypenameOrExpression value;
+		WordTypenameOrExpression value;
 	};
 
 	struct VariadicTemplateParameter {
@@ -575,6 +570,13 @@ struct NodeStructs {
 		NameSpace content;
 	};
 };
+
+inline NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr) {
+	if (std::holds_alternative<std::string>(expr._value) && std::get<std::string>(expr._value) == "DB") {
+		std::cout << "db";
+	}
+	return { std::move(expr) };
+}
 
 template <typename T>
 static std::weak_ordering cmp(const T& a, const T& b) {

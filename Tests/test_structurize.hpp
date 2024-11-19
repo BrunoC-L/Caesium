@@ -108,28 +108,28 @@ bool test_structurize_equals() {
 		});
 
 	ok &= test_structurize_equals<Expression>(__LINE__, 0, "a.b.c",
-		NodeStructs::Expression{
+		make_expression({
 			NodeStructs::PropertyAccessExpression{
-				NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{
-					NodeStructs::Expression{ std::string{ "a" } },
+				make_expression({ NodeStructs::PropertyAccessExpression{
+					make_expression({ std::string{ "a" } }),
 					"b"
-				} },
+				} }),
 				"c"
 			}
-		});
+		}));
 
 	ok &= test_structurize_equals<Expression>(__LINE__, 0, "filesystem::entries(\"C:/\")",
-		NodeStructs::Expression{
+		make_expression({
 			NodeStructs::CallExpression{
-				.operand = NodeStructs::Expression{
+				.operand = make_expression({
 					NodeStructs::NamespaceExpression{
-						.name_space = NodeStructs::Expression{ std::string{ "filesystem" } },
+						.name_space = make_expression({ std::string{ "filesystem" } }),
 						.name_in_name_space = "entries"
 					}
-				},
+				}),
 				.arguments = { as_vec(NodeStructs::FunctionArgument{ std::nullopt, { str_parse("\"C:/\"") } }) }
 			}
-		});
+		}));
 
 	ok &= test_structurize_equals<Template>(__LINE__, 0, "template f<T>:\n\tInt f(Vector<`T`> ref vec):\n\t\treturn 0",
 		NodeStructs::Template{
@@ -153,7 +153,7 @@ bool test_structurize_equals() {
 				.name = "a",
 			}),
 			.statements = as_vec(NodeStructs::Statement{
-				NodeStructs::Expression{
+				make_expression({
 					NodeStructs::CallExpression{
 						.operand = "println",
 						.arguments = NodeStructs::ParenArguments{
@@ -163,7 +163,7 @@ bool test_structurize_equals() {
 							})
 						}
 					}
-				}
+				})
 			})
 		});
 
@@ -174,7 +174,7 @@ bool test_structurize_equals() {
 
 	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x.x",
 		NodeStructs::WordTypenameOrExpression{
-			.value = NodeStructs::Expression{ NodeStructs::PropertyAccessExpression{ { std::string{ "x" } },  std::string{"x"} } }
+			.value = make_expression({ NodeStructs::PropertyAccessExpression{ { std::string{ "x" } },  std::string{"x"} } })
 		});
 
 	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x::x",
