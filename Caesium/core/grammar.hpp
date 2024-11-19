@@ -27,13 +27,12 @@ namespace grammar {
 	using ParenArguments = And<Commit<Token<PARENOPEN>>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 	using BraceArguments = And<Commit<Token<BRACEOPEN>>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
 	using BracketArguments = And<Commit<Token<BRACKETOPEN>>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
-	using TemplateArguments = And<Token<LT>, CommaStar<Expression>, Token<GT>>;
 
 	using TypenameOrExpression = Or<Typename, Expression>;
 
 	using VariadicExpansionTypename = And<Word, Token<DOTS>>;
 	using NamespaceTypenameExtension = And<Token<NS>, Word>;
-	using TemplateTypenameExtension = And<Token<LT>, CommaStar<Alloc<TypenameOrExpression>>, Token<GT>>;
+	using TemplateTypenameExtension = And<Token<LT>, CommaStar<TypenameOrExpression>, Token<GT>>;
 	using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
 	using NonAutoTypename = And<
 		Or<VariadicExpansionTypename, Word>,
@@ -78,7 +77,7 @@ namespace grammar {
 		>,
 		ParenArguments,
 		BracketArguments,
-		TemplateArguments,
+		TemplateTypenameExtension,
 		And<Token<NS>, Word>
 		//BraceArguments,
 		/*,
@@ -290,4 +289,3 @@ namespace grammar {
 	static_assert(!(sizeof(T*)), "missing name for T");
 	}
 }
-

@@ -47,8 +47,6 @@ NodeStructs::BracketArguments getStruct(const grammar::BracketArguments& args);
 
 NodeStructs::BraceArguments getStruct(const grammar::BraceArguments& args);
 
-NodeStructs::TemplateArguments getStruct(const grammar::TemplateArguments& args);
-
 NodeStructs::Expression getExpressionStruct(const grammar::BraceArguments&);
 
 NodeStructs::Expression getExpressionStruct(const grammar::ParenExpression& statement);

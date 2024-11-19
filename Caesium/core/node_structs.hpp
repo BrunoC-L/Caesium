@@ -142,10 +142,6 @@ struct NodeStructs {
 		std::vector<FunctionArgument> args;
 	};
 
-	struct TemplateArguments {
-		std::vector<WordTypenameOrExpression> args;
-	};
-
 	struct ParenArguments {
 		std::vector<FunctionArgument> args;
 	};
@@ -162,7 +158,7 @@ struct NodeStructs {
 
 	struct TemplateExpression {
 		Expression operand;
-		TemplateArguments arguments;
+		std::vector<WordTypenameOrExpression> args;
 	};
 
 	struct ConstructExpression {
@@ -572,9 +568,8 @@ struct NodeStructs {
 };
 
 inline NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr) {
-	if (std::holds_alternative<std::string>(expr._value) && std::get<std::string>(expr._value) == "DB") {
+	if (std::holds_alternative<std::string>(expr._value) && std::get<std::string>(expr._value) == "DB")
 		std::cout << "db";
-	}
 	return { std::move(expr) };
 }
 
@@ -993,7 +988,6 @@ CMP_COPY_N(2, PropertyAccessExpression)
 CMP_COPY_N(1, ParenArguments)
 CMP_COPY_N(1, BraceArguments)
 CMP_COPY_N(1, BracketArguments)
-CMP_COPY_N(1, TemplateArguments)
 CMP_COPY_N(4, Type)
 CMP_COPY_N(3, Alias)
 CMP_COPY_N(2, MemberVariable)

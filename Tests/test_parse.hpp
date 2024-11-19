@@ -89,8 +89,8 @@ bool test_parse() {
 	ok &= test_parse_correct<And<TypenameOrExpression>>(__LINE__, 0, "E");
 	ok &= test_parse_correct<And<TypenameOrExpression, Token<GT>>>(__LINE__, 0, "E>");
 	ok &= test_parse_correct<And<Token<LT>, TypenameOrExpression, Token<GT>>>(__LINE__, 0, "<E>");
-	ok &= test_parse_correct<And<Token<LT>, Alloc<TypenameOrExpression>, Token<GT>>>(__LINE__, 0, "<E>");
-	ok &= test_parse_correct<And<Token<LT>, CommaStar<Alloc<TypenameOrExpression>>, Token<GT>>>(__LINE__, 0, "<E>");
+	ok &= test_parse_correct<And<Token<LT>, TypenameOrExpression, Token<GT>>>(__LINE__, 0, "<E>");
+	ok &= test_parse_correct<And<Token<LT>, CommaStar<TypenameOrExpression>, Token<GT>>>(__LINE__, 0, "<E>");
 	ok &= test_parse_correct<TemplateTypenameExtension>(__LINE__, 0, "<E>");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E<E>");
 	ok &= test_parse_correct<Typename>(__LINE__, 0, "E::E");

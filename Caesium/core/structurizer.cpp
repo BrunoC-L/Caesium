@@ -85,8 +85,7 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 							NodeStructs::Typename{
 								NodeStructs::TemplatedTypename {
 									std::get<NodeStructs::VariadicExpansionTypename>(std::move(res).value._value).type,
-									e.get<CommaStar<Alloc<grammar::TypenameOrExpression>>>().get<Alloc<grammar::TypenameOrExpression>>()
-									| std::views::transform([&](const Alloc<grammar::TypenameOrExpression>& e) { return e.get(); })
+									e.get<CommaStar<grammar::TypenameOrExpression>>().get<grammar::TypenameOrExpression>()
 									| std::views::transform([&](const grammar::TypenameOrExpression& e) { return getStruct(e, tag_expect_empty_category{}); })
 									| to_vec()
 								}, NodeStructs::Value{}
@@ -111,8 +110,7 @@ NodeStructs::Typename getStruct(const grammar::Typename& t, const auto& exts, No
 				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
 					return { NodeStructs::TemplatedTypename{
 						std::move(res),
-						e.get<CommaStar<Alloc<grammar::TypenameOrExpression>>>().get<Alloc<grammar::TypenameOrExpression>>()
-						| std::views::transform([&](auto&& e) { return e.get(); })
+						e.get<CommaStar<grammar::TypenameOrExpression>>().get<grammar::TypenameOrExpression>()
 						| std::views::transform([&](auto&& e) { return getStruct(e, tag_allow_value_category_or_empty{}); })
 						| to_vec()
 					}, NodeStructs::Value{} };
@@ -591,14 +589,6 @@ NodeStructs::BraceArguments getStruct(const grammar::BraceArguments& args) {
 	};
 }
 
-NodeStructs::TemplateArguments getStruct(const grammar::TemplateArguments& args) {
-	return {
-		args.get<CommaStar<grammar::Expression>>().get_view<grammar::Expression>()
-			| std::views::transform([&](auto&& e) { return NodeStructs::WordTypenameOrExpression{ getExpressionStruct(e) }; })
-			| to_vec()
-	};
-}
-
 NodeStructs::Expression getExpressionStruct(const grammar::BraceArguments&) {
 	throw;
 	/*NodeStructs::BraceArguments res;
@@ -678,13 +668,19 @@ NodeStructs::Expression getPostfixExpressionStruct(NodeStructs::Expression&& exp
 			/*[&](const BraceArguments& args) {
 				return make_expression({ NodeStructs::ConstructExpression{ std::move(expr), getStruct(args) } });
 			},*/
-			[&](const grammar::TemplateArguments& args) {
-				return make_expression({ NodeStructs::TemplateExpression{ std::move(expr), getStruct(args) } });
+			[&](const grammar::TemplateTypenameExtension& args) {
+				return make_expression({ NodeStructs::TemplateExpression{
+					std::move(expr), 
+					args.get<CommaStar<grammar::TypenameOrExpression>>().get<grammar::TypenameOrExpression>()
+					| std::views::transform([&](auto&& e) { return getStruct(e, tag_allow_value_category_or_empty{}); })
+					| to_vec()
+				} });
 			}
 		),
 		postfix.value()
 	);
 }
+
 NodeStructs::Expression getExpressionStruct(const grammar::PostfixExpression& statement, NodeStructs::Expression cur, const auto& vec, size_t i) {
 	if (i == vec.size())
 		return std::move(cur);

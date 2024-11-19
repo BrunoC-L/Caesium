@@ -504,13 +504,13 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 
 	if (auto it = state.state.global_namespace.templates.find(operand);
 		it != state.state.global_namespace.templates.end()) {
-		auto t = find_best_template(it->second, expr.arguments.args);
+		auto t = find_best_template(it->second, expr.args);
 		return_if_error(t);
 		const auto& tmpl = t.value().tmpl.get();
-		std::vector<std::string> args = expr.arguments.args
+		std::vector<std::string> args = expr.args
 			| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(e); })
 			| to_vec();
-		std::string tmpl_name = template_name(it->first, expr.arguments.args);
+		std::string tmpl_name = template_name(it->first, expr.args);
 
 		size_t max_params = it->second.at(0).parameters.size();
 		for (unsigned i = 1; i < it->second.size(); ++i)
@@ -613,7 +613,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 					return opt_error.value();
 				return expression_information{ type_information{
 					.type = NodeStructs::MetaType{ std::move(structured_t) },
-					.representation = template_name(tmpl.name, expr.arguments.args)
+					.representation = template_name(tmpl.name, expr.args)
 				} };
 			}
 		}
@@ -625,7 +625,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 
 	if (operand == "type_list") {
 		std::vector<NodeStructs::MetaType> types;
-		for (const auto& arg : expr.arguments.args) {
+		for (const auto& arg : expr.args) {
 			expected<NodeStructs::MetaType> arg_t = std::visit(overload(
 				[&](const std::string& e) -> expected<NodeStructs::MetaType> {
 					return type_of_typename(state, NodeStructs::BaseTypename{ e });
