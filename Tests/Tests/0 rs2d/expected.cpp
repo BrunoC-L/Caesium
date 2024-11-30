@@ -1,36 +1,40 @@
 #include "defaults.hpp"
+#include "SFML/Network.hpp"
+#include "SFML/System.hpp"
+#include "SFML/Window.hpp"
 
-using sf__sf_time = sf::sf_time;
-using sf__clock = sf::clock;
+using sf__Time = sf::Time;
+using sf__Clock = sf::Clock;
 using sf__TcpSocket = sf::TcpSocket;
 using sf__TcpListener = sf::TcpListener;
 using sf__SocketSelector = sf::SocketSelector;
 using sf__Socket = sf::Socket;
-using sf__SocketStatus = sf::SocketStatus;
-struct A;
-struct B;
-struct a__b__c;
+using sf__Socket__Status = sf::Socket::Status;
+struct reference_wrapper__DB;
+struct ServerServiceProvider__DB;
+struct DB;
 
-struct A {
+struct ServerServiceProvider__DB {
+	Tuple<Optional<reference_wrapper__DB>> services;
 };
 
-struct B {
-Int a;
-};
-
-struct a__b__c {
+struct DB {
+ServerServiceProvider__DB provider;
 };
 
 
-Int _redirect_main(const Vector<String>& args);
+Void provide__DB__DB(ServerServiceProvider__DB& provider, const DB& service);
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& args);
 
-Int _redirect_main(const Vector<String>& args) {
-	B x = B{0};
-	A y = A{};
-	B z = B{0};
-	sf__clock clock = sf__clock{};
-	a__b__c d = a__b__c{};
-	return z.a;
+Void provide__DB__DB(ServerServiceProvider__DB& provider, const DB& service) {
+							provider.services[0] = { service, };
+	};
+Int _redirect_main(const Vector_String_& args) {
+	ServerServiceProvider__DB provider = ServerServiceProvider__DB{{ None, }};
+	DB db = DB{provider};
+	provide__DB__DB(provider, db);
+	return 0;
 };
 
 int main(int argc, char** argv) {

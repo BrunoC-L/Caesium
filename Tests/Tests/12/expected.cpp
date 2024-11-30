@@ -11,9 +11,10 @@ B b;
 };
 
 
-Int _redirect_main(const Vector<String>& s);
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& s);
 
-Int _redirect_main(const Vector<String>& s) {
+Int _redirect_main(const Vector_String_& s) {
 	A a = A{B{}};
 };
 

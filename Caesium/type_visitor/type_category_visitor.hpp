@@ -15,7 +15,7 @@ struct TypeCategoryVisitor {
 			[&](const auto& t) {
 				return self(t);
 			},
-			t.type._value
+			t.type.get()._value
 		);
 	}
 #define TypeCategoryVisitorDeclarations \
@@ -26,7 +26,6 @@ struct TypeCategoryVisitor {
 	R operator()(const NodeStructs::InterfaceType& t);\
 	R operator()(const NodeStructs::NamespaceType& t);\
 	R operator()(const NodeStructs::Builtin& t);\
-	R operator()(const NodeStructs::TupleType& t);\
 	R operator()(const NodeStructs::UnionType& t);\
 	R operator()(const NodeStructs::TemplateType& t);\
 	R operator()(const NodeStructs::EnumType& t);\

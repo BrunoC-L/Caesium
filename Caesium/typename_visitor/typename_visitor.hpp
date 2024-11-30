@@ -15,7 +15,7 @@ struct TypenameVisitor {
 			[&](const auto& t) {
 				return self(t);
 			},
-			t.value._value
+			t.value.get()._value
 		);
 	}
 
@@ -23,7 +23,6 @@ struct TypenameVisitor {
 	R operator()(const NodeStructs::BaseTypename& t);\
 	R operator()(const NodeStructs::NamespacedTypename& t);\
 	R operator()(const NodeStructs::TemplatedTypename& t);\
-	R operator()(const NodeStructs::TupleTypename& t);\
 	R operator()(const NodeStructs::UnionTypename& t);\
 	R operator()(const NodeStructs::OptionalTypename& t);\
 	R operator()(const NodeStructs::VariadicExpansionTypename& t);

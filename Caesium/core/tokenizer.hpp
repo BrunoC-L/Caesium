@@ -97,9 +97,14 @@ enum TOKENS {
 
 using TokenValue = std::pair<TOKENS, std::string>;
 
+std::string file_name_stub();
+
 struct Iterator {
 	std::vector<TokenValue>& vec;
 	unsigned index;
+	unsigned line;
+	unsigned col;
+	std::string file_name = file_name_stub();
 };
 
 struct Tokenizer {

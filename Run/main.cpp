@@ -6,27 +6,27 @@
 #include "core/structurizer.hpp"
 #include "core/toCpp.hpp"
 
-static NodeStructs::File caesium2AST(const std::filesystem::path& fileName) {
-	std::ifstream caesium(fileName);
+static NodeStructs::File caesium2AST(const std::filesystem::path& file_name) {
+	std::ifstream caesium(file_name);
 	if (!caesium.is_open())
 		throw std::exception();
 	std::string program;
 	std::getline(caesium, program, '\0');
 	grammar::File file(0);
 	auto tokens = Tokenizer(program).read();
-	Iterator it{ tokens, 0 };
+	Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = file_name.stem().generic_string() };
 	if (build(file, it)) {
-		std::cout << fileName << ": built\n";
-		return getStruct(file, fileName.stem().generic_string() + ".caesium");
+		std::cout << file_name << ": built\n";
+		return getStruct(file, file_name.stem().generic_string() + ".caesium");
 	}
 	else {
-		std::cout << fileName << ": not built\n";
+		std::cout << file_name << ": not built\n";
 		throw;
 	}
 }
 
-std::optional<std::ofstream> open(const std::filesystem::path& folder, std::string_view filename) {
-	auto filepath = folder.generic_string() + filename.data();
+std::optional<std::ofstream> open(const std::filesystem::path& folder, std::string_view file_name) {
+	auto filepath = folder.generic_string() + file_name.data();
 	std::ofstream f(filepath, std::ios::trunc);
 	if (!f.is_open()) {
 		std::cout << "Unable to open" << filepath << "\n";

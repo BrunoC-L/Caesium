@@ -14,9 +14,10 @@ struct C {
 };
 
 
-Int _redirect_main(const Vector<String>& s);
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& s);
 
-Int _redirect_main(const Vector<String>& s) {
+Int _redirect_main(const Vector_String_& s) {
 	Union<A, B> v1 = Union<A, B>{A{}};
 	Union<A, B, C> v2 = std::visit([](const auto& auto1) -> Union<A, B, C> { return auto1; }, v1);
 };

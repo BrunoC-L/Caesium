@@ -1,31 +1,22 @@
 exists:
     sf:
-        type sf_time:
-        type clock:
-        sf_time getElapsedTime(clock ref _):
-        Int asMicroseconds(sf_time ref _):
-        Void restart(clock ref _):
+        type Time:
+        type Clock:
+        sf_time getElapsedTime(Vlock ref _):
+        Int asMicroseconds(Time ref _):
+        Void restart(Clock ref _):
 
         type TcpSocket:
         type TcpListener:
         type SocketSelector:
         type Socket:
-        type SocketStatus:
+    sf__Socket:
+        type Status:
 
-exists:
-    std:
-        template reference_wrapper<T>:
-            type reference_wrapper:
-                `T` ref _
-    template get<T>:
-        `T` ref get(std::reference_wrapper<`T`> ref _):
-
-template ServerServiceProvider<Ts...>:
-    type ServerServiceProvider:
-        Tuple<std::reference_wrapper<`Ts...`>?> services
-
-type ServerServiceProvider2:
-    Tuple<std::reference_wrapper<DB>?> services
+template Tuple<Ts...>:
+    type Tuple:
+        #ifor i, T in type_list<`Ts...`>:
+            T ref ? member_##i
 
 template provide<Ts..., U>:
     Void provide(ServerServiceProvider<`Ts...`> ref! provider, `U` ref service):
@@ -33,7 +24,7 @@ template provide<Ts..., U>:
         #ifor i, T in type_list<`Ts...`>:
             #if T == `U`/*<`Ts...`>*/:
                 #found = True
-                provider.services[i] = std::reference_wrapper(service)
+                provider.service##i = { ref service }
         #if !found:
             #compile_time_error()
 
@@ -43,7 +34,7 @@ template request<Ts..., U>:
         #ifor i, T in type_list<`Ts...`>:
             #if T == `U`:
                 #found = True
-                return provider.services[i].get()
+                return provider.service##i
         #if !found:
             #compile_time_error()
 
@@ -64,10 +55,9 @@ type DB:
 
 Int main(Vector<String> ref args):
 	// srand(time(NULL));
-
-	ServerServiceProviderImpl provider = { { None } }
+    ServerServiceProviderImpl provider = { { None } }
     DB db = { provider }
-
+    Int? x = 0
     provide<DB, DB>(provider, db)
 //    provider.provide<DB, DB>(db)
 //    db.provide<DB, DB>(provider)
@@ -77,7 +67,7 @@ Int main(Vector<String> ref args):
 
 //    Int a = 0
 //    Int b = 1
-//    Bool c = a >? b
+//    Bool c = a > ? b
     
 	// DB db(&provider, 5);
 	// ObjectFactory objf;

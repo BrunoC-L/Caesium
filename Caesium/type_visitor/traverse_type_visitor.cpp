@@ -40,10 +40,6 @@ R T::operator()(const NodeStructs::Builtin& t) {
 	return std::nullopt;
 }
 
-R T::operator()(const NodeStructs::TupleType& t) {
-	throw;
-}
-
 R T::operator()(const NodeStructs::UnionType& t) {
 	for (const auto& union_type : t.arguments)
 		if (auto optional_error = operator()(union_type); optional_error.has_value())

@@ -4,10 +4,14 @@
 #include "core/structurizer.hpp"
 #include "utility/colored_text.hpp"
 
+std::string test_file_name_stub() {
+	return "test_file_name_stub";
+}
+
 template <bool expected_to_built, typename... Ts>
 bool test_parse(int line, int n_indent, std::string program) {
 	auto tokens = Tokenizer(program).read();
-	Iterator it = { tokens, 0 };
+	Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = test_file_name_stub() };
 	And node = [&]() {
 		if constexpr (expected_to_built)
 			return And<Ts...>(n_indent);

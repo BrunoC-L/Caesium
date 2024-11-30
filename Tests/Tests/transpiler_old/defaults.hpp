@@ -11,6 +11,8 @@ using Bool = bool;
 using Void = void;
 using Floating = double;
 template <typename First, typename Second> using Pair = std::pair<First, Second>;
+#include <optional>
+template <typename T> using Optional = std::optional<T>;
 #include <variant>
 template <typename... Ts> using Union = std::variant<Ts...>;
 #include <vector>
@@ -26,6 +28,7 @@ template <typename T> using TreeSet = std::set<T>;
 template <typename K, typename V> using Map = std::unordered_map<K, V>;
 static constexpr bool True = true;
 static constexpr bool False = false;
+static constexpr std::nullopt_t None = std::nullopt;
 template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
 template <typename T>
 Vector<T>& push(Vector<T>& vec, auto e) { vec.push_back(std::move(e)); return vec; }

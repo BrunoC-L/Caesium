@@ -19,9 +19,9 @@ std::optional<std::string> open_read(const std::filesystem::path& file) {
 	return std::move(program);
 }
 
-std::optional<NodeStructs::File> create_file_struct(const std::string& folder_name, std::string_view caesiumProgram, std::string_view filename) {
+std::optional<NodeStructs::File> create_file_struct(const std::string& folder_name, std::string_view caesiumProgram, std::string_view file_name) {
 	std::vector<TokenValue> tokens(Tokenizer{ std::string{ caesiumProgram } }.read());
-	Iterator it = { tokens, 0 };
+	Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = std::string{ file_name } };
 	auto file = grammar::File(0);
 	try {
 		bool nodeBuilt = build(file, it);
@@ -30,7 +30,7 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 			programReadEntirely = ++it.index == it.vec.size();
 
 		if (nodeBuilt && programReadEntirely)
-			return getStruct(file, filename);
+			return getStruct(std::string{ file_name }, tokens, file);
 		else {
 			std::cout << folder_name
 				<< " built: " << colored_text_from_bool(nodeBuilt)
@@ -60,7 +60,7 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 		std::stringstream ss;
 		ss << "Unable to parse "
 			<< e.name_of_rule
-			<< "\nin file '" << folder_name << '/' << filename
+			<< "\nin file '" << folder_name << '/' << file_name
 			<< "'\non line " << line
 			<< "\nContent was: \n";
 		auto index = e.beg_offset;

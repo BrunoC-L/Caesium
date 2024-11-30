@@ -94,7 +94,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		if (name == "size") {
 			/*if (auto is_str = t <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } } == std::weak_ordering::equivalent) {
 				return expression_information{ non_type_information{
-					.type = NodeStructs::PrimitiveType{ { int{} } },
+					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} },
 					.representation = operand_info.representation + ".size()",
 					.value_category = NodeStructs::Value{}
 				} };
@@ -107,12 +107,12 @@ R T::operator()(const NodeStructs::Type& t) {
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
-	if (std::holds_alternative<std::string>(t.value._value)) {
+	if (holds<NodeStructs::PrimitiveType::NonValued<std::string>>(t.value)) {
 		if (property_name == "size") {
 			if (arguments.size() != 0)
 				throw;
 			return expression_information{ non_type_information{
-				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } },
+				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
 				.representation = operand_info.representation + ".size()",
 				.value_category = NodeStructs::Value{},
 			} };
@@ -125,10 +125,10 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 			if (!std::holds_alternative<non_type_information>(arg_t.value()))
 				throw;
 			const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
-			if (!std::holds_alternative<directly_assignable>(assigned_to(state, { NodeStructs::PrimitiveType{ int{} } }, arg_t_ok.type)._value))
+			if (!std::holds_alternative<directly_assignable>(assigned_to(state, { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }, arg_t_ok.type)._value))
 				throw;
 			return expression_information{ non_type_information{
-				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { char{} } } },
+				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } },
 				.representation = operand_info.representation + ".at(" + arg_t_ok.representation + ")",
 				.value_category = NodeStructs::Value{},
 			} };
@@ -150,10 +150,6 @@ R T::operator()(const NodeStructs::NamespaceType& t) {
 }
 
 R T::operator()(const NodeStructs::Builtin& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::TupleType& t) {
 	throw;
 }
 
@@ -197,7 +193,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
-		if (!std::holds_alternative<directly_assignable>(assigned_to(state, t.value_type.get(), arg_info_ok.type)._value))
+		if (!std::holds_alternative<directly_assignable>(assigned_to(state, t.value_type, arg_info_ok.type)._value))
 			return error{
 				"user error",
 				"wrong type pushed to Vector<T>"
@@ -213,7 +209,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		if (arguments.size() != 0)
 			throw;
 		return expression_information{ non_type_information{
-			.type = NodeStructs::PrimitiveType{ { int{} } },
+			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} },
 			.representation = operand_info.representation + ".size()",
 			.value_category = NodeStructs::Value{}
 		} };
@@ -223,7 +219,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		if (arguments.size() != 0)
 			throw;
 		return expression_information{ non_type_information{
-			.type = copy(t.value_type.get()),
+			.type = copy(t.value_type),
 			.representation = operand_info.representation + ".back()",
 			.value_category = copy(operand_info.value_category)
 		} };
@@ -240,13 +236,13 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
-		if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } })  != std::weak_ordering::equivalent)
+		if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } })  != std::weak_ordering::equivalent)
 			return error{
 				"user error",
 				"wrong type for vector reserve"
 			};
 		return expression_information{ non_type_information{
-			.type = NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } },
+			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} },
 			.representation = operand_info.representation + ".reserve(" + arg_info_ok.representation + ")",
 			.value_category = NodeStructs::Value{}
 		} };

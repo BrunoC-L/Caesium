@@ -8,6 +8,8 @@
 #include "../utility/expected.hpp"
 #include "../utility/enumerate.hpp"
 #include "node_structs.hpp"
+#include "structurizer.hpp"
+#include "helpers.hpp"
 
 struct variable_info {
 	NodeStructs::ValueCategory value_category;
@@ -288,7 +290,6 @@ bool uses_auto(const NodeStructs::Expression& t);
 
 #include "../expression_visitor/expression_for_template_visitor.hpp"
 #include "../expression_visitor/transpile_expression_visitor.hpp"
-#include "../expression_visitor/expression_original_representation_visitor.hpp"
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
 
@@ -296,13 +297,8 @@ bool uses_auto(const NodeStructs::Expression& t);
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
 #include "../typename_visitor/typename_for_template_visitor.hpp"
-#include "../typename_visitor/typename_original_representation_visitor.hpp"
 
 std::string word_typename_or_expression_for_template(const NodeStructs::WordTypenameOrExpression& value);
-
-std::string expression_original_representation(
-	const NodeStructs::WordTypenameOrExpression& tn_or_expr
-);
 
 expected<NodeStructs::MetaType> type_of_typename(
 	transpilation_state_with_indent state,

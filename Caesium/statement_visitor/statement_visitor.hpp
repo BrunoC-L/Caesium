@@ -15,7 +15,7 @@ struct StatementVisitor {
 			[&](const auto& t) {
 				return self(t);
 			},
-			t.statement._value
+			t.statement.get()._value
 		);
 	}
 };

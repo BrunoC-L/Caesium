@@ -3,12 +3,13 @@
 
 
 Int f__Int();
-Int _redirect_main(const Vector<String>& args);
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& args);
 
 Int f__Int() {
 	return 0;
 };
-Int _redirect_main(const Vector<String>& args) {
+Int _redirect_main(const Vector_String_& args) {
 	return f__Int();
 };
 

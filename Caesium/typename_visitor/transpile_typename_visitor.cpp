@@ -33,11 +33,11 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& type) {
-	auto type_of_namespace_or_e = type_of_typename(state, type.name_space.get());
+	auto type_of_namespace_or_e = type_of_typename(state, type.name_space);
 	return_if_error(type_of_namespace_or_e);
 	const auto& type_of_namespace = type_of_namespace_or_e.value();
 
-	auto repr_of_typename_or_e = operator()(type.name_space.get());
+	auto repr_of_typename_or_e = operator()(type.name_space);
 	return_if_error(repr_of_typename_or_e);
 	const auto& repr_of_typename = repr_of_typename_or_e.value();
 
@@ -62,15 +62,15 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 				return repr_of_typename + "__" + type.name_in_name_space;
 			throw;
 		}
-	), type_of_namespace.type._value);
+	), type_of_namespace.type.get()._value);
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
-	bool is_variant = cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Union" } }) == std::weak_ordering::equivalent;
+	bool is_variant = cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Union" } }) == std::weak_ordering::equivalent;
 	bool is_vec_or_set =
-		cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Vector" } }) == std::weak_ordering::equivalent
-		|| cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Set" } }) == std::weak_ordering::equivalent;
-	bool is_map = cmp(type.type.get().value, NodeStructs::Typename::Variant_{ NodeStructs::BaseTypename{ "Map" } }) == std::weak_ordering::equivalent;
+		cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Vector" } }) == std::weak_ordering::equivalent
+		|| cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Set" } }) == std::weak_ordering::equivalent;
+	bool is_map = cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Map" } }) == std::weak_ordering::equivalent;
 	if (is_vec_or_set || is_map || is_variant) {
 		if (is_vec_or_set && type.templated_with.size() != 1)
 			throw;
@@ -138,26 +138,6 @@ R T::operator()(const NodeStructs::OptionalTypename& type) {
 	auto inner_or_e = operator()(type.type);
 	return_if_error(inner_or_e);
 	return "Optional<" + std::move(inner_or_e).value() + ">";
-}
-
-R T::operator()(const NodeStructs::TupleTypename& type) {
-	std::stringstream ss;
-	ss << "Tuple<";
-	auto ts = copy(type.members);
-	if (ts.size() == 0)
-		throw;
-	bool first = true;
-	for (const auto& t : ts) {
-		if (first)
-			first = false;
-		else
-			ss << ", ";
-		auto res = operator()(t);
-		return_if_error(res);
-		ss << res.value();
-	}
-	ss << ">";
-	return ss.str();
 }
 
 R T::operator()(const NodeStructs::UnionTypename& type) {

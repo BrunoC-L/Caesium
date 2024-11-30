@@ -62,9 +62,9 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 		{
 			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			Iterator it{ tokens, 0 };
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
 			if (build(f, it)) {
-				auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
+				auto structured_f = getStruct("template:/" + tmpl_name, tokens, f.get<grammar::Function>(), std::nullopt);
 				structured_f.name = tmpl_name;
 				if (uses_auto(structured_f)) {
 					state.state.global_namespace.functions_using_auto[tmpl_name].push_back(std::move(structured_f));
@@ -87,11 +87,11 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 		{
 			And<IndentToken, grammar::Type> t{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			Iterator it{ tokens, 0 };
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
 			auto ok = build(t, it);
 			while (parse_empty_line(it));
 			if (ok && (it.index == it.vec.size() || it.vec[it.index].first == END)) {
-				auto structured_t = getStruct(t.get<grammar::Type>(), std::nullopt);
+				auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.get<grammar::Type>(), std::nullopt);
 				structured_t.name = tmpl_name;
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
 				// if exists 
@@ -105,11 +105,11 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 		{
 			And<IndentToken, grammar::Typename> tn{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			Iterator it{ tokens, 0 };
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
 			auto ok = build(tn, it);
 			while (parse_empty_line(it));
 			if (ok && (it.index == it.vec.size() || it.vec[it.index].first == END)) {
-				auto structured_tn = getStruct(tn.get<grammar::Typename>(), tag_allow_value_category_or_empty{});
+				auto structured_tn = getStruct("template:/" + tmpl_name, tokens, tn.get<grammar::Typename>(), tag_allow_value_category_or_empty{});
 				return type_of_typename(state, structured_tn);
 			}
 		}
@@ -122,7 +122,7 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 		return error{
 			"user error",
 			"Template not found `" + name_to_find + "`"
-	};
+		};
 }
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
@@ -156,15 +156,6 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				std::move(ts).value()
 			} };
 		}
-		if (t.type == "Tuple") {
-			auto ts = vec_of_expected_to_expected_of_vec(templated_with
-				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
-				| to_vec());
-			return_if_error(ts);
-			return NodeStructs::MetaType{ NodeStructs::TupleType{
-				std::move(ts).value()
-			} };
-		}
 		throw;
 	}
 	return f(state, templated_with, t.type, state.state.global_namespace);
@@ -173,9 +164,9 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 R T::operator()(const NodeStructs::NamespacedTypename& t) {
 	auto ns_or_e = type_of_typename(state, t.name_space);
 	return_if_error(ns_or_e);
-	if (!std::holds_alternative<NodeStructs::NamespaceType>(ns_or_e.value().type._value))
+	if (!std::holds_alternative<NodeStructs::NamespaceType>(ns_or_e.value().type.get()._value))
 		throw;
-	return f(state, templated_with, t.name_in_name_space, std::get<NodeStructs::NamespaceType>(ns_or_e.value().type._value).name_space.get());
+	return f(state, templated_with, t.name_in_name_space, std::get<NodeStructs::NamespaceType>(ns_or_e.value().type.get()._value).name_space.get());
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
@@ -190,10 +181,6 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& t) {
-	throw;
-}
-
-R T::operator()(const NodeStructs::TupleTypename& type) {
 	throw;
 }
 

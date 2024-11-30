@@ -61,10 +61,6 @@ R T::operator()(const NodeStructs::Builtin& t) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::TupleType& t) {
-	throw;
-}
-
 R T::operator()(const NodeStructs::UnionType& t) {
 	throw;
 }

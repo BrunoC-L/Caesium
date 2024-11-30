@@ -5,20 +5,20 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (t.type == "Int")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } };
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } };
 	if (t.type == "Bool")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { bool{} } } };
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } };
 	if (t.type == "String")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } };
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } };
 	if (t.type == "Char")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { char{} } } };
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } };
 	if (t.type == "Void")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } } };
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} } };
 	if (t.type == "Floating")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { double{} } } };
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } };
 	if (t.type == "None") {
 		throw;
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { NodeStructs::empty_optional_t{} } } };
+		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::empty_optional_t>{} } };
 	}
 
 	if (auto it = state.state.global_namespace.types.find(t.type); it != state.state.global_namespace.types.end()) {
@@ -91,17 +91,13 @@ R T::operator()(const NodeStructs::TemplatedTypename& tt) {
 		return_if_error(tn);
 		templated_with.push_back({ std::move(tn).value() });
 	}
-	return type_template_of_typename(state, templated_with, tt.type.get());
+	return type_template_of_typename(state, templated_with, tt.type);
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& t) {
 	auto t_or_e = operator()(t.type);
 	return_if_error(t_or_e);
 	return NodeStructs::MetaType{ NodeStructs::OptionalType{ std::move(t_or_e).value() } };
-}
-
-R T::operator()(const NodeStructs::TupleTypename& type) {
-	throw;
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {

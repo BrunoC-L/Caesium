@@ -8,31 +8,21 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& t) {
-	return operator()(t.name_space.get()) + "__" + t.name_in_name_space;
+	return operator()(t.name_space) + "__" + t.name_in_name_space;
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
 	auto args = t.templated_with
 		| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(e); });
 	std::stringstream ss;
-	ss << operator()(t.type.get()) << "__";
+	ss << operator()(t.type) << "__";
 	for (const auto& arg : args)
 		ss << "_" << arg;
 	return ss.str();
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& t) {
-	return "Opt_" + operator()(t.type.get()) + "_";
-}
-
-R T::operator()(const NodeStructs::TupleTypename& t) {
-	auto args = t.members
-		| std::views::transform([&](auto&& e) { return operator()(e); });
-	std::stringstream ss;
-	ss << "tuple_";
-	for (const auto& arg : args)
-		ss << "_" << arg;
-	return ss.str();
+	return "Opt_" + operator()(t.type) + "_";
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {

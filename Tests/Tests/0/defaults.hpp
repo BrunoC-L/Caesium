@@ -11,6 +11,8 @@ using Bool = bool;
 using Void = void;
 using Floating = double;
 template <typename First, typename Second> using Pair = std::pair<First, Second>;
+#include <optional>
+template <typename T> using Optional = std::optional<T>;
 #include <variant>
 template <typename... Ts> using Union = std::variant<Ts...>;
 #include <vector>
@@ -26,6 +28,7 @@ template <typename T> using TreeSet = std::set<T>;
 template <typename K, typename V> using Map = std::unordered_map<K, V>;
 static constexpr bool True = true;
 static constexpr bool False = false;
+static constexpr std::nullopt_t None = std::nullopt;
 template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
 template <typename T>
 Vector<T>& push(Vector<T>& vec, auto e) { vec.push_back(std::move(e)); return vec; }
@@ -94,32 +97,32 @@ Vector<Union<builtin_filesystem_file, builtin_filesystem_directory>> filesystem_
 }
 
 Int str_size_(const std::string& s) {
-    return s.size();
+	return s.size();
 }
 
 Int str_size_(const char* s) {
-    return strlen(s);
+	return strlen(s);
 }
 
 Int str_size_(char) {
-    return 1;
+	return 1;
 }
 
 Int str_size(auto&& s, auto&&... strs) {
-    if constexpr (sizeof...(strs) > 0) {
-        return str_size_(s) + str_size(strs...);
-    }
-    else {
-        return str_size_(s);
-    }
+	if constexpr (sizeof...(strs) > 0) {
+		return str_size_(s) + str_size(strs...);
+	}
+	else {
+		return str_size_(s);
+	}
 }
 
 String sum_strings(auto&& s1, auto&& s2, auto&&... strs) {
-    String res;
-    res.reserve(str_size(s1, s2, strs...));
-    Int n_strs = 2 + sizeof...(strs);
-    res += s1;
-    res += s2;
+	String res;
+	res.reserve(str_size(s1, s2, strs...));
+	Int n_strs = 2 + sizeof...(strs);
+	res += s1;
+	res += s2;
 	((res += strs), ...);
-    return res;
+	return res;
 }

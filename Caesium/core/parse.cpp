@@ -1,5 +1,9 @@
 #include "parse.hpp"
 
+std::string file_name_stub() {
+	throw;
+}
+
 void parse_whitespaces(Iterator& it) {
 	while (it.vec[it.index].first == TAB || it.vec[it.index].first == SPACE)
 		it.index++;

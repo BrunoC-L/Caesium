@@ -16,10 +16,12 @@ struct Named {
 	Union<Dog, Cat> value;
 };
 
-Int _redirect_main(const Vector<String>& s);
+using Vector_Named_ = Vector<Named>;
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& s);
 
-Int _redirect_main(const Vector<String>& s) {
-	Vector<Named> vec = Vector<Named>{};
+Int _redirect_main(const Vector_String_& s) {
+	Vector_Named_ vec = Vector_Named_{};
 	push(vec, Dog{String{"doggo"}});
 	push(vec, Cat{String{"gato"}});
 	for (auto&& e : vec) {

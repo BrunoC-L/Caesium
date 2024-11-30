@@ -1,0 +1,1 @@
+unions require at least one argument, union type was ``, expression was: `{}`

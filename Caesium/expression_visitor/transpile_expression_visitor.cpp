@@ -25,7 +25,7 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(if_expr_info.value()))
 			throw;
 		non_type_information& if_expr_info_ok = std::get<non_type_information>(condition_expr_info.value());
-		if (cmp(if_expr_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+		if (cmp(if_expr_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
 		throw;
 
 		auto else_expr_info = operator()(expr.ifElseExprs.value().second);
@@ -57,7 +57,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
 	throw;
 	ss << base_ok.representation;
 	for (const auto& e : expr.ors) {
@@ -66,12 +66,12 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(or_expr.value()))
 			throw;
 		const non_type_information& or_expr_ok = std::get<non_type_information>(or_expr.value());
-		if (cmp(or_expr_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+		if (cmp(or_expr_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
 		throw;
 		ss << " || " << or_expr_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { bool{} } },
+		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -84,8 +84,8 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
-	throw;
+	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+		throw;
 	ss << base_ok.representation;
 	for (const auto& e : expr.ands) {
 		auto and_ = operator()(e);
@@ -93,51 +93,73 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(and_.value()))
 			throw;
 		const non_type_information& and_ok = std::get<non_type_information>(and_.value());
-		if (cmp(and_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
-		throw;
+		if (cmp(and_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+			throw;
 		ss << " || " << and_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { bool{} } },
+		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
 }
 
 R T::operator()(const NodeStructs::EqualityExpression& expr) {
-	std::stringstream ss;
 	auto base = operator()(expr.expr);
 	return_if_error(base);
-	if (!std::holds_alternative<non_type_information>(base.value()))
-		throw;
-	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	ss << base_ok.representation;
-	for (const auto& [op, e] : expr.equals) {
-		auto eq = operator()(e);
-		return_if_error(eq);
-		if (std::holds_alternative<non_type_information>(eq.value())) {
-			const non_type_information& eq_ok = std::get<non_type_information>(eq.value());
-			if (cmp(base_ok.type, eq_ok.type) != std::weak_ordering::equivalent) {
-				cmp(base_ok.type, eq_ok.type);
-				return error{
-					"user error",
-					"cannot compare types for EqualityExpression, left was `"
-					+ expression_original_representation(expr.expr)
-					+ "`, right was `"
-					+ expression_original_representation(e)
-					+ "`"
-				};
+	if (std::holds_alternative<non_type_information>(base.value())) {
+		std::stringstream ss;
+		const non_type_information& base_ok = std::get<non_type_information>(base.value());
+		ss << base_ok.representation;
+		for (const auto& [op, e] : expr.equals) {
+			auto eq = operator()(e);
+			return_if_error(eq);
+			if (std::holds_alternative<non_type_information>(eq.value())) {
+				const non_type_information& eq_ok = std::get<non_type_information>(eq.value());
+				if (cmp(base_ok.type, eq_ok.type) != std::weak_ordering::equivalent) {
+					cmp(base_ok.type, eq_ok.type);
+					return error{
+						"user error",
+						"cannot compare types for EqualityExpression, left was `"
+						+ original_representation(expr.expr)
+						+ "`, right was `"
+						+ original_representation(e)
+						+ "`"
+					};
+				}
+				ss << " " << symbol_variant_as_text(op._value) << " " << eq_ok.representation;
 			}
-			ss << " " << symbol_variant_as_text(op._value) << " " << eq_ok.representation;
+			else
+				throw;
 		}
-		else
-			throw;
+		return expression_information{ non_type_information{
+			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
+			.representation = ss.str(),
+			.value_category = NodeStructs::Value{},
+		} };
 	}
-	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { bool{} } },
-		.representation = ss.str(),
-		.value_category = NodeStructs::Value{},
-	} };
+	else {
+		const type_information& left = std::get<type_information>(base.value());
+		if (expr.equals.size() != 1)
+			throw;
+		const auto& [op, e] = expr.equals[0];
+		auto right = operator()(e);
+		return_if_error(right);
+		if (!std::holds_alternative<type_information>(right.value()))
+			throw;
+		const type_information& right_ok = std::get<type_information>(right.value());
+		auto [str, val] = [&]() -> std::pair<std::string, bool> {
+			if (cmp(left.type, right_ok.type) == std::weak_ordering::equivalent)
+				return { "True", true };
+			else
+				return { "False", false };
+		}();
+		return expression_information{ non_type_information{
+			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<bool>{ val } },
+			.representation = std::move(str),
+			.value_category = NodeStructs::Value{},
+		} };
+	}
 }
 
 R T::operator()(const NodeStructs::CompareExpression& expr) {
@@ -147,10 +169,10 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) != std::weak_ordering::equivalent
-		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) != std::weak_ordering::equivalent
-		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ std::string{} } }) != std::weak_ordering::equivalent
-		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ char{} } }) != std::weak_ordering::equivalent)
+	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} }}) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} }}) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} }}) != std::weak_ordering::equivalent)
 		throw;
 	ss << base_ok.representation;
 	if (expr.comparisons.size() != 1)
@@ -167,23 +189,23 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 		ss << " " << symbol_variant_as_text(op._value) << " " << cmp_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { bool{} } },
+		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
 }
 
 bool is_int(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) == std::weak_ordering::equivalent;
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) == std::weak_ordering::equivalent;
 }
 
 bool is_floating(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) == std::weak_ordering::equivalent;
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } }) == std::weak_ordering::equivalent;
 }
 
 bool is_char_or_string(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ std::string{} } }) == std::weak_ordering::equivalent
-		|| cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ char{} } }) == std::weak_ordering::equivalent;
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } }) == std::weak_ordering::equivalent
+		|| cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } }) == std::weak_ordering::equivalent;
 }
 
 template <typename OP, typename E>
@@ -207,7 +229,11 @@ static R sum_numbers(auto& vis, const non_type_information& base, const std::vec
 	}
 	ss << ")";
 	return expression_information{ non_type_information{
-		.type = NodeStructs::MetaType{ has_floating ? NodeStructs::PrimitiveType{ double{} } : NodeStructs::PrimitiveType{ int{} } },
+		.type = NodeStructs::MetaType{
+			has_floating ?
+			NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } }
+			: NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }
+		},
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -232,7 +258,7 @@ static R sum_strings(auto& vis, const non_type_information& base, const std::vec
 	}
 	ss << ")";
 	return expression_information{ non_type_information{
-		.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ std::string{} } },
+		.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -255,7 +281,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 		return error{
 			"user error",
 			"expected Integer, Floating, Char or String for addition"
-		};
+	};
 }
 
 R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
@@ -265,8 +291,8 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) != std::weak_ordering::equivalent
-		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) != std::weak_ordering::equivalent)
+	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) != std::weak_ordering::equivalent
+		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } }) != std::weak_ordering::equivalent)
 		throw;
 	ss << base_ok.representation;
 
@@ -283,36 +309,84 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 	}
 
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { int{} } },
+		.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
 }
 
 R T::operator()(const NodeStructs::UnaryExpression& expr) {
-	std::stringstream ss;
-	for (const auto& op : expr.unary_operators)
-		ss << symbol_variant_as_text(op._value);
+	if (expr.unary_operators.size() != 1)
+		throw;
+
+	/*for (const NodeStructs::UnaryExpression::op_types& op : expr.unary_operators)
+		ss << symbol_variant_as_text(op._value);*/
+
 	auto base = operator()(expr.expr);
 	return_if_error(base);
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		throw;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }) != std::weak_ordering::equivalent
-		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ double{} } }) != std::weak_ordering::equivalent
-		&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ bool{} } }) != std::weak_ordering::equivalent)
+
+	if (holds<NodeStructs::CompileTimeType>(base_ok.type)) {
+		if (holds<Token<DASH>>(expr.unary_operators[0])) {
+			if (!holds<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type))
+				throw;
+			if (holds<NodeStructs::PrimitiveType::Valued<int>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value)) {
+				int val = get<NodeStructs::PrimitiveType::Valued<int>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value).value;
+				return expression_information{ non_type_information{
+					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ -val } },
+					.representation = std::to_string(-val),
+					.value_category = NodeStructs::Value{},
+				} };
+			}
+			if (holds<NodeStructs::PrimitiveType::Valued<double>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value)) {
+				double val = get<NodeStructs::PrimitiveType::Valued<double>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value).value;
+				return expression_information{ non_type_information{
+					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<double>{ -val } },
+					.representation = std::to_string(-val),
+					.value_category = NodeStructs::Value{},
+				} };
+			}
+			throw;
+		}
+		if (holds<Token<NOT>>(expr.unary_operators[0])) {
+			if (!holds<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type))
+				throw;
+			if (holds<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value)) {
+				bool val = get<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value).value;
+				return expression_information{ non_type_information{
+					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<bool>{ !val } },
+					.representation = std::to_string(!val),
+					.value_category = NodeStructs::Value{},
+				} };
+			}
+			throw;
+		}
 		throw;
-	ss << base_ok.representation;
-	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { int{} } },
-		.representation = ss.str(),
-		.value_category = NodeStructs::Value{},
-	} };
+	}
+	else {
+		if (holds<Token<DASH>>(expr.unary_operators[0])
+			&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) != std::weak_ordering::equivalent
+			&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } }) != std::weak_ordering::equivalent)
+			throw;
+		if (holds<Token<NOT>>(expr.unary_operators[0])
+			&& cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+			throw;
+		std::stringstream ss;
+		ss << symbol_variant_as_text(expr.unary_operators[0]._value) << base_ok.representation;
+		return expression_information{ non_type_information{
+			.type = copy(base_ok.type),
+			.representation = ss.str(),
+			.value_category = NodeStructs::Value{},
+		} };
+	}
+
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	if (std::holds_alternative<std::string>(expr.operand.expression.get()._value)) {
-		const std::string& operand = std::get<std::string>(expr.operand.expression.get()._value);
+	if (holds<std::string>(expr.operand)) {
+		const std::string& operand = get<std::string>(expr.operand);
 		if (auto it = state.state.global_namespace.functions_using_auto.find(operand); it != state.state.global_namespace.functions_using_auto.end()) {
 			auto args_ = vec_of_expected_to_expected_of_vec(expr.arguments.args
 				| std::views::transform([&](auto&& arg) { return transpile_arg(state, variables, arg); })
@@ -342,8 +416,8 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	return_if_error(t);
 	if (std::holds_alternative<type_information>(t.value())) {
 		const auto& ti = std::get<type_information>(t.value());
-		if (std::holds_alternative<NodeStructs::Builtin>(ti.type.type._value)) {
-			const std::string& name = std::get<NodeStructs::Builtin>(ti.type.type._value).name;
+		if (holds<NodeStructs::Builtin>(ti.type)) {
+			const std::string& name = get<NodeStructs::Builtin>(ti.type).name;
 			if (name == "print" || name == "println") {
 				std::stringstream ss;
 
@@ -358,7 +432,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 					ss << " << \"\\n\"";
 				ss << ")";
 				return expression_information{ non_type_information{
-					.type = NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } },
+					.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} } },
 					.representation = ss.str(),
 					.value_category = NodeStructs::Value{}
 				} };
@@ -373,21 +447,26 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 				if (!std::holds_alternative<non_type_information>(expr_info.value()))
 					throw;
 				const non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
-				if (!std::holds_alternative<directly_assignable>(assigned_to(state, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ int{} } }, expr_info_ok.type)._value))
+				if (!std::holds_alternative<directly_assignable>(assigned_to(state, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }, expr_info_ok.type)._value))
 					throw;
 				ss << expr_info_ok.representation << ")";
 				return expression_information{ non_type_information{
-					.type = NodeStructs::PrimitiveType{ { NodeStructs::void_t{} } },
+					.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} } },
 					.representation = ss.str(),
 					.value_category = NodeStructs::Value{}
 				} };
 			}
-			throw;
+			if (name == "compile_time_error") {
+				return error{
+					"user error",
+					"user activated compile_time_error encountered"
+				};
+			}
 		}
-		if (std::holds_alternative<NodeStructs::TemplateType>(ti.type.type._value)) {
-			const auto& options = std::get<NodeStructs::TemplateType>(ti.type.type._value)
+		if (holds<NodeStructs::TemplateType>(ti.type)) {
+			const auto& options = get<NodeStructs::TemplateType>(ti.type)
 				.name_space.get()
-				.templates.at(std::get<NodeStructs::TemplateType>(ti.type.type._value).name);
+				.templates.at(get<NodeStructs::TemplateType>(ti.type).name);
 			if (options.size() != 1)
 				throw;
 			const auto& tmpl = options.back();
@@ -399,7 +478,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			);*/
 			throw;
 		}
-		if (std::holds_alternative<NodeStructs::FunctionType>(ti.type.type._value)) {
+		if (holds<NodeStructs::FunctionType>(ti.type)) {
 			auto args_ = vec_of_expected_to_expected_of_vec(expr.arguments.args
 				| std::views::transform([&](auto&& arg) { return transpile_arg(state, variables, arg); })
 				| to_vec());
@@ -411,8 +490,8 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			const auto& args_ok = opt.value();
 			auto expected_f = find_best_function(
 				state,
-				std::get<NodeStructs::FunctionType>(ti.type.type._value).name,
-				std::get<NodeStructs::FunctionType>(ti.type.type._value).name_space,
+				get<NodeStructs::FunctionType>(ti.type).name,
+				get<NodeStructs::FunctionType>(ti.type).name_space,
 				args_ok | std::views::transform([](const auto& e) { return copy(e.type); }) | to_vec()
 			);
 			return_if_error(expected_f);
@@ -472,6 +551,14 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 					} },
 					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
 				} };
+			if (auto it = ns.templates.find(expr.name_in_name_space); it != ns.templates.end())
+				return expression_information{ type_information{
+					.type = NodeStructs::MetaType{ NodeStructs::TemplateType{
+						.name = expr.name_in_name_space,
+						.name_space = ns
+					} },
+					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
+				} };
 			return error{
 				"user error",
 				"namespace `" + ns.name + "` has no type or function `" + expr.name_in_name_space + "`"
@@ -494,13 +581,13 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 		[&](const auto& nst) -> transpile_expression_information_t {
 			throw;
 		}
-	), operand_t_ok.type.type._value);
+	), operand_t_ok.type.type.get()._value);
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
-	if (!std::holds_alternative<std::string>(expr.operand.expression.get()._value))
+	if (!holds<std::string>(expr.operand))
 		throw;
-	const auto& operand = std::get<std::string>(expr.operand.expression.get()._value);
+	const auto& operand = get<std::string>(expr.operand);
 
 	if (auto it = state.state.global_namespace.templates.find(operand);
 		it != state.state.global_namespace.templates.end()) {
@@ -564,10 +651,10 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		{
 			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			Iterator it{ tokens, 0 };
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
 			try {
 				if (build(f, it)) {
-					auto structured_f = structurize_function(f.get<grammar::Function>(), std::nullopt);
+					auto structured_f = getStruct("template:/" + tmpl_name, tokens, f.get<grammar::Function>(), std::nullopt);
 					structured_f.name = tmpl_name;
 					if (uses_auto(structured_f)) {
 						state.state.global_namespace.functions_using_auto[structured_f.name].push_back(std::move(structured_f));
@@ -603,9 +690,9 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		{
 			And<IndentToken, grammar::Type, Token<END>> t{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
-			Iterator it{ tokens, 0 };
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
 			if (build(t, it)) {
-				auto structured_t = NodeStructs::Type{ getStruct(t.get<grammar::Type>(), std::nullopt) };
+				auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.get<grammar::Type>(), std::nullopt);
 				structured_t.name = tmpl_name;
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
 				auto opt_error = traverse_type(state, structured_t);
@@ -636,15 +723,47 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 				[&](const NodeStructs::Expression& e) -> expected<NodeStructs::MetaType> {
 					return error{
 						"user error",
-						"not a typename `" + expression_original_representation(e) + "`"
+						"not a typename `" + original_representation(e) + "`"
 					};
 				}
 			), arg.value._value);
 			return_if_error(arg_t);
+			types.push_back(std::move(arg_t).value());
 		}
 		return expression_information{ type_information{
-			.type = NodeStructs::MetaType{ NodeStructs::TypeListType{ .types = std::move(types) } },
+			.type = NodeStructs::MetaType{ NodeStructs::TypeListType{.types = std::move(types) } },
 			.representation = "compile time do not transpile"
+		} };
+	}
+
+	if (operand == "Vector") {
+		if (expr.args.size() != 1)
+			throw;
+		expected<NodeStructs::MetaType> arg_t = std::visit(overload(
+			[&](const std::string& e) -> expected<NodeStructs::MetaType> {
+				return type_of_typename(state, NodeStructs::BaseTypename{ e });
+			},
+			[&](const NodeStructs::Typename& t) -> expected<NodeStructs::MetaType> {
+				return type_of_typename(state, t);
+			},
+			[&](const NodeStructs::Expression& e) -> expected<NodeStructs::MetaType> {
+				return error{
+					"user error",
+					"not a typename `" + original_representation(e) + "`"
+				};
+			}
+		), expr.args[0].value._value);
+		return_if_error(arg_t);
+
+		auto tn = typename_of_type(state, arg_t.value());
+		return_if_error(tn);
+
+		auto repr = transpile_typename(state, tn.value());
+		return_if_error(repr);
+
+		return expression_information{ type_information{
+			.type = NodeStructs::MetaType{ NodeStructs::VectorType{.value_type = std::move(arg_t.value()) } },
+			.representation = "Vector<" + repr.value() + ">"
 		} };
 	}
 
@@ -754,7 +873,10 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 
 			auto arranged = rearrange_if_possible(state, param_ts.value(), std::move(non_type_args));
 			if (!arranged)
-				throw;
+				return error{
+					"user error",
+					"could not arrange"
+				};
 
 			std::stringstream args_repr;
 			bool has_previous = false;
@@ -785,7 +907,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			if (expr.arguments.args.size() != 0)
 				return error{
 					"user error",
-					"vectors construction is done without arguments, expression was: `" + expression_original_representation(expr) + "`"
+					"vectors construction is done without arguments, expression was: `" + original_representation(expr.arguments.args[0].expr) + "`"
 				};
 			return expression_information{ non_type_information{
 				.type = copy(vec_t),
@@ -797,12 +919,12 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			if (expr.arguments.args.size() < 1)
 				return error{
 					"user error",
-					"unions require at least one argument, union type was `" + typename_original_representation(typename_of_type(state, union_t).value()) + "`, expression was: `" + expression_original_representation(expr) + "`"
-				};
+					"unions require at least one argument, union type was `" + typename_of_type(state, union_t).value().rule_info.content + "`, expression was: `{}`"
+			};
 			if (expr.arguments.args.size() > 1)
 				return error{
 					"user error",
-					"unions require at most one argument, union type was `" + typename_original_representation(typename_of_type(state, union_t).value()) + "`, expression was: `" + expression_original_representation(expr) + "`"
+					"unions require at most one argument, union type was `" + typename_of_type(state, union_t).value().rule_info.content + "`, expression was: `TODO`"
 				};
 			auto expr_info = transpile_arg(state, variables, expr.arguments.args.at(0));
 			return_if_error(expr_info);
@@ -822,7 +944,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				"expression does not match any of the union type"
 			};
 		}
-	), t.value().type._value);
+	), t.value().type.get()._value);
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
@@ -832,10 +954,10 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 		throw;
 	auto [type, repr, vcat] = std::get<non_type_information>(std::move(operand_info).value());
 	return std::visit(overload(
-		[&](const auto&) -> R {
+		[&](const auto& x) -> R {
 			return error{
 				"user error",
-				"bracket access is reserved for vector, set and map types"
+				"bracket access is reserved for vector, set, map and tuple types"
 			};
 		},
 		[&](NodeStructs::VectorType&& vt) -> R {
@@ -844,7 +966,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				throw;
 			const non_type_information& arg_info_ok = std::get<non_type_information>(arg_info.value());
-			if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { int{} } } }) != std::weak_ordering::equivalent)
+			if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) != std::weak_ordering::equivalent)
 				throw;
 			return expression_information{ non_type_information{
 				.type = std::move(vt).value_type,
@@ -858,7 +980,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				throw;
 			const non_type_information& arg_info_ok = std::get<non_type_information>(arg_info.value());
-			if (cmp(arg_info_ok.type, vt.key_type.get()) != std::weak_ordering::equivalent)
+			if (cmp(arg_info_ok.type, vt.key_type) != std::weak_ordering::equivalent)
 				throw;
 			return expression_information{ non_type_information{
 				.type = std::move(vt).value_type,
@@ -866,7 +988,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 				.value_category = std::move(vcat),
 			} };
 		}
-	), std::move(type).type._value);
+	), std::move(type).type.get()._value);
 }
 
 // for expressions like (move cat).meow() or {move cat}.meow()
@@ -877,18 +999,18 @@ auto rewire(const NodeStructs::PropertyAccessAndCallExpression& expr, const auto
 	for (const auto& arg : expr.arguments.args)
 		joined.push_back(copy(arg));
 	return NodeStructs::CallExpression{
-		.operand = make_expression({ expr.property_name }),
+		.operand = make_expression({ expr.property_name }, rule_info_stub_no_throw()),
 		.arguments = std::move(joined)
 	};
 }
 
 R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
-	if (std::holds_alternative<NodeStructs::ParenArguments>(expr.operand.expression.get()._value)) {
-		const auto& operand = std::get<NodeStructs::ParenArguments>(expr.operand.expression.get()._value);
+	if (holds<NodeStructs::ParenArguments>(expr.operand)) {
+		const auto& operand = get<NodeStructs::ParenArguments>(expr.operand);
 		return operator()(rewire(expr, operand));
 	}
-	/*if (std::holds_alternative<NodeStructs::BraceArguments>(expr.operand.expression.get()._value)) {
-		const auto& operand = std::get<NodeStructs::BraceArguments>(expr.operand.expression.get()._value);
+	/*if (holds<NodeStructs::BraceArguments>(expr.operand)) {
+		const auto& operand = std::get<NodeStructs::BraceArguments>(expr.operand);
 		return operator()(rewire(expr, operand));
 	}*/
 	auto operand_info = transpile_expression(state, variables, expr.operand);
@@ -909,7 +1031,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	auto t = type_of_postfix_member(state, expr.property_name, type);
 	return_if_error(t);
 
-	if (std::holds_alternative<NodeStructs::InterfaceType>(type.type._value))
+	if (std::holds_alternative<NodeStructs::InterfaceType>(type.type.get()._value))
 		return expression_information{ non_type_information{
 			.type = std::move(t).value().second,
 			.representation = "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + std::move(repr) + ".value)",
@@ -1033,7 +1155,7 @@ R T::operator()(const std::string& expr) {
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ { int{ atoi(expr.value.c_str()) } } },
+		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ atoi(expr.value.c_str()) } },
 		.representation = expr.value,
 		.value_category = NodeStructs::Value{}
 	} };
@@ -1041,7 +1163,7 @@ R T::operator()(const Token<INTEGER_NUMBER>& expr) {
 
 R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 	return expression_information{ non_type_information{
-		.type = { NodeStructs::PrimitiveType{ { double{ stod(expr.value) } } } },
+		.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<double>{ stod(expr.value) } } },
 		.representation = expr.value,
 		.value_category = NodeStructs::Value{}
 	} };
@@ -1050,27 +1172,27 @@ R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
 R T::operator()(const Token<STRING>& expr) {
 	if (expr.value.size() == 3) // char
 		return expression_information{ non_type_information{
-			.type = { NodeStructs::PrimitiveType{ { expr.value.at(1) } } },
+			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<char>{ expr.value.at(1) } } },
 			.representation = "Char{ '" + std::string{ expr.value.at(1) } + "' }",
 			.value_category = NodeStructs::Value{}
 		} };
 	if (expr.value.size() == 4 && expr.value.at(1) == '\\') { // backslash character
 		if (expr.value.at(2) == '"')
 			return expression_information{ non_type_information{
-				.type = { NodeStructs::PrimitiveType{ { expr.value.at(0) } } },
+				.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<char>{ expr.value.at(0) } } },
 				.representation = "Char{ '" + std::string{ expr.value.at(2) } + "' }",
 				.value_category = NodeStructs::Value{}
 			} };
 		else
 			return expression_information{ non_type_information{
-				.type = { NodeStructs::PrimitiveType{ { expr.value.at(0) } } },
+				.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<char>{ expr.value.at(0) } } },
 				.representation = "Char{ '\\" + std::string{ expr.value.at(2) } + "' }",
 				.value_category = NodeStructs::Value{}
 			} };
 	}
 	else
 		return expression_information{ non_type_information{
-			.type = { NodeStructs::PrimitiveType{ { expr.value } } },
+			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<std::string>{ expr.value } } },
 			.representation = "String{" + expr.value + "}",
 			.value_category = NodeStructs::Value{}
 		} };
