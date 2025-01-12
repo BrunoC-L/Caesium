@@ -12,9 +12,9 @@ R T::operator()(const NodeStructs::Type& t) {
 		t.member_variables.end(),
 		[&](const auto& m) { return m.name == property_name; }
 	); it != t.member_variables.end()) {
-		auto mt = type_of_typename(state, it->type);
+		auto mt = type_of_typename(state, variables, it->type);
 		return_if_error(mt);
-		auto expect_error = type_of_function_like_call_with_args(state, arguments, mt.value());
+		auto expect_error = type_of_function_like_call_with_args(state, variables, arguments, mt.value());
 		return_if_error(expect_error);
 		throw;
 	}
@@ -27,11 +27,11 @@ R T::operator()(const NodeStructs::Type& t) {
 			state.state.traversed_functions.insert(copy(fn));
 			state.state.functions_to_transpile.insert(copy(fn));
 		}
-		auto first_param_str = transpile_typename(state, fn.parameters.at(0).typename_);
+		auto first_param_str = transpile_typename(state, variables, fn.parameters.at(0).typename_);
 		return_if_error(first_param_str);
-		auto first_param = type_of_typename(state, fn.parameters.at(0).typename_);
+		auto first_param = type_of_typename(state, variables, fn.parameters.at(0).typename_);
 		return_if_error(first_param);
-		if (!std::holds_alternative<directly_assignable>(assigned_to(state, first_param.value(), { copy(t) })._value))
+		if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, first_param.value(), { copy(t) })._value))
 			return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n" };
 
 		if (arguments.size() + 1 != fn.parameters.size())
@@ -41,20 +41,20 @@ R T::operator()(const NodeStructs::Type& t) {
 		ss << fn.name << "(" << operand_info.representation;
 
 		for (int i = 1; i < fn.parameters.size(); ++i) {
-			auto nth_param = type_of_typename(state, fn.parameters.at(i).typename_);
+			auto nth_param = type_of_typename(state, variables, fn.parameters.at(i).typename_);
 			return_if_error(nth_param);
 			auto nth_argument = transpile_arg(state, variables, arguments.at(i - 1));
 			return_if_error(nth_argument);
 			if (!std::holds_alternative<non_type_information>(nth_argument.value()))
 				throw;
 			const non_type_information& nth_argument_ok = std::get<non_type_information>(nth_argument.value());
-			if (!std::holds_alternative<directly_assignable>(assigned_to(state, nth_param.value(), nth_argument_ok.type)._value))
+			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, nth_param.value(), nth_argument_ok.type)._value))
 				throw;
 			ss << ", " << nth_argument_ok.representation;
 		}
 		ss << ")";
 
-		auto return_t = type_of_typename(state, fn.returnType);
+		auto return_t = type_of_typename(state, variables, fn.returnType);
 		return_if_error(return_t);
 
 		return expression_information{ non_type_information{
@@ -125,7 +125,7 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 			if (!std::holds_alternative<non_type_information>(arg_t.value()))
 				throw;
 			const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
-			if (!std::holds_alternative<directly_assignable>(assigned_to(state, { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }, arg_t_ok.type)._value))
+			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }, arg_t_ok.type)._value))
 				throw;
 			return expression_information{ non_type_information{
 				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } },
@@ -193,7 +193,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
-		if (!std::holds_alternative<directly_assignable>(assigned_to(state, t.value_type, arg_info_ok.type)._value))
+		if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, t.value_type, arg_info_ok.type)._value))
 			return error{
 				"user error",
 				"wrong type pushed to Vector<T>"

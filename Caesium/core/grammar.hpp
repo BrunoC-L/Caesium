@@ -4,6 +4,7 @@
 namespace grammar {
 	// forward declare recursive rules
 	struct Typename; // typenames contain typenames
+	template <typename context>
 	struct Statement; // statements contain statements
 	struct ConditionalExpression; // expressions contain expressions
 	struct FunctionArgument; // expressions use function arguments and function arguments use expressions
@@ -22,7 +23,8 @@ namespace grammar {
 	using ArgumentCategory = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	using FunctionParameter = And<Commit<Typename>, Word>;
 	using FunctionParameters = CommaStar<FunctionParameter>;
-	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement>>>>>;
+	struct function_context {};
+	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement<function_context>>>>>>;
 	using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
 	using ParenArguments = And<Commit<Token<PARENOPEN>>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 	using BraceArguments = And<Commit<Token<BRACEOPEN>>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
@@ -189,8 +191,11 @@ namespace grammar {
 		SwitchStatement,
 		Assignment
 	>>;
-
-	struct Statement : And<IndentToken, Opt<Token<POUND>>, StatementOpts> {};
+	struct type_context {};
+	struct top_level_context {};
+	template <> struct Statement<function_context> : And<IndentToken, Opt<Token<POUND>>, StatementOpts> {};
+	template <> struct Statement<type_context> : And<IndentToken, Token<POUND>, StatementOpts> {};
+	template <> struct Statement<top_level_context> : And<IndentToken, Token<POUND>, StatementOpts> {};
 
 	using Interface = And<
 		Token<INTERFACE>,
@@ -230,7 +235,7 @@ namespace grammar {
 				Word,
 				Opt<And<
 					Token<EQUAL>,
-					Expression
+					TypenameOrExpression
 				>>
 			>
 		>>,
@@ -283,7 +288,7 @@ namespace grammar {
 	CASE(BraceArguments, "BraceArguments")
 	CASE(BracketArguments, "BracketArguments")
 	CASE(FunctionParameter, "FunctionParameter")
-	CASE(Statement, "Statement")
+	CASE(Statement<function_context>, "Statement")
 	if constexpr (std::is_same_v<T, And<Commit<IndentToken>, Alloc<Or<VariableDeclarationStatement, ExpressionStatement, IfStatement, ForStatement, IForStatement, WhileStatement, BreakStatement, ReturnStatement, BlockStatement, MatchStatement, SwitchStatement, Assignment>>>>) return "Statement"; else
 #undef CASE
 	static_assert(!(sizeof(T*)), "missing name for T");

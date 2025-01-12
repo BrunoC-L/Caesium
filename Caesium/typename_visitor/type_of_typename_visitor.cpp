@@ -42,7 +42,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	}
 	if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->second;
-		auto type = type_of_typename(state, type_name);
+		auto type = type_of_typename(state, variables, type_name);
 		return_if_error(type);
 		if (std::optional<error> err = traverse_type(state, type.value()); err.has_value())
 			return err.value();
@@ -79,19 +79,19 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 	auto e_space_t = operator()(t.name_space);
 	return_if_error(e_space_t);
 	const auto& space_t = e_space_t.value();
-	return type_of_resolution_operator(state, space_t, t.name_in_name_space);
+	return type_of_resolution_operator(state, variables, space_t, t.name_in_name_space);
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& tt) {
 	std::vector<NodeStructs::WordTypenameOrExpression> templated_with;
 	for (const auto& t : tt.templated_with) {
-		auto arg = type_of_typename(state, t);
+		auto arg = type_of_typename(state, variables, t);
 		return_if_error(arg);
 		auto tn = typename_of_type(state, arg.value());
 		return_if_error(tn);
 		templated_with.push_back({ std::move(tn).value() });
 	}
-	return type_template_of_typename(state, templated_with, tt.type);
+	return type_template_of_typename(state, variables, templated_with, tt.type);
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& t) {

@@ -10,11 +10,12 @@ struct B {
 };
 
 
+using Union_A_B_ = Union<A, B>;
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& s);
 
 Int _redirect_main(const Vector_String_& s) {
-	Union<A, B> var = Union<A, B>{A{}};
+	Union_A_B_ var = Union_A_B_{A{}};
 };
 
 int main(int argc, char** argv) {

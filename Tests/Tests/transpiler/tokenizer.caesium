@@ -367,7 +367,7 @@ TOKENVALUE readToken(String ref program, Int ref! index):
 		return { TOKENS::WORD, word }
         
 	String num = parseInt(program, ref! index)
-	if !num.size():
+	if ! (num.size() >? 0):
 		exit(1)
 	if index != program.size() and program.at(index) == '.':
 		index = index + 1

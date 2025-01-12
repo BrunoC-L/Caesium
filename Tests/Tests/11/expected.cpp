@@ -14,12 +14,14 @@ struct C {
 };
 
 
+using Union_A_B_ = Union<A, B>;
+using Union_A_B_C_ = Union<A, B, C>;
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& s);
 
 Int _redirect_main(const Vector_String_& s) {
-	Union<A, B> v1 = Union<A, B>{A{}};
-	Union<A, B, C> v2 = std::visit([](const auto& auto1) -> Union<A, B, C> { return auto1; }, v1);
+	Union_A_B_ v1 = Union_A_B_{A{}};
+	Union_A_B_C_ v2 = std::visit([](const auto& auto1) -> Union_A_B_C_ { return auto1; }, v1);
 };
 
 int main(int argc, char** argv) {

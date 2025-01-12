@@ -7,7 +7,6 @@ struct builtins {
 	NodeStructs::Builtin builtin_compile_time_error = { "compile_time_error" };
 	NodeStructs::Builtin builtin_type_list = { "type_list" };
 
-
 	NodeStructs::Builtin builtin_union = { "Union" };
 
 	//vec
@@ -32,35 +31,35 @@ struct builtins {
 		.name_space = std::nullopt,
 		.returnType = make_typename(
 			NodeStructs::TemplatedTypename{
-				.type = make_typename(NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+				.type = make_typename(NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{}, rule_info_language_element("Vector")),
 				.templated_with = as_vec(
 					NodeStructs::WordTypenameOrExpression{ make_typename(
 						NodeStructs::UnionTypename{
 							as_vec(
 								make_typename(NodeStructs::NamespacedTypename{
-									.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+									.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_language_element("filesystem")),
 									.name_in_name_space = "file"
-								}, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+								}, NodeStructs::Reference{}, rule_info_language_element("filesystem::file")),
 								make_typename(NodeStructs::NamespacedTypename{
-									.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+									.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_language_element("filesystem")),
 									.name_in_name_space = "directory"
-								}, NodeStructs::Reference{}, rule_info_stub_no_throw())
+								}, NodeStructs::Reference{}, rule_info_language_element("filesystem::directory"))
 							)
 						},
 						NodeStructs::Reference{},
-						rule_info_stub_no_throw()
+						rule_info_language_element("filesystem::file | filesystem::directory")
 					) }
 				)
 			},
 			NodeStructs::Reference{},
-			rule_info_stub_no_throw()
+			rule_info_language_element("Vector<filesystem::file | filesystem::directory>")
 		),
 		.parameters = as_vec(
 			NodeStructs::FunctionParameter{
 				.typename_ = make_typename(NodeStructs::NamespacedTypename{
-					.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+					.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_language_element("filesystem")),
 					.name_in_name_space = "directory"
-				}, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+				}, NodeStructs::Reference{}, rule_info_language_element("filesystem::directory")),
 			//.category = NodeStructs::ParameterCategory{ NodeStructs::Reference{}),
 			.name = "dir"
 		}
@@ -71,41 +70,62 @@ struct builtins {
 	NodeStructs::Function entries_str = {
 		.name = "entries",
 		.name_space = std::nullopt,
-		.returnType = make_typename(NodeStructs::TemplatedTypename {
-			.type = make_typename(NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
-			.templated_with = as_vec(
-				NodeStructs::WordTypenameOrExpression{ make_typename(
-					NodeStructs::UnionTypename{
-						as_vec(
-							make_typename(NodeStructs::NamespacedTypename{
-								.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
-								.name_in_name_space = "file"
-							}, NodeStructs::Reference{}, rule_info_stub_no_throw()),
-							make_typename(NodeStructs::NamespacedTypename{
-								.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
-								.name_in_name_space = "directory"
-							}, NodeStructs::Reference{}, rule_info_stub_no_throw())
-						)
-					}, NodeStructs::Reference{}, rule_info_stub_no_throw()
-				)}
-			)
-		}, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+		.returnType = make_typename(
+			NodeStructs::TemplatedTypename{
+				.type = make_typename(NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Reference{}, rule_info_language_element("Vector")),
+				.templated_with = as_vec(
+					NodeStructs::WordTypenameOrExpression{ make_typename(
+						NodeStructs::UnionTypename{
+							as_vec(
+								make_typename(NodeStructs::NamespacedTypename{
+									.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_language_element("filesystem")),
+									.name_in_name_space = "file"
+								}, NodeStructs::Reference{}, rule_info_language_element("filesystem::file")),
+								make_typename(NodeStructs::NamespacedTypename{
+									.name_space = make_typename(NodeStructs::BaseTypename{ "filesystem" }, NodeStructs::Reference{}, rule_info_language_element("filesystem")),
+									.name_in_name_space = "directory"
+								}, NodeStructs::Reference{}, rule_info_language_element("filesystem::directory"))
+							)
+						},
+						NodeStructs::Reference{},
+						rule_info_language_element("filesystem::file | filesystem::directory")
+					) }
+				)
+			},
+			NodeStructs::Reference{},
+			rule_info_language_element("Vector<filesystem::file | filesystem::directory>")
+		),
 		.parameters = as_vec(
 		NodeStructs::FunctionParameter{
-			.typename_ = make_typename(NodeStructs::BaseTypename{ "String" }, NodeStructs::Reference{}, rule_info_stub_no_throw()),
+			.typename_ = make_typename(NodeStructs::BaseTypename{ "String" }, NodeStructs::Reference{}, rule_info_language_element("String")),
 			//.category = NodeStructs::ParameterCategory{ NodeStructs::Reference{}),
 			.name = "dir"
 			}
-			),
-			.statements = {}
+		),
+		.statements = {}
 	};
 
 	Namespace filesystem_ns = {
 		.name = "filesystem",
 		.functions = as_map(std::pair{ entries_str.name, as_vec(copy(entries_str), copy(entries_dir)) }),
 		.aliases = as_map(
-			std::pair{ std::string{ "file" }, make_typename(NodeStructs::BaseTypename{ "builtin_filesystem_file" }, NodeStructs::Reference{}, rule_info_stub_no_throw()) },
-			std::pair{ std::string{ "directory" }, make_typename(NodeStructs::BaseTypename{ "builtin_filesystem_directory" }, NodeStructs::Reference{}, rule_info_stub_no_throw()) }
+			std::pair{
+				std::string{ "file" },
+				make_typename(
+					NodeStructs::BaseTypename{ "builtin_filesystem_file" },
+					NodeStructs::Reference{},
+					rule_info_language_element("filesystem::file")
+				)
+			},
+			std::pair{
+				std::string{ "directory" },
+				make_typename(
+					NodeStructs::BaseTypename{ "builtin_filesystem_directory" },
+					NodeStructs::Reference{},
+					rule_info_language_element("filesystem::directory")
+				)
+			}
 		),
+		.rule_info = rule_info_language_element("filesystem")
 	};
 };

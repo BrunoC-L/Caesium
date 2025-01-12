@@ -249,9 +249,28 @@ auto cmp5(const T& x1, const T& x2) {
 }
 
 template <typename T>
-auto cmp11(const T& x1, const T& x2) {
-	const auto& [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11] = x1;
-	const auto& [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11] = x2;
+auto cmp6(const T& x1, const T& x2) {
+	const auto& [m1, m2, m3, m4, m5, m6] = x1;
+	const auto& [n1, n2, n3, n4, n5, n6] = x2;
+	if (auto c = cmp(m1, n1); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m2, n2); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m3, n3); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m4, n4); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m5, n5); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m6, n6); c != std::weak_ordering::equivalent)
+		return c;
+	return std::weak_ordering::equivalent;
+}
+
+template <typename T>
+auto cmp12(const T& x1, const T& x2) {
+	const auto& [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12] = x1;
+	const auto& [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12] = x2;
 	if (auto c = cmp(m1, n1); c != std::weak_ordering::equivalent)
 		return c;
 	if (auto c = cmp(m2, n2); c != std::weak_ordering::equivalent)
@@ -273,6 +292,8 @@ auto cmp11(const T& x1, const T& x2) {
 	if (auto c = cmp(m10, n10); c != std::weak_ordering::equivalent)
 		return c;
 	if (auto c = cmp(m11, n11); c != std::weak_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m12, n12); c != std::weak_ordering::equivalent)
 		return c;
 	return std::weak_ordering::equivalent;
 }
@@ -297,6 +318,36 @@ inline std::weak_ordering operator<=>(const NodeStructs::PrimitiveType& left, co
 	const auto& a = left.value._value;
 	const auto& b = right.value._value;
 	return cmp(a.index(), b.index());
+}
+
+inline bool primitives_assignable(const NodeStructs::PrimitiveType& parameter, const NodeStructs::PrimitiveType& argument) {
+	using vt = std::variant<
+		NodeStructs::PrimitiveType::NonValued<std::string>,
+		NodeStructs::PrimitiveType::NonValued<double>,
+		NodeStructs::PrimitiveType::NonValued<int>,
+		NodeStructs::PrimitiveType::NonValued<bool>,
+		NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>,
+		NodeStructs::PrimitiveType::NonValued<char>,
+		NodeStructs::PrimitiveType::NonValued<NodeStructs::empty_optional_t>,
+
+		NodeStructs::PrimitiveType::Valued<std::string>,
+		NodeStructs::PrimitiveType::Valued<double>,
+		NodeStructs::PrimitiveType::Valued<int>,
+		NodeStructs::PrimitiveType::Valued<bool>,
+		NodeStructs::PrimitiveType::Valued<NodeStructs::void_t>,
+		NodeStructs::PrimitiveType::Valued<char>,
+		NodeStructs::PrimitiveType::Valued<NodeStructs::empty_optional_t>
+	>; 
+	constexpr unsigned diff = 7; // observe how the beginning indices are NonValued<T> and index + 7 is Valued<T>
+
+	const vt& param = parameter.value._value;
+	const vt& arg = argument.value._value;
+
+	if (param.index() == arg.index())
+		return true;
+
+	if (param.index() + diff == arg.index()) // if param is nonvalued and param + diff matches valued arg, thats ok
+		return true;
 }
 
 template <typename T>
@@ -445,8 +496,8 @@ T copy6(const T& x) {
 }
 
 template <typename T>
-T copy11(const T& x) {
-	const auto& [a, b, c, d, e, f, g, h, i, j, k] = x;
+T copy12(const T& x) {
+	const auto& [a, b, c, d, e, f, g, h, i, j, k, l] = x;
 	return {
 		copy(a),
 		copy(b),
@@ -459,6 +510,7 @@ T copy11(const T& x) {
 		copy(i),
 		copy(j),
 		copy(k),
+		copy(l),
 	};
 }
 
@@ -469,7 +521,7 @@ T copy11(const T& x) {
 #define CMP4(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp4(left, right); }
 #define CMP5(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp5(left, right); }
 #define CMP6(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp6(left, right); }
-#define CMP11(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp11(left, right); }
+#define CMP12(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp12(left, right); }
 
 #define COPY0(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy0(tn); }
 #define COPY1(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy1(tn); }
@@ -477,7 +529,8 @@ T copy11(const T& x) {
 #define COPY3(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy3(tn); }
 #define COPY4(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy4(tn); }
 #define COPY5(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy5(tn); }
-#define COPY11(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy11(tn); }
+#define COPY6(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy6(tn); }
+#define COPY12(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy12(tn); }
 
 #define CMP_COPY_N(N, T) CMP##N(T) COPY##N(T)
 
@@ -530,7 +583,7 @@ CMP_COPY_N(2, PropertyAccessExpression)
 CMP_COPY_N(1, ParenArguments)
 CMP_COPY_N(1, BraceArguments)
 CMP_COPY_N(1, BracketArguments)
-CMP_COPY_N(4, Type)
+CMP_COPY_N(5, Type)
 CMP_COPY_N(3, Alias)
 CMP_COPY_N(2, MemberVariable)
 CMP_COPY_N(2, FunctionType)
@@ -553,16 +606,16 @@ CMP_COPY_N(0, TypeToken)
 CMP_COPY_N(0, TypeList)
 CMP_COPY_N(1, TypeListType)
 CMP_COPY_N(1, CompileTimeType)
-CMP_COPY_N(4, Interface)
+CMP_COPY_N(5, Interface)
 CMP_COPY_N(2, Block)
-CMP_COPY_N(5, Template)
+CMP_COPY_N(6, Template)
 CMP_COPY_N(3, Enum)
 CMP_COPY_N(1, TemplateParameter)
 CMP_COPY_N(2, TemplateParameterWithDefaultValue)
 CMP_COPY_N(1, VariadicTemplateParameter)
 CMP_COPY_N(2, FunctionParameter)
 CMP_COPY_N(5, Function)
-CMP_COPY_N(11, NameSpace)
+CMP_COPY_N(12, NameSpace)
 CMP_COPY_N(1, Exists)
 CMP_COPY_N(3, File)
 CMP_COPY_N(1, Import)

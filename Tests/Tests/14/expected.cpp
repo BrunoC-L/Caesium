@@ -10,18 +10,18 @@ struct Cat {
 };
 
 
-Int f__Animal(const Vector_Animal_& vec);
-using Vector_Animal_ = Vector<Animal>;
+Int f_Union_Cat_Dog__(const Vector_Union_Cat_Dog__& vec);
+using Union_Cat_Dog_ = Union<Cat, Dog>;
 using Vector_String_ = Vector<String>;
-using Vector_union__Dog_Cat_ = Vector<union__Dog_Cat>;
+using Vector_Union_Cat_Dog__ = Vector<Union_Cat_Dog_>;
 Int _redirect_main(const Vector_String_& s);
 
-Int f__Animal(const Vector_Animal_& vec) {
+Int f_Union_Cat_Dog__(const Vector_Union_Cat_Dog__& vec) {
 	return 0;
 };
 Int _redirect_main(const Vector_String_& s) {
-	Vector_union__Dog_Cat_ animals = Vector_union__Dog_Cat_{};
-	return f__Animal(animals);
+	Vector_Union_Cat_Dog__ animals = Vector_Union_Cat_Dog__{};
+	return f_Union_Cat_Dog__(animals);
 };
 
 int main(int argc, char** argv) {

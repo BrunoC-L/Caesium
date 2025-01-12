@@ -52,7 +52,7 @@ R f(
 
 R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 	bool is_aggregate_init = holds<NodeStructs::BraceArguments>(statement.expr);
-	bool is_auto = cmp(statement.type.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_stub_no_throw()).value) == std::weak_ordering::equivalent;
+	bool is_auto = cmp(statement.type.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::weak_ordering::equivalent;
 	if (is_auto) {
 		if (is_aggregate_init)
 			return error{
@@ -68,7 +68,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 			auto deduced_typename = typename_of_type(state, assigned_expression_ok.type);
 			return_if_error(deduced_typename);
 
-			auto deduced_typename_repr = transpile_typename(state, deduced_typename.value());
+			auto deduced_typename_repr = transpile_typename(state, variables, deduced_typename.value());
 			return_if_error(deduced_typename_repr);
 
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, std::move(assigned_expression_ok).type });
@@ -78,13 +78,13 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 		throw;
 	}
 	else {
-		auto type = type_of_typename(state, statement.type);
+		auto type = type_of_typename(state, variables, statement.type);
 		return_if_error(type);
 
 		auto tn = typename_of_type(state, type.value());
 		return_if_error(tn);
 
-		auto type_repr = transpile_typename(state, tn.value());
+		auto type_repr = transpile_typename(state, variables, tn.value());
 		return_if_error(type_repr);
 
 		auto assigned_expression = [&]() {
@@ -105,7 +105,7 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 
 		auto& assigned_expression_ok = std::get<non_type_information>(assigned_expression.value());
 
-		auto assignable = assigned_to(state, type.value(), assigned_expression_ok.type)._value;
+		auto assignable = assigned_to(state, variables, type.value(), assigned_expression_ok.type)._value;
 		return std::visit(overload(
 			[&](const directly_assignable& assignable) -> R {
 				return f(state, variables, statement, type.value(), type_repr.value(), std::move(assigned_expression_ok), is_compile_time);
@@ -349,8 +349,9 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 		if (!std::holds_alternative<non_type_information>(expr_info.value()))
 			throw;
 		const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
-		auto assign = assigned_to(state, expected_return_type, expr_info_ok.type)._value;
+		auto assign = assigned_to(state, variables, expected_return_type, expr_info_ok.type)._value;
 		if (std::holds_alternative<not_assignable>(assign)) {
+			auto assign2 = assigned_to(state, variables, expected_return_type, expr_info_ok.type)._value;
 			return error{
 				"user error",
 				"returned expression does not match declared return type, expression was `"
@@ -410,19 +411,19 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 	const auto& expr_ok = std::get<non_type_information>(expr_info.value());
 	auto tn = typename_of_type(state, expr_ok.type);
 	return_if_error(tn);
-	auto tn_repr = transpile_typename(state, tn.value());
+	auto tn_repr = transpile_typename(state, variables, tn.value());
 	return_if_error(tn_repr);
 	unsigned id = state.state.current_variable_unique_id++;
 	ss << "const " << tn_repr.value() << "& matchval" << id << " = " << expr_ok.representation << ";\n";
 	for (const NodeStructs::MatchCase& match_case : statement.cases) {
-		auto tn = transpile_typename(state, match_case.variable_declarations.at(0).first);
+		auto tn = transpile_typename(state, variables, match_case.variable_declarations.at(0).first);
 		return_if_error(tn);
 		const auto& varname = match_case.variable_declarations.at(0).second;
 
 		variables[varname]
 			.push_back(variable_info{
 				.value_category = NodeStructs::Reference{},
-				.type = type_of_typename(state, match_case.variable_declarations.at(0).first).value() 
+				.type = type_of_typename(state, variables, match_case.variable_declarations.at(0).first).value()
 			});
 		auto statements = transpile(state.indented(), variables, match_case.statements, expected_return_type);
 		variables[varname].pop_back();

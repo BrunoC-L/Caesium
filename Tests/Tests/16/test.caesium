@@ -2,7 +2,7 @@ template problematic<T, U>:
     Int problematic():
         return 0
 
-template problematic<T=String, U>:
+template problematic<T=Int, U>:
     Int problematic():
         return 1
 
@@ -11,4 +11,4 @@ template problematic<T, U=Int>:
         return 2
 
 Int main(Vector<String> ref s):
-    return problematic<String, Int>()
+    return problematic<Int, Int>()

@@ -84,7 +84,7 @@ bool build(TemplateBody& body, Iterator& it) {
 	return true;
 }
 
-bool build(Or<Token<NEWLINE>, Expect<grammar::Statement>>& x, Iterator& it) {
+bool build(Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>& x, Iterator& it) {
 	x.beg_offset = it.index;
 	// if its a new line OK
 	{
@@ -104,7 +104,7 @@ bool build(Or<Token<NEWLINE>, Expect<grammar::Statement>>& x, Iterator& it) {
 		// and it is properly indented (neither less nor more indent)
 		if (built) {
 			// then we try to parse the statement (note the Expect<> which throws if it fails)
-			auto node = Expect<grammar::Statement>(x.n_indent);
+			auto node = Expect<grammar::Statement<grammar::function_context>>(x.n_indent);
 			bool built = build(node, it);
 			if (built) {
 				x._value.emplace(std::move(node));

@@ -32,7 +32,7 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 		return NodeStructs::MetaType{ copy(type) };
 	}
 	if (auto it = ns.aliases.find(accessed); it != ns.aliases.end()) {
-		auto e_t = type_of_typename(state, it->second);
+		auto e_t = type_of_typename(state, variables, it->second);
 		return_if_error(e_t);
 		auto opt_e = traverse_type(state, e_t.value());
 		if (opt_e.has_value())

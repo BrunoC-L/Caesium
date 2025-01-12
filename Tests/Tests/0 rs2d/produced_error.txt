@@ -1,7 +1,1 @@
-Template expansion does not result in a type or function: |begin|
-	type ServerServiceProvider:
-		#ifor i, T in type_list<DB>:
-			T ref ? service_##i
-
-
-|end|
+Template not found `ServerServiceProvider`

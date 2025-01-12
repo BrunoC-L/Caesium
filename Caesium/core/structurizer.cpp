@@ -269,31 +269,37 @@ Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaul
 Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter> getTemplateParameter(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
-	const And<grammar::Word, Opt<And<Token<EQUAL>, grammar::Expression>>>& parameter_and_optional_value
+	const And<grammar::Word, Opt<And<Token<EQUAL>, grammar::TypenameOrExpression>>>& parameter_and_optional_value
 ) {
-	if (parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::Expression>>>().has_value())
+	if (parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::TypenameOrExpression>>>().has_value())
 		return NodeStructs::TemplateParameterWithDefaultValue{
-			parameter_and_optional_value.get<grammar::Word>().value,
-			getExpressionStruct(file_name, vec, parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::Expression>>>().value().get<grammar::Expression>())
-	};
+			.name = parameter_and_optional_value.get<grammar::Word>().value,
+			.value = getStruct(
+				file_name,
+				vec,
+				parameter_and_optional_value.get<Opt<And<Token<EQUAL>, grammar::TypenameOrExpression>>>().value().get<grammar::TypenameOrExpression>(),
+				tag_expect_empty_category{}
+			)
+		};
 	else
 		return NodeStructs::TemplateParameter{
 			parameter_and_optional_value.get<grammar::Word>().value,
-	};
+		};
 }
+
 using parameter_t = Or<
 	And<
-	grammar::Word,
-	Token<DOTS>
+		grammar::Word,
+		Token<DOTS>
 	>,
 	And<
-	grammar::Word,
-	Opt<And<
-	Token<EQUAL>,
-	grammar::Expression
-	>>
+		grammar::Word,
+		Opt<And<
+			Token<EQUAL>,
+			grammar::TypenameOrExpression
+		>>
 	>
-	>;
+>;
 
 Variant<NodeStructs::TemplateParameter, NodeStructs::TemplateParameterWithDefaultValue, NodeStructs::VariadicTemplateParameter> getTemplateParameter(
 	const std::string& file_name,
@@ -316,7 +322,8 @@ NodeStructs::Template getStruct(const std::string& file_name, const std::vector<
 			| std::views::transform([&](auto&& e) { return getTemplateParameter(file_name, vec, e); })
 			| to_vec(),
 		.templated = t.get<TemplateBody>().value,
-		.indent = t.n_indent + 1
+		.indent = t.n_indent + 1,
+		.rule_info = rule_info_from_rule(file_name, vec, t)
 	};
 }
 
@@ -350,7 +357,8 @@ NodeStructs::Type getStruct(const std::string& file_name, const std::vector<Toke
 			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::MemberVariable>(e); })
 			| std::views::transform([&](auto&& e) { return std::get<grammar::MemberVariable>(e); })
 			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t); })
-			| to_vec()
+			| to_vec(),
+		.rule_info = rule_info_from_rule(file_name, vec, t.get<grammar::Word>())
 	};
 }
 
@@ -374,7 +382,8 @@ NodeStructs::Interface getStruct(const std::string& file_name, const std::vector
 			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::MemberVariable>(e); })
 			| std::views::transform([&](auto&& e) { return std::get<grammar::MemberVariable>(e); })
 			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t); })
-			| to_vec()
+			| to_vec(),
+		.rule_info = rule_info_from_rule(file_name, vec, interface)
 	};
 }
 
@@ -396,7 +405,7 @@ bool uses_auto(const NodeStructs::Function& fn);
 
 NodeStructs::NameSpace getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::NameSpace& ns, std::optional<NodeStructs::Typename> name_space);
 
-NodeStructs::NameSpace getNamespaceStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& indent_named_range, std::optional<NodeStructs::Typename> name_space, std::optional<std::string> name) {
+NodeStructs::NameSpace getNamespaceStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& indent_named_range, rule_info info, std::optional<NodeStructs::Typename> name_space, const grammar::Word& name) {
 	std::vector<NodeStructs::Type> types;
 	std::vector<NodeStructs::Function> functions;
 	std::vector<NodeStructs::Interface> interfaces;
@@ -405,19 +414,15 @@ NodeStructs::NameSpace getNamespaceStruct(const std::string& file_name, const st
 	std::vector<NodeStructs::NameSpace> namespaces;
 	std::vector<NodeStructs::Enum> enums;
 
-	std::optional<NodeStructs::Typename> composed_ns = [&]() {
-		if (name.has_value())
-			return std::optional<NodeStructs::Typename>{
-				name_space.has_value() ?
-					make_typename(NodeStructs::NamespacedTypename{
-						std::move(name_space).value(),
-						name.value(),
-					}, NodeStructs::Value{}, rule_info_stub_no_throw())
-					: make_typename(NodeStructs::BaseTypename{ name.value() }, NodeStructs::Value{}, rule_info_stub_no_throw())
-				};
+	NodeStructs::Typename composed_ns = [&]() {
+		if (name_space.has_value())
+			return make_typename(NodeStructs::NamespacedTypename{
+				std::move(name_space).value(),
+				name.value,
+			}, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, name));
 		else
-			return std::move(name_space);
-		}();
+			return make_typename(NodeStructs::BaseTypename{ name.value }, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, name));
+	}();
 
 	for (const And<IndentToken, grammar::Named>& named : indent_named_range) {
 		std::visit(
@@ -444,11 +449,11 @@ NodeStructs::NameSpace getNamespaceStruct(const std::string& file_name, const st
 					enums.push_back(getStruct(file_name, vec, e, copy(composed_ns)));
 				}
 			), named.get<grammar::Named>().value()
-					);
+		);
 	}
 
 	return {
-		.name = name.has_value() ? std::move(name).value() : "UNNAMED_NAMESPACE",
+		.name = name.value,
 		.name_space = copy(name_space),
 		.functions = functions
 		| std::views::filter([&](auto&& f) { return !uses_auto(f); })
@@ -465,6 +470,66 @@ NodeStructs::NameSpace getNamespaceStruct(const std::string& file_name, const st
 		.aliases = std::move(aliases),
 		.enums = std::move(enums),
 		.namespaces = std::move(namespaces),
+		.rule_info = std::move(info)
+	};
+}
+
+NodeStructs::NameSpace getNamespaceStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& indent_named_range, rule_info info) {
+	std::vector<NodeStructs::Type> types;
+	std::vector<NodeStructs::Function> functions;
+	std::vector<NodeStructs::Interface> interfaces;
+	std::vector<NodeStructs::Template> templates;
+	std::vector<NodeStructs::Alias> aliases;
+	std::vector<NodeStructs::NameSpace> namespaces;
+	std::vector<NodeStructs::Enum> enums;
+
+	for (const And<IndentToken, grammar::Named>& named : indent_named_range) {
+		std::visit(
+			overload(
+				[&](const grammar::Type& e) {
+					types.push_back(getStruct(file_name, vec, e, std::nullopt));
+				},
+				[&](const grammar::Function& e) {
+					functions.push_back(getStruct(file_name, vec, e, std::nullopt));
+				},
+				[&](const grammar::Interface& e) {
+					interfaces.push_back(getStruct(file_name, vec, e, std::nullopt));
+				},
+				[&](const grammar::Template& e) {
+					templates.push_back(getStruct(file_name, vec, e, std::nullopt));
+				},
+				[&](const grammar::Alias& e) {
+					aliases.push_back(getStruct(file_name, vec, e, std::nullopt));
+				},
+				[&](const grammar::NameSpace& e) {
+					namespaces.push_back(getStruct(file_name, vec, e, std::nullopt));
+				},
+				[&](const grammar::Enum& e) {
+					enums.push_back(getStruct(file_name, vec, e, std::nullopt));
+				}
+			), named.get<grammar::Named>().value()
+		);
+	}
+
+	return {
+		.name = "UNNAMED_NAMESPACE",
+		.name_space = std::nullopt,
+		.functions = functions
+		| std::views::filter([&](auto&& f) { return !uses_auto(f); })
+		| std::views::transform([&](auto&& fn) { return copy(fn); })
+		| to_vec(),
+		.functions_using_auto = functions
+		| std::views::filter([&](auto&& f) { return uses_auto(f); })
+		| std::views::transform([&](auto&& fn) { return copy(fn); })
+		| to_vec(),
+		.types = std::move(types),
+		.interfaces = std::move(interfaces),
+		.templates = std::move(templates),
+		.blocks = {},
+		.aliases = std::move(aliases),
+		.enums = std::move(enums),
+		.namespaces = std::move(namespaces),
+		.rule_info = std::move(info)
 	};
 }
 
@@ -473,21 +538,19 @@ NodeStructs::NameSpace getStruct(const std::string& file_name, const std::vector
 		file_name,
 		vec,
 		ns.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get<And<IndentToken, grammar::Named>>(),
+		rule_info_from_rule(file_name, vec, ns),
 		std::move(name_space),
-		ns.get<grammar::Word>().value
+		ns.get<grammar::Word>()
 	);
 }
 
 NodeStructs::Exists getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Exists& e) {
-	return NodeStructs::Exists{
-		getNamespaceStruct(
-			file_name,
-			vec,
-			e.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get<And<IndentToken, grammar::Named>>(),
-			std::nullopt,
-			std::nullopt
-		)
-	};
+	return NodeStructs::Exists{ getNamespaceStruct(
+		file_name,
+		vec,
+		e.get<Indent<Star<Or<Token<NEWLINE>, And<IndentToken, grammar::Named>>>>>().get<And<IndentToken, grammar::Named>>(),
+		rule_info_from_rule(file_name, vec, e)
+	) };
 }
 
 NodeStructs::File getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::File& f) {
@@ -548,7 +611,8 @@ NodeStructs::File getStruct(const std::string& file_name, const std::vector<Toke
 				| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::NameSpace>(e); })
 				| std::views::transform([&](auto&& e) { return std::get<grammar::NameSpace>(e); })
 				| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e, std::nullopt); })
-				| to_vec()
+				| to_vec(),
+			.rule_info = rule_info_from_rule(file_name, vec, f)
 		}
 	};
 }
@@ -874,8 +938,8 @@ NodeStructs::Expression getStatementStruct(const std::string& file_name, const s
 	return getExpressionStruct(file_name, vec, statement);
 }
 
-auto getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const Expect<grammar::Statement>& statement) {
-	const grammar::Statement& st = statement;
+auto getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const Expect<grammar::Statement<grammar::function_context>>& statement) {
+	const grammar::Statement<grammar::function_context>& st = statement;
 	return getStatementStruct(file_name, vec, st);
 }
 
@@ -887,15 +951,15 @@ NodeStructs::VariableDeclarationStatement getStatementStruct(const std::string& 
 }
 
 std::vector<NodeStructs::Statement> getStatements(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::ColonIndentCodeBlock& code) {
-	return code.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement>>>>>().get<Or<Token<NEWLINE>, Expect<grammar::Statement>>>()
+	return code.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>>>().get<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>()
 		| std::views::transform(
-			[&](const Or<Token<NEWLINE>, Expect<grammar::Statement>>& e)
-			-> const std::variant<Token<NEWLINE>, Expect<grammar::Statement>>&{
+			[&](const Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>& e)
+			-> const std::variant<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>&{
 				return e.value();
 			})
-		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement>>(e); })
-				| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement>>(e); })
-				| std::views::transform([&](const Expect<grammar::Statement>& e) { return getStatementStruct(file_name, vec, e); })
+		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement<grammar::function_context>>>(e); })
+				| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement<grammar::function_context>>>(e); })
+				| std::views::transform([&](const Expect<grammar::Statement<grammar::function_context>>& e) { return getStatementStruct(file_name, vec, e); })
 				| to_vec();
 }
 
@@ -979,8 +1043,8 @@ NodeStructs::MatchCase getCase(const std::string& file_name, const std::vector<T
 		| to_vec(),
 		statements
 		| std::views::transform([&](auto&& e) { return e.value(); })
-		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement>>(e); })
-		| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement>>(e); })
+		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement<grammar::function_context>>>(e); })
+		| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement<grammar::function_context>>>(e); })
 		| std::views::transform([&](auto&& e) { return getStatementStruct(file_name, vec, e); })
 		| to_vec()
 	};
@@ -995,7 +1059,7 @@ std::vector<NodeStructs::MatchCase> getCases(const std::string& file_name, const
 			file_name,
 			vec,
 			typenames.nodes,
-			statements.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement>>>>>().get_view<Or<Token<NEWLINE>, Expect<grammar::Statement>>>()
+			statements.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>>>().get_view<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>()
 		));
 	}
 	return res;
@@ -1064,7 +1128,7 @@ NodeStructs::Assignment getStatementStruct(const std::string& file_name, const s
 	return { getExpressionStruct(file_name, vec, statement.get<grammar::Expression, 0>()), getExpressionStruct(file_name, vec, statement.get<grammar::Expression, 1>()) };
 }
 
-NodeStructs::Statement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Statement& statement) {
+NodeStructs::Statement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Statement<grammar::function_context>& statement) {
 	return NodeStructs::Statement{
 		std::visit(
 			[&](const auto& statement) -> NodeStructs::Statement::vt {

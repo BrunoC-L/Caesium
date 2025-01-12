@@ -1,4 +1,5 @@
 #include "../core/toCPP.hpp"
+#include "../utility/replace_all.hpp"
 #include <algorithm>
 
 using T = transpile_typename_visitor;
@@ -33,7 +34,7 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& type) {
-	auto type_of_namespace_or_e = type_of_typename(state, type.name_space);
+	auto type_of_namespace_or_e = type_of_typename(state, variables, type.name_space);
 	return_if_error(type_of_namespace_or_e);
 	const auto& type_of_namespace = type_of_namespace_or_e.value();
 
@@ -77,9 +78,9 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 		if (is_map && type.templated_with.size() != 2)
 			throw;
 		std::stringstream single_word, with_brackets;
-		auto tmpl = type_template_of_typename(state, type.templated_with, type.type);
+		auto tmpl = type_template_of_typename(state, variables, type.templated_with, type.type);
 		return_if_error(tmpl);
-		auto t = operator()(type.type);
+		R t = operator()(type.type);
 		return_if_error(t);
 
 		single_word << t.value() << "_";
@@ -92,17 +93,55 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 				single_word << "_";
 				with_brackets << ", ";
 			}
-			single_word << word_typename_or_expression_for_template(t);
-			with_brackets << word_typename_or_expression_for_template(t);
+			auto base = std::visit(overload(
+				[&](const std::string s) -> std::string {
+					auto test = transpile_expression(state, variables, s);
+					if (test.has_value()) {
+						if (!std::holds_alternative<type_information>(test.value()))
+							throw;
+						return std::get<type_information>(test.value()).representation;
+					} else {
+						auto test2 = transpile_typename(state, variables, NodeStructs::BaseTypename{ s });
+						if (test2.has_error())
+							throw;
+						return test2.value();
+					}
+					throw;
+				},
+				[&](const NodeStructs::Expression& e) -> std::string {
+					auto t = transpile_expression(state, variables, e);
+					if (t.has_error())
+						throw;
+					if (!std::holds_alternative<type_information>(t.value()))
+						throw;
+					return std::get<type_information>(t.value()).representation;
+				},
+				[&](const NodeStructs::Typename& t) -> std::string {
+					return transpile_typename(state, variables, t).value();
+				}
+			), t.value._value);
+			with_brackets << base;
+			single_word << replace_all(std::move(base), "<", "_", ">", "_", " " , "", ",", "_");
 		}
 		single_word << "_";
 		with_brackets << ">";
+		state.state.global_namespace.aliases.insert({
+			single_word.str(),
+			NodeStructs::Typename{
+				.value = copy(type),
+				.category = NodeStructs::Value{},
+				.rule_info = copy(type.type.rule_info)
+			}
+		});
+		if (single_word.str() == "f_Int_") {
+			throw;
+		}
 		state.state.aliases_to_transpile.insert({ single_word.str(), with_brackets.str() });
 		return single_word.str();
 	}
 	else {
 		std::stringstream ss;
-		auto tmpl = type_template_of_typename(state, type.templated_with, type.type);
+		auto tmpl = type_template_of_typename(state, variables, type.templated_with, type.type);
 		return_if_error(tmpl);
 		auto t = operator()(type.type);
 		return_if_error(t);
@@ -113,7 +152,9 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 				first = false;
 			else
 				ss << "__";
-			ss << word_typename_or_expression_for_template(t);
+			auto a = word_typename_or_expression_for_template(state, variables, t);
+			return_if_error(a);
+			ss << a.value();
 		}
 		return ss.str();
 	}
@@ -137,7 +178,17 @@ void swap(NodeStructs::Typename& a, NodeStructs::Typename& b) {
 R T::operator()(const NodeStructs::OptionalTypename& type) {
 	auto inner_or_e = operator()(type.type);
 	return_if_error(inner_or_e);
-	return "Optional<" + std::move(inner_or_e).value() + ">";
+	auto out = replace_all(copy(inner_or_e.value()), "<", "_", ">", "_", " ", "", ",", "_");
+	state.state.global_namespace.aliases.insert({
+		out,
+		NodeStructs::Typename{
+			.value = copy(type),
+			.category = NodeStructs::Value{},
+			.rule_info = copy(type.type.rule_info)
+		}
+	});
+	state.state.aliases_to_transpile.insert({ "Optional_" + out + "_", "Optional<" + out + ">" });
+	return "Optional_" + std::move(out) + "_";
 }
 
 R T::operator()(const NodeStructs::UnionTypename& type) {
@@ -158,7 +209,21 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 		ss << res.value();
 	}
 	ss << ">";
-	return ss.str();
+	auto out = ss.str();
+	auto replaced = replace_all(copy(out), "<", "_", ">", "_", " ", "", ",", "_");
+	state.state.global_namespace.aliases.insert({
+		replaced,
+		NodeStructs::Typename{
+			.value = copy(type),
+			.category = NodeStructs::Value{},
+			.rule_info = rule_info{.file_name = "todo:/", .content = "todo??" }
+		}
+	});
+	if (replaced == "f_Int_") {
+		throw;
+	}
+	state.state.aliases_to_transpile.insert({ replaced, std::move(out) });
+	return replaced;
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {

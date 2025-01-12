@@ -141,9 +141,9 @@ bool test_parse() {
 	ok &= test_parse_correct<VariableDeclarationStatement>(__LINE__, 0, "Bool c = a >? c");
 	ok &= test_parse_correct<CompareOperator>(__LINE__, 0, ">?");
 
-	ok &= test_parse_correct<And<Token<COLON>, Newline, Indent<Star<Statement>>>>(__LINE__, 0, ":\n\tx");
-	ok &= test_parse_correct<And<Newline, Indent<Star<Statement>>>>(__LINE__, 0, "\n\tx");
-	ok &= test_parse_correct<Indent<Star<Statement>>>(__LINE__, 0, "\tx");
+	ok &= test_parse_correct<And<Token<COLON>, Newline, Indent<Star<Statement<function_context>>>>>(__LINE__, 0, ":\n\tx");
+	ok &= test_parse_correct<And<Newline, Indent<Star<Statement<function_context>>>>>(__LINE__, 0, "\n\tx");
+	ok &= test_parse_correct<Indent<Star<Statement<function_context>>>>(__LINE__, 0, "\tx");
 	ok &= test_parse_correct<Indent<And<IndentToken, Word>>>(__LINE__, 0, "\tx");
 	ok &= test_parse_correct<IndentToken, Word>(__LINE__, 1, "\tx");
 	ok &= test_parse_correct<IfStatement>(__LINE__, 0, "if a:\n\tb");
@@ -163,9 +163,9 @@ bool test_parse() {
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\tb\n");
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\n\tb\n");
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta//a\n\n\tb\n");
-	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a // a\na\n");
-	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a //\na\n");
-	ok &= test_parse_correct<And<Statement, Statement>>(__LINE__, 0, "a // a \na\n");
+	ok &= test_parse_correct<And<Statement<function_context>, Statement<function_context>>>(__LINE__, 0, "a // a\na\n");
+	ok &= test_parse_correct<And<Statement<function_context>, Statement<function_context>>>(__LINE__, 0, "a //\na\n");
+	ok &= test_parse_correct<And<Statement<function_context>, Statement<function_context>>>(__LINE__, 0, "a // a \na\n");
 
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type A:\n\tA a\n");

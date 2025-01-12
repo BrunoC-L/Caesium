@@ -2,9 +2,10 @@
 
 
 
-Int _redirect_main(const Vector<String>& cli_args);
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& cli_args);
 
-Int _redirect_main(const Vector<String>& cli_args) {
+Int _redirect_main(const Vector_String_& cli_args) {
 	for (auto&& arg : cli_args) {
 		(Void)(std::cout << ('"' + arg + '"') << "\n");
 	}

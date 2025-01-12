@@ -6,6 +6,7 @@ struct type_of_resolution_operator_visitor : TypeCategoryVisitor<type_of_resolut
 	using TypeCategoryVisitor<type_of_resolution_operator_visitor>::operator();
 
 	transpilation_state_with_indent state;
+	variables_t& variables;
 	const std::string& accessed;
 
 	using R = expected<NodeStructs::MetaType>;
@@ -15,8 +16,9 @@ struct type_of_resolution_operator_visitor : TypeCategoryVisitor<type_of_resolut
 
 expected<NodeStructs::MetaType> type_of_resolution_operator(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const auto& type,
 	const std::string& accessed
 ) {
-	return type_of_resolution_operator_visitor{ {}, state, accessed }(type);
+	return type_of_resolution_operator_visitor{ {}, state, variables, accessed }(type);
 }

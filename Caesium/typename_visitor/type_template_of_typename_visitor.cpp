@@ -6,34 +6,49 @@
 using T = type_template_of_typename_visitor;
 using R = T::R;
 
-R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with, const std::string& name_to_find, const Namespace& ns) {
+R f(transpilation_state_with_indent state, variables_t& variables, const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with, const std::string& name_to_find, const Namespace& ns) {
 	if (auto it = ns.templates.find(name_to_find); it != ns.templates.end()) {
 		const auto& templates = it->second;
 
 		// todo check if already traversed
-		auto t = find_best_template(templates, templated_with);
+		auto t = find_best_template(state, variables, templates, templated_with);
 		return_if_error(t);
 		const auto& tmpl = t.value().tmpl.get();
 		const auto& arg_placements = t.value().arg_placements;
-		auto grab_nth_with_commas = [&](size_t i) {
+		auto grab_nth_with_commas = [&](size_t i) -> expected<std::string> {
 			std::stringstream ss;
 			bool has_previous = false;
 			for (size_t j = 0; j < arg_placements.size(); ++j) {
 				size_t k = arg_placements.at(j);
 				if (k == i) {
-					const auto& arg = word_typename_or_expression_for_template(templated_with.at(j));
+					const auto& arg = word_typename_or_expression_for_template(state, variables, templated_with.at(j));
+					return_if_error(arg);
 					if (has_previous)
 						ss << ", ";
 					has_previous = true;
-					ss << arg;
+					ss << arg.value();
 				}
 			}
 			return ss.str();
-			};
-		auto args = templated_with
-			| std::views::transform([&](auto&& tn) { return word_typename_or_expression_for_template(tn); })
-			| to_vec();
-		std::string tmpl_name = template_name(it->first, args);
+		};
+		auto args_or_e = vec_of_expected_to_expected_of_vec(templated_with
+			| std::views::transform([&](auto&& tn) { return word_typename_or_expression_for_template(state, variables, tn); })
+			| to_vec());
+		return_if_error(args_or_e);
+		const auto& args = args_or_e.value();
+		auto ex1 = NodeStructs::TemplateExpression{
+			.operand = NodeStructs::Expression{ .expression = name_to_find, .rule_info = rule_info{.file_name = "todo:/", .content = name_to_find } },
+			.args = copy(args)
+			| std::views::transform([&](const std::string& s) { return NodeStructs::WordTypenameOrExpression(s); })
+			| to_vec()
+		};
+		auto ex2 = NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{
+			.expression = std::move(ex1),
+			.rule_info = rule_info{.file_name = "todo:/", .content = name_to_find }
+		} };
+		auto tmpl_name_or_e = word_typename_or_expression_for_template(state, variables, std::move(ex2));
+		return_if_error(tmpl_name_or_e);
+		const auto& tmpl_name = tmpl_name_or_e.value();
 		// todo check if exists
 		if (auto it = state.state.global_namespace.types.find(tmpl_name); it != state.state.global_namespace.types.end()) {
 			const auto& types = it->second;
@@ -50,13 +65,15 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 
 		std::string replaced = tmpl.templated;
 		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
+			auto val = grab_nth_with_commas(i);
+			return_if_error(val);
 			replaced = replace_all(
 				std::move(replaced),
 				std::visit(overload(
 					[](const auto& e) { return "`" + e.name + "`"; },
 					[](const NodeStructs::VariadicTemplateParameter& e) { return "`" + e.name + "...`"; }
 				), tmpl.parameters.at(i)._value),
-				grab_nth_with_commas(i)
+				val.value()
 			);
 		}
 		{
@@ -110,7 +127,7 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 			while (parse_empty_line(it));
 			if (ok && (it.index == it.vec.size() || it.vec[it.index].first == END)) {
 				auto structured_tn = getStruct("template:/" + tmpl_name, tokens, tn.get<grammar::Typename>(), tag_allow_value_category_or_empty{});
-				return type_of_typename(state, structured_tn);
+				return type_of_typename(state, variables, structured_tn);
 			}
 		}
 		return error{
@@ -128,19 +145,19 @@ R f(transpilation_state_with_indent state, const std::vector<NodeStructs::WordTy
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end()) {
 		if (t.type == "Vector") {
-			auto x = type_of_typename(state, templated_with.at(0));
+			auto x = type_of_typename(state, variables, templated_with.at(0));
 			return_if_error(x);
 			return NodeStructs::MetaType{ NodeStructs::VectorType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
 		}
 		if (t.type == "Set") {
-			auto x = type_of_typename(state, templated_with.at(0));
+			auto x = type_of_typename(state, variables, templated_with.at(0));
 			return_if_error(x);
 			return NodeStructs::MetaType{ NodeStructs::SetType{ NonCopyableBox<NodeStructs::MetaType>{ std::move(x).value() } } };
 		}
 		if (t.type == "Map") {
-			auto k = type_of_typename(state, templated_with.at(0));
+			auto k = type_of_typename(state, variables, templated_with.at(0));
 			return_if_error(k);
-			auto v = type_of_typename(state, templated_with.at(1));
+			auto v = type_of_typename(state, variables, templated_with.at(1));
 			return_if_error(v);
 			return NodeStructs::MetaType{ NodeStructs::MapType{
 				NonCopyableBox<NodeStructs::MetaType>{ std::move(k).value() },
@@ -149,7 +166,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		}
 		if (t.type == "Union") {
 			auto ts = vec_of_expected_to_expected_of_vec(templated_with
-				| std::views::transform([&](auto&& tn) { return type_of_typename(state, tn); })
+				| std::views::transform([&](auto&& tn) { return type_of_typename(state, variables, tn); })
 				| to_vec());
 			return_if_error(ts);
 			return NodeStructs::MetaType{ NodeStructs::UnionType{
@@ -158,15 +175,15 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		}
 		throw;
 	}
-	return f(state, templated_with, t.type, state.state.global_namespace);
+	return f(state, variables, templated_with, t.type, state.state.global_namespace);
 }
 
 R T::operator()(const NodeStructs::NamespacedTypename& t) {
-	auto ns_or_e = type_of_typename(state, t.name_space);
+	auto ns_or_e = type_of_typename(state, variables, t.name_space);
 	return_if_error(ns_or_e);
 	if (!std::holds_alternative<NodeStructs::NamespaceType>(ns_or_e.value().type.get()._value))
 		throw;
-	return f(state, templated_with, t.name_in_name_space, std::get<NodeStructs::NamespaceType>(ns_or_e.value().type.get()._value).name_space.get());
+	return f(state, variables, templated_with, t.name_in_name_space, std::get<NodeStructs::NamespaceType>(ns_or_e.value().type.get()._value).name_space.get());
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {

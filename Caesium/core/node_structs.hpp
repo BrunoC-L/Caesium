@@ -24,8 +24,16 @@ struct rule_info {
 	cursor_info end;
 };
 
-rule_info rule_info_stub();
+template <typename T>
+struct empty {};
+
+template <typename T>
+rule_info rule_info_stub() {
+	empty<T> t{}; // for debug purposes
+	throw;
+}
 rule_info rule_info_stub_no_throw();
+rule_info rule_info_language_element(std::string s);
 
 template <typename... Ts> using Variant = caesium_lib::variant::type<Ts...>;
 template <typename T> using Optional = caesium_lib::optional::type<T>;
@@ -98,7 +106,7 @@ struct NodeStructs {
 		using vt = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, UnionTypename, VariadicExpansionTypename>;
 		NonCopyableBox<vt> value;
 		Optional<ParameterCategory> category;
-		rule_info rule_info = rule_info_stub();
+		rule_info rule_info = rule_info_stub<Typename>();
 	};
 
 	struct TemplatedTypename {
@@ -158,7 +166,7 @@ struct NodeStructs {
 			Token<STRING> // string token like "abc"
 		>;
 		NonCopyableBox<vt> expression;
-		rule_info rule_info = rule_info_stub();
+		rule_info rule_info = rule_info_stub<Expression>();
 	};
 
 	struct WordTypenameOrExpression {
@@ -398,6 +406,7 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
+		rule_info rule_info = rule_info_stub<Type>();
 	};
 
 	struct Interface {
@@ -405,6 +414,7 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
+		rule_info rule_info = rule_info_stub<Interface>();
 	};
 
 	struct InterfaceType {
@@ -439,6 +449,7 @@ struct NodeStructs {
 		std::vector<Variant<TemplateParameter, TemplateParameterWithDefaultValue, VariadicTemplateParameter>> parameters;
 		std::string templated;
 		int indent;
+		rule_info rule_info = rule_info_stub<Template>();
 	};
 
 	struct MetaType {
@@ -599,6 +610,7 @@ struct NodeStructs {
 
 		std::vector<NameSpace> namespaces;
 
+		rule_info rule_info = rule_info_stub<NameSpace>();
 	};
 
 	struct Exists {

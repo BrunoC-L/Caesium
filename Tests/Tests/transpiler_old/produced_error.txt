@@ -1,1 +1,0 @@
-cannot compare types for EqualityExpression, left was `argc `, right was `1`

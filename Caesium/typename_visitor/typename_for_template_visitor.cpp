@@ -1,4 +1,5 @@
 #include "../core/toCPP.hpp"
+#include "typename_for_template_visitor.hpp"
 
 using T = typename_for_template_visitor;
 using R = T::R;
@@ -12,13 +13,14 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
-	auto args = t.templated_with
-		| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(e); });
+	throw;
+	/*auto args = t.templated_with
+		| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(state, variables, e); });
 	std::stringstream ss;
 	ss << operator()(t.type) << "__";
 	for (const auto& arg : args)
 		ss << "_" << arg;
-	return ss.str();
+	return ss.str();*/
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& t) {

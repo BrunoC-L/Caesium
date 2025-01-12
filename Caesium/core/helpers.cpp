@@ -1,13 +1,18 @@
 #include "helpers.hpp"
 
-rule_info rule_info_stub() {
-	throw;
-}
-
 rule_info rule_info_stub_no_throw() {
 	return rule_info{
 		.file_name = "stub:/",
-		.content = "",
+		.content = "stub",
+		.beg = { 0, 0 },
+		.end = { 0, 0 }
+	};
+}
+
+rule_info rule_info_language_element(std::string s) {
+	return rule_info{
+		.file_name = "caesium:/",
+		.content = std::move(s),
 		.beg = { 0, 0 },
 		.end = { 0, 0 }
 	};

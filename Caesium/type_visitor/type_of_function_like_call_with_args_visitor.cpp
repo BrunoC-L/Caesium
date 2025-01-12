@@ -13,7 +13,7 @@ R T::operator()(const NodeStructs::Type& t) {
 R T::operator()(const NodeStructs::PrimitiveType& t) {
 	return error{
 		"user error",
-		"Use of type like a function is prohibited. Type was `" + transpile_typename(state, typename_of_primitive(t)).value() + "`"
+		"Use of type like a function is prohibited. Type was `" + transpile_typename(state, variables, typename_of_primitive(t)).value() + "`"
 	};
 }
 

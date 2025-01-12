@@ -6,6 +6,7 @@ struct type_of_postfix_member_visitor : TypeCategoryVisitor<type_of_postfix_memb
 	using TypeCategoryVisitor<type_of_postfix_member_visitor>::operator();
 
 	transpilation_state_with_indent state;
+	variables_t& variables;
 	const std::string& property_name;
 
 	using R = expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>>;
@@ -15,8 +16,9 @@ struct type_of_postfix_member_visitor : TypeCategoryVisitor<type_of_postfix_memb
 
 expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>> type_of_postfix_member(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::string& property_name,
 	const auto& type
 ) {
-	return type_of_postfix_member_visitor{ {}, state, property_name }(type);
+	return type_of_postfix_member_visitor{ {}, state, variables, property_name }(type);
 }

@@ -6,6 +6,7 @@ struct transpile_typename_visitor : TypenameVisitor<transpile_typename_visitor> 
 	using TypenameVisitor<transpile_typename_visitor>::operator();
 
 	transpilation_state_with_indent state;
+	variables_t& variables;
 
 	using R = transpile_t;
 
@@ -14,7 +15,8 @@ struct transpile_typename_visitor : TypenameVisitor<transpile_typename_visitor> 
 
 transpile_t transpile_typename(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const auto& tn
 ) {
-	return transpile_typename_visitor{ {}, state }(tn);
+	return transpile_typename_visitor{ {}, state, variables }(tn);
 }

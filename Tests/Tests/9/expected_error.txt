@@ -1,1 +1,1 @@
-unions require at least one argument, union type was `A|B`, expression was: `A|B{ }`
+unions require at least one argument, union type was `A | B`, expression was: `{}`

@@ -3,18 +3,19 @@
 
 
 Bool test_parse();
-Bool test_transpile_all_folders(const Vector_union__builtin_filesystem_file_builtin_filesystem_directory_& folders);
+Bool test_transpile_all_folders(const Vector_Union_builtin_filesystem_directory_builtin_filesystem_file__& folders);
 Bool test_transpile_folder(const builtin_filesystem_directory& dir);
+using Union_builtin_filesystem_directory_builtin_filesystem_file_ = Union<builtin_filesystem_directory, builtin_filesystem_file>;
 using Vector_String_ = Vector<String>;
-using Vector_union__builtin_filesystem_file_builtin_filesystem_directory_ = Vector<union__builtin_filesystem_file_builtin_filesystem_directory>;
+using Vector_Union_builtin_filesystem_directory_builtin_filesystem_file__ = Vector<Union_builtin_filesystem_directory_builtin_filesystem_file_>;
 Int _redirect_main(const Vector_String_& args);
 
 Bool test_parse() {
 	return False;
 };
-Bool test_transpile_all_folders(const Vector_union__builtin_filesystem_file_builtin_filesystem_directory_& folders) {
+Bool test_transpile_all_folders(const Vector_Union_builtin_filesystem_directory_builtin_filesystem_file__& folders) {
 	for (auto&& entry : folders) {
-		const Union<builtin_filesystem_directory, builtin_filesystem_file>& matchval4 = entry;
+		const Union_builtin_filesystem_directory_builtin_filesystem_file_& matchval4 = entry;
 		if (std::holds_alternative<builtin_filesystem_directory>(matchval4)) {
 			const builtin_filesystem_directory& dir = std::get<builtin_filesystem_directory>(matchval4);
 			return test_transpile_folder(dir);

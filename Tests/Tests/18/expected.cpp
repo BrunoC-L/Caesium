@@ -13,20 +13,23 @@ String name;
 };
 
 struct CatsAndDogs {
-Vector<Cat> cats;
-Vector<Dog> dogs;
+Vector_Cat_ cats;
+Vector_Dog_ dogs;
 };
 
 
 CatsAndDogs add(CatsAndDogs&& cats_and_dogs, Cat&& cat);
-Int _redirect_main(const Vector<String>& s);
+using Vector_Cat_ = Vector<Cat>;
+using Vector_Dog_ = Vector<Dog>;
+using Vector_String_ = Vector<String>;
+Int _redirect_main(const Vector_String_& s);
 
 CatsAndDogs add(CatsAndDogs&& cats_and_dogs, Cat&& cat) {
 	push(cats_and_dogs.cats, std::move(cat));
 	return cats_and_dogs;
 };
-Int _redirect_main(const Vector<String>& s) {
-	CatsAndDogs a = CatsAndDogs{Vector<Cat>{}, Vector<Dog>{}};
+Int _redirect_main(const Vector_String_& s) {
+	CatsAndDogs a = CatsAndDogs{Vector_Cat_{}, Vector_Dog_{}};
 	CatsAndDogs b = add(std::move(a), Cat{String{"cat1"}});
 	CatsAndDogs c = add(std::move(b), Cat{String{"cat2"}});
 	CatsAndDogs d = add(std::move(c), Cat{String{"cat3"}});

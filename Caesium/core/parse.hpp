@@ -215,7 +215,7 @@ bool build(Expect<T>& x, Iterator& it) {
 }
 
 // specialize build for statements or newlines
-bool build(Or<Token<NEWLINE>, Expect<grammar::Statement>>& x, Iterator& it);
+bool build(Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>& x, Iterator& it);
 // specialize build for typename or expression
 bool build(grammar::TypenameOrExpression& x, Iterator& it);
 

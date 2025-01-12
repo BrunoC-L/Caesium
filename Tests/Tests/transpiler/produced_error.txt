@@ -1,1 +1,1 @@
-could not arrange
+undeclared identifier `TOKENS__WORD`

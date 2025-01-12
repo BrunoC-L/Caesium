@@ -145,6 +145,8 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 }
 
 R T::operator()(const std::string& expr) {
+	if (expr == "Word")
+		throw;
 	return expr;
 }
 

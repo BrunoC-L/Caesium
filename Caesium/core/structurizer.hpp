@@ -96,7 +96,7 @@ NodeStructs::ReturnStatement getStatementStruct(const std::string& file_name, co
 
 NodeStructs::MatchStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::MatchStatement& statement);
 
-NodeStructs::Statement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Statement& statement);
+NodeStructs::Statement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Statement<grammar::function_context>& statement);
 
 std::string accumulate_content(const std::vector<TokenValue>& vec, const unsigned& beg, const unsigned& end);
 

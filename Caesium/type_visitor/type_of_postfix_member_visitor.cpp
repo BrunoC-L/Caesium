@@ -9,7 +9,7 @@ R T::operator()(const NodeStructs::Type& t) {
 			t.member_variables.end(),
 			[&](const auto& m) { return m.name == property_name; }
 		); it != t.member_variables.end())
-		return type_of_typename(state, it->type)
+		return type_of_typename(state, variables, it->type)
 			.transform([](NodeStructs::MetaType&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 		const auto& fn = it->second.back();
@@ -47,7 +47,7 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 		t.interface.get().member_variables.end(),
 		[&](const auto& member) { return member.name == property_name; }
 	); it != t.interface.get().member_variables.end())
-		return type_of_typename(state, it->type)
+		return type_of_typename(state, variables, it->type)
 			.transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });
 	else
 		return error{ "user error", "Error: object of type `" + t.interface.get().name + "` has no member `" + property_name + "`\n" };

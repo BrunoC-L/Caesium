@@ -56,10 +56,11 @@ struct Namespace {
 
 	std::map<std::string, Namespace> namespaces;
 	map_to_vec<NodeStructs::Builtin> builtins;
+	rule_info rule_info = rule_info_stub<Namespace>();
 };
 
 inline auto copy(const Namespace& ns) {
-	return copy11(ns);
+	return copy12(ns);
 }
 
 struct transpilation_state {
@@ -192,7 +193,7 @@ transpile_t transpile(
 	const NodeStructs::MetaType& expected_return_type
 );
 
-transpile_declaration_definition_t transpile(
+transpile_declaration_definition_t transpile_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
 );
@@ -204,6 +205,7 @@ transpile_declaration_definition_t transpile(
 
 transpile_t transpile(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
@@ -211,12 +213,6 @@ std::vector<NodeStructs::MetaType> decompose_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::MetaType& type
 );
-
-//std::optional<error> add_decomposed_for_iterator_variables(
-//	transpilation_state_with_indent state,
-//	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
-//	const NodeStructs::MetaType& it_type
-//);
 
 std::optional<error> add_for_iterator_variables(
 	transpilation_state_with_indent state,
@@ -231,13 +227,9 @@ transpile_expression_information_t transpile_arg(
 	const NodeStructs::FunctionArgument& arg
 );
 
-transpile_t transpile_expressions(
-	transpilation_state_with_indent state,
-	const std::vector<NodeStructs::Expression>& args
-);
-
 transpile_t transpile_typenames(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::vector<NodeStructs::Typename>& args
 );
 
@@ -264,6 +256,7 @@ struct requires_conversion {
 
 Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 	transpilation_state_with_indent state_,
+	variables_t& variables,
 	const NodeStructs::MetaType& parameter,
 	const NodeStructs::MetaType& argument
 );
@@ -288,7 +281,7 @@ bool uses_auto(const NodeStructs::Expression& t);
 #include "../type_visitor/typename_of_type_visitor.hpp"
 #include "../type_visitor/type_of_resolution_operator.hpp"
 
-#include "../expression_visitor/expression_for_template_visitor.hpp"
+//#include "../expression_visitor/expression_for_template_visitor.hpp"
 #include "../expression_visitor/transpile_expression_visitor.hpp"
 
 #include "../statement_visitor/transpile_statement_visitor.hpp"
@@ -296,12 +289,17 @@ bool uses_auto(const NodeStructs::Expression& t);
 #include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
-#include "../typename_visitor/typename_for_template_visitor.hpp"
+//#include "../typename_visitor/typename_for_template_visitor.hpp"
 
-std::string word_typename_or_expression_for_template(const NodeStructs::WordTypenameOrExpression& value);
+expected<std::string> word_typename_or_expression_for_template(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::WordTypenameOrExpression& value
+);
 
 expected<NodeStructs::MetaType> type_of_typename(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const NodeStructs::WordTypenameOrExpression& tn_or_expr
 );
 
@@ -322,12 +320,15 @@ struct Arrangement {
 };
 
 expected<Arrangement> find_best_template(
+	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::vector<NodeStructs::Template>& templates,
 	const std::vector<NodeStructs::WordTypenameOrExpression>& args
 );
 
 expected<std::optional<const NodeStructs::Function*>> find_best_function(
 	transpilation_state_with_indent state,
+	variables_t& variables,
 	const std::string& name,
 	const Namespace& space,
 	const std::vector<NodeStructs::MetaType>& arg_types

@@ -8,7 +8,7 @@ using R = T::R;
 R T::operator()(const NodeStructs::Type& type) {
 	if (!state.state.traversed_types.contains(type)) {
 		state.state.traversed_types.insert(copy(type));
-		auto opt_e = transpile(state.unindented(), type);
+		auto opt_e = transpile_type(state.unindented(), type);
 		if (opt_e.has_error()) {
 			state.state.traversed_types.erase(type);
 			return std::move(opt_e).error();
