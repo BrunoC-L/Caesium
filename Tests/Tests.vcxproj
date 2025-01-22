@@ -131,6 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="test_parse.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Caesium\Caesium.vcxproj">

@@ -30,8 +30,8 @@ bool holds(const NodeStructs::Typename& x) {
 	return holds<T>(x.value.get());
 }
 
-template <typename T>
-bool holds(const NodeStructs::Statement& x) {
+template <typename T, typename context>
+bool holds(const NodeStructs::Statement<context>& x) {
 	return holds<T>(x.statement.get());
 }
 
@@ -71,14 +71,14 @@ T&& get(NodeStructs::Typename&& x) { return get<T>(std::move(x).value.get()); }
 template <typename T>
 T& get(NodeStructs::Typename& x) { return get<T>(x.value.get()); }
 
-template <typename T>
-const T& get(const NodeStructs::Statement& x) { return get<T>(x.statement.get()); }
+template <typename T, typename context>
+const T& get(const NodeStructs::Statement<context>& x) { return get<T>(x.statement.get()); }
 
-template <typename T>
-T&& get(NodeStructs::Statement&& x) { return get<T>(std::move(x).statement.get()); }
+template <typename T, typename context>
+T&& get(NodeStructs::Statement<context>&& x) { return get<T>(std::move(x).statement.get()); }
 
-template <typename T>
-T& get(NodeStructs::Statement& x) { return get<T>(x.statement.get()); }
+template <typename T, typename context>
+T& get(NodeStructs::Statement<context>& x) { return get<T>(x.statement.get()); }
 
 const std::string& original_representation(const NodeStructs::WordTypenameOrExpression& tn_or_expr);
 const std::string& original_representation(const std::string& e);
@@ -549,21 +549,51 @@ CMP_COPY_N(0, Reference)
 CMP_COPY_N(0, MutableReference)
 CMP_COPY_N(0, Move)
 CMP_COPY_N(0, Value)
-CMP_COPY_N(2, Statement)
 CMP_COPY_N(2, VariableDeclaration)
-CMP_COPY_N(3, VariableDeclarationStatement)
-CMP_COPY_N(3, IfStatement)
-CMP_COPY_N(3, ForStatement)
-CMP_COPY_N(2, IForStatement)
-CMP_COPY_N(2, WhileStatement)
-CMP_COPY_N(2, MatchCase)
-CMP_COPY_N(2, MatchStatement)
-CMP_COPY_N(1, BreakStatement)
-CMP_COPY_N(2, ReturnStatement)
-CMP_COPY_N(2, SwitchCase)
-CMP_COPY_N(2, SwitchStatement)
-CMP_COPY_N(2, Assignment)
-CMP_COPY_N(1, BlockStatement)
+
+CMP_COPY_N(2, Statement<function_context>)
+CMP_COPY_N(1, Statement<type_context>)
+CMP_COPY_N(1, Statement<top_level_context>)
+CMP_COPY_N(3, VariableDeclarationStatement<function_context>)
+CMP_COPY_N(3, VariableDeclarationStatement<type_context>)
+CMP_COPY_N(3, VariableDeclarationStatement<top_level_context>)
+CMP_COPY_N(3, IfStatement<function_context>)
+CMP_COPY_N(3, IfStatement<type_context>)
+CMP_COPY_N(3, IfStatement<top_level_context>)
+CMP_COPY_N(3, ForStatement<function_context>)
+CMP_COPY_N(3, ForStatement<type_context>)
+CMP_COPY_N(3, ForStatement<top_level_context>)
+CMP_COPY_N(2, IForStatement<function_context>)
+CMP_COPY_N(2, IForStatement<type_context>)
+CMP_COPY_N(2, IForStatement<top_level_context>)
+CMP_COPY_N(2, WhileStatement<function_context>)
+CMP_COPY_N(2, WhileStatement<type_context>)
+CMP_COPY_N(2, WhileStatement<top_level_context>)
+CMP_COPY_N(2, MatchCase<function_context>)
+CMP_COPY_N(2, MatchCase<type_context>)
+CMP_COPY_N(2, MatchCase<top_level_context>)
+CMP_COPY_N(2, MatchStatement<function_context>)
+CMP_COPY_N(2, MatchStatement<type_context>)
+CMP_COPY_N(2, MatchStatement<top_level_context>)
+CMP_COPY_N(1, BreakStatement<function_context>)
+CMP_COPY_N(1, BreakStatement<type_context>)
+CMP_COPY_N(1, BreakStatement<top_level_context>)
+CMP_COPY_N(2, ReturnStatement<function_context>)
+CMP_COPY_N(2, ReturnStatement<type_context>)
+CMP_COPY_N(2, ReturnStatement<top_level_context>)
+CMP_COPY_N(2, SwitchCase<function_context>)
+CMP_COPY_N(2, SwitchCase<type_context>)
+CMP_COPY_N(2, SwitchCase<top_level_context>)
+CMP_COPY_N(2, SwitchStatement<function_context>)
+CMP_COPY_N(2, SwitchStatement<type_context>)
+CMP_COPY_N(2, SwitchStatement<top_level_context>)
+CMP_COPY_N(2, Assignment<function_context>)
+CMP_COPY_N(2, Assignment<type_context>)
+CMP_COPY_N(2, Assignment<top_level_context>)
+CMP_COPY_N(1, BlockStatement<function_context>)
+CMP_COPY_N(1, BlockStatement<type_context>)
+CMP_COPY_N(1, BlockStatement<top_level_context>)
+
 CMP_COPY_N(2, FunctionArgument)
 CMP_COPY_N(2, ConditionalExpression)
 CMP_COPY_N(2, OrExpression)
@@ -583,7 +613,7 @@ CMP_COPY_N(2, PropertyAccessExpression)
 CMP_COPY_N(1, ParenArguments)
 CMP_COPY_N(1, BraceArguments)
 CMP_COPY_N(1, BracketArguments)
-CMP_COPY_N(5, Type)
+CMP_COPY_N(6, Type)
 CMP_COPY_N(3, Alias)
 CMP_COPY_N(2, MemberVariable)
 CMP_COPY_N(2, FunctionType)

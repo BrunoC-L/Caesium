@@ -173,10 +173,16 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 		std::cout << "Test folder missing caesium file: " << folder << "\n";
 		return false;
 	}
+	std::variant<transpile_t, parse_error> produced_file_or_error = [&]() -> std::variant<transpile_t, parse_error> {
+		try {
+			return transpile(vec);
+		}
+		catch (const parse_error& e) {
+			return e;
+		}
+	}();
 
-	auto produced_file_or_error = transpile(vec);
-
-	if (produced_file_or_error.has_value()) {
+	if (std::holds_alternative<transpile_t>(produced_file_or_error) && std::get<transpile_t>(produced_file_or_error).has_value()) {
 		/*auto header_opt = open_read(folder / "expected.hpp");
 		if (!header_opt.has_value())
 			throw;
@@ -187,7 +193,7 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 			throw;
 		const auto& expected_cpp = cpp_opt.value();
 
-		const auto& cpp = produced_file_or_error.value();
+		const auto& cpp = std::get<transpile_t>(produced_file_or_error).value();
 
 		/*auto first_diff_header = first_diff(header, expected_header);
 		bool header_ok = header.size() == expected_header.size() && header.size() == first_diff_header;*/
@@ -210,8 +216,16 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 		}
 		return ok;
 	}
+	else if (std::holds_alternative<transpile_t>(produced_file_or_error)) {
+		auto err = std::move(std::get<transpile_t>(produced_file_or_error)).error().message;
+		auto e_file = std::ofstream{ folder / "produced_error.txt" };
+		e_file << err;
+		std::cout << folder_name << " transpiled: " << colored_text_from_bool(false) << "\n";
+		return false;
+	}
 	else {
-		auto err = std::move(produced_file_or_error).error().message;
+		const parse_error& e = std::get<parse_error>(produced_file_or_error);
+		auto err = "error on rule: " + e.name_of_rule;
 		auto e_file = std::ofstream{ folder / "produced_error.txt" };
 		e_file << err;
 		std::cout << folder_name << " transpiled: " << colored_text_from_bool(false) << "\n";

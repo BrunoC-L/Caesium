@@ -84,38 +84,6 @@ bool build(TemplateBody& body, Iterator& it) {
 	return true;
 }
 
-bool build(Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>& x, Iterator& it) {
-	x.beg_offset = it.index;
-	// if its a new line OK
-	{
-		auto node = Token<NEWLINE>(x.n_indent);
-		bool built = build(node, it);
-		if (built) {
-			x._value.emplace(std::move(node));
-			x.end_offset = it.index;
-			return true;
-		}
-	}
-	// if its not a new line
-	{
-		auto temp = it;
-		auto indent_node = IndentToken{ x.n_indent };
-		bool built = build(indent_node, temp);
-		// and it is properly indented (neither less nor more indent)
-		if (built) {
-			// then we try to parse the statement (note the Expect<> which throws if it fails)
-			auto node = Expect<grammar::Statement<grammar::function_context>>(x.n_indent);
-			bool built = build(node, it);
-			if (built) {
-				x._value.emplace(std::move(node));
-				x.end_offset = it.index;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 // specialize build for typename or expression
 bool build(grammar::TypenameOrExpression& x, Iterator& it) {
 	auto it_typename = it;

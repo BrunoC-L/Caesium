@@ -179,17 +179,11 @@ std::optional<error> stack(
 	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
+template <typename context>
 transpile_t transpile(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const std::vector<NodeStructs::Statement>& statements,
-	const NodeStructs::MetaType& expected_return_type
-);
-
-transpile_t transpile(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const NodeStructs::Statement& statement,
+	const NodeStructs::Statement<context>& statement,
 	const NodeStructs::MetaType& expected_return_type
 );
 
@@ -269,7 +263,6 @@ transpile_t expr_to_printable(
 
 bool uses_auto(const NodeStructs::Function& fn);
 bool uses_auto(const NodeStructs::FunctionParameter& param);
-bool uses_auto(const NodeStructs::Statement& param);
 bool uses_auto(const NodeStructs::Typename& t);
 bool uses_auto(const NodeStructs::Expression& t);
 
@@ -284,7 +277,8 @@ bool uses_auto(const NodeStructs::Expression& t);
 //#include "../expression_visitor/expression_for_template_visitor.hpp"
 #include "../expression_visitor/transpile_expression_visitor.hpp"
 
-#include "../statement_visitor/transpile_statement_visitor.hpp"
+//#include "../statement_visitor/transpile_statement_visitor.hpp"
+#include "../statement_visitor/transpile_statement.hpp"
 
 #include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
@@ -333,3 +327,33 @@ expected<std::optional<const NodeStructs::Function*>> find_best_function(
 	const Namespace& space,
 	const std::vector<NodeStructs::MetaType>& arg_types
 );
+
+template <typename context>
+transpile_t transpile(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const std::vector<NodeStructs::Statement<context>>& statements,
+	const NodeStructs::MetaType& expected_return_type
+) {
+	std::stringstream ss;
+	for (const NodeStructs::Statement<context>& statement : statements) {
+		auto k = transpile_statement(state, variables, expected_return_type, statement);
+		if (k.has_value())
+			ss << indent(state.indent) << k.value();
+		else
+			return k.error();
+	}
+
+	return ss.str();
+}
+
+template <typename context>
+bool uses_auto(const NodeStructs::Statement<context>& statement) {
+	// todo recursive impl and check for variable declarations and for statements
+	if (holds<NodeStructs::VariableDeclarationStatement<context>>(statement)) {
+		const auto& var_decl = get<NodeStructs::VariableDeclarationStatement<context>>(statement);
+		return uses_auto(var_decl.type);
+	}
+	else
+		return false;
+}

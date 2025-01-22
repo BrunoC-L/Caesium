@@ -38,6 +38,16 @@ rule_info rule_info_language_element(std::string s);
 template <typename... Ts> using Variant = caesium_lib::variant::type<Ts...>;
 template <typename T> using Optional = caesium_lib::optional::type<T>;
 
+namespace grammar {
+	struct type_context;
+	struct function_context;
+	struct top_level_context;
+}
+
+using type_context = grammar::type_context;
+using function_context = grammar::function_context;
+using top_level_context = grammar::top_level_context;
+
 struct Namespace;
 
 struct NodeStructs {
@@ -50,6 +60,7 @@ struct NodeStructs {
 	struct Typename;
 	struct WordTypenameOrExpression;
 
+	template <typename context>
 	struct Statement;
 
 	struct ConditionalExpression;
@@ -294,86 +305,101 @@ struct NodeStructs {
 		std::string name;
 	};
 
+	template <typename context>
 	struct VariableDeclarationStatement {
 		Typename type;
 		std::string name;
 		Expression expr;
 	};
 
+	template <typename context>
 	struct ForStatement {
 		Expression collection;
 		std::vector<Variant<VariableDeclaration, std::string>> iterators;
-		std::vector<Statement> statements;
+		std::vector<Statement<context>> statements;
 	};
 
+	template <typename context>
 	struct IForStatement {
 		std::string index_iterator;
-		ForStatement for_statement;
+		ForStatement<context> for_statement;
 	};
 
+	template <typename context>
 	struct IfStatement {
 		Expression ifExpr;
-		std::vector<Statement> ifStatements;
-		std::optional<Variant<NonCopyableBox<IfStatement>, std::vector<Statement>>> elseExprStatements;
+		std::vector<Statement<context>> ifStatements;
+		std::optional<Variant<NonCopyableBox<IfStatement<context>>, std::vector<Statement<context>>>> elseExprStatements;
 	};
 
+	template <typename context>
 	struct WhileStatement {
 		Expression whileExpr;
-		std::vector<Statement> statements;
+		std::vector<Statement<context>> statements;
 	};
 
+	template <typename context>
 	struct MatchCase {
 		std::vector<std::pair<Typename, std::string>> variable_declarations;
-		std::vector<Statement> statements;
+		std::vector<Statement<context>> statements;
 	};
 
+	template <typename context>
 	struct MatchStatement {
 		std::vector<Expression> expressions;
-		std::vector<MatchCase> cases;
+		std::vector<MatchCase<context>> cases;
 	};
 
+	template <typename context>
 	struct BreakStatement {
 		std::optional<Expression> ifExpr;
 	};
 
+	template <typename context>
 	struct ReturnStatement {
 		std::vector<FunctionArgument> returnExpr;
 		std::optional<Expression> ifExpr;
 	};
 
+	template <typename context>
 	struct SwitchCase {
 		Expression expr;
-		std::vector<Statement> statements;
+		std::vector<Statement<context>> statements;
 	};
 
+	template <typename context>
 	struct SwitchStatement {
 		Expression expr;
-		std::vector<SwitchCase> cases;
+		std::vector<SwitchCase<context>> cases;
 	};
 
+	template <typename context>
 	struct Assignment {
 		Expression left;
 		Expression right;
 	};
 
+	template <typename context>
 	struct BlockStatement {
 		Typename parametrized_block;
 	};
 
-	struct Statement {
+	template <>
+	struct Statement<function_context> {
+		using context = function_context;
 		using vt = Variant<
 			Expression,
-			VariableDeclarationStatement,
-			IfStatement,
-			ForStatement,
-			IForStatement,
-			WhileStatement,
-			BreakStatement,
-			ReturnStatement,
-			BlockStatement,
-			MatchStatement,
-			SwitchStatement,
-			Assignment
+			VariableDeclarationStatement<context>,
+			IfStatement<context>,
+			ForStatement<context>,
+			IForStatement<context>,
+			WhileStatement<context>,
+			BreakStatement<context>,
+			ReturnStatement<context>,
+			BlockStatement<context>,
+			MatchStatement<context>,
+			SwitchStatement<context>,
+			Assignment<context>
 		>;
 		NonCopyableBox<vt> statement;
 		bool is_compile_time;
@@ -382,6 +408,48 @@ struct NodeStructs {
 	struct MemberVariable {
 		Typename type;
 		std::string name;
+	};
+
+	template <>
+	struct Statement<type_context> {
+		using context = type_context;
+		using vt = Variant<
+			Expression,
+			VariableDeclarationStatement<context>,
+			IfStatement<context>,
+			ForStatement<context>,
+			IForStatement<context>,
+			WhileStatement<context>,
+			BreakStatement<context>,
+			ReturnStatement<context>,
+			BlockStatement<context>,
+			MatchStatement<context>,
+			SwitchStatement<context>,
+			Assignment<context>,
+			Alias,
+			MemberVariable
+		>;
+		NonCopyableBox<vt> statement;
+	};
+
+	template <>
+	struct Statement<top_level_context> {
+		using context = top_level_context;
+		using vt = Variant<
+			Expression,
+			VariableDeclarationStatement<context>,
+			IfStatement<context>,
+			ForStatement<context>,
+			IForStatement<context>,
+			WhileStatement<context>,
+			BreakStatement<context>,
+			ReturnStatement<context>,
+			BlockStatement<context>,
+			MatchStatement<context>,
+			SwitchStatement<context>,
+			Assignment<context>
+		>;
+		NonCopyableBox<vt> statement;
 	};
 
 	struct Import {
@@ -398,7 +466,7 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		Typename returnType;
 		std::vector<FunctionParameter> parameters;
-		std::vector<Statement> statements;
+		std::vector<Statement<function_context>> statements;
 	};
 
 	struct Type {
@@ -406,6 +474,7 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
+		std::vector<Statement<type_context>> compile_time_statements;
 		rule_info rule_info = rule_info_stub<Type>();
 	};
 
@@ -589,7 +658,7 @@ struct NodeStructs {
 
 	struct Block {
 		std::string name;
-		std::vector<Statement> statements;
+		std::vector<Statement<function_context>> statements;
 	};
 
 	struct NameSpace {

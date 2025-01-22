@@ -13,35 +13,36 @@ exists:
     sf__Socket:
         type Status:
 
-template Tuple<Ts...>:
-    type Tuple:
+template tuple_of_optionals<Ts...>:
+    type tuple_of_optionals:
         #ifor i, T in type_list<`Ts...`>:
-            T ref ? member_##i
+            T? member_##i
 
-template provide<Ts..., U>:
-    Void provide(ServerServiceProvider<`Ts...`> ref! provider, `U` ref service):
+template add<Ts..., U>:
+    tuple_of_optionals<`Ts...`> add(tuple_of_optionals<`Ts...`> val services, `U` val service):
         #Bool found = False
         #ifor i, T in type_list<`Ts...`>:
             #if T == `U`/*<`Ts...`>*/:
                 #found = True
-                provider.service##i = { ref service }
+                services.service##i = { ref service }
         #if !found:
             #compile_time_error()
+        return services
 
 template request<Ts..., U>:
-    `U` ref request(ServerServiceProvider<`Ts...`> ref provider):
+    `U` ref request(tuple_of_optionals<`Ts...`> ref services):
         #Bool found = False
         #ifor i, T in type_list<`Ts...`>:
             #if T == `U`:
                 #found = True
-                return provider.service##i
+                return services.service##i
         #if !found:
             #compile_time_error()
 
-using ServerServiceProviderImpl = ServerServiceProvider<DB>
+using Services = tuple_of_optionals<DB>
 
 type DB:
-    ServerServiceProviderImpl ref provider
+    Services ref services
 
 // type ObjectFactory:
 // type Map:
@@ -55,30 +56,30 @@ type DB:
 
 Int main(Vector<String> ref args):
 	// srand(time(NULL));
-    ServerServiceProviderImpl provider = { { None } }
-    DB db = { provider }
+    Services services = { { None } }
+    DB db = { services }
     Int? x = 0
-    provide<DB, DB>(provider, db)
-//    provider.provide<DB, DB>(db)
-//    db.provide<DB, DB>(provider)
-//    (provider, db).provide<DB, DB>()
+    provide<DB, DB>(services, db)
+//    services.provide<DB, DB>(db)
+//    db.provide<DB, DB>(services)
+//    (services, db).provide<DB, DB>()
 
-//    auto db_ref = provider.request()
+//    auto db_ref = services.request()
 
 //    Int a = 0
 //    Int b = 1
 //    Bool c = a > ? b
     
-	// DB db(&provider, 5);
+	// DB db(&services, 5);
 	// ObjectFactory objf;
-	// Map map(&provider, objf);
-	// UserService userService(&provider);
-	// PlayerActionService playerActionService(&provider);
-	// SocketServerService server(&provider, 38838);
+	// Map map(&services, objf);
+	// UserService userService(&services);
+	// PlayerActionService playerActionService(&services);
+	// SocketServerService server(&services, 38838);
 	// ClockTickScheduler tickScheduler;
-	// TaskScheduler scheduler(&provider);
-	// ObjectService os(&provider);
-	// App app(&provider, &tickScheduler);
+	// TaskScheduler scheduler(&services);
+	// ObjectService os(&services);
+	// App app(&services, &tickScheduler);
 	// app.init();
 	// app.start();
 

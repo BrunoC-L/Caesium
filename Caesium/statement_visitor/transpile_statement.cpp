@@ -1,27 +1,17 @@
 #include "../core/toCPP.hpp"
 
-using T = transpile_statement_visitor;
-using R = T::R;
+using R = transpile_t;
 
-R T::operator()(const NodeStructs::Expression& statement) {
-	auto repr =  transpile_expression(state, variables, statement);
-	return_if_error(repr);
-	if (!std::holds_alternative<non_type_information>(repr.value()))
-		throw;
-	const auto& repr_ok = std::get<non_type_information>(repr.value());
-	return repr_ok.representation + ";\n";
-}
-
+template <typename context, bool is_compile_time>
 R f(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::VariableDeclarationStatement& statement,
+	const NodeStructs::VariableDeclarationStatement<context>& statement,
 	const NodeStructs::MetaType& type,
 	const std::string& type_repr,
-	non_type_information assigned_expression_ok,
-	bool is_compile_time
+	non_type_information assigned_expression_ok
 ) {
-	if (is_compile_time) {
+	if constexpr (is_compile_time) {
 		if (holds<NodeStructs::CompileTimeType>(type))
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(assigned_expression_ok.type) });
 		else if (holds<NodeStructs::PrimitiveType>(type))
@@ -50,7 +40,28 @@ R f(
 	}
 }
 
-R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Expression& statement
+) {
+	auto repr =  transpile_expression(state, variables, statement);
+	return_if_error(repr);
+	if (!std::holds_alternative<non_type_information>(repr.value()))
+		throw;
+	const auto& repr_ok = std::get<non_type_information>(repr.value());
+	return repr_ok.representation + ";\n";
+}
+
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::VariableDeclarationStatement<context>& statement
+) {
 	bool is_aggregate_init = holds<NodeStructs::BraceArguments>(statement.expr);
 	bool is_auto = cmp(statement.type.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::weak_ordering::equivalent;
 	if (is_auto) {
@@ -108,14 +119,14 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 		auto assignable = assigned_to(state, variables, type.value(), assigned_expression_ok.type)._value;
 		return std::visit(overload(
 			[&](const directly_assignable& assignable) -> R {
-				return f(state, variables, statement, type.value(), type_repr.value(), std::move(assigned_expression_ok), is_compile_time);
+				return f<context, is_compile_time>(state, variables, statement, type.value(), type_repr.value(), std::move(assigned_expression_ok));
 			},
 			[&](requires_conversion& assignable) -> R {
 				transpile_expression_information_t converted = assignable.converter(state, variables, statement.expr);
 				return_if_error(converted);
 				if (!std::holds_alternative<non_type_information>(converted.value()))
 					throw;
-				return f(state, variables, statement, type.value(), type_repr.value(), std::get<non_type_information>(std::move(converted).value()), is_compile_time);
+				return f<context, is_compile_time>(state, variables, statement, type.value(), type_repr.value(), std::get<non_type_information>(std::move(converted).value()));
 			},
 			[&](const not_assignable&) -> R {
 				return error{
@@ -131,8 +142,14 @@ R T::operator()(const NodeStructs::VariableDeclarationStatement& statement) {
 	}
 }
 
-R T::operator()(const NodeStructs::IfStatement& statement) {
-	if (is_compile_time) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::IfStatement<context>& statement
+) {
+	if constexpr (is_compile_time) {
 		auto cnd = transpile_expression(state, variables, statement.ifExpr);
 		return_if_error(cnd);
 		if (!std::holds_alternative<non_type_information>(cnd.value()))
@@ -183,10 +200,10 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 			indent(state.indent) + "} else " +
 			std::visit(
 				overload(overload_default_error,
-					[&](const NonCopyableBox<NodeStructs::IfStatement>& elseif) {
-						return operator()(elseif.get()).value();
+					[&](const NonCopyableBox<NodeStructs::IfStatement<context>>& elseif) {
+						return transpile_statement_specific<context, is_compile_time>(state, variables, expected_return_type, elseif.get()).value();
 					},
-					[&](const std::vector<NodeStructs::Statement>& justelse) {
+					[&](const std::vector<NodeStructs::Statement<context>>& justelse) {
 						return "{\n" + transpile(state.indented(), variables, justelse, expected_return_type).value() + indent(state.indent) + "}\n";
 					}
 				),
@@ -210,16 +227,15 @@ R T::operator()(const NodeStructs::IfStatement& statement) {
 
 struct empty_tag {};
 
-template <bool ifor>
+template <bool ifor, bool is_compile_time>
 R transpile_for_or_ifor_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::MetaType& expected_return_type,
 	const auto& statement,
-	const auto& index_or_none,
-	bool is_compile_time
+	const auto& index_or_none
 ) {
-	if (is_compile_time) {
+	if constexpr (is_compile_time) {
 		auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
 		return_if_error(coll_type_or_e);
 		if (!std::holds_alternative<type_information>(coll_type_or_e.value()))
@@ -308,15 +324,33 @@ R transpile_for_or_ifor_statement(
 	}
 }
 
-R T::operator()(const NodeStructs::ForStatement& statement) {
-	return transpile_for_or_ifor_statement<false>(state, variables, expected_return_type, statement, empty_tag{}, is_compile_time);
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::ForStatement<context>& statement
+) {
+	return transpile_for_or_ifor_statement<false, is_compile_time>(state, variables, expected_return_type, statement, empty_tag{});
 }
 
-R T::operator()(const NodeStructs::IForStatement& statement) {
-	return transpile_for_or_ifor_statement<true>(state, variables, expected_return_type, statement.for_statement, statement.index_iterator, is_compile_time);
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::IForStatement<context>& statement
+) {
+	return transpile_for_or_ifor_statement<true, is_compile_time>(state, variables, expected_return_type, statement.for_statement, statement.index_iterator);
 }
 
-R T::operator()(const NodeStructs::WhileStatement& statement) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::WhileStatement<context>& statement
+) {
 	auto while_expr_info = transpile_expression(state, variables, statement.whileExpr);
 	return_if_error(while_expr_info);
 	if (!std::holds_alternative<non_type_information>(while_expr_info.value()))
@@ -327,7 +361,13 @@ R T::operator()(const NodeStructs::WhileStatement& statement) {
 	return "while (" + while_expr_info_ok.representation + ") {\n" + transpiled_statements.value() + indent(state.indent) + "}\n";
 }
 
-R T::operator()(const NodeStructs::BreakStatement& statement) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::BreakStatement<context>& statement
+) {
 	if (!statement.ifExpr.has_value())
 		return "break;\n";
 	auto s1 = transpile_expression(state, variables, statement.ifExpr.value());
@@ -338,7 +378,13 @@ R T::operator()(const NodeStructs::BreakStatement& statement) {
 	return "if (" + s1_ok.representation + ") break;\n";
 }
 
-R T::operator()(const NodeStructs::ReturnStatement& statement) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::ReturnStatement<context>& statement
+) {
 	if (statement.returnExpr.size() == 0)
 		return "return;\n";
 	if (statement.returnExpr.size() != 1)
@@ -385,20 +431,32 @@ R T::operator()(const NodeStructs::ReturnStatement& statement) {
 		return "return " + return_expression.value() + ";\n";
 }
 
-R T::operator()(const NodeStructs::BlockStatement& statement) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::BlockStatement<context>& statement
+) {
 	const auto& s = get<NodeStructs::BaseTypename>(statement.parametrized_block).type;
 	if (state.state.global_namespace.blocks.contains(s)) {
 		const NodeStructs::Block& block = state.state.global_namespace.blocks.at(s).back();
 		std::stringstream ss;
 		for (const auto& statement_in_block : block.statements)
-			ss << operator()(statement_in_block).value();
+			ss << transpile_statement(state, variables, expected_return_type, statement_in_block).value();
 		return ss.str();
 	}
 	else
 		return error{ "user error", "bad block name" + s };
 }
 
-R T::operator()(const NodeStructs::MatchStatement& statement) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::MatchStatement<context>& statement
+) {
 	std::stringstream ss;
 	if (statement.expressions.size() != 1)
 		throw;
@@ -415,7 +473,7 @@ R T::operator()(const NodeStructs::MatchStatement& statement) {
 	return_if_error(tn_repr);
 	unsigned id = state.state.current_variable_unique_id++;
 	ss << "const " << tn_repr.value() << "& matchval" << id << " = " << expr_ok.representation << ";\n";
-	for (const NodeStructs::MatchCase& match_case : statement.cases) {
+	for (const NodeStructs::MatchCase<context>& match_case : statement.cases) {
 		auto tn = transpile_typename(state, variables, match_case.variable_declarations.at(0).first);
 		return_if_error(tn);
 		const auto& varname = match_case.variable_declarations.at(0).second;
@@ -478,17 +536,17 @@ std::string case_fix<Token<STRING>>(std::string case_expr) {
 	return case_expr;
 }
 
-template <typename token_string_or_token_int>
+template <typename token_string_or_token_int, typename context>
 R int_or_char_switch(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::MetaType& expected_return_type,
-	const NodeStructs::SwitchStatement& statement,
+	const NodeStructs::SwitchStatement<context>& statement,
 	const non_type_information& expr_info_ok
 ) {
 	std::stringstream ss;
 	ss << "switch (" << expr_info_ok.representation << ") {\n";
-	for (const NodeStructs::SwitchCase& switch_case : statement.cases) {
+	for (const NodeStructs::SwitchCase<context>& switch_case : statement.cases) {
 		const auto& [switch_expr, switch_statements] = switch_case;
 		if (!std::holds_alternative<token_string_or_token_int>(switch_expr.expression.get()._value))
 			throw;
@@ -504,17 +562,23 @@ R int_or_char_switch(
 	return ss.str();
 }
 
-R T::operator()(const NodeStructs::SwitchStatement& statement) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::SwitchStatement<context>& statement
+) {
 	auto expr_info = transpile_expression(state, variables, statement.expr);
 	return_if_error(expr_info);
 	if (!std::holds_alternative<non_type_information>(expr_info.value()))
 		throw;
 	const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
 	if (is_int(expr_info_ok.type)) {
-		return int_or_char_switch<Token<INTEGER_NUMBER>>(state, variables, expected_return_type, statement, expr_info_ok);
+		return int_or_char_switch<Token<INTEGER_NUMBER>, context>(state, variables, expected_return_type, statement, expr_info_ok);
 	}
 	if (is_char(expr_info_ok.type)) {
-		return int_or_char_switch<Token<STRING>>(state, variables, expected_return_type, statement, expr_info_ok);
+		return int_or_char_switch<Token<STRING>, context>(state, variables, expected_return_type, statement, expr_info_ok);
 	}
 	if (is_floating(expr_info_ok.type)) {
 		throw;
@@ -525,8 +589,14 @@ R T::operator()(const NodeStructs::SwitchStatement& statement) {
 	throw;
 }
 
-R T::operator()(const NodeStructs::Assignment& statement) {
-	if (is_compile_time) {
+template <typename context, bool is_compile_time>
+R transpile_statement_specific(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Assignment<context>& statement
+) {
+	if constexpr (is_compile_time) {
 		if (!holds<std::string>(statement.left))
 			throw;
 		const std::string& var = get<std::string>(statement.left);
@@ -564,4 +634,46 @@ R T::operator()(const NodeStructs::Assignment& statement) {
 			throw;
 		return std::get<non_type_information>(left.value()).representation + " = " + std::get<non_type_information>(right.value()).representation + ";\n";
 	}
+}
+
+R transpile_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Statement<grammar::function_context>& statement
+) {
+	if (statement.is_compile_time)
+		return std::visit(
+			[&](const auto& st) -> R {
+				return transpile_statement_specific<grammar::function_context, true>(state, variables, expected_return_type, st);
+			},
+			statement.statement.get()._value
+		);
+	else
+		return std::visit(
+			[&](const auto& st) -> R {
+				return transpile_statement_specific<grammar::function_context, false>(state, variables, expected_return_type, st);
+			},
+			statement.statement.get()._value
+		);
+}
+
+R transpile_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Statement<grammar::type_context>& statement
+) {
+	throw;
+	//return transpile_statement_visitor<context>{ {}, state, variables, expected_return_type }(statement);
+}
+
+R transpile_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Statement<grammar::top_level_context>& statement
+) {
+	throw;
+	//return transpile_statement_visitor<context>{ {}, state, variables, expected_return_type }(statement);
 }

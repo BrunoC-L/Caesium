@@ -254,7 +254,7 @@ NodeStructs::Function getStruct(const std::string& file_name, const std::vector<
 				return res;
 			})
 			| to_vec(),
-		.statements = getStatements(file_name, vec, f.get<grammar::ColonIndentCodeBlock>())
+		.statements = getStatements(file_name, vec, f.get<grammar::ColonIndentCodeBlock<grammar::function_context>>())
 	};
 }
 
@@ -343,47 +343,52 @@ NodeStructs::Alias getStruct(const std::string& file_name, const std::vector<Tok
 }
 
 NodeStructs::Type getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Type& t, std::optional<NodeStructs::Typename> name_space) {
-	auto elems = t.get<Indent<Star<And<IndentToken, grammar::TypeElement>>>>().get_view<grammar::TypeElement>()
+	auto elems = t.get<Indent<Star<grammar::TypeElement>>>().get_view<grammar::TypeElement>()
 		| std::views::transform([&](auto&& e) { return e.value(); });
 	return {
 		.name = t.get<grammar::Word>().value,
 		.name_space = copy(name_space),
 		.aliases = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t, copy(name_space)); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<And<IndentToken, grammar::Alias>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<And<IndentToken, grammar::Alias>>(e); })
+			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t.get<grammar::Alias>(), copy(name_space)); })
 			| to_vec(),
 		.member_variables = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<And<IndentToken, grammar::MemberVariable>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<And<IndentToken, grammar::MemberVariable>>(e); })
+			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t.get<grammar::MemberVariable>()); })
+			| to_vec(),
+		.compile_time_statements = elems
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Statement<type_context>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<grammar::Statement<type_context>>(e); })
+			| std::views::transform([&](auto&& t) { return get_base_statement_struct(file_name, vec, t); })
 			| to_vec(),
 		.rule_info = rule_info_from_rule(file_name, vec, t.get<grammar::Word>())
 	};
 }
 
-NodeStructs::Interface getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Interface& interface, std::optional<NodeStructs::Typename> name_space) {
-	using Member = Or<
-		grammar::Alias,
-		grammar::MemberVariable
-	>;
-	using Members = Indent<Star<And<IndentToken, Member>>>;
-	auto elems = interface.get<Members>().get_view<Member>()
+NodeStructs::Interface getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Interface& t, std::optional<NodeStructs::Typename> name_space) {
+	auto elems = t.get<Indent<Star<grammar::TypeElement>>>().get_view<grammar::TypeElement>()
 		| std::views::transform([&](auto&& e) { return e.value(); });
 	return {
-		.name = interface.get<grammar::Word>().value,
+		.name = t.get<grammar::Word>().value,
 		.name_space = copy(name_space),
 		.aliases = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t, copy(name_space)); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<And<IndentToken, grammar::Alias>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<And<IndentToken, grammar::Alias>>(e); })
+			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t.get<grammar::Alias>(), copy(name_space)); })
 			| to_vec(),
 		.member_variables = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<And<IndentToken, grammar::MemberVariable>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<And<IndentToken, grammar::MemberVariable>>(e); })
+			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t.get<grammar::MemberVariable>()); })
 			| to_vec(),
-		.rule_info = rule_info_from_rule(file_name, vec, interface)
+		/*.compile_time_statements = elems
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::StatementOpts<grammar::type_context>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<grammar::StatementOpts<grammar::type_context>>(e); })
+			| std::views::transform([&](auto&& t) { return getStatementStruct(file_name, vec, t); })
+			| to_vec(),*/
+		.rule_info = rule_info_from_rule(file_name, vec, t.get<grammar::Word>())
 	};
 }
 
@@ -930,215 +935,16 @@ NodeStructs::Expression getExpressionStruct(const std::string& file_name, const 
 		return getExpressionStruct(file_name, vec, expr.get<grammar::OrExpression>());
 }
 
-NodeStructs::Expression getExpressionStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::ExpressionStatement& statement) {
+template <typename context>
+NodeStructs::Expression getExpressionStruct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::ExpressionStatement<context>& statement
+) {
 	return getExpressionStruct(file_name, vec, statement.get<grammar::Expression>());
 }
 
-NodeStructs::Expression getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::ExpressionStatement& statement) {
-	return getExpressionStruct(file_name, vec, statement);
-}
 
-auto getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const Expect<grammar::Statement<grammar::function_context>>& statement) {
-	const grammar::Statement<grammar::function_context>& st = statement;
-	return getStatementStruct(file_name, vec, st);
-}
-
-NodeStructs::VariableDeclarationStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::VariableDeclarationStatement& statement) {
-	return {
-		getStruct(file_name, vec, statement.get<grammar::Typename>(), tag_allow_value_category_or_empty{}),
-		statement.get<grammar::Word>().value, getExpressionStruct(file_name, vec, statement.get<grammar::Expression>())
-	};
-}
-
-std::vector<NodeStructs::Statement> getStatements(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::ColonIndentCodeBlock& code) {
-	return code.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>>>().get<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>()
-		| std::views::transform(
-			[&](const Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>& e)
-			-> const std::variant<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>&{
-				return e.value();
-			})
-		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement<grammar::function_context>>>(e); })
-				| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement<grammar::function_context>>>(e); })
-				| std::views::transform([&](const Expect<grammar::Statement<grammar::function_context>>& e) { return getStatementStruct(file_name, vec, e); })
-				| to_vec();
-}
-
-NodeStructs::BlockStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::BlockStatement& statement) {
-	// wtf even is this right now it doesn't make sense
-	throw;
-	//return { getStruct(statement.get<grammar::Typename>()) };
-}
-
-NodeStructs::IfStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::IfStatement& statement) {
-	using T = Variant<NonCopyableBox<NodeStructs::IfStatement>, std::vector<NodeStructs::Statement>>;
-	return {
-		getExpressionStruct(file_name, vec, statement.get<grammar::Expression>()),
-		getStatements(file_name, vec, statement.get<grammar::ColonIndentCodeBlock>()),
-		statement.get<Opt<Alloc<grammar::ElseStatement>>>().node.transform([&](const auto& e) -> T {
-			return std::visit(
-				overload(overload_default_error,
-					[&](const Alloc<grammar::IfStatement>& e) -> T {
-						return getStatementStruct(file_name, vec, e.get());
-					},
-					[&](const grammar::ColonIndentCodeBlock& e) -> T {
-						return getStatements(file_name, vec, e);
-					}
-				),
-				e.get()
-				.get<Or<Alloc<grammar::IfStatement>, grammar::ColonIndentCodeBlock>>()
-				.value()
-			);
-		})
-	};
-}
-
-NodeStructs::ForStatement getForStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& statement) {
-	return {
-		.collection = getExpressionStruct(file_name, vec, statement.get<grammar::Expression>()),
-		.iterators = statement.get<CommaPlus<Or<grammar::VariableDeclaration, grammar::Word>>>().get<Or<grammar::VariableDeclaration, grammar::Word>>()
-			| std::views::transform([&](const Or<grammar::VariableDeclaration, grammar::Word>& or_node) {
-				return std::visit(overload(
-					[&](const grammar::Word& e) -> Variant<NodeStructs::VariableDeclaration, std::string> {
-						return { e.value };
-					},
-					[&](const grammar::VariableDeclaration& e) -> Variant<NodeStructs::VariableDeclaration, std::string> {
-						return NodeStructs::VariableDeclaration{
-							getStruct(file_name, vec, e.get<grammar::Typename>(), tag_allow_value_category_or_empty{}),
-							e.get<grammar::Word>().value
-						};
-					}
-				), or_node.value());
-			})
-			| to_vec(),
-		.statements = getStatements(file_name, vec, statement.get<grammar::ColonIndentCodeBlock>())
-	};
-}
-
-NodeStructs::ForStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::ForStatement& statement) {
-	return getForStatementStruct(file_name, vec, statement);
-}
-
-NodeStructs::IForStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::IForStatement& statement) {
-	return {
-		statement.get<grammar::Word>().value,
-		getForStatementStruct(file_name, vec, statement)
-	};
-}
-
-NodeStructs::WhileStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::WhileStatement& statement) {
-	return {
-		getExpressionStruct(file_name, vec, statement.get<grammar::Expression>()),
-		getStatements(file_name, vec, statement.get<grammar::ColonIndentCodeBlock>())
-	};
-}
-
-NodeStructs::MatchCase getCase(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& typenames, const auto& statements) {
-	return {
-		typenames
-		| std::views::transform([&](auto&& variable_declaration) {
-			return std::pair{
-				getStruct(file_name, vec, variable_declaration.get<grammar::Typename>(), tag_allow_value_category_or_empty{}),
-				variable_declaration.get<grammar::Word>().value
-			}; })
-		| to_vec(),
-		statements
-		| std::views::transform([&](auto&& e) { return e.value(); })
-		| std::views::filter([&](auto&& e) { return std::holds_alternative<Expect<grammar::Statement<grammar::function_context>>>(e); })
-		| std::views::transform([&](auto&& e) { return std::get<Expect<grammar::Statement<grammar::function_context>>>(e); })
-		| std::views::transform([&](auto&& e) { return getStatementStruct(file_name, vec, e); })
-		| to_vec()
-	};
-}
-
-std::vector<NodeStructs::MatchCase> getCases(const std::string& file_name, const std::vector<TokenValue>& vec, const Indent<Plus<And<IndentToken, CommaPlus<grammar::VariableDeclaration>, grammar::ColonIndentCodeBlock>>>& cases) {
-	std::vector<NodeStructs::MatchCase> res;
-	res.reserve(cases.nodes.size());
-	for (const auto& and_node : cases.nodes) {
-		const auto& [_, typenames, statements] = and_node.value;
-		res.push_back(getCase(
-			file_name,
-			vec,
-			typenames.nodes,
-			statements.get<Indent<Star<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>>>().get_view<Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>>()
-		));
-	}
-	return res;
-}
-
-NodeStructs::MatchStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::MatchStatement& statement) {
-	return {
-		statement.get<CommaPlus<grammar::Expression>>().get_view<grammar::Expression>()
-			| std::views::transform([&](auto&& e) { return getExpressionStruct(file_name, vec, e); })
-			| to_vec(),
-		getCases(file_name, vec, statement.get<Indent<Plus<And<
-			IndentToken,
-			CommaPlus<grammar::VariableDeclaration>,
-			grammar::ColonIndentCodeBlock
-		>>>>())
-	};
-}
-
-NodeStructs::BreakStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::BreakStatement& statement) {
-	return {
-		statement.get<Opt<And<Token<IF>, grammar::Expression>>>().has_value()
-			? getExpressionStruct(file_name, vec, statement.get<Opt<And<Token<IF>, grammar::Expression>>>().value().get<grammar::Expression>())
-			: std::optional<NodeStructs::Expression>{}
-	};
-}
-
-std::vector<NodeStructs::Expression> getExpressions(
-	const std::string& file_name, const std::vector<TokenValue>& vec, const std::vector<grammar::Expression>& expressions
-) {
-	return expressions
-		| std::views::transform([&](auto&& e) { return getExpressionStruct(file_name, vec, e); })
-		| to_vec();
-}
-
-NodeStructs::ReturnStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::ReturnStatement& statement) {
-	std::vector<NodeStructs::FunctionArgument> returns = statement.get<CommaStar<grammar::FunctionArgument>>().get<grammar::FunctionArgument>()
-		| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e); })
-		| to_vec();
-	return {
-		std::move(returns),
-		statement.get<Opt<And<Token<IF>, grammar::Expression>>>().has_value()
-			? getExpressionStruct(file_name, vec, statement.get<Opt<And<Token<IF>, grammar::Expression>>>().value().get<grammar::Expression>())
-			: std::optional<NodeStructs::Expression>{}
-	};
-}
-
-NodeStructs::SwitchStatement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::SwitchStatement& statement) {
-	return NodeStructs::SwitchStatement{
-		.expr = getExpressionStruct(file_name, vec, statement.get<grammar::Expression>()),
-		.cases = statement.get<Indent<Star<And<
-			IndentToken,
-			grammar::Expression,
-			grammar::ColonIndentCodeBlock
-		>>>>().get<And<IndentToken, grammar::Expression, grammar::ColonIndentCodeBlock>>()
-		| std::views::transform([&](const And<IndentToken, grammar::Expression, grammar::ColonIndentCodeBlock>& switch_case) {
-			return NodeStructs::SwitchCase{
-				getExpressionStruct(file_name, vec, switch_case.get<grammar::Expression>()),
-				getStatements(file_name, vec, switch_case.get<grammar::ColonIndentCodeBlock>())
-			};
-		})
-		| to_vec()
-	};
-}
-
-NodeStructs::Assignment getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Assignment& statement) {
-	return { getExpressionStruct(file_name, vec, statement.get<grammar::Expression, 0>()), getExpressionStruct(file_name, vec, statement.get<grammar::Expression, 1>()) };
-}
-
-NodeStructs::Statement getStatementStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Statement<grammar::function_context>& statement) {
-	return NodeStructs::Statement{
-		std::visit(
-			[&](const auto& statement) -> NodeStructs::Statement::vt {
-				return { getStatementStruct(file_name, vec, statement) };
-			},
-			statement.get<grammar::StatementOpts>().get().value()
-		),
-		statement.get<Opt<Token<POUND>>>().has_value()
-	};
-}
 
 NodeStructs::WordTypenameOrExpression getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::TypenameOrExpression& t, tag_expect_value_category) {
 	return getTypenameOrExpressionStruct<tag_expect_value_category>(file_name, vec, t);
@@ -1158,4 +964,88 @@ std::string accumulate_content(const std::vector<TokenValue>& vec, const unsigne
 	while (it != end)
 		ss << vec[it++].second;
 	return ss.str();
+}
+
+std::vector<NodeStructs::Expression> getExpressions(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const std::vector<grammar::Expression>& expressions
+) {
+	return expressions
+		| std::views::transform([&](auto&& e) { return getExpressionStruct(file_name, vec, e); })
+		| to_vec();
+}
+
+template <template <typename> typename Statement, typename context>
+NodeStructs::Statement<context>::vt test123(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const Statement<context>& statement
+) {
+	return { getStatementStruct<context>(file_name, vec, statement) };
+}
+
+NodeStructs::Statement<grammar::function_context> get_base_statement_struct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::Statement<grammar::function_context>& statement
+) {
+	return NodeStructs::Statement<grammar::function_context>{
+		std::visit(overload(
+				[&](const auto& x) -> NodeStructs::Statement<grammar::function_context>::vt {
+					return test123(file_name, vec, x);
+				}
+			),
+			statement.get<grammar::StatementOpts<grammar::function_context>>().get().value()
+		),
+			statement.get<Opt<Token<POUND>>>().has_value()
+	};
+}
+
+NodeStructs::Statement<grammar::type_context> get_base_statement_struct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::Statement<grammar::type_context>& statement
+) {
+	using R = NodeStructs::Statement<grammar::type_context>::vt;
+	return NodeStructs::Statement<grammar::type_context>{
+		std::visit(overload(
+				[&](const And<IndentToken, Token<POUND>, grammar::StatementOpts<type_context>>& st) -> R {
+					return std::visit([&](const auto& sto) -> R {
+						return test123(file_name, vec, sto);
+					}, st.get<grammar::StatementOpts<type_context>>().get().value());
+				},
+				[&](const And<IndentToken, grammar::Alias>& x) -> R {
+					return getStruct(file_name, vec, x.get<grammar::Alias>(), std::nullopt);
+				},
+				[&](const And<IndentToken, grammar::MemberVariable>& x) -> R {
+					return getStruct(file_name, vec, x.get<grammar::MemberVariable>());
+				}
+			),
+			statement.value()
+		)
+	};
+}
+
+NodeStructs::Statement<grammar::top_level_context> get_base_statement_struct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::Statement<grammar::top_level_context>& statement
+) {
+	throw;
+	//return NodeStructs::Statement<grammar::top_level_context>{
+	//	std::visit(overload(
+	//		[&](const auto& x) -> NodeStructs::Statement<grammar::top_level_context>::vt {
+	//			return test123(file_name, vec, x);
+	//		}/*,
+	//		[&](const grammar::Alias& x) -> NodeStructs::Statement<grammar::top_level_context>::vt {
+	//			return getStruct(file_name, vec, x);
+	//		},
+	//		[&](const grammar::MemberVariable& x) -> NodeStructs::Statement<grammar::top_level_context>::vt {
+	//			return getStruct(file_name, vec, x);
+	//		}*/
+	//			),
+	//		statement.get<grammar::StatementOpts<grammar::top_level_context>>().get().value()
+	//	)
+	//};
 }

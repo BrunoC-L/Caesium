@@ -142,8 +142,7 @@ bool test_structurize_equals() {
 			}, tests_rule_info_stub()
 		));
 
-	throw
-	/*ok &= test_structurize_equals<Template>(__LINE__, 0, "template f<T>:\n\tInt f(Vector<`T`> ref vec):\n\t\treturn 0",
+	ok &= test_structurize_equals<Template>(__LINE__, 0, "template f<T>:\n\tInt f(Vector<`T`> ref vec):\n\t\treturn 0",
 		NodeStructs::Template{
 			.name = "f",
 			.name_space = std::nullopt,
@@ -154,7 +153,7 @@ bool test_structurize_equals() {
 			.templated = "\tInt f(Vector<`T`> ref vec):\n\t\treturn 0",
 			.indent = 1,
 			.rule_info = tests_rule_info_stub()
-		});*/
+		});
 
 	ok &= test_structurize_equals<Function>(__LINE__, 0, "A f(A ref a):\n\tprintln(a)\n",
 		NodeStructs::Function{
@@ -165,7 +164,7 @@ bool test_structurize_equals() {
 				.typename_ = make_typename(NodeStructs::BaseTypename{ "A" }, NodeStructs::Reference{}, tests_rule_info_stub()),
 				.name = "a",
 			}),
-			.statements = as_vec(NodeStructs::Statement{
+			.statements = as_vec(NodeStructs::Statement<function_context>{
 				make_expression(
 					NodeStructs::CallExpression{
 						.operand = make_expression("println", tests_rule_info_stub()),

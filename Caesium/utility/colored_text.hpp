@@ -15,20 +15,20 @@ struct output_stream_colors {
 	constexpr static self_t(reset, "\033[0m");
 };
 
-std::string colored_text(auto&& text, auto&& color) {
+static std::string colored_text(auto&& text, auto&& color) {
 	std::stringstream ss;
 	ss << color << text << output_stream_colors::reset;
 	return std::move(ss).str();
 }
 
-std::string colored_text(bool b, auto&& color) {
+static std::string colored_text(bool b, auto&& color) {
 	return colored_text(b ? "true" : "false", std::forward<decltype(color)>(color));
 }
 
-std::string colored_text_with_bool(auto&& text, bool b) {
+static std::string colored_text_with_bool(auto&& text, bool b) {
 	return colored_text(text, b ? output_stream_colors::green : output_stream_colors::red);
 }
 
-std::string colored_text_from_bool(bool b) {
+static std::string colored_text_from_bool(bool b) {
 	return colored_text_with_bool(b, b);
 }

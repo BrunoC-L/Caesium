@@ -13,19 +13,17 @@ int main(int argc, char** argv) {
 
 	std::cout << std::boolalpha;
 
-	if (argc > 2) { // todo check the arguments for like --run_tests or -t
-		if (!test_parse())
-			return bad_exit;
-		std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
+	if (!test_parse())
+		return bad_exit;
+	std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
 
-		if (!test_structurize_equals())
-			return bad_exit;
-		std::cout << colored_text("All structurize tests passed\n", output_stream_colors::green);
+	if (!test_structurize_equals())
+		return bad_exit;
+	std::cout << colored_text("All structurize tests passed\n", output_stream_colors::green);
 
-		if (!test_template_selection())
-			return bad_exit;
-		std::cout << colored_text("All template selection tests passed\n", output_stream_colors::green);
-	}
+	if (!test_template_selection())
+		return bad_exit;
+	std::cout << colored_text("All template selection tests passed\n", output_stream_colors::green);
 
 	if (!test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }))
 		return bad_exit;

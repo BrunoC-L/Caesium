@@ -17,7 +17,7 @@ static NodeStructs::File caesium2AST(const std::filesystem::path& file_name) {
 	Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = file_name.stem().generic_string() };
 	if (build(file, it)) {
 		std::cout << file_name << ": built\n";
-		return getStruct(file, file_name.stem().generic_string() + ".caesium");
+		return getStruct(file_name.stem().generic_string() + ".caesium", tokens, file);
 	}
 	else {
 		std::cout << file_name << ": not built\n";

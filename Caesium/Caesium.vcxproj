@@ -152,9 +152,9 @@
     <ClCompile Include="expression_visitor\expression_for_template_visitor.cpp" />
     <ClCompile Include="core\structurizer.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
+    <ClCompile Include="statement_visitor\transpile_statement.cpp" />
     <ClCompile Include="typename_visitor\typename_for_template_visitor.cpp" />
     <ClCompile Include="type_visitor\transpile_member_call_visitor.cpp" />
-    <ClCompile Include="statement_visitor\transpile_statement_visitor.cpp" />
     <ClCompile Include="typename_visitor\transpile_typename_visitor.cpp" />
     <ClCompile Include="type_visitor\traverse_type_visitor.cpp" />
     <ClCompile Include="type_visitor\typename_of_type_visitor.cpp" />
@@ -170,6 +170,7 @@
     <ClInclude Include="core\default_includes.hpp" />
     <ClInclude Include="core\helpers.hpp" />
     <ClInclude Include="core\parse.hpp" />
+    <ClInclude Include="statement_visitor\transpile_statement.hpp" />
     <ClInclude Include="typename_visitor\typename_for_template_visitor.hpp" />
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
     <ClInclude Include="type_visitor\typename_of_type_visitor.hpp" />
@@ -191,10 +192,8 @@
     <ClInclude Include="core\grammar.hpp" />
     <ClInclude Include="core\primitives.hpp" />
     <ClInclude Include="utility\replace_all.hpp" />
-    <ClInclude Include="statement_visitor\statement_visitor.hpp" />
     <ClInclude Include="core\structurizer.hpp" />
     <ClInclude Include="expression_visitor\transpile_expression_visitor.hpp" />
-    <ClInclude Include="statement_visitor\transpile_statement_visitor.hpp" />
     <ClInclude Include="typename_visitor\transpile_typename_visitor.hpp" />
     <ClInclude Include="type_visitor\traverse_type_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_postfix_member_visitor.hpp" />

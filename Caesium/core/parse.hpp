@@ -124,7 +124,7 @@ bool build(And<Ands...>& and_, Iterator& it) {
 				it.index = temp;
 				failed = true;
 			}
-			});
+		});
 		and_.end_offset = it.index;
 		return !failed;
 	}
@@ -146,7 +146,7 @@ bool build(And<Ands...>& and_, Iterator& it) {
 			}
 			if constexpr (is_specialization<std::remove_cvref_t<decltype(node)>, Commit>::value)
 				commited = true;
-			});
+		});
 		and_.end_offset = it.index;
 		return !failed;
 	}
@@ -154,6 +154,7 @@ bool build(And<Ands...>& and_, Iterator& it) {
 
 template <typename... Ors>
 bool build(Or<Ors...>& or_, Iterator& it) {
+	using T = Or<Ors...>;
 	or_.beg_offset = it.index;
 	bool populated = false;
 	([&] {
@@ -165,7 +166,7 @@ bool build(Or<Ors...>& or_, Iterator& it) {
 			or_._value.emplace(std::move(node));
 			populated = true;
 		}
-		}(), ...);
+	}(), ...);
 	or_.end_offset = it.index;
 	return populated;
 }
@@ -214,9 +215,39 @@ bool build(Expect<T>& x, Iterator& it) {
 	return true;
 }
 
-// specialize build for statements or newlines
-bool build(Or<Token<NEWLINE>, Expect<grammar::Statement<grammar::function_context>>>& x, Iterator& it);
-// specialize build for typename or expression
+// specialize build for following types:
 bool build(grammar::TypenameOrExpression& x, Iterator& it);
-
 bool build(grammar::CompareOperator&, Iterator&);
+
+template <typename context>
+bool build(Or<Token<NEWLINE>, Expect<grammar::Statement<context>>>& x, Iterator& it) {
+	x.beg_offset = it.index;
+	// if its a new line OK
+	{
+		auto node = Token<NEWLINE>(x.n_indent);
+		bool built = build(node, it);
+		if (built) {
+			x._value.emplace(std::move(node));
+			x.end_offset = it.index;
+			return true;
+		}
+	}
+	// if its not a new line
+	{
+		auto temp = it;
+		auto indent_node = IndentToken{ x.n_indent };
+		bool built = build(indent_node, temp);
+		// and it is properly indented (neither less nor more indent)
+		if (built) {
+			// then we try to parse the statement (note the Expect<> which throws if it fails)
+			auto node = Expect<grammar::Statement<context>>(x.n_indent);
+			bool built = build(node, it);
+			if (built) {
+				x._value.emplace(std::move(node));
+				x.end_offset = it.index;
+				return true;
+			}
+		}
+	}
+	return false;
+}

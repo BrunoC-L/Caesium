@@ -14,6 +14,11 @@ namespace grammar {
 	using String = Token<STRING>;
 	using Newline = Token<NEWLINE>;
 
+	// tag types
+	struct function_context {};
+	struct type_context {};
+	struct top_level_context {};
+
 	using Enum = And<Commit<Token<ENUM>>, Word, Token<COLON>, Newline, Star<Indent<And<IndentToken, Word, Newline>>>>;
 
 	using Expression = ConditionalExpression;
@@ -23,9 +28,8 @@ namespace grammar {
 	using ArgumentCategory = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	using FunctionParameter = And<Commit<Typename>, Word>;
 	using FunctionParameters = CommaStar<FunctionParameter>;
-	struct function_context {};
-	using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement<function_context>>>>>>;
-	using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock>;
+	template <typename context> using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement<context>>>>>>;
+	using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock<function_context>>;
 	using ParenArguments = And<Commit<Token<PARENOPEN>>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 	using BraceArguments = And<Commit<Token<BRACEOPEN>>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
 	using BracketArguments = And<Commit<Token<BRACKETOPEN>>, CommaStar<FunctionArgument>, Token<BRACKETCLOSE>>;
@@ -53,7 +57,6 @@ namespace grammar {
 	> {};
 
 	using MemberVariable = And<Typename, Word, Newline>;
-	using TypeElement = Or<Alias, MemberVariable>;
 
 	using Construct = And<Typename, BraceArguments>;
 
@@ -112,39 +115,41 @@ namespace grammar {
 
 	struct FunctionArgument : And<Opt<ArgumentCategory>, Expression> {};
 
-	using ExpressionStatement = And<Expression, Newline>;
-	using BlockDeclaration = And<Token<BLOCK>, ColonIndentCodeBlock>;
-	using BlockStatement = And<Token<BLOCK>, Typename>;
-	using VariableDeclaration = And<Typename, Word>;
-	using VariableDeclarationStatement = And<Typename, Word, Token<EQUAL>, Expression, Newline>;
+	template <typename context> struct ExpressionStatement : And<Expression, Newline> {};
+	template <typename context> struct BlockDeclaration : And<Token<BLOCK>, ColonIndentCodeBlock<context>> {};
+	template <typename context> struct BlockStatement : And<Token<BLOCK>, Typename> {};
+	template <typename context> struct VariableDeclaration : And<Typename, Word> {};
+	template <typename context> struct VariableDeclarationStatement : And<Typename, Word, Token<EQUAL>, Expression, Newline> {};
 
-	struct ElseStatement; // we need to explicitly allow `else if <>:` otherwise using `else {ifstatement}` would require indentation
-	using IfStatement = And<Token<IF>, Expression, ColonIndentCodeBlock, Opt<Alloc<ElseStatement>>>;
-	struct ElseStatement : And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement>, ColonIndentCodeBlock>> {};
+	template <typename context> struct ElseStatement; // we need to explicitly allow `else if <>:` otherwise using `else {ifstatement}` would require indentation
+	template <typename context> struct IfStatement : And<Token<IF>, Expression, ColonIndentCodeBlock<context>, Opt<Alloc<ElseStatement<context>>>> {};
+	template <> struct ElseStatement<function_context> : And<IndentToken, Token<ELSE>, Or<Alloc<IfStatement<function_context>>, ColonIndentCodeBlock<function_context>>> {};
+	template <> struct ElseStatement<type_context> : And<IndentToken, Token<POUND>, Token<ELSE>, Or<Alloc<IfStatement<type_context>>, ColonIndentCodeBlock<type_context>>> {};
+	template <> struct ElseStatement<top_level_context> : And<IndentToken, Token<POUND>, Token<ELSE>, Or<Alloc<IfStatement<top_level_context>>, ColonIndentCodeBlock<top_level_context>>> {};
 
-	using BreakStatement = And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline>;
-	using ForStatement = And<
+	template <typename context> struct BreakStatement : And<Token<BREAK>, Opt<And<Token<IF>, Expression>>, Newline> {};
+	template <typename context> struct ForStatement : And<
 		Token<FOR>,
-		CommaPlus<Or<VariableDeclaration, Word>>,
+		CommaPlus<Or<VariableDeclaration<context>, Word>>,
 		Token<IN>,
 		Expression,
 		Opt<And<Token<IF>, Expression>>,
 		Opt<And<Token<WHILE>, Expression>>,
-		ColonIndentCodeBlock
-	>;
-	using IForStatement = And<
+		ColonIndentCodeBlock<context>
+	> {};
+	template <typename context> struct IForStatement : And<
 		Token<IFOR>,
 		Word, // require a variable for the index
 		Token<COMMA>,
-		CommaPlus<Or<VariableDeclaration, Word>>, // and at least 1 variable iterating
+		CommaPlus<Or<VariableDeclaration<context>, Word>>, // and at least 1 variable iterating
 		Token<IN>,
 		Expression,
 		Opt<And<Token<IF>, Expression>>,
 		Opt<And<Token<WHILE>, Expression>>,
-		ColonIndentCodeBlock
-	>;
-	using WhileStatement = And<Token<WHILE>, Expression, ColonIndentCodeBlock>;
-	using ReturnStatement = And<
+		ColonIndentCodeBlock<context>
+	> {};
+	template <typename context> struct WhileStatement : And<Token<WHILE>, Expression, ColonIndentCodeBlock<context>> {};
+	template <typename context> struct ReturnStatement : And<
 		Token<RETURN>,
 		CommaStar<FunctionArgument>,
 		Opt<And<
@@ -152,19 +157,19 @@ namespace grammar {
 			Expression
 		>>,
 		Newline
-	>;
-	using MatchStatement = And<
+	> {};
+	template <typename context> struct MatchStatement : And<
 		Token<MATCH>,
 		CommaPlus<Expression>,
 		Token<COLON>,
 		Newline,
 		Indent<Plus<And<
 			IndentToken,
-			CommaPlus<VariableDeclaration>,
-			ColonIndentCodeBlock
+			CommaPlus<VariableDeclaration<context>>,
+			ColonIndentCodeBlock<context>
 		>>>
-	>;
-	using SwitchStatement = And<
+	> {};
+	template <typename context> struct SwitchStatement : And<
 		Token<SWITCH>,
 		Expression,
 		Token<COLON>,
@@ -172,43 +177,82 @@ namespace grammar {
 		Indent<Star<And<
 			IndentToken,
 			Expression,
-			ColonIndentCodeBlock
+			ColonIndentCodeBlock<context>
 		>>>
-	>;
+	> {};
 
-	using Assignment = And<Expression, Token<EQUAL>, Expression>;
-	using StatementOpts = Alloc<Or<
-		VariableDeclarationStatement,
-		ExpressionStatement,
-		IfStatement,
-		ForStatement,
-		IForStatement,
-		WhileStatement,
-		BreakStatement,
-		ReturnStatement,
-		BlockStatement,
-		MatchStatement,
-		SwitchStatement,
-		Assignment
-	>>;
-	struct type_context {};
-	struct top_level_context {};
-	template <> struct Statement<function_context> : And<IndentToken, Opt<Token<POUND>>, StatementOpts> {};
-	template <> struct Statement<type_context> : And<IndentToken, Token<POUND>, StatementOpts> {};
-	template <> struct Statement<top_level_context> : And<IndentToken, Token<POUND>, StatementOpts> {};
+	template <typename context> struct Assignment : And<Expression, Token<EQUAL>, Expression> {};
+
+	template <typename context>
+	struct StatementOpts;
+
+	template <> struct StatementOpts<function_context> : Alloc<Or<
+		VariableDeclarationStatement<function_context>,
+		ExpressionStatement<function_context>,
+		IfStatement<function_context>,
+		ForStatement<function_context>,
+		IForStatement<function_context>,
+		WhileStatement<function_context>,
+		BreakStatement<function_context>,
+		ReturnStatement<function_context>,
+		BlockStatement<function_context>,
+		MatchStatement<function_context>,
+		SwitchStatement<function_context>,
+		Assignment<function_context>
+	>> {};
+
+	template <> struct StatementOpts<type_context> : Alloc<Or<
+		VariableDeclarationStatement<type_context>,
+		ExpressionStatement<type_context>,
+		IfStatement<type_context>,
+		ForStatement<type_context>,
+		IForStatement<type_context>,
+		WhileStatement<type_context>,
+		BreakStatement<type_context>,
+		ReturnStatement<type_context>,
+		BlockStatement<type_context>,
+		MatchStatement<type_context>,
+		SwitchStatement<type_context>,
+		Assignment<type_context>
+	>> {};
+
+	template <> struct StatementOpts<top_level_context> : Alloc<Or<
+		VariableDeclarationStatement<top_level_context>,
+		ExpressionStatement<top_level_context>,
+		IfStatement<top_level_context>,
+		ForStatement<top_level_context>,
+		IForStatement<top_level_context>,
+		WhileStatement<top_level_context>,
+		BreakStatement<top_level_context>,
+		ReturnStatement<top_level_context>,
+		BlockStatement<top_level_context>,
+		MatchStatement<top_level_context>,
+		SwitchStatement<top_level_context>,
+		Assignment<top_level_context>
+	>> {};
+
+	template <> struct Statement<function_context> : And<IndentToken, Opt<Token<POUND>>, StatementOpts<function_context>> {};
+	template <> struct Statement<type_context> : Or<
+		And<IndentToken, Token<POUND>, StatementOpts<type_context>>,
+		And<IndentToken, Alias>,
+		And<IndentToken, MemberVariable>
+	> {};
+	template <> struct Statement<top_level_context> : Or<
+		And<IndentToken, Token<POUND>, StatementOpts<top_level_context>>
+	> {};
+
+	using TypeElement = Or<
+		And<IndentToken, Alias>,
+		And<IndentToken, MemberVariable>,
+		Statement<type_context>
+	>;
 
 	using Interface = And<
 		Token<INTERFACE>,
 		Word,
 		Token<COLON>,
 		Newline,
-		Indent<Star<And<
-			IndentToken,
-			Or<
-				Alias,
-				MemberVariable
-			>
-		>>>
+		Indent<Star<TypeElement>>
 	>;
 
 	using Type = And<
@@ -216,10 +260,7 @@ namespace grammar {
 		Word,
 		Token<COLON>,
 		Newline,
-		Indent<Star<And<
-			IndentToken,
-			TypeElement
-		>>>
+		Indent<Star<TypeElement>>
 	>;
 
 	using Template = And<
@@ -242,7 +283,8 @@ namespace grammar {
 		Token<GT>,
 		Token<COLON>,
 		Token<NEWLINE>,
-		TemplateBody>;
+		TemplateBody
+	>;
 
 	struct NameSpace;
 
@@ -289,7 +331,8 @@ namespace grammar {
 	CASE(BracketArguments, "BracketArguments")
 	CASE(FunctionParameter, "FunctionParameter")
 	CASE(Statement<function_context>, "Statement")
-	if constexpr (std::is_same_v<T, And<Commit<IndentToken>, Alloc<Or<VariableDeclarationStatement, ExpressionStatement, IfStatement, ForStatement, IForStatement, WhileStatement, BreakStatement, ReturnStatement, BlockStatement, MatchStatement, SwitchStatement, Assignment>>>>) return "Statement"; else
+	CASE(Statement<type_context>, "Statement")
+	CASE(Statement<top_level_context>, "Statement")
 #undef CASE
 	static_assert(!(sizeof(T*)), "missing name for T");
 	}
