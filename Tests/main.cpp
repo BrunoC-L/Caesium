@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
 	constexpr auto bad_exit = 1;
 
 	if (argc == 1) {
-		std::cerr << colored_text("Expected a test folder argument TODO MESSAGE\n", output_stream_colors::red);
+		std::cerr << colored_text("Expected a test folder argument. DEV TODO MESSAGE\n", output_stream_colors::red);
 		return bad_exit;
 	}
 

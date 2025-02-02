@@ -2,6 +2,8 @@
 #include <functional>
 #include <optional>
 #include <variant>
+#include <utility>
+#include <compare>
 
 #include "tokenizer.hpp"
 #include "../utility/fn_util.hpp"

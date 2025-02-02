@@ -1,9 +1,7 @@
 type T:
     # if True:
         Int a
-    # else:
-        Int b
 
 Int main(Vector<String> ref args):
     T t = { 3 }
-    return t.b
+    return t.a

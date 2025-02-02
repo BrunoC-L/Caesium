@@ -350,42 +350,6 @@ inline bool primitives_assignable(const NodeStructs::PrimitiveType& parameter, c
 		return true;
 }
 
-template <typename T>
-inline T copy(T t) {
-	return t;
-}
-
-inline std::string copy(const std::string& str) {
-	return str;
-}
-
-template <typename T>
-std::optional<T> copy(const std::optional<T>& x) {
-	if (x.has_value())
-		return std::optional<T>{ copy(x.value()) };
-	else
-		return std::optional<T>{ std::nullopt };
-}
-
-template <typename... Ts>
-Variant<Ts...> copy(const Variant<Ts...>& x) {
-	return std::visit([](const auto& u) { return Variant<Ts...>{ copy(u) }; }, x._value);
-}
-
-template <typename T>
-Optional<T> copy(const Optional<T>& x) {
-	return Optional<T>{ copy(x._value) };
-}
-
-template <typename T>
-std::vector<T> copy(const std::vector<T>& vec) {
-	std::vector<T> res;
-	res.reserve(vec.size());
-	for (const auto& e : vec)
-		res.push_back(copy(e));
-	return res;
-}
-
 template <typename K, typename V>
 std::map<K, V> copy(const std::map<K, V>& m) {
 	std::map<K, V> res;
@@ -523,14 +487,14 @@ T copy12(const T& x) {
 #define CMP6(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp6(left, right); }
 #define CMP12(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp12(left, right); }
 
-#define COPY0(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy0(tn); }
-#define COPY1(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy1(tn); }
-#define COPY2(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy2(tn); }
-#define COPY3(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy3(tn); }
-#define COPY4(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy4(tn); }
-#define COPY5(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy5(tn); }
-#define COPY6(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy6(tn); }
-#define COPY12(T) inline NodeStructs::T copy(const NodeStructs::T& tn) { return copy12(tn); }
+#define COPY0(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy0(e); }
+#define COPY1(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy1(e); }
+#define COPY2(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy2(e); }
+#define COPY3(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy3(e); }
+#define COPY4(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy4(e); }
+#define COPY5(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy5(e); }
+#define COPY6(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy6(e); }
+#define COPY12(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy12(e); }
 
 #define CMP_COPY_N(N, T) CMP##N(T) COPY##N(T)
 
@@ -554,6 +518,12 @@ CMP_COPY_N(2, VariableDeclaration)
 CMP_COPY_N(2, Statement<function_context>)
 CMP_COPY_N(1, Statement<type_context>)
 CMP_COPY_N(1, Statement<top_level_context>)
+CMP_COPY_N(1, RunTimeStatement<function_context>)
+CMP_COPY_N(1, RunTimeStatement<type_context>)
+CMP_COPY_N(1, RunTimeStatement<top_level_context>)
+CMP_COPY_N(1, CompileTimeStatement<function_context>)
+CMP_COPY_N(1, CompileTimeStatement<type_context>)
+CMP_COPY_N(1, CompileTimeStatement<top_level_context>)
 CMP_COPY_N(3, VariableDeclarationStatement<function_context>)
 CMP_COPY_N(3, VariableDeclarationStatement<type_context>)
 CMP_COPY_N(3, VariableDeclarationStatement<top_level_context>)

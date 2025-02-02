@@ -15,9 +15,9 @@ namespace grammar {
 	using Newline = Token<NEWLINE>;
 
 	// tag types
-	struct function_context {};
-	struct type_context {};
-	struct top_level_context {};
+	struct function_context {}; constexpr inline function_context copy(function_context) { return {}; }
+	struct type_context {}; constexpr inline type_context copy(type_context) { return {}; }
+	struct top_level_context {}; constexpr inline top_level_context copy(top_level_context) { return {}; }
 
 	using Enum = And<Commit<Token<ENUM>>, Word, Token<COLON>, Newline, Star<Indent<And<IndentToken, Word, Newline>>>>;
 
@@ -28,7 +28,7 @@ namespace grammar {
 	using ArgumentCategory = Or<Token<MOVE>, And<Token<REF>, Token<NOT>>, Token<REF>>;
 	using FunctionParameter = And<Commit<Typename>, Word>;
 	using FunctionParameters = CommaStar<FunctionParameter>;
-	template <typename context> using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Token<NEWLINE>, Expect<Statement<context>>>>>>;
+	template <typename context> using ColonIndentCodeBlock = And<Token<COLON>, Newline, Indent<Star<Or<Newline, Expect<Statement<context>>>>>>;
 	using Function = And<Typename, Word, Token<PARENOPEN>, FunctionParameters, Token<PARENCLOSE>, ColonIndentCodeBlock<function_context>>;
 	using ParenArguments = And<Commit<Token<PARENOPEN>>, CommaStar<FunctionArgument>, Token<PARENCLOSE>>;
 	using BraceArguments = And<Commit<Token<BRACEOPEN>>, CommaStar<FunctionArgument>, Token<BRACECLOSE>>;
@@ -187,8 +187,8 @@ namespace grammar {
 	struct StatementOpts;
 
 	template <> struct StatementOpts<function_context> : Alloc<Or<
-		VariableDeclarationStatement<function_context>,
 		ExpressionStatement<function_context>,
+		VariableDeclarationStatement<function_context>,
 		IfStatement<function_context>,
 		ForStatement<function_context>,
 		IForStatement<function_context>,
@@ -241,18 +241,12 @@ namespace grammar {
 		And<IndentToken, Token<POUND>, StatementOpts<top_level_context>>
 	> {};
 
-	using TypeElement = Or<
-		And<IndentToken, Alias>,
-		And<IndentToken, MemberVariable>,
-		Statement<type_context>
-	>;
-
 	using Interface = And<
 		Token<INTERFACE>,
 		Word,
 		Token<COLON>,
 		Newline,
-		Indent<Star<TypeElement>>
+		Indent<Star<Statement<type_context>>>
 	>;
 
 	using Type = And<
@@ -260,7 +254,7 @@ namespace grammar {
 		Word,
 		Token<COLON>,
 		Newline,
-		Indent<Star<TypeElement>>
+		Indent<Star<Statement<type_context>>>
 	>;
 
 	using Template = And<
@@ -282,7 +276,7 @@ namespace grammar {
 		>>,
 		Token<GT>,
 		Token<COLON>,
-		Token<NEWLINE>,
+		Newline,
 		TemplateBody
 	>;
 
@@ -301,26 +295,26 @@ namespace grammar {
 	struct NameSpace : And<
 		Word,
 		Token<COLON>,
-		Token<NEWLINE>,
-		Indent<Star<Or<Token<NEWLINE>, And<IndentToken, Named>>>>
+		Newline,
+		Indent<Star<Or<Newline, And<IndentToken, Named>>>>
 	> {};
 
 	using Exists = And<
 		Token<EXISTS>,
 		Token<COLON>,
-		Token<NEWLINE>,
-		Indent<Star<Or<Token<NEWLINE>, And<IndentToken, Named>>>>
+		Newline,
+		Indent<Star<Or<Newline, And<IndentToken, Named>>>>
 	>;
 
 	using File = And<
 		Star<Import>,
-		Star<Or<Token<NEWLINE>, Named, Exists>>,
+		Star<Or<Newline, Named, Exists>>,
 		Token<END>
 	>;
 
 	template <typename T>
 	constexpr std::string name_of_rule() {
-	#define CASE(type, value)  if constexpr (std::is_same_v<T, type>) return value; else
+#define CASE(type, value) if constexpr (std::is_same_v<T, type>) return value; else
 	CASE(Type, "Type")
 	CASE(Template, "Template")
 	CASE(Enum, "Enum")
@@ -330,10 +324,10 @@ namespace grammar {
 	CASE(BraceArguments, "BraceArguments")
 	CASE(BracketArguments, "BracketArguments")
 	CASE(FunctionParameter, "FunctionParameter")
-	CASE(Statement<function_context>, "Statement")
-	CASE(Statement<type_context>, "Statement")
-	CASE(Statement<top_level_context>, "Statement")
+	CASE(Statement<function_context>, "Statement<function_context>")
+	CASE(Statement<type_context>, "Statement<type_context>")
+	CASE(Statement<top_level_context>, "Statement<top_level_context>")
 #undef CASE
-	static_assert(!(sizeof(T*)), "missing name for T");
+	static_assert(!(sizeof(T*)), "missing `name_of_rule()` for T");
 	}
 }

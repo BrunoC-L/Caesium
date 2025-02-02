@@ -380,21 +380,3 @@ NodeStructs::Assignment<context> getStatementStruct(
 ) {
 	return { getExpressionStruct(file_name, vec, statement.get<grammar::Expression, 0>()), getExpressionStruct(file_name, vec, statement.get<grammar::Expression, 1>()) };
 }
-
-NodeStructs::Statement<grammar::function_context> get_base_statement_struct(
-	const std::string& file_name,
-	const std::vector<TokenValue>& vec,
-	const grammar::Statement<grammar::function_context>& statement
-);
-
-NodeStructs::Statement<grammar::type_context> get_base_statement_struct(
-	const std::string& file_name,
-	const std::vector<TokenValue>& vec,
-	const grammar::Statement<grammar::type_context>& statement
-);
-
-NodeStructs::Statement<grammar::top_level_context> get_base_statement_struct(
-	const std::string& file_name,
-	const std::vector<TokenValue>& vec,
-	const grammar::Statement<grammar::top_level_context>& statement
-);

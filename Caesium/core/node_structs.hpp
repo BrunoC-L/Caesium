@@ -17,6 +17,8 @@ struct cursor_info {
 	unsigned column;
 };
 
+constexpr inline cursor_info copy(const cursor_info& e) { return e; }
+
 struct rule_info {
 	std::string file_name;
 	std::string content;
@@ -24,14 +26,20 @@ struct rule_info {
 	cursor_info end;
 };
 
+constexpr inline rule_info copy(const rule_info& e) { return e; }
+
 template <typename T>
 struct empty {};
+
+template <typename T>
+constexpr inline empty<T> copy(const empty<T>&) { return {}; }
 
 template <typename T>
 rule_info rule_info_stub() {
 	empty<T> t{}; // for debug purposes
 	throw;
 }
+
 rule_info rule_info_stub_no_throw();
 rule_info rule_info_language_element(std::string s);
 
@@ -62,6 +70,9 @@ struct NodeStructs {
 
 	template <typename context>
 	struct Statement;
+
+	template <typename context>
+	struct CompileTimeStatement;
 
 	struct ConditionalExpression;
 	struct OrExpression;
@@ -384,72 +395,9 @@ struct NodeStructs {
 		Typename parametrized_block;
 	};
 
-	template <>
-	struct Statement<function_context> {
-		using context = function_context;
-		using vt = Variant<
-			Expression,
-			VariableDeclarationStatement<context>,
-			IfStatement<context>,
-			ForStatement<context>,
-			IForStatement<context>,
-			WhileStatement<context>,
-			BreakStatement<context>,
-			ReturnStatement<context>,
-			BlockStatement<context>,
-			MatchStatement<context>,
-			SwitchStatement<context>,
-			Assignment<context>
-		>;
-		NonCopyableBox<vt> statement;
-		bool is_compile_time;
-	};
-
 	struct MemberVariable {
 		Typename type;
 		std::string name;
-	};
-
-	template <>
-	struct Statement<type_context> {
-		using context = type_context;
-		using vt = Variant<
-			Expression,
-			VariableDeclarationStatement<context>,
-			IfStatement<context>,
-			ForStatement<context>,
-			IForStatement<context>,
-			WhileStatement<context>,
-			BreakStatement<context>,
-			ReturnStatement<context>,
-			BlockStatement<context>,
-			MatchStatement<context>,
-			SwitchStatement<context>,
-			Assignment<context>,
-			Alias,
-			MemberVariable
-		>;
-		NonCopyableBox<vt> statement;
-	};
-
-	template <>
-	struct Statement<top_level_context> {
-		using context = top_level_context;
-		using vt = Variant<
-			Expression,
-			VariableDeclarationStatement<context>,
-			IfStatement<context>,
-			ForStatement<context>,
-			IForStatement<context>,
-			WhileStatement<context>,
-			BreakStatement<context>,
-			ReturnStatement<context>,
-			BlockStatement<context>,
-			MatchStatement<context>,
-			SwitchStatement<context>,
-			Assignment<context>
-		>;
-		NonCopyableBox<vt> statement;
 	};
 
 	struct Import {
@@ -474,7 +422,7 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
-		std::vector<Statement<type_context>> compile_time_statements;
+		std::vector<CompileTimeStatement<type_context>> compile_time_statements;
 		rule_info rule_info = rule_info_stub<Type>();
 	};
 
@@ -690,5 +638,61 @@ struct NodeStructs {
 		std::vector<Import> imports;
 		std::vector<Exists> exists;
 		NameSpace content;
+	};
+
+	template <typename context>
+	using RunTimeStatement = Variant<
+		Expression,
+		VariableDeclarationStatement<context>,
+		IfStatement<context>,
+		ForStatement<context>,
+		IForStatement<context>,
+		WhileStatement<context>,
+		BreakStatement<context>,
+		ReturnStatement<context>,
+		BlockStatement<context>,
+		MatchStatement<context>,
+		SwitchStatement<context>,
+		Assignment<context>
+	>;
+
+	template <typename context>
+	struct CompileTimeStatement : Variant<
+		VariableDeclarationStatement<context>,
+		IfStatement<context>,
+		ForStatement<context>,
+		IForStatement<context>,
+		WhileStatement<context>,
+		BreakStatement<context>,
+		ReturnStatement<context>,
+		BlockStatement<context>,
+		MatchStatement<context>,
+		SwitchStatement<context>,
+		Assignment<context>
+	> {};
+
+	template <typename context, typename contextual_options>
+	using CompileTimeStatementOpts = Variant<CompileTimeStatement<context>, contextual_options>;
+
+	template <>
+	struct Statement<function_context> {
+		using context = function_context;
+		using contextual_options = Variant<RunTimeStatement<function_context>>;
+		NonCopyableBox<CompileTimeStatementOpts<context, contextual_options>> statement;
+		bool is_compile_time;
+	};
+
+	template <>
+	struct Statement<type_context> {
+		using context = type_context;
+		using contextual_options = Variant<Alias, MemberVariable>;
+		NonCopyableBox<CompileTimeStatementOpts<context, contextual_options>> statement;
+	};
+
+	template <>
+	struct Statement<top_level_context> {
+		using context = type_context;
+		using contextual_options = Variant<Type>;
+		NonCopyableBox<CompileTimeStatementOpts<context, contextual_options>> statement;
 	};
 };

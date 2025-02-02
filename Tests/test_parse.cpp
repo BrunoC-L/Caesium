@@ -160,17 +160,17 @@ bool test_parse() {
 	ok &= test_parse_correct<VariableDeclarationStatement<function_context>>(__LINE__, 0, "Int a = {}\n");
 	ok &= test_parse_correct<VariableDeclarationStatement<type_context>>(__LINE__, 0, "Int a = {}\n");
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 0, "#Int a = {}\n");
-	ok &= test_parse_correct<TypeElement>(__LINE__, 1, "\t#Int a = {}\n");
+	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 1, "\t#Int a = {}\n");
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 1, "\t#if True:\n\t\t#Int a = {}\n");
 	ok &= test_parse_correct<IndentToken, Token<POUND>, StatementOpts<type_context>>(__LINE__, 1, "\t#if True:\n\t\t#Int a = {}\n");
 	ok &= test_parse_correct<Token<IF>, Expression, ColonIndentCodeBlock<type_context>>(__LINE__, 0, "if True:\n");
 	ok &= test_parse_correct<IfStatement<type_context>>(__LINE__, 0, "if True:\n\t#Int a = {}\n");
 	ok &= test_parse_correct<Indent<Star<Or<Token<NEWLINE>, Expect<Statement<function_context>>>>>>(__LINE__, 0, "");
 	ok &= test_parse_correct<Indent<Star<Or<Token<NEWLINE>, Expect<Statement<type_context>>>>>>(__LINE__, 0, "");
-		
-	ok &= test_parse_correct<Star<TypeElement>>(__LINE__, 1, "\t#Int a = {}\n");
 
-	ok &= test_parse_correct<Star<TypeElement>>(__LINE__, 2, "\t\t#Int a = {}\n");
+	ok &= test_parse_correct<Star<Statement<type_context>>>(__LINE__, 1, "\t#Int a = {}\n");
+
+	ok &= test_parse_correct<Star<Statement<type_context>>>(__LINE__, 2, "\t\t#Int a = {}\n");
 
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type T:\n\t#Int a = {}\n");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type T:\n\t#Int a = {}\n\tInt a\n");
@@ -191,9 +191,9 @@ bool test_parse() {
 
 
 	ok &= test_parse_correct<Typename, Token<GT>>(__LINE__, 0, "X>");
-	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<X> ? a");
-	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<Tuple<X>?> a");
-	ok &= test_parse_correct<TypeElement>(__LINE__, 0, "Tuple<reference_wrapper<DB>?> services");
+	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 0, "Tuple<X> ? a");
+	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 0, "Tuple<Tuple<X>?> a");
+	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 0, "Tuple<reference_wrapper<DB>?> services");
 
 	return ok;
 }

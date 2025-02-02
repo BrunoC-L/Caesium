@@ -350,10 +350,11 @@ transpile_t transpile(
 template <typename context>
 bool uses_auto(const NodeStructs::Statement<context>& statement) {
 	// todo recursive impl and check for variable declarations and for statements
-	if (holds<NodeStructs::VariableDeclarationStatement<context>>(statement)) {
+	throw;
+	/*if (holds<NodeStructs::VariableDeclarationStatement<context>>(statement)) {
 		const auto& var_decl = get<NodeStructs::VariableDeclarationStatement<context>>(statement);
 		return uses_auto(var_decl.type);
 	}
 	else
-		return false;
+		return false;*/
 }

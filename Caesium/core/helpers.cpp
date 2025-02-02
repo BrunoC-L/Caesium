@@ -19,11 +19,11 @@ rule_info rule_info_language_element(std::string s) {
 }
 
 NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr, rule_info info) {
-	return { std::move(expr), std::move(info) };
+	return { std::move(expr), std::move(info)};
 }
 
 NodeStructs::Typename make_typename(NodeStructs::Typename::vt tn, Optional<NodeStructs::ParameterCategory> cat, rule_info info) {
-	return { std::move(tn), std::move(cat), std::move(info) };
+	return { std::move(tn), std::move(cat), std::move(info)};
 }
 
 const std::string& original_representation(
