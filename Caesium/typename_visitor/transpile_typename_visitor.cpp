@@ -100,7 +100,8 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 						if (!std::holds_alternative<type_information>(test.value()))
 							throw;
 						return std::get<type_information>(test.value()).representation;
-					} else {
+					}
+					else {
 						auto test2 = transpile_typename(state, variables, NodeStructs::BaseTypename{ s });
 						if (test2.has_error())
 							throw;

@@ -640,20 +640,20 @@ R transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::MetaType& expected_return_type,
-	const NodeStructs::Statement<grammar::function_context>& statement
+	const NodeStructs::Statement<function_context>& statement
 ) {
 	throw;
 	/*if (statement.is_compile_time)
 		return std::visit(
 			[&](const auto& st) -> R {
-				return transpile_statement_specific<grammar::function_context, true>(state, variables, expected_return_type, st);
+				return transpile_statement_specific<function_context, true>(state, variables, expected_return_type, st);
 			},
 			statement.statement.get()._value
 		);
 	else
 		return std::visit(
 			[&](const auto& st) -> R {
-				return transpile_statement_specific<grammar::function_context, false>(state, variables, expected_return_type, st);
+				return transpile_statement_specific<function_context, false>(state, variables, expected_return_type, st);
 			},
 			statement.statement.get()._value
 		);*/

@@ -84,10 +84,10 @@ rule_info rule_info_from_rule(const std::string& file_name, const std::vector<To
 	return x;
 }
 
-NodeStructs::Statement<grammar::function_context> get_base_statement_struct(
+NodeStructs::Statement<function_context> get_base_statement_struct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
-	const grammar::Statement<grammar::function_context>& statement
+	const grammar::Statement<function_context>& statement
 );
 
 NodeStructs::Statement<grammar::type_context> get_base_statement_struct(

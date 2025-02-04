@@ -671,14 +671,11 @@ struct NodeStructs {
 		Assignment<context>
 	> {};
 
-	template <typename context, typename contextual_options>
-	using CompileTimeStatementOpts = Variant<CompileTimeStatement<context>, contextual_options>;
-
 	template <>
 	struct Statement<function_context> {
 		using context = function_context;
 		using contextual_options = Variant<RunTimeStatement<function_context>>;
-		NonCopyableBox<CompileTimeStatementOpts<context, contextual_options>> statement;
+		NonCopyableBox<Variant<CompileTimeStatement<context>, contextual_options>> statement;
 		bool is_compile_time;
 	};
 
@@ -686,13 +683,13 @@ struct NodeStructs {
 	struct Statement<type_context> {
 		using context = type_context;
 		using contextual_options = Variant<Alias, MemberVariable>;
-		NonCopyableBox<CompileTimeStatementOpts<context, contextual_options>> statement;
+		NonCopyableBox<Variant<CompileTimeStatement<context>, contextual_options>> statement;
 	};
 
 	template <>
 	struct Statement<top_level_context> {
 		using context = type_context;
 		using contextual_options = Variant<Type>;
-		NonCopyableBox<CompileTimeStatementOpts<context, contextual_options>> statement;
+		NonCopyableBox<Variant<CompileTimeStatement<context>, contextual_options>> statement;
 	};
 };

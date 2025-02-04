@@ -66,6 +66,11 @@ bool test_parse() {
 	ok &= test_parse_correct<VariableDeclarationStatement<function_context>>(__LINE__, 0, "Bool c = a >? c");
 	ok &= test_parse_correct<CompareOperator>(__LINE__, 0, ">?");
 
+	ok &= test_parse_correct<Expression>(__LINE__, 0, "x");
+	ok &= test_parse_correct<RunTimeStatement<function_context>>(__LINE__, 0, "x");
+	ok &= test_parse_correct<Statement<function_context>>(__LINE__, 0, "x");
+	ok &= test_parse_correct<Indent<Statement<function_context>>>(__LINE__, 0, "\tx");
+	ok &= test_parse_correct<Indent<Star<Statement<function_context>>>>(__LINE__, 0, "\tx");
 	ok &= test_parse_correct<And<Token<COLON>, Newline, Indent<Star<Statement<function_context>>>>>(__LINE__, 0, ":\n\tx");
 	ok &= test_parse_correct<And<Newline, Indent<Star<Statement<function_context>>>>>(__LINE__, 0, "\n\tx");
 	ok &= test_parse_correct<Indent<Star<Statement<function_context>>>>(__LINE__, 0, "\tx");
@@ -162,7 +167,7 @@ bool test_parse() {
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 0, "#Int a = {}\n");
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 1, "\t#Int a = {}\n");
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 1, "\t#if True:\n\t\t#Int a = {}\n");
-	ok &= test_parse_correct<IndentToken, Token<POUND>, StatementOpts<type_context>>(__LINE__, 1, "\t#if True:\n\t\t#Int a = {}\n");
+	//ok &= test_parse_correct<IndentToken, Token<POUND>, StatementOpts<type_context>>(__LINE__, 1, "\t#if True:\n\t\t#Int a = {}\n");
 	ok &= test_parse_correct<Token<IF>, Expression, ColonIndentCodeBlock<type_context>>(__LINE__, 0, "if True:\n");
 	ok &= test_parse_correct<IfStatement<type_context>>(__LINE__, 0, "if True:\n\t#Int a = {}\n");
 	ok &= test_parse_correct<Indent<Star<Or<Token<NEWLINE>, Expect<Statement<function_context>>>>>>(__LINE__, 0, "");

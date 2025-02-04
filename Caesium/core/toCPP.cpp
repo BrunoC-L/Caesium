@@ -1434,7 +1434,8 @@ expected<NodeStructs::Function> realise_function_using_auto(
 			.parameters = std::move(realised.parameters),
 			.statements = std::move(realised.statements)
 		};
-	} else {
+	}
+	else {
 		auto return_tn = deduce_return_type(state, variables, realised.statements);
 		return_if_error(return_tn);
 

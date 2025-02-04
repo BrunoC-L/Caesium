@@ -254,7 +254,7 @@ NodeStructs::Function getStruct(const std::string& file_name, const std::vector<
 				return res;
 			})
 			| to_vec(),
-		.statements = getStatements(file_name, vec, f.get<grammar::ColonIndentCodeBlock<grammar::function_context>>())
+		.statements = getStatements(file_name, vec, f.get<grammar::ColonIndentCodeBlock<function_context>>())
 	};
 }
 
@@ -344,25 +344,31 @@ NodeStructs::Alias getStruct(const std::string& file_name, const std::vector<Tok
 
 NodeStructs::Type getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Type& t, std::optional<NodeStructs::Typename> name_space) {
 	auto elems = t.get<Indent<Star<grammar::Statement<type_context>>>>().get_view<grammar::Statement<type_context>>()
-		| std::views::transform([&](auto&& e) { return e.value(); });
+		| std::views::transform([&](const And<IndentToken, Or<grammar::CompileTimeStatement<type_context>, Or<grammar::RunTimeStatement<type_context>>>>& e) {
+			return e.get<Or<grammar::CompileTimeStatement<type_context>, Or<grammar::RunTimeStatement<type_context>>>>().value();
+		});
 	return {
 		.name = t.get<grammar::Word>().value,
 		.name_space = copy(name_space),
 		.aliases = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<And<IndentToken, grammar::Alias>>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<And<IndentToken, grammar::Alias>>(e); })
-			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t.get<grammar::Alias>(), copy(name_space)); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<Or<grammar::Alias, grammar::MemberVariable>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<Or<grammar::Alias, grammar::MemberVariable>>(e).value(); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Alias>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<grammar::Alias>(e); })
+			| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e, copy(name_space)); })
 			| to_vec(),
 		.member_variables = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<And<IndentToken, grammar::MemberVariable>>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<And<IndentToken, grammar::MemberVariable>>(e); })
-			| std::views::transform([&](auto&& t) { return getStruct(file_name, vec, t.get<grammar::MemberVariable>()); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<Or<grammar::Alias, grammar::MemberVariable>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<Or<grammar::Alias, grammar::MemberVariable>>(e).value(); })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::MemberVariable>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<grammar::MemberVariable>(e); })
+			| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e); })
 			| to_vec(),
 		.compile_time_statements = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<And<IndentToken, Token<POUND>, grammar::StatementOpts<type_context>>>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<And<IndentToken, Token<POUND>, grammar::StatementOpts<type_context>>>(e); })
-			| std::views::transform([&](auto&& e) { return e.get<grammar::StatementOpts<type_context>>(); })
-			| std::views::transform([&](auto&& t) -> NodeStructs::CompileTimeStatement<type_context> { throw; })
+			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::CompileTimeStatement<type_context>>(e); })
+			| std::views::transform([&](auto&& e) { return std::get<grammar::CompileTimeStatement<type_context>>(e); })
+			//| std::views::transform([&](auto&& e) { return e.get<grammar::StatementOpts<type_context>>(); })
+			| std::views::transform([&](auto&& e) -> NodeStructs::CompileTimeStatement<type_context> { throw; })
 			| to_vec(),
 		.rule_info = rule_info_from_rule(file_name, vec, t.get<grammar::Word>())
 	};
@@ -978,31 +984,46 @@ std::vector<NodeStructs::Expression> getExpressions(
 		| to_vec();
 }
 
-//template <template <typename> typename Statement, typename context>
-//NodeStructs::StatementOpts<context> get_base_statement_struct_from_specific(
-//	const std::string& file_name,
-//	const std::vector<TokenValue>& vec,
-//	const Statement<context>& statement
-//) {
-//	return { getStatementStruct<context>(file_name, vec, statement) };
-//}
-
-NodeStructs::Statement<grammar::function_context> get_base_statement_struct(
+template <template <typename> typename Statement, typename context>
+NodeStructs::Statement<context>::contextual_options get_base_statement_struct_from_specific(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
-	const grammar::Statement<grammar::function_context>& statement
+	const Statement<context>& statement
 ) {
 	throw;
-	/*return NodeStructs::Statement<grammar::function_context>{
-		std::visit(overload(
-				[&](const auto& x) -> NodeStructs::StatementOpts<grammar::function_context> {
-					return get_base_statement_struct_from_specific(file_name, vec, x);
-				}
-			),
-			statement.get<grammar::StatementOpts<grammar::function_context>>().get().value()
-		),
-		statement.get<Opt<Token<POUND>>>().has_value()
-	};*/
+	//return { getStatementStruct<context>(file_name, vec, statement) };
+}
+
+NodeStructs::Statement<function_context> get_base_statement_struct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::Statement<function_context>& statement
+) {
+	throw;
+	//if (statement.get<Opt<Token<POUND>>>().has_value()) {
+	//	return NodeStructs::Statement<function_context>{
+	//		std::visit(overload(
+	//				[&](const auto& x) -> NodeStructs::CompileTimeStatement<function_context> {
+	//					//return get_base_statement_struct_from_specific(file_name, vec, x);
+	//				}
+	//			),
+	//			statement.get<grammar::StatementOpts<function_context>>().get().value()
+	//		),
+	//		true
+	//	};
+	//}
+	//else {
+	//	return NodeStructs::Statement<function_context>{
+	//		std::visit(overload(
+	//				[&](const auto& x) -> Variant<NodeStructs::RunTimeStatement<function_context>> {
+	//					//return get_base_statement_struct_from_specific(file_name, vec, x);
+	//				}
+	//			),
+	//			statement.get<grammar::StatementOpts<function_context>>().get().value()
+	//		),
+	//		false
+	//	};
+	//}
 }
 
 NodeStructs::Statement<grammar::type_context> get_base_statement_struct(
