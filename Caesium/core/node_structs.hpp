@@ -664,7 +664,6 @@ struct NodeStructs {
 		IForStatement<context>,
 		WhileStatement<context>,
 		BreakStatement<context>,
-		ReturnStatement<context>,
 		BlockStatement<context>,
 		MatchStatement<context>,
 		SwitchStatement<context>,

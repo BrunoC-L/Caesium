@@ -421,7 +421,6 @@ NodeStructs::CompileTimeStatement<context> get_compile_time_statement(
 		grammar::IForStatement<context>,
 		grammar::WhileStatement<context>,
 		grammar::BreakStatement<context>,
-		grammar::ReturnStatement<context>,
 		grammar::BlockStatement<context>,
 		grammar::MatchStatement<context>,
 		grammar::SwitchStatement<context>,
@@ -1230,14 +1229,20 @@ NodeStructs::RunTimeStatement getStruct(
 }
 
 template <typename context, typename... contextuals>
-NodeStructs::Statement<context> get_base_statement_struct2(
+NodeStructs::Statement<context> getStatementStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	const Or<grammar::CompileTimeStatement<context>, Or<contextuals...>>& statement
 ) {
 	return std::visit(overload(
-		[&](const grammar::CompileTimeStatement<context>&) -> NodeStructs::Statement<context> {
-			throw;
+		[&](const grammar::CompileTimeStatement<context>& ct_statement) -> NodeStructs::Statement<context> {
+			return NodeStructs::Statement<context>{
+				NonCopyableBox<Variant<NodeStructs::CompileTimeStatement<context>, NodeStructs::contextual_options<context>>>{
+					Variant<NodeStructs::CompileTimeStatement<context>, NodeStructs::contextual_options<context>>{
+						get_compile_time_statement(file_name, vec, ct_statement)
+					}
+				}
+			};
 		},
 		[&](const Or<contextuals...>& x) -> NodeStructs::Statement<context> {
 			if constexpr (std::is_same_v<context, function_context>) {
@@ -1276,7 +1281,7 @@ NodeStructs::Statement<function_context> get_base_statement_struct(
 	const std::vector<TokenValue>& vec,
 	const grammar::Statement<function_context>& statement
 ) {
-	return get_base_statement_struct2(file_name, vec, statement.get<Or<grammar::CompileTimeStatement<function_context>, Or<grammar::RunTimeStatement>>>());
+	return getStatementStruct(file_name, vec, statement.get<Or<grammar::CompileTimeStatement<function_context>, Or<grammar::RunTimeStatement>>>());
 }
 
 NodeStructs::Statement<grammar::type_context> get_base_statement_struct(
@@ -1284,7 +1289,7 @@ NodeStructs::Statement<grammar::type_context> get_base_statement_struct(
 	const std::vector<TokenValue>& vec,
 	const grammar::Statement<grammar::type_context>& statement
 ) {
-	return get_base_statement_struct2(file_name, vec, statement.get<Or<grammar::CompileTimeStatement<type_context>, Or<grammar::Alias, grammar::MemberVariable>>>());
+	return getStatementStruct(file_name, vec, statement.get<Or<grammar::CompileTimeStatement<type_context>, Or<grammar::Alias, grammar::MemberVariable>>>());
 }
 
 NodeStructs::Statement<grammar::top_level_context> get_base_statement_struct(

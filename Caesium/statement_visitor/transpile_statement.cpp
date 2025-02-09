@@ -644,8 +644,9 @@ R transpile_statement(
 ) {
 	return std::visit(overload(
 		[&](const NodeStructs::CompileTimeStatement<function_context>& st) -> R {
-			throw;
-			//return transpile_statement_specific<function_context, true>(state, variables, expected_return_type, st);
+			return caesium_lib::variant::visit(st, [&](const auto& st) -> R {
+				return transpile_statement_specific<function_context, true>(state, variables, expected_return_type, st);
+			});
 		},
 		[&](const Variant<NodeStructs::RunTimeStatement>& st) -> R {
 			return caesium_lib::variant::visit(std::get<NodeStructs::RunTimeStatement>(st._value),

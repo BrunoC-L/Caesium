@@ -190,64 +190,6 @@ namespace grammar {
 
 	template <typename context> struct Assignment : And<Expression, Token<EQUAL>, Expression> {};
 
-	//template <typename context>
-	//struct StatementOpts;
-
-	//template <> struct StatementOpts<function_context> : Alloc<Or<
-	//	ExpressionStatement<function_context>,
-	//	VariableDeclarationStatement<function_context>,
-	//	IfStatement<function_context>,
-	//	ForStatement<function_context>,
-	//	IForStatement<function_context>,
-	//	WhileStatement<function_context>,
-	//	BreakStatement<function_context>,
-	//	ReturnStatement<function_context>,
-	//	BlockStatement<function_context>,
-	//	MatchStatement<function_context>,
-	//	SwitchStatement<function_context>,
-	//	Assignment<function_context>
-	//>> {};
-
-	//template <> struct StatementOpts<type_context> : Alloc<Or<
-	//	VariableDeclarationStatement<type_context>,
-	//	ExpressionStatement<type_context>,
-	//	IfStatement<type_context>,
-	//	ForStatement<type_context>,
-	//	IForStatement<type_context>,
-	//	WhileStatement<type_context>,
-	//	BreakStatement<type_context>,
-	//	ReturnStatement<type_context>,
-	//	BlockStatement<type_context>,
-	//	MatchStatement<type_context>,
-	//	SwitchStatement<type_context>,
-	//	Assignment<type_context>
-	//>> {};
-
-	//template <> struct StatementOpts<top_level_context> : Alloc<Or<
-	//	VariableDeclarationStatement<top_level_context>,
-	//	ExpressionStatement<top_level_context>,
-	//	IfStatement<top_level_context>,
-	//	ForStatement<top_level_context>,
-	//	IForStatement<top_level_context>,
-	//	WhileStatement<top_level_context>,
-	//	BreakStatement<top_level_context>,
-	//	ReturnStatement<top_level_context>,
-	//	BlockStatement<top_level_context>,
-	//	MatchStatement<top_level_context>,
-	//	SwitchStatement<top_level_context>,
-	//	Assignment<top_level_context>
-	//>> {};
-
-	//template <> struct Statement<function_context> : And<IndentToken, Opt<Token<POUND>>, StatementOpts<function_context>> {};
-	//template <> struct Statement<type_context> : Or<
-	//	And<IndentToken, Token<POUND>, StatementOpts<type_context>>,
-	//	And<IndentToken, Alias>,
-	//	And<IndentToken, MemberVariable>
-	//> {};
-	//template <> struct Statement<top_level_context> : Or<
-	//	And<IndentToken, Token<POUND>, StatementOpts<top_level_context>>
-	//> {};
-
 	template <typename context>
 	using CompileTimeStatement = And<Token<POUND>, Or<
 		VariableDeclarationStatement<context>,
@@ -256,7 +198,6 @@ namespace grammar {
 		IForStatement<context>,
 		WhileStatement<context>,
 		BreakStatement<context>,
-		ReturnStatement<context>,
 		BlockStatement<context>,
 		MatchStatement<context>,
 		SwitchStatement<context>,

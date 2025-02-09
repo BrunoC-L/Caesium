@@ -1202,19 +1202,137 @@ bool uses_auto(const NodeStructs::Typename& t) {
 	return std::visit([](const auto& t_) { return uses_auto(t_); }, t.value.get()._value);
 }
 
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::Expression& statement
+) {
+	return std::nullopt;
+}
+
 template <typename context>
 expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const std::vector<NodeStructs::Statement<context>>& statements
-);
+	const NodeStructs::VariableDeclarationStatement<context>& statement
+) {
+	throw;
+}
 
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::IfStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::ForStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::IForStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::WhileStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::BreakStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::ReturnStatement<context>& statement
+) {
+	if (statement.ifExpr.has_value())
+		throw;
+	if (statement.returnExpr.size() != 1)
+		throw;
+	if (statement.returnExpr.size() == 0)
+		return expected<std::optional<NodeStructs::MetaType>>{
+			std::optional<NodeStructs::MetaType>{
+				NodeStructs::MetaType{
+					NodeStructs::PrimitiveType{
+						NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{}
+					}
+				}
+			}
+		};
+	auto arg_info = transpile_arg(state, variables, statement.returnExpr.at(0));
+	return_if_error(arg_info);
+	if (!std::holds_alternative<non_type_information>(arg_info.value()))
+		throw;
+	return std::get<non_type_information>(std::move(arg_info).value()).type;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::BlockStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MatchStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::SwitchStatement<context>& statement
+) {
+	throw;
+}
+
+template <typename context>
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::Assignment<context>& statement
+) {
+	throw;
+}
 
 expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::contextual_options<function_context>& statement
+	const NodeStructs::RunTimeStatement& statement
 ) {
+	return caesium_lib::variant::visit(statement, [&](const auto& statement) { return deduce_return_type(state, variables, statement); });
 	throw;
 	//return std::visit(
 	//	overload(
@@ -1344,6 +1462,14 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	//	),
 	//	statement.statement.get()._value
 	//);
+}
+
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::contextual_options<function_context>& statement
+) {
+	return caesium_lib::variant::visit(statement, [&](const auto& statement) { return deduce_return_type(state, variables, statement); });
 }
 
 template <typename context>
