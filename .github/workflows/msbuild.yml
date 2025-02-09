@@ -34,4 +34,4 @@ jobs:
 
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: D:\a\Caesium\Caesium\Tests\x64\Debug\tests.exe
+      run: D:\a\Caesium\Caesium\Tests\x64\Debug\tests.exe D:\a\Caesium\Caesium\Tests\Tests
