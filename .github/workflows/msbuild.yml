@@ -36,11 +36,14 @@ jobs:
       run: dir D:\a\Caesium\Caesium
 
     - name: List executables 
-      run: dir D:\a\Caesium\Caesium\x64
+      run: dir D:\a\Caesium\Caesium\Caesium
 
     - name: List executables 
-      run: dir D:\a\Caesium\Caesium\x64\Debug
+      run: dir D:\a\Caesium\Caesium\Caesium\x64
+
+    - name: List executables 
+      run: dir D:\a\Caesium\Caesium\Caesium\x64\Debug
 
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: D:\a\Caesium\Caesium\x64\Debug\tests.exe "./Tests/"
+      run: D:\a\Caesium\Caesium\Caesium\x64\Debug\tests.exe D:\a\Caesium\Caesium\Tests\Tests
