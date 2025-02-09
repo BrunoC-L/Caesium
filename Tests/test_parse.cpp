@@ -67,7 +67,7 @@ bool test_parse() {
 	ok &= test_parse_correct<CompareOperator>(__LINE__, 0, ">?");
 
 	ok &= test_parse_correct<Expression>(__LINE__, 0, "x");
-	ok &= test_parse_correct<RunTimeStatement<function_context>>(__LINE__, 0, "x");
+	ok &= test_parse_correct<RunTimeStatement>(__LINE__, 0, "x");
 	ok &= test_parse_correct<Statement<function_context>>(__LINE__, 0, "x");
 	ok &= test_parse_correct<Indent<Statement<function_context>>>(__LINE__, 0, "\tx");
 	ok &= test_parse_correct<Indent<Star<Statement<function_context>>>>(__LINE__, 0, "\tx");
@@ -93,6 +93,10 @@ bool test_parse() {
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\tb\n");
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta\n\n\tb\n");
 	ok &= test_parse_correct<Enum>(__LINE__, 0, "enum TOKENS:\n\ta//a\n\n\tb\n");
+
+	ok &= test_parse_correct<Statement<function_context>>(__LINE__, 0, "a // a\n");
+	ok &= test_parse_correct<Statement<function_context>>(__LINE__, 0, "a\n");
+	ok &= test_parse_incorrect<And<Statement<function_context>, Newline>>(__LINE__, 0, "a\n");
 	ok &= test_parse_correct<And<Statement<function_context>, Statement<function_context>>>(__LINE__, 0, "a // a\na\n");
 	ok &= test_parse_correct<And<Statement<function_context>, Statement<function_context>>>(__LINE__, 0, "a //\na\n");
 	ok &= test_parse_correct<And<Statement<function_context>, Statement<function_context>>>(__LINE__, 0, "a // a \na\n");
@@ -164,6 +168,7 @@ bool test_parse() {
 
 	ok &= test_parse_correct<VariableDeclarationStatement<function_context>>(__LINE__, 0, "Int a = {}\n");
 	ok &= test_parse_correct<VariableDeclarationStatement<type_context>>(__LINE__, 0, "Int a = {}\n");
+	ok &= test_parse_correct<CompileTimeStatement<type_context>>(__LINE__, 0, "#Int a = {}\n");
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 0, "#Int a = {}\n");
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 1, "\t#Int a = {}\n");
 	ok &= test_parse_correct<Statement<type_context>>(__LINE__, 1, "\t#if True:\n\t\t#Int a = {}\n");

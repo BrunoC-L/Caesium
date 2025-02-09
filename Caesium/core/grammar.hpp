@@ -249,7 +249,7 @@ namespace grammar {
 	//> {};
 
 	template <typename context>
-	using CompileTimeStatement = Or<
+	using CompileTimeStatement = And<Token<POUND>, Or<
 		VariableDeclarationStatement<context>,
 		IfStatement<context>,
 		ForStatement<context>,
@@ -261,26 +261,25 @@ namespace grammar {
 		MatchStatement<context>,
 		SwitchStatement<context>,
 		Assignment<context>
-	>;
+	>>;
 
-	template <typename context>
 	using RunTimeStatement = Or<
-		Expression,
-		VariableDeclarationStatement<context>,
-		IfStatement<context>,
-		ForStatement<context>,
-		IForStatement<context>,
-		WhileStatement<context>,
-		BreakStatement<context>,
-		ReturnStatement<context>,
-		BlockStatement<context>,
-		MatchStatement<context>,
-		SwitchStatement<context>,
-		Assignment<context>
+		ExpressionStatement<function_context>,
+		VariableDeclarationStatement<function_context>,
+		IfStatement<function_context>,
+		ForStatement<function_context>,
+		IForStatement<function_context>,
+		WhileStatement<function_context>,
+		BreakStatement<function_context>,
+		ReturnStatement<function_context>,
+		BlockStatement<function_context>,
+		MatchStatement<function_context>,
+		SwitchStatement<function_context>,
+		Assignment<function_context>
 	>;
 
 	template <>
-	struct Statement<function_context> : And<IndentToken, Or<CompileTimeStatement<function_context>, Or<RunTimeStatement<function_context>>>> {};
+	struct Statement<function_context> : And<IndentToken, Or<CompileTimeStatement<function_context>, Or<RunTimeStatement>>> {};
 
 	struct Type : And<
 		Commit<Token<TYPE>>,

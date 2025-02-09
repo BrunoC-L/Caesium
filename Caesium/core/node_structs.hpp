@@ -431,6 +431,7 @@ struct NodeStructs {
 		std::optional<Typename> name_space;
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
+		std::vector<CompileTimeStatement<type_context>> compile_time_statements;
 		rule_info rule_info = rule_info_stub<Interface>();
 	};
 
@@ -640,20 +641,19 @@ struct NodeStructs {
 		NameSpace content;
 	};
 
-	template <typename context>
 	using RunTimeStatement = Variant<
 		Expression,
-		VariableDeclarationStatement<context>,
-		IfStatement<context>,
-		ForStatement<context>,
-		IForStatement<context>,
-		WhileStatement<context>,
-		BreakStatement<context>,
-		ReturnStatement<context>,
-		BlockStatement<context>,
-		MatchStatement<context>,
-		SwitchStatement<context>,
-		Assignment<context>
+		VariableDeclarationStatement<function_context>,
+		IfStatement<function_context>,
+		ForStatement<function_context>,
+		IForStatement<function_context>,
+		WhileStatement<function_context>,
+		BreakStatement<function_context>,
+		ReturnStatement<function_context>,
+		BlockStatement<function_context>,
+		MatchStatement<function_context>,
+		SwitchStatement<function_context>,
+		Assignment<function_context>
 	>;
 
 	template <typename context>
@@ -671,25 +671,14 @@ struct NodeStructs {
 		Assignment<context>
 	> {};
 
-	template <>
-	struct Statement<function_context> {
-		using context = function_context;
-		using contextual_options = Variant<RunTimeStatement<function_context>>;
-		NonCopyableBox<Variant<CompileTimeStatement<context>, contextual_options>> statement;
-		bool is_compile_time;
-	};
+	template <typename T> struct contextual_options_;
+	template <> struct contextual_options_<function_context> { using type = Variant<RunTimeStatement>; };
+	template <> struct contextual_options_<type_context> { using type = Variant<Alias, MemberVariable>; };
+	template <> struct contextual_options_<top_level_context> { using type = Variant<Type, Function>; };
+	template <typename T> using contextual_options = contextual_options_<T>::type;
 
-	template <>
-	struct Statement<type_context> {
-		using context = type_context;
-		using contextual_options = Variant<Alias, MemberVariable>;
-		NonCopyableBox<Variant<CompileTimeStatement<context>, contextual_options>> statement;
-	};
-
-	template <>
-	struct Statement<top_level_context> {
-		using context = type_context;
-		using contextual_options = Variant<Type>;
-		NonCopyableBox<Variant<CompileTimeStatement<context>, contextual_options>> statement;
+	template <typename context_>
+	struct Statement {
+		NonCopyableBox<Variant<CompileTimeStatement<context_>, contextual_options<context_>>> statement;
 	};
 };

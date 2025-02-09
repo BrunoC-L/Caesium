@@ -349,12 +349,18 @@ transpile_t transpile(
 
 template <typename context>
 bool uses_auto(const NodeStructs::Statement<context>& statement) {
-	// todo recursive impl and check for variable declarations and for statements
-	throw;
-	/*if (holds<NodeStructs::VariableDeclarationStatement<context>>(statement)) {
-		const auto& var_decl = get<NodeStructs::VariableDeclarationStatement<context>>(statement);
-		return uses_auto(var_decl.type);
+	if (holds<NodeStructs::CompileTimeStatement<context>>(statement))
+		return false;
+	if constexpr (std::is_same_v<context, function_context>) {
+		const Variant<NodeStructs::RunTimeStatement>& st1 = get<Variant<NodeStructs::RunTimeStatement>>(statement);
+		const NodeStructs::RunTimeStatement& st = get<NodeStructs::RunTimeStatement>(st1);
+		if (holds<NodeStructs::VariableDeclarationStatement<context>>(st)) {
+			const auto& var_decl = get<NodeStructs::VariableDeclarationStatement<context>>(st);
+			return uses_auto(var_decl.type);
+		}
+		else
+			return false;
 	}
-	else
-		return false;*/
+	throw;
+	// todo recursive impl and check for variable declarations and for statements
 }

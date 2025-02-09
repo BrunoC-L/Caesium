@@ -891,6 +891,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 											throw;
 										const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
 										ss << expr_info_ok.representation << ", ";
+										throw;
 									},
 									[](not_assignable&) -> transpile_expression_information_t {
 										throw;
@@ -1208,150 +1209,157 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	const std::vector<NodeStructs::Statement<context>>& statements
 );
 
+
+expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::contextual_options<function_context>& statement
+) {
+	throw;
+	//return std::visit(
+	//	overload(
+	//		overload_default_error,
+	//		[&](const NodeStructs::ReturnStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			if (statement.ifExpr.has_value())
+	//				throw;
+	//			if (statement.returnExpr.size() != 1)
+	//				throw;
+	//			auto res_info = transpile_expression(state, variables, statement.returnExpr.at(0).expr);
+	//			return_if_error(res_info);
+	//			if (!std::holds_alternative<non_type_information>(res_info.value()))
+	//				throw;
+	//			return std::get<non_type_information>(std::move(res_info).value()).type;
+	//		},
+	//		[&](const NodeStructs::Expression& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			return std::nullopt;
+	//		},
+	//		[&](const NodeStructs::VariableDeclarationStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			return std::nullopt;
+	//		},
+	//		[&](const NodeStructs::IfStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			auto if_res_t = deduce_return_type(state, variables, statement.ifStatements);
+	//			return_if_error(if_res_t);
+
+	//			if (!statement.elseExprStatements.has_value())
+	//				return if_res_t;
+
+	//			auto else_res_t = std::visit(
+	//				overload(
+	//					[&](const std::vector<NodeStructs::Statement<context>>& statements) -> expected<std::optional<NodeStructs::MetaType>> {
+	//						return deduce_return_type(state, variables, statements);
+	//					},
+	//					[&](const NonCopyableBox<NodeStructs::IfStatement<context>>& inner_if) -> expected<std::optional<NodeStructs::MetaType>> {
+	//						return deduce_return_type(state, variables, NodeStructs::Statement<context>{ copy(inner_if.get()) });
+	//					}
+	//				),
+	//				statement.elseExprStatements.value()._value
+	//			);
+	//			return_if_error(else_res_t);
+
+	//			if (if_res_t.value().has_value() && else_res_t.value().has_value())
+	//				if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::weak_ordering::equivalent)
+	//					throw;
+	//				else
+	//					return if_res_t;
+	//			if (if_res_t.value().has_value())
+	//				return if_res_t;
+	//			return std::move(else_res_t);
+	//		},
+	//		[&](const NodeStructs::IForStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			throw;
+	//		},
+	//		[&](const NodeStructs::ForStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
+	//			return_if_error(coll_type_or_e);
+	//			if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
+	//				throw;
+	//			const auto& coll_type_or_e_ok = std::get<non_type_information>(coll_type_or_e.value());
+	//			auto it_type = iterator_type(state, coll_type_or_e_ok.type);
+	//			if (statement.iterators.size() > 1)
+	//				throw;
+	//			auto opt_e = add_for_iterator_variables(state, variables, statement.iterators, it_type);
+	//			if (opt_e.has_value())
+	//				return opt_e.value();
+	//			return deduce_return_type(state, variables, statement.statements);
+	//		},
+	//		[&](const NodeStructs::WhileStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			return deduce_return_type(state, variables, statement.statements);
+	//		},
+	//		[&](const NodeStructs::BreakStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			return std::nullopt;
+	//		},
+	//		[&](const NodeStructs::BlockStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			throw;
+	//		},
+	//		[&](const NodeStructs::MatchStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			// for each match case copy variables, add the match variables, note the return type from the case, compare with stored
+	//			if (statement.expressions.size() != 1)
+	//				throw;
+	//			if (statement.cases.size() == 0)
+	//				throw;
+	//			/*auto expr_info = transpile_expression(state, variables, statement.expressions.at(0));
+	//			return_if_error(expr_info);
+	//			if (!std::holds_alternative<non_type_information>(expr_info.value()))
+	//				throw;
+	//			const auto& expr_ok = std::get<non_type_information>(expr_info.value());
+	//			auto tn = typename_of_type(state, expr_ok.type.type);
+	//			return_if_error(tn);
+	//			auto tn_repr = transpile_typename(state, variables, tn.value());
+	//			return_if_error(tn_repr);*/
+
+	//			std::optional<NodeStructs::MetaType> res = std::nullopt;
+	//			for (const NodeStructs::MatchCase<context>& match_case : statement.cases) {
+	//				if (match_case.variable_declarations.size() != 1)
+	//					throw;
+	//				auto tn = transpile_typename(state, variables, match_case.variable_declarations.at(0).first);
+	//				return_if_error(tn);
+	//				const auto& varname = match_case.variable_declarations.at(0).second;
+	//				variables[varname]
+	//					.push_back(variable_info{
+	//						.value_category = NodeStructs::Reference{},
+	//						.type = type_of_typename(state, variables, match_case.variable_declarations.at(0).first).value()
+	//						});
+	//				auto deduced = deduce_return_type(state, variables, match_case.statements);
+	//				variables[varname].pop_back();
+	//				return_if_error(deduced);
+
+	//				if (deduced.value().has_value())
+	//					if (res.has_value())
+	//						if (cmp(res.value(), deduced.value().value()) != std::weak_ordering::equivalent)
+	//							throw;
+	//						else
+	//							continue;
+	//					else
+	//						res.emplace(std::move(deduced).value().value());
+	//			}
+	//			return res;
+	//			// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw, it will be removed eventually
+	//		},
+	//		[&](const NodeStructs::SwitchStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			throw;
+	//		},
+	//		[&](const NodeStructs::Assignment<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+	//			return std::nullopt;
+	//		}
+	//	),
+	//	statement.statement.get()._value
+	//);
+}
+
 template <typename context>
 expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::Statement<context>& statement
 ) {
-	throw;
-//
-//	bool is_compile_time = [&]() {
-//		if constexpr (std::is_same_v<context, function_context>) {
-//			return statement.is_compile_time;
-//		}
-//		else {
-//			return true;
-//		}
-//	}();
-//	return std::visit(
-//		overload(
-//			overload_default_error,
-//			[&](const NodeStructs::ReturnStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				if (statement.ifExpr.has_value())
-//					throw;
-//				if (statement.returnExpr.size() != 1)
-//					throw;
-//				auto res_info = transpile_expression(state, variables, statement.returnExpr.at(0).expr);
-//				return_if_error(res_info);
-//				if (!std::holds_alternative<non_type_information>(res_info.value()))
-//					throw;
-//				return std::get<non_type_information>(std::move(res_info).value()).type;
-//			},
-//			[&](const NodeStructs::Expression& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				return std::nullopt;
-//			},
-//			[&](const NodeStructs::VariableDeclarationStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				return std::nullopt;
-//			},
-//			[&](const NodeStructs::IfStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				auto if_res_t = deduce_return_type(state, variables, statement.ifStatements);
-//				return_if_error(if_res_t);
-//
-//				if (!statement.elseExprStatements.has_value())
-//					return if_res_t;
-//
-//				auto else_res_t = std::visit(
-//					overload(
-//						[&](const std::vector<NodeStructs::Statement<context>>& statements) -> expected<std::optional<NodeStructs::MetaType>> {
-//							return deduce_return_type(state, variables, statements);
-//						},
-//						[&](const NonCopyableBox<NodeStructs::IfStatement<context>>& inner_if) -> expected<std::optional<NodeStructs::MetaType>> {
-//							return deduce_return_type(state, variables, NodeStructs::Statement<context>{ copy(inner_if.get()) });
-//						}
-//					),
-//					statement.elseExprStatements.value()._value
-//				);
-//				return_if_error(else_res_t);
-//
-//				if (if_res_t.value().has_value() && else_res_t.value().has_value())
-//					if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::weak_ordering::equivalent)
-//						throw;
-//					else
-//						return if_res_t;
-//				if (if_res_t.value().has_value())
-//					return if_res_t;
-//				return std::move(else_res_t);
-//			},
-//			[&](const NodeStructs::IForStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				throw;
-//			},
-//			[&](const NodeStructs::ForStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
-//				return_if_error(coll_type_or_e);
-//				if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
-//					throw;
-//				const auto& coll_type_or_e_ok = std::get<non_type_information>(coll_type_or_e.value());
-//				auto it_type = iterator_type(state, coll_type_or_e_ok.type);
-//				if (statement.iterators.size() > 1)
-//					throw;
-//				auto opt_e = add_for_iterator_variables(state, variables, statement.iterators, it_type);
-//				if (opt_e.has_value())
-//					return opt_e.value();
-//				return deduce_return_type(state, variables, statement.statements);
-//			},
-//			[&](const NodeStructs::WhileStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				return deduce_return_type(state, variables, statement.statements);
-//			},
-//			[&](const NodeStructs::BreakStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				return std::nullopt;
-//			},
-//			[&](const NodeStructs::BlockStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				throw;
-//			},
-//			[&](const NodeStructs::MatchStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				// for each match case copy variables, add the match variables, note the return type from the case, compare with stored
-//				if (statement.expressions.size() != 1)
-//					throw;
-//				if (statement.cases.size() == 0)
-//					throw;
-//				/*auto expr_info = transpile_expression(state, variables, statement.expressions.at(0));
-//				return_if_error(expr_info);
-//				if (!std::holds_alternative<non_type_information>(expr_info.value()))
-//					throw;
-//				const auto& expr_ok = std::get<non_type_information>(expr_info.value());
-//				auto tn = typename_of_type(state, expr_ok.type.type);
-//				return_if_error(tn);
-//				auto tn_repr = transpile_typename(state, variables, tn.value());
-//				return_if_error(tn_repr);*/
-//
-//				std::optional<NodeStructs::MetaType> res = std::nullopt;
-//				for (const NodeStructs::MatchCase<context>& match_case : statement.cases) {
-//					if (match_case.variable_declarations.size() != 1)
-//						throw;
-//					auto tn = transpile_typename(state, variables, match_case.variable_declarations.at(0).first);
-//					return_if_error(tn);
-//					const auto& varname = match_case.variable_declarations.at(0).second;
-//					variables[varname]
-//						.push_back(variable_info{
-//							.value_category = NodeStructs::Reference{},
-//							.type = type_of_typename(state, variables, match_case.variable_declarations.at(0).first).value()
-//							});
-//					auto deduced = deduce_return_type(state, variables, match_case.statements);
-//					variables[varname].pop_back();
-//					return_if_error(deduced);
-//
-//					if (deduced.value().has_value())
-//						if (res.has_value())
-//							if (cmp(res.value(), deduced.value().value()) != std::weak_ordering::equivalent)
-//								throw;
-//							else
-//								continue;
-//						else
-//							res.emplace(std::move(deduced).value().value());
-//				}
-//				return res;
-//				// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw, it will be removed eventually
-//			},
-//			[&](const NodeStructs::SwitchStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				throw;
-//			},
-//			[&](const NodeStructs::Assignment<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
-//				return std::nullopt;
-//			}
-//		),
-//		statement.statement.get()._value
-//	);
+	return caesium_lib::variant::visit(statement.statement.get(), overload(
+		[&](const NodeStructs::CompileTimeStatement<context>& statement) -> expected<std::optional<NodeStructs::MetaType>> {
+			throw;
+		},
+		[&](const NodeStructs::contextual_options<context>& contextual)->expected<std::optional<NodeStructs::MetaType>>{
+			return deduce_return_type(state, variables, contextual);
+		}
+	));
 }
 
 template <typename context>
@@ -1360,22 +1368,21 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	variables_t& variables,
 	const std::vector<NodeStructs::Statement<context>>& statements
 ) {
-	throw;
-//	std::optional<NodeStructs::MetaType> res = std::nullopt;
-//	for (const auto& statement : statements) {
-//		expected<std::optional<NodeStructs::MetaType>> e = deduce_return_type(state, variables, statement);
-//		return_if_error(e);
-//
-//		if (e.value().has_value())
-//			if (res.has_value())
-//				if (cmp(res.value(), e.value().value()) != std::weak_ordering::equivalent)
-//					throw;
-//				else
-//					continue;
-//			else
-//				res.emplace(std::move(e).value().value());
-//	}
-//	return res;
+	std::optional<NodeStructs::MetaType> res = std::nullopt;
+	for (const auto& statement : statements) {
+		expected<std::optional<NodeStructs::MetaType>> e = deduce_return_type(state, variables, statement);
+		return_if_error(e);
+
+		if (e.value().has_value())
+			if (res.has_value())
+				if (cmp(res.value(), e.value().value()) != std::weak_ordering::equivalent)
+					throw;
+				else
+					continue;
+			else
+				res.emplace(std::move(e).value().value());
+	}
+	return res;
 }
 
 expected<NodeStructs::Function> realise_function_using_auto(
@@ -1708,7 +1715,9 @@ bool first_arrangement_preferred_over_second(
 ) {
 	if (first_arrangement_has_at_least_one_reason_to_be_preferred_over_second(args, second, first))
 		return false;
-	if (!first_arrangement_has_at_least_one_reason_to_be_preferred_over_second(args, first, second))
+	else if (first_arrangement_has_at_least_one_reason_to_be_preferred_over_second(args, first, second))
+		return true;
+	else
 		return has_empty_variadic(second) && !has_empty_variadic(first);
 }
 
