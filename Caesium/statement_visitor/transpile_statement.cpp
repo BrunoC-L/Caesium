@@ -656,20 +656,6 @@ R transpile_statement(
 			);
 		}
 	), statement.statement.get()._value);
-	/*if (statement.is_compile_time)
-		return std::visit(
-			[&](const auto& st) -> R {
-				return transpile_statement_specific<function_context, true>(state, variables, expected_return_type, st);
-			},
-			statement.statement.get()._value
-		);
-	else
-		return std::visit(
-			[&](const auto& st) -> R {
-				return transpile_statement_specific<function_context, false>(state, variables, expected_return_type, st);
-			},
-			statement.statement.get()._value
-		);*/
 }
 
 R transpile_statement(
