@@ -6,9 +6,9 @@
 #include "../utility/replace_all.hpp"
 
 #include "toCPP.hpp"
-#include "structurizer.hpp"
+#include "../structured/structurizer.hpp"
 #include "builtins.hpp"
-#include "default_includes.hpp"
+#include "../utility/default_includes.hpp"
 
 void add_impl(auto& v, auto&& e) {
 	if (std::find_if(v.begin(), v.end(), [&](const auto& x) { return cmp(x, e) == std::weak_ordering::equivalent; }) != v.end())
@@ -130,7 +130,7 @@ template <typename T>
 auto add(Namespace& named, std::map<std::string, std::vector<T>>& map_of_vec) {
 	for (const auto& [key, vec] : map_of_vec)
 		for (const T& e : vec)
-			add(named, copy(e));
+			add(named, ::copy(e));
 }
 
 auto add_auto_fns(Namespace& named, std::map<std::string, std::vector<NodeStructs::Function>>& map_of_vec) {
@@ -168,13 +168,14 @@ std::optional<error> insert_all_named_recursive_with_imports(
 					return opt_error;
 				Namespace& imported_named = named_by_file.at(i.imported);
 
-				add(named, imported_named.types);
+				throw;
+				/*add(named, imported_named.types);
 				add(named, imported_named.functions);
 				add_auto_fns(named, imported_named.functions_using_auto);
 				add(named, imported_named.interfaces);
 				add(named, imported_named.blocks);
 				add(named, imported_named.templates);
-				add(named, imported_named.enums);
+				add(named, imported_named.enums);*/
 				for (const auto& [k, e] : imported_named.namespaces)
 					named.namespaces.emplace(k, copy(e));
 			}
@@ -222,12 +223,13 @@ std::optional<error> insert_aliases_recursive_with_imports(
 void mark_exists_as_traversed(transpilation_state& state, variables_t& variables, const NodeStructs::NameSpace& exists, std::stringstream& ss) {
 	for (const auto& e : exists.types) {
 		if (e.name_space.has_value()) {
-			auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
+			throw;
+			/*auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
 			if (str_or_e.has_error())
 				throw;
 			ss << "using " << str_or_e.value() << "__" << e.name << " = ";
 			std::string aliases_to = replace_all(std::move(str_or_e).value(), "__", "::");
-			ss << aliases_to << "::" << e.name << ";\n";
+			ss << aliases_to << "::" << e.name << ";\n";*/
 		}
 		state.traversed_types.insert(copy(e));
 	}
@@ -236,22 +238,24 @@ void mark_exists_as_traversed(transpilation_state& state, variables_t& variables
 		bool is_type = true;
 		if (is_type) {
 			if (e.name_space.has_value()) {
-				auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
+				throw;
+				/*auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
 				if (str_or_e.has_error())
 					throw;
 				ss << "template <typename... Ts> using " << str_or_e.value() << "__" << e.name << " = ";
 				std::string aliases_to = replace_all(std::move(str_or_e).value(), "__", "::");
-				ss << aliases_to << "::" << e.name << "<Ts...>;\n";
+				ss << aliases_to << "::" << e.name << "<Ts...>;\n";*/
 			}
 		}
 		else { // assume function
 			if (e.name_space.has_value()) {
-				auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
+				throw;
+				/*auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
 				if (str_or_e.has_error())
 					throw;
 				ss << "decltype(auto) " << str_or_e.value() << "__" << e.name << "(auto&&... args) { return ";
 				std::string aliases_to = replace_all(std::move(str_or_e).value(), "__", "::");
-				ss << aliases_to << "::" << e.name << "(std::forward<decltype(args)...>(args...)); }\n";
+				ss << aliases_to << "::" << e.name << "(std::forward<decltype(args)...>(args...)); }\n";*/
 			}
 		}
 	}
@@ -279,30 +283,47 @@ void mark_exists_as_traversed(transpilation_state& state, variables_t& variables
 	mark_exists_as_traversed(state, variables, exists.global_exists, ss);
 }
 
+expected<std::pair<std::map<std::string, Namespace>, std::set<std::string>>> create_named_by_file(const std::vector<NodeStructs::File>& project) {
+	std::map<std::string, Namespace> named_by_file{};
+	std::set<std::string> inserted_named = {};
+
+	 // at this point we could also check if some files are never used and provide a warning
+
+	for (const auto& file2 : project) {
+		Namespace named_of_file = {
+			.rule_info = copy(file2.content.rule_info)
+		};
+		add_builtins(named_of_file);
+		named_by_file.emplace(file2.content.name, std::move(named_of_file));
+		if (auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.content.name, inserted_named); opt_error.has_value())
+			return opt_error.value();
+	}
+
+	return std::pair{ std::move(named_by_file), std::move(inserted_named) };
+}
+
+expected<std::pair<std::set<std::string>, std::map<std::string, Namespace>>> insert_aliases(const std::vector<NodeStructs::File>& project, std::map<std::string, Namespace> named_by_file) {
+	std::set<std::string> inserted_aliases = {};
+	for (const auto& file2 : project)
+		if (auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.content.name, inserted_aliases); opt_e.has_value())
+			return opt_e.value();
+	return std::pair{ std::move(inserted_aliases), std::move(named_by_file) };
+}
+
 transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 	for (const auto& file : project)
 		for (const auto& fn : file.content.functions)
 			if (fn.name == "main") {
-				std::map<std::string, Namespace> named_by_file;
 
-				std::set<std::string> inserted_named = {};
-				for (const auto& file2 : project) {
-					Namespace named_of_file = {
-						.rule_info = copy(file2.content.rule_info)
-					};
-					add_builtins(named_of_file);
-					named_by_file.emplace(file2.content.name, std::move(named_of_file));
-					if (auto opt_error = insert_all_named_recursive_with_imports(project, named_by_file, file2.content.name, inserted_named); opt_error.has_value())
-						return opt_error.value();
-				}
+				auto named_or_e = create_named_by_file(project);
+				return_if_error(named_or_e);
+				auto [named_by_file_, inserted_named] = std::move(named_or_e).value();
 
-				std::set<std::string> inserted_aliases = {};
-				for (const auto& file2 : project)
-					if (auto opt_e = insert_aliases_recursive_with_imports(project, named_by_file, file2.content.name, inserted_aliases); opt_e.has_value())
-						return opt_e.value();
+				auto aliases_or_e = insert_aliases(project, std::move(named_by_file_));
+				return_if_error(aliases_or_e);
+				auto [inserted_aliases, named_by_file] = std::move(aliases_or_e).value();
 
-				for (const auto& [_, named] : named_by_file)
-					for (const auto& [_, templates] : named.templates)
+				for (const auto& [_, templates] : named_by_file.at(file.content.name).templates)
 					if (auto opt_e = validate_templates(templates); opt_e.has_value())
 						return opt_e.value();
 
@@ -1141,6 +1162,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 }
 
 bool uses_auto(const NodeStructs::Function& fn) {
+	throw;
 	if (cmp(fn.returnType.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::weak_ordering::equivalent)
 		return true;
 	for (const auto& param : fn.parameters)
@@ -1153,17 +1175,17 @@ bool uses_auto(const NodeStructs::FunctionParameter& param) {
 	return uses_auto(param.typename_);
 }
 
-static bool uses_auto(const NodeStructs::BaseTypename& t) {
+bool uses_auto(const NodeStructs::BaseTypename& t) {
 	return t.type == "auto";
 }
 
-static bool uses_auto(const NodeStructs::NamespacedTypename& t) {
+bool uses_auto(const NodeStructs::NamespacedTypename& t) {
 	if (t.name_in_name_space == "auto")
 		throw;
 	return uses_auto(t.name_space);
 }
 
-static bool uses_auto(const NodeStructs::TemplatedTypename& t) {
+bool uses_auto(const NodeStructs::TemplatedTypename& t) {
 	if (uses_auto(t.type))
 		return true;
 	for (const auto& param : t.templated_with)
@@ -1176,22 +1198,22 @@ static bool uses_auto(const NodeStructs::TemplatedTypename& t) {
 	return false;
 }
 
-static bool uses_auto(const NodeStructs::Expression& t) {
+bool uses_auto(const NodeStructs::Expression& t) {
 	throw;
 }
 
-static bool uses_auto(const NodeStructs::UnionTypename& t) {
+bool uses_auto(const NodeStructs::UnionTypename& t) {
 	for (const auto& param : t.ors)
 		if (uses_auto(param))
 			return true;
 	return false;
 }
 
-static bool uses_auto(const NodeStructs::OptionalTypename& t) {
+bool uses_auto(const NodeStructs::OptionalTypename& t) {
 	return uses_auto(t.type);
 }
 
-static bool uses_auto(const NodeStructs::VariadicExpansionTypename& t) {
+bool uses_auto(const NodeStructs::VariadicExpansionTypename& t) {
 	auto res = uses_auto(t.type);
 	if (res)
 		throw;

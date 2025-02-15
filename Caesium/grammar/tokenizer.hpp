@@ -2,8 +2,10 @@
 #include <sstream>
 #include <vector>
 
+using token_t = std::uint8_t;
+
 enum TOKENS {
-	END, // marks the last token of a stream
+	END = token_t{ 0 }, // marks the last token of a stream
 
 	SEMICOLON,
 	COLON,

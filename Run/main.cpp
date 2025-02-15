@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 
-#include "core/structurizer.hpp"
+#include "structured/structurizer.hpp"
 #include "core/toCpp.hpp"
 
 static NodeStructs::File caesium2AST(const std::filesystem::path& file_name) {

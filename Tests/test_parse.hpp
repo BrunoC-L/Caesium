@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include "core/toCpp.hpp"
-#include "core/structurizer.hpp"
+#include "structured/structurizer.hpp"
 #include "utility/colored_text.hpp"
 
 static std::string test_file_name_stub() {

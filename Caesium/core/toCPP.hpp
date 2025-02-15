@@ -7,9 +7,9 @@
 #include <functional>
 #include "../utility/expected.hpp"
 #include "../utility/enumerate.hpp"
-#include "node_structs.hpp"
-#include "structurizer.hpp"
-#include "helpers.hpp"
+#include "../structured/node_structs.hpp"
+#include "../structured/structurizer.hpp"
+#include "../structured/helpers.hpp"
 
 struct variable_info {
 	NodeStructs::ValueCategory value_category;
@@ -29,9 +29,12 @@ struct non_type_information{
 	NodeStructs::ValueCategory value_category;
 };
 
-inline auto copy(const non_type_information& info) {
-	return copy3(info);
-}
+template <>
+struct copy_t<non_type_information> {
+	static non_type_information copy(const non_type_information& info) {
+		return copy3(info);
+	}
+};
 
 using expression_information = std::variant<type_information, non_type_information>;
 using transpile_t = expected<std::string>;
@@ -40,7 +43,7 @@ using transpile_expression_information_t = expected<expression_information>;
 struct Namespace {
 	std::string name;
 
-	template <typename T> using map_to_vec = std::map<std::string, std::vector<T>>;
+	template <typename T> using map_to_vec = std::map<std::string, std::vector<T>, decltype([](const std::string& l, const std::string& r) { return l <=> r == std::weak_ordering::less; })>;
 
 	map_to_vec<NodeStructs::Function> functions;
 	map_to_vec<NodeStructs::Function> functions_using_auto;
@@ -51,17 +54,20 @@ struct Namespace {
 	map_to_vec<NodeStructs::Template> templates;
 
 	map_to_vec<NodeStructs::Block> blocks;
-	std::map<std::string, NodeStructs::Typename> aliases;
+	std::map<std::string, NodeStructs::Typename, decltype([](const std::string& l, const std::string& r) { return l <=> r == std::weak_ordering::less; })> aliases;
 	map_to_vec<NodeStructs::Enum> enums;
 
-	std::map<std::string, Namespace> namespaces;
+	std::map<std::string, Namespace, decltype([](const std::string& l, const std::string& r) { return l <=> r == std::weak_ordering::less; })> namespaces;
 	map_to_vec<NodeStructs::Builtin> builtins;
 	rule_info rule_info = rule_info_stub<Namespace>();
 };
 
-inline auto copy(const Namespace& ns) {
-	return copy12(ns);
-}
+template <>
+struct copy_t<Namespace> {
+	static Namespace copy(const Namespace& ns) {
+		return copy12(ns);
+	}
+};
 
 struct transpilation_state {
 	Namespace global_namespace;
@@ -74,16 +80,30 @@ struct transpilation_state {
 	) : global_namespace(std::move(global_namespace)) {}
 
 	// shouldnt those be pointers...?
-	std::set<NodeStructs::Function> traversed_functions;
-	std::set<NodeStructs::Type> traversed_types;
-	std::set<NodeStructs::Interface> traversed_interfaces;
+	std::set<NodeStructs::Function,
+		decltype([](const NodeStructs::Function& l, const NodeStructs::Function& r) { return l <=> r == std::weak_ordering::less; })>
+			traversed_functions;
+	std::set<NodeStructs::Type,
+		decltype([](const NodeStructs::Type& l, const NodeStructs::Type& r) { return l <=> r == std::weak_ordering::less; })>
+		traversed_types;
+	std::set<NodeStructs::Interface,
+		decltype([](const NodeStructs::Interface& l, const NodeStructs::Interface& r) { return l <=> r == std::weak_ordering::less; })>
+			traversed_interfaces;
 
-	std::set<NodeStructs::Function> functions_to_transpile;
+	std::set<NodeStructs::Function,
+		decltype([](const NodeStructs::Function& l, const NodeStructs::Function& r) { return l <=> r == std::weak_ordering::less; })>
+			functions_to_transpile;
 	std::vector<NodeStructs::Type> types_to_transpile;
-	std::set<NodeStructs::Interface> interfaces_to_transpile;
-	std::set<NodeStructs::Enum> enums_to_transpile;
+	std::set<NodeStructs::Interface,
+		decltype([](const NodeStructs::Interface& l, const NodeStructs::Interface& r) { return l <=> r == std::weak_ordering::less; })>
+			interfaces_to_transpile;
+	std::set<NodeStructs::Enum,
+		decltype([](const NodeStructs::Enum& l, const NodeStructs::Enum& r) { return l <=> r == std::weak_ordering::less; })>
+			enums_to_transpile;
 
-	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
+	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>,
+		decltype([](const NodeStructs::Typename& l, const NodeStructs::Typename& r) { return l <=> r == std::weak_ordering::less; })>
+			interface_symbol_to_members;
 	std::set<std::pair<std::string, std::string>> aliases_to_transpile;
 };
 
@@ -100,7 +120,7 @@ struct transpilation_state_with_indent {
 	}
 };
 
-template <size_t token>
+template <token_t token>
 static constexpr std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::ASTERISK) return "*";
 	if constexpr (token == TOKENS::SLASH) return "/";
@@ -115,19 +135,21 @@ static constexpr std::string _symbol_as_text() {
 	if constexpr (token == TOKENS::GT) return ">";
 	if constexpr (token == TOKENS::LTE) return "<=";
 	if constexpr (token == TOKENS::GTE) return ">=";
+	// compilation error if control flow reaches here
 }
 
-template <size_t token>
+template <token_t token>
 std::string symbol_as_text(Token<token>) {
 	return _symbol_as_text<token>();
 }
 
-template <size_t... tokens>
+template <token_t... tokens>
 std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) {
-	return std::visit(
+	throw;
+	/*return std::visit(
 		[&](const auto& tk) { return symbol_as_text(tk); },
 		token
-	);
+	);*/
 }
 
 static std::string indent(size_t n) {
@@ -308,9 +330,6 @@ NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& pr
 struct Arrangement {
 	std::reference_wrapper<const NodeStructs::Template> tmpl;
 	std::vector<size_t> arg_placements;
-	/*std::weak_ordering operator<=>(const Arrangement& other) {
-		return cmp(arg_placements, other.arg_placements);
-	}*/
 };
 
 expected<Arrangement> find_best_template(

@@ -1,16 +1,17 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "lib.hpp"
 #include <optional>
 #include <compare>
 #include <map>
 #include <iostream>
 
+#include "lib.hpp"
+
 #include "../utility/box.hpp"
 #include "../utility/overload.hpp"
 
-#include "primitives.hpp"
+#include "../grammar/primitives.hpp"
 
 struct cursor_info {
 	unsigned line;
@@ -58,7 +59,7 @@ using top_level_context = grammar::top_level_context;
 
 struct Namespace;
 
-struct NodeStructs {
+namespace NodeStructs {
 	struct TemplatedTypename;
 	struct NamespacedTypename;
 	struct BaseTypename;
@@ -497,7 +498,7 @@ struct NodeStructs {
 			TypeToken, // type(type)
 
 			CompileTimeType // type of a variable declared with #type var = ...
-		> ;
+		>;
 		NonCopyableBox<vt> type;
 	};
 
@@ -671,10 +672,18 @@ struct NodeStructs {
 	> {};
 
 	template <typename T> struct contextual_options_;
-	template <> struct contextual_options_<function_context> { using type = Variant<RunTimeStatement>; };
-	template <> struct contextual_options_<type_context> { using type = Variant<Alias, MemberVariable>; };
-	template <> struct contextual_options_<top_level_context> { using type = Variant<Type, Function>; };
-	template <typename T> using contextual_options = contextual_options_<T>::type;
+
+	template <>
+	struct contextual_options_<function_context> { using type = Variant<RunTimeStatement>; };
+
+	template <>
+	struct contextual_options_<type_context> { using type = Variant<Alias, MemberVariable>; };
+
+	template <>
+	struct contextual_options_<top_level_context> { using type = Variant<Type, Function>; };
+
+	template <typename T>
+	using contextual_options = contextual_options_<T>::type;
 
 	template <typename context_>
 	struct Statement {

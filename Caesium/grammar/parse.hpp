@@ -3,7 +3,7 @@
 
 void parse_whitespaces(Iterator& it);
 
-template <int token>
+template <token_t token>
 bool build_end_token(Token<token>& t, Iterator& it) {
 	t.beg_offset = it.index;
 	bool ok = it.vec[it.index].first == token;
@@ -15,7 +15,7 @@ bool build_end_token(Token<token>& t, Iterator& it) {
 
 bool build_newline_token(Iterator& it);
 
-template <int token>
+template <token_t token>
 bool build_normal_token(Token<token>& t, Iterator& it) {
 	bool ok = it.vec[it.index].first == token;
 	if (ok) {
@@ -26,7 +26,7 @@ bool build_normal_token(Token<token>& t, Iterator& it) {
 	return ok;
 }
 
-template <int token>
+template <token_t token>
 bool build(Token<token>& t, Iterator& it) {
 	t.beg_offset = it.index;
 	auto res = [&]() {

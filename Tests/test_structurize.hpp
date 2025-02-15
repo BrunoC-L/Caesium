@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include "core/toCpp.hpp"
-#include "core/structurizer.hpp"
+#include "structured/structurizer.hpp"
 #include "utility/colored_text.hpp"
 #include "utility/as_vec.hpp"
 

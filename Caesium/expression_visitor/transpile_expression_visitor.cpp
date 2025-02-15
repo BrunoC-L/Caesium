@@ -1,6 +1,6 @@
 #include "../core/toCPP.hpp"
 #include "../utility/replace_all.hpp"
-#include "../core/structurizer.hpp"
+#include "../structured/structurizer.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 #include "../utility/vec_of_variant_to_optional_vector_single_type.hpp"
 #include <iostream>
@@ -673,7 +673,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
 			try {
 				if (build(f, it)) {
-					auto structured_f = getStruct("template:/" + tmpl_name, tokens, f.get<grammar::Function>(), std::nullopt);
+					auto structured_f = getStruct("template:/" + tmpl_name, tokens, f.template get<grammar::Function>(), std::nullopt);
 					structured_f.name = tmpl_name;
 					if (uses_auto(structured_f)) {
 						state.state.global_namespace.functions_using_auto[structured_f.name].push_back(std::move(structured_f));
@@ -711,7 +711,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			auto tokens = Tokenizer(replaced).read();
 			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
 			if (build(t, it)) {
-				auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.get<grammar::Type>(), std::nullopt);
+				auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.template get<grammar::Type>(), std::nullopt);
 				structured_t.name = tmpl_name;
 				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
 				auto opt_error = traverse_type(state, structured_t);

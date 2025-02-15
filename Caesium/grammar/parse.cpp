@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "parse.hpp"
 
 std::string file_name_stub() {
@@ -59,7 +60,7 @@ bool parse_indented_line(TemplateBody& body, Iterator& it) {
 	it.index--;
 	auto until_newline = Until<Token<NEWLINE>>{ body.n_indent };
 	bool has_newline = build(until_newline, it);
-	_ASSERT(has_newline); // if that doesnt work something is just wrong with the tokenizer.
+	assert(has_newline); // if that doesnt work something is just wrong with the tokenizer.
 	return true;
 }
 

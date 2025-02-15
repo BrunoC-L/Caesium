@@ -1,5 +1,5 @@
 #include "../core/toCPP.hpp"
-#include "../core/structurizer.hpp"
+#include "../structured/structurizer.hpp"
 #include "../utility/replace_all.hpp"
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 

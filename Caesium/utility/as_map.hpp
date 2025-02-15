@@ -10,8 +10,8 @@ void emplace(auto&& m, auto e, auto&&... es) {
 }
 
 template <typename K, typename V>
-std::map<K, V> as_map(std::pair<K, V> e, auto&&... es) {
-	std::map<K, V> res;
+std::map<K, V, decltype([](const K& l, const K& r) { return l <=> r == std::weak_ordering::less; })> as_map(std::pair<K, V> e, auto&&... es) {
+	std::map<K, V, decltype([](const K& l, const K& r) { return l <=> r == std::weak_ordering::less; })> res;
 	emplace(res, std::move(e));
 	emplace(res, std::forward<decltype(es)>(es)...);
 	return res;

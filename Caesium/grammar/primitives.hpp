@@ -20,7 +20,7 @@ namespace grammar {
 	constexpr std::string name_of_rule();
 }
 
-template <int _token>
+template <token_t _token>
 struct Token {
 	static constexpr auto token = _token;
 	static_assert(token != TAB, "Using Token<TAB> will not work, trailing tabs are ignored, use IndentNode");
@@ -191,7 +191,7 @@ struct KNode {
 			return (const std::vector<T>&)nodes;
 		else if constexpr (is_specialization<T, And>::value)
 			return nodes
-			| std::views::transform([&](auto&& e) { return e.get<U>(); })
+			| std::views::transform([&](auto&& e) { return e.template get<U>(); })
 			;
 		else if constexpr (std::is_same_v<Alloc<U>, T>)
 			return nodes

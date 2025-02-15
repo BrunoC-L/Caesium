@@ -1,6 +1,7 @@
 #pragma once
 #include "node_structs.hpp"
-#include "primitives.hpp"
+#include "../grammar/primitives.hpp"
+#include <set>
 
 NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr, rule_info info);
 NodeStructs::Typename make_typename(NodeStructs::Typename::vt tn, Optional<NodeStructs::ParameterCategory> cat, rule_info info);
@@ -86,11 +87,12 @@ const std::string& original_representation(const NodeStructs::Typename& e);
 const std::string& original_representation(const NodeStructs::Expression& e);
 
 
+#define CMP_N(N, T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right);
+#define CMP_COPY_N(N, T) CMP_N(N,T)
+#include "cmp_copy_all.hpp"
 
-
-
-
-
+inline std::weak_ordering operator<=>(const NodeStructs::MetaType& left, const NodeStructs::MetaType& right);
+inline std::weak_ordering operator<=>(const NodeStructs::PrimitiveType& left, const NodeStructs::PrimitiveType& right);
 
 template <typename T>
 static std::weak_ordering cmp(const T& a, const T& b) {
@@ -169,7 +171,7 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 			throw;
 	}
 	else if constexpr (is_specialization<T, NodeStructs::PrimitiveType::NonValued>::value) {
-		return true;
+		return std::weak_ordering::equivalent;
 	}
 	else if constexpr (is_specialization<T, NodeStructs::PrimitiveType::Valued>::value) {
 		return cmp(a.value, b.value);
@@ -350,47 +352,6 @@ inline bool primitives_assignable(const NodeStructs::PrimitiveType& parameter, c
 		return true;
 }
 
-template <typename K, typename V>
-std::map<K, V> copy(const std::map<K, V>& m) {
-	std::map<K, V> res;
-	for (const auto& [k, v] : m)
-		res.emplace(copy(k), copy(v));
-	return res;
-}
-
-template <typename T>
-NonCopyableBox<T> copy(const NonCopyableBox<T>& box) {
-	return NonCopyableBox<T>{ copy(box.get()) };
-}
-
-inline NodeStructs::PrimitiveType copy(const NodeStructs::PrimitiveType& p) {
-	return std::visit(overload(
-		[&](const auto& val) -> NodeStructs::PrimitiveType {
-			using raw_t = std::remove_cvref_t<decltype(val)>;
-			if constexpr (is_specialization<raw_t, NodeStructs::PrimitiveType::Valued>::value)
-				return NodeStructs::PrimitiveType{ raw_t{ copy(val.value) } };
-			else
-				return NodeStructs::PrimitiveType{ raw_t{} };
-		}),
-		p.value._value
-	);
-}
-
-template <typename T>
-std::reference_wrapper<T> copy(const std::reference_wrapper<T>& t) {
-	return { t.get() };
-}
-
-template <typename T, typename U>
-std::pair<T, U> copy(const std::pair<T, U>& x) {
-	return copy2(x);
-}
-
-template <int token>
-Token<token> copy(const Token<token>& tk) {
-	return tk;
-}
-
 template <typename T>
 T copy0(const T& x) {
 	return {};
@@ -478,142 +439,71 @@ T copy12(const T& x) {
 	};
 }
 
-#define CMP0(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp0(left, right); }
-#define CMP1(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp1(left, right); }
-#define CMP2(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp2(left, right); }
-#define CMP3(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp3(left, right); }
-#define CMP4(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp4(left, right); }
-#define CMP5(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp5(left, right); }
-#define CMP6(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp6(left, right); }
-#define CMP12(T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp12(left, right); }
+template <typename T, typename compare>
+struct copy_t<std::set<T, compare>> {
+	static std::set<T, compare> copy(const std::set<T, compare>& s) {
+		std::set<T, compare> res;
+		for (const auto& e : s)
+			res.insert(::copy(e));
+		return res;
+	}
+};
 
-#define COPY0(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy0(e); }
-#define COPY1(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy1(e); }
-#define COPY2(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy2(e); }
-#define COPY3(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy3(e); }
-#define COPY4(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy4(e); }
-#define COPY5(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy5(e); }
-#define COPY6(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy6(e); }
-#define COPY12(T) inline NodeStructs::T copy(const NodeStructs::T& e) { return copy12(e); }
+template <typename K, typename V, typename compare>
+struct copy_t<std::map<K, V, compare>> {
+	static std::map<K, V, compare> copy(const std::map<K, V, compare>& m) {
+		std::map<K, V, compare> res;
+		for (const auto& [k, v] : m)
+			res.emplace(::copy(k), ::copy(v));
+		return res;
+	}
+};
 
-#define CMP_COPY_N(N, T) CMP##N(T) COPY##N(T)
+template <typename T>
+struct copy_t<NonCopyableBox<T>> {
+	static NonCopyableBox<T> copy(const NonCopyableBox<T>& box) {
+		return NonCopyableBox<T>{ ::copy(box.get()) };
+	}
+};
 
-COPY1(MetaType)
+template <typename T>
+struct copy_t<NodeStructs::PrimitiveType::NonValued<T>> {
+	static NodeStructs::PrimitiveType::NonValued<T> copy(const NodeStructs::PrimitiveType::NonValued<T>& v) {
+		return NodeStructs::PrimitiveType::NonValued<T>{};
+	}
+};
 
-CMP_COPY_N(3, Typename)
-CMP_COPY_N(1, OptionalTypename)
-CMP_COPY_N(1, UnionTypename)
-CMP_COPY_N(1, VariadicExpansionTypename)
-CMP_COPY_N(1, BaseTypename)
-CMP_COPY_N(2, NamespacedTypename)
-CMP_COPY_N(2, TemplatedTypename)
-CMP_COPY_N(1, WordTypenameOrExpression)
-CMP_COPY_N(2, Expression)
-CMP_COPY_N(0, Reference)
-CMP_COPY_N(0, MutableReference)
-CMP_COPY_N(0, Move)
-CMP_COPY_N(0, Value)
-CMP_COPY_N(2, VariableDeclaration)
+template <typename T>
+struct copy_t<NodeStructs::PrimitiveType::Valued<T>> {
+	static NodeStructs::PrimitiveType::Valued<T> copy(const NodeStructs::PrimitiveType::Valued<T>& v) {
+		return NodeStructs::PrimitiveType::Valued<T>{ ::copy(v.value) };
+	}
+};
 
-CMP_COPY_N(1, Statement<function_context>)
-CMP_COPY_N(1, Statement<type_context>)
-CMP_COPY_N(1, Statement<top_level_context>)
-CMP_COPY_N(1, RunTimeStatement)
-CMP_COPY_N(1, CompileTimeStatement<function_context>)
-CMP_COPY_N(1, CompileTimeStatement<type_context>)
-CMP_COPY_N(1, CompileTimeStatement<top_level_context>)
-CMP_COPY_N(3, VariableDeclarationStatement<function_context>)
-CMP_COPY_N(3, VariableDeclarationStatement<type_context>)
-CMP_COPY_N(3, VariableDeclarationStatement<top_level_context>)
-CMP_COPY_N(3, IfStatement<function_context>)
-CMP_COPY_N(3, IfStatement<type_context>)
-CMP_COPY_N(3, IfStatement<top_level_context>)
-CMP_COPY_N(3, ForStatement<function_context>)
-CMP_COPY_N(3, ForStatement<type_context>)
-CMP_COPY_N(3, ForStatement<top_level_context>)
-CMP_COPY_N(2, IForStatement<function_context>)
-CMP_COPY_N(2, IForStatement<type_context>)
-CMP_COPY_N(2, IForStatement<top_level_context>)
-CMP_COPY_N(2, WhileStatement<function_context>)
-CMP_COPY_N(2, WhileStatement<type_context>)
-CMP_COPY_N(2, WhileStatement<top_level_context>)
-CMP_COPY_N(2, MatchCase<function_context>)
-CMP_COPY_N(2, MatchCase<type_context>)
-CMP_COPY_N(2, MatchCase<top_level_context>)
-CMP_COPY_N(2, MatchStatement<function_context>)
-CMP_COPY_N(2, MatchStatement<type_context>)
-CMP_COPY_N(2, MatchStatement<top_level_context>)
-CMP_COPY_N(1, BreakStatement<function_context>)
-CMP_COPY_N(1, BreakStatement<type_context>)
-CMP_COPY_N(1, BreakStatement<top_level_context>)
-CMP_COPY_N(2, ReturnStatement<function_context>)
-CMP_COPY_N(2, ReturnStatement<type_context>)
-CMP_COPY_N(2, ReturnStatement<top_level_context>)
-CMP_COPY_N(2, SwitchCase<function_context>)
-CMP_COPY_N(2, SwitchCase<type_context>)
-CMP_COPY_N(2, SwitchCase<top_level_context>)
-CMP_COPY_N(2, SwitchStatement<function_context>)
-CMP_COPY_N(2, SwitchStatement<type_context>)
-CMP_COPY_N(2, SwitchStatement<top_level_context>)
-CMP_COPY_N(2, Assignment<function_context>)
-CMP_COPY_N(2, Assignment<type_context>)
-CMP_COPY_N(2, Assignment<top_level_context>)
-CMP_COPY_N(1, BlockStatement<function_context>)
-CMP_COPY_N(1, BlockStatement<type_context>)
-CMP_COPY_N(1, BlockStatement<top_level_context>)
+template <>
+struct copy_t<NodeStructs::PrimitiveType> {
+	static NodeStructs::PrimitiveType copy(const NodeStructs::PrimitiveType& p) {
+		return NodeStructs::PrimitiveType{ ::copy(p.value) };
+	}
+};
 
-CMP_COPY_N(2, FunctionArgument)
-CMP_COPY_N(2, ConditionalExpression)
-CMP_COPY_N(2, OrExpression)
-CMP_COPY_N(2, AndExpression)
-CMP_COPY_N(2, EqualityExpression)
-CMP_COPY_N(2, CompareExpression)
-CMP_COPY_N(2, AdditiveExpression)
-CMP_COPY_N(2, MultiplicativeExpression)
-CMP_COPY_N(2, UnaryExpression)
-CMP_COPY_N(2, CallExpression)
-CMP_COPY_N(2, NamespaceExpression)
-CMP_COPY_N(2, TemplateExpression)
-CMP_COPY_N(2, ConstructExpression)
-CMP_COPY_N(2, BracketAccessExpression)
-CMP_COPY_N(3, PropertyAccessAndCallExpression)
-CMP_COPY_N(2, PropertyAccessExpression)
-CMP_COPY_N(1, ParenArguments)
-CMP_COPY_N(1, BraceArguments)
-CMP_COPY_N(1, BracketArguments)
-CMP_COPY_N(6, Type)
-CMP_COPY_N(3, Alias)
-CMP_COPY_N(2, MemberVariable)
-CMP_COPY_N(2, FunctionType)
-CMP_COPY_N(1, InterfaceType)
-CMP_COPY_N(1, NamespaceType)
-CMP_COPY_N(1, UnionType)
-CMP_COPY_N(1, OptionalType)
-CMP_COPY_N(2, TemplateType)
-CMP_COPY_N(1, Builtin)
-CMP_COPY_N(1, EnumType)
-CMP_COPY_N(2, EnumValueType)
-CMP_COPY_N(2, AggregateType)
-CMP_COPY_N(0, Vector)
-CMP_COPY_N(0, Set)
-CMP_COPY_N(0, Map)
-CMP_COPY_N(1, VectorType)
-CMP_COPY_N(1, SetType)
-CMP_COPY_N(2, MapType)
-CMP_COPY_N(0, TypeToken)
-CMP_COPY_N(0, TypeList)
-CMP_COPY_N(1, TypeListType)
-CMP_COPY_N(1, CompileTimeType)
-CMP_COPY_N(6, Interface)
-CMP_COPY_N(2, Block)
-CMP_COPY_N(6, Template)
-CMP_COPY_N(3, Enum)
-CMP_COPY_N(1, TemplateParameter)
-CMP_COPY_N(2, TemplateParameterWithDefaultValue)
-CMP_COPY_N(1, VariadicTemplateParameter)
-CMP_COPY_N(2, FunctionParameter)
-CMP_COPY_N(5, Function)
-CMP_COPY_N(12, NameSpace)
-CMP_COPY_N(1, Exists)
-CMP_COPY_N(3, File)
-CMP_COPY_N(1, Import)
+template <typename T>
+struct copy_t<std::reference_wrapper<T>> {
+	static std::reference_wrapper<T> copy(const std::reference_wrapper<T>& t) {
+		return { t.get() };
+	}
+};
+
+template <typename T, typename U>
+struct copy_t<std::pair<T, U>> {
+	static std::pair<T, U> copy(const std::pair<T, U>& x) {
+		return copy2(x);
+	}
+};
+
+#define CMP_N(N, T) inline std::weak_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp##N (left, right); }
+#define COPY_N(N,T) template <> struct copy_t<NodeStructs::T> { static NodeStructs::T copy(const NodeStructs::T& e) { return copy##N (e); } };
+#define CMP_COPY_N(N, T) CMP_N(N,T) COPY_N(N,T)
+#include "cmp_copy_all.hpp"
+
+COPY_N(1, MetaType)

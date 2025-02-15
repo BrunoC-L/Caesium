@@ -107,8 +107,8 @@ struct builtins {
 
 	Namespace filesystem_ns = {
 		.name = "filesystem",
-		.functions = as_map(std::pair{ entries_str.name, as_vec(copy(entries_str), copy(entries_dir)) }),
-		.aliases = as_map(
+		.functions = {},//as_map(std::pair{ entries_str.name, as_vec(copy(entries_str), copy(entries_dir)) }),
+		.aliases = {},/*as_map(
 			std::pair{
 				std::string{ "file" },
 				make_typename(
@@ -125,7 +125,7 @@ struct builtins {
 					rule_info_language_element("filesystem::directory")
 				)
 			}
-		),
+		),*/
 		.rule_info = rule_info_language_element("filesystem")
 	};
 };
