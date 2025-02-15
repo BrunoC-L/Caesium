@@ -17,7 +17,7 @@ R f(
 		else if (holds<NodeStructs::PrimitiveType>(type))
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, NodeStructs::CompileTimeType{ copy(assigned_expression_ok.type) } });
 		else
-			throw;
+			NOT_IMPLEMENTED;
 		return "";
 	}
 	else {
@@ -50,7 +50,7 @@ R transpile_statement_specific(
 	auto repr =  transpile_expression(state, variables, statement);
 	return_if_error(repr);
 	if (!std::holds_alternative<non_type_information>(repr.value()))
-		throw;
+		NOT_IMPLEMENTED;
 	const auto& repr_ok = std::get<non_type_information>(repr.value());
 	return repr_ok.representation + ";\n";
 }
@@ -86,7 +86,7 @@ R transpile_statement_specific(
 
 			return deduced_typename_repr.value() + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 		}
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	else {
 		auto type = type_of_typename(state, variables, statement.type);
@@ -112,7 +112,7 @@ R transpile_statement_specific(
 		}();
 		return_if_error(assigned_expression);
 		if (!std::holds_alternative<non_type_information>(assigned_expression.value()))
-			throw;
+			NOT_IMPLEMENTED;
 
 		auto& assigned_expression_ok = std::get<non_type_information>(assigned_expression.value());
 
@@ -125,7 +125,7 @@ R transpile_statement_specific(
 				transpile_expression_information_t converted = assignable.converter(state, variables, statement.expr);
 				return_if_error(converted);
 				if (!std::holds_alternative<non_type_information>(converted.value()))
-					throw;
+					NOT_IMPLEMENTED;
 				return f<context, is_compile_time>(state, variables, statement, type.value(), type_repr.value(), std::get<non_type_information>(std::move(converted).value()));
 			},
 			[&](const not_assignable&) -> R {
@@ -153,7 +153,7 @@ R transpile_statement_specific(
 		auto cnd = transpile_expression(state, variables, statement.ifExpr);
 		return_if_error(cnd);
 		if (!std::holds_alternative<non_type_information>(cnd.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& cnd_ok = std::get<non_type_information>(cnd.value());
 
 		bool cnd_value = [&]() {
@@ -161,11 +161,11 @@ R transpile_statement_specific(
 				&& holds<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(cnd_ok.type).value))
 					return get<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(cnd_ok.type).value).value;
 			if (!holds<NodeStructs::CompileTimeType>(cnd_ok.type))
-				throw;
+				NOT_IMPLEMENTED;
 			if (!holds<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(cnd_ok.type).type))
-				throw;
+				NOT_IMPLEMENTED;
 			if (!holds<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(cnd_ok.type).type).value))
-				throw;
+				NOT_IMPLEMENTED;
 			return get<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(cnd_ok.type).type).value).value;
 		}();
 
@@ -176,7 +176,7 @@ R transpile_statement_specific(
 			return if_statements.value();
 		}
 		else if (statement.elseExprStatements.has_value()) {
-			throw;
+			NOT_IMPLEMENTED;
 		}
 		else
 			return "";
@@ -189,7 +189,7 @@ R transpile_statement_specific(
 		auto if_expr = transpile_expression(state, variables, statement.ifExpr);
 		return_if_error(if_expr);
 		if (!std::holds_alternative<non_type_information>(if_expr.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& if_expr_ok = std::get<non_type_information>(if_expr.value());
 
 		if (statement.elseExprStatements.has_value())
@@ -213,7 +213,7 @@ R transpile_statement_specific(
 			auto k = transpile_expression(state, variables, statement.ifExpr);
 			return_if_error(k);
 			if (!std::holds_alternative<non_type_information>(k.value()))
-				throw;
+				NOT_IMPLEMENTED;
 			const auto& k_ok = std::get<non_type_information>(k.value());
 			return "if (" +
 				k_ok.representation +
@@ -239,12 +239,12 @@ R transpile_for_or_ifor_statement(
 		auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
 		return_if_error(coll_type_or_e);
 		if (!std::holds_alternative<type_information>(coll_type_or_e.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& coll_type_or_e_ok = std::get<type_information>(coll_type_or_e.value());
 		if (holds<NodeStructs::TypeListType>(coll_type_or_e_ok.type)) {
 			const NodeStructs::TypeListType& tl = get<NodeStructs::TypeListType>(coll_type_or_e_ok.type);
 			if (statement.iterators.size() != 1 || !std::holds_alternative<std::string>(statement.iterators[0]._value))
-				throw;
+				NOT_IMPLEMENTED;
 			const std::string& type_iterator = std::get<std::string>(statement.iterators[0]._value);
 			
 			int i = 0;
@@ -274,19 +274,19 @@ R transpile_for_or_ifor_statement(
 			state.state.global_namespace.aliases.erase(type_iterator);
 			return ss.str();
 		}
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	else {
 		auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
 		return_if_error(coll_type_or_e);
 		if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& coll_type_or_e_ok = std::get<non_type_information>(coll_type_or_e.value());
 		auto it_type = iterator_type(state, coll_type_or_e_ok.type);
 
 		std::stringstream ss;
 		if (statement.iterators.size() > 1)
-			throw;
+			NOT_IMPLEMENTED;
 		auto opt_e = add_for_iterator_variables(state, variables, statement.iterators, it_type);
 		if (opt_e.has_value())
 			return opt_e.value();
@@ -305,7 +305,7 @@ R transpile_for_or_ifor_statement(
 		auto s1 = transpile_expression(state, variables, statement.collection);
 		return_if_error(s1);
 		if (!std::holds_alternative<non_type_information>(s1.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& s1_ok = std::get<non_type_information>(s1.value());
 		auto s2 = transpile(state.indented(), variables, statement.statements, expected_return_type);
 		return_if_error(s2);
@@ -354,7 +354,7 @@ R transpile_statement_specific(
 	auto while_expr_info = transpile_expression(state, variables, statement.whileExpr);
 	return_if_error(while_expr_info);
 	if (!std::holds_alternative<non_type_information>(while_expr_info.value()))
-		throw;
+		NOT_IMPLEMENTED;
 	const auto& while_expr_info_ok = std::get<non_type_information>(while_expr_info.value());
 	auto transpiled_statements = transpile(state.indented(), variables, statement.statements, expected_return_type);
 	return_if_error(transpiled_statements);
@@ -373,7 +373,7 @@ R transpile_statement_specific(
 	auto s1 = transpile_expression(state, variables, statement.ifExpr.value());
 	return_if_error(s1);
 	if (!std::holds_alternative<non_type_information>(s1.value()))
-		throw;
+		NOT_IMPLEMENTED;
 	const auto& s1_ok = std::get<non_type_information>(s1.value());
 	return "if (" + s1_ok.representation + ") break;\n";
 }
@@ -388,12 +388,12 @@ R transpile_statement_specific(
 	if (statement.returnExpr.size() == 0)
 		return "return;\n";
 	if (statement.returnExpr.size() != 1)
-		throw; // gonna have to see about that
+		NOT_IMPLEMENTED; // gonna have to see about that
 	R return_expression = [&]() -> R {
 		auto expr_info = transpile_expression(state, variables, statement.returnExpr.at(0).expr);
 		return_if_error(expr_info);
 		if (!std::holds_alternative<non_type_information>(expr_info.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
 		auto assign = assigned_to(state, variables, expected_return_type, expr_info_ok.type)._value;
 		if (std::holds_alternative<not_assignable>(assign)) {
@@ -413,7 +413,7 @@ R transpile_statement_specific(
 			auto converted = rc.converter(state, variables, statement.returnExpr.at(0).expr);
 			return_if_error(converted);
 			if (!std::holds_alternative<non_type_information>(converted.value()))
-				throw;
+				NOT_IMPLEMENTED;
 			const auto& converted_ok = std::get<non_type_information>(converted.value());
 			return converted_ok.representation;
 		}
@@ -423,7 +423,7 @@ R transpile_statement_specific(
 		auto cnd = transpile_expression(state, variables, statement.ifExpr.value());
 		return_if_error(cnd);
 		if (!std::holds_alternative<non_type_information>(cnd.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& cnd_ok = std::get<non_type_information>(cnd.value());
 		return "if (" + cnd_ok.representation + ") return " + return_expression.value() + ";\n";
 	}
@@ -459,13 +459,13 @@ R transpile_statement_specific(
 ) {
 	std::stringstream ss;
 	if (statement.expressions.size() != 1)
-		throw;
+		NOT_IMPLEMENTED;
 	if (statement.cases.size() == 0)
-		throw;
+		NOT_IMPLEMENTED;
 	auto expr_info = transpile_expression(state, variables, statement.expressions.at(0));
 	return_if_error(expr_info);
 	if (!std::holds_alternative<non_type_information>(expr_info.value()))
-		throw;
+		NOT_IMPLEMENTED;
 	const auto& expr_ok = std::get<non_type_information>(expr_info.value());
 	auto tn = typename_of_type(state, expr_ok.type);
 	return_if_error(tn);
@@ -499,7 +499,7 @@ R transpile_statement_specific(
 			<< indent(state.indent)<< "} else\n";
 	}
 	// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw, it will be removed eventually
-	ss << indent(state.indent + 1) << "throw;\n";
+	ss << indent(state.indent + 1) << "NOT_IMPLEMENTED;\n";
 	return ss.str();
 }
 
@@ -549,7 +549,7 @@ R int_or_char_switch(
 	for (const NodeStructs::SwitchCase<context>& switch_case : statement.cases) {
 		const auto& [switch_expr, switch_statements] = switch_case;
 		if (!std::holds_alternative<token_string_or_token_int>(switch_expr.expression.get()._value))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& val = std::get<token_string_or_token_int>(switch_expr.expression.get()._value);
 		ss << indent(state.indent + 1) << "case " << case_fix<token_string_or_token_int>(val.value) << ":\n";
 		if (switch_statements.size() > 0) {
@@ -572,7 +572,7 @@ R transpile_statement_specific(
 	auto expr_info = transpile_expression(state, variables, statement.expr);
 	return_if_error(expr_info);
 	if (!std::holds_alternative<non_type_information>(expr_info.value()))
-		throw;
+		NOT_IMPLEMENTED;
 	const auto& expr_info_ok = std::get<non_type_information>(expr_info.value());
 	if (is_int(expr_info_ok.type)) {
 		return int_or_char_switch<Token<INTEGER_NUMBER>, context>(state, variables, expected_return_type, statement, expr_info_ok);
@@ -581,12 +581,12 @@ R transpile_statement_specific(
 		return int_or_char_switch<Token<STRING>, context>(state, variables, expected_return_type, statement, expr_info_ok);
 	}
 	if (is_floating(expr_info_ok.type)) {
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	if (is_string(expr_info_ok.type)) {
-		throw;
+		NOT_IMPLEMENTED;
 	}
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 template <typename context, bool is_compile_time>
@@ -598,22 +598,22 @@ R transpile_statement_specific(
 ) {
 	if constexpr (is_compile_time) {
 		if (!holds<std::string>(statement.left))
-			throw;
+			NOT_IMPLEMENTED;
 		const std::string& var = get<std::string>(statement.left);
 		auto right = transpile_expression(state, variables, statement.right);
 		return_if_error(right);
 		if (!std::holds_alternative<non_type_information>(right.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		if (holds<NodeStructs::CompileTimeType>(std::get<non_type_information>(right.value()).type)) {
 			if (variables.at(var).size() != 1)
-				throw;
+				NOT_IMPLEMENTED;
 			variables.at(var).pop_back();
 			variables.at(var).push_back(variable_info{ .value_category = NodeStructs::Value{}, .type = std::move(get<NodeStructs::CompileTimeType>(std::get<non_type_information>(right.value()).type)) });
 			return "";
 		}
 		if (holds<NodeStructs::PrimitiveType>(std::get<non_type_information>(right.value()).type)) {
 			if (variables.at(var).size() != 1)
-				throw;
+				NOT_IMPLEMENTED;
 			variables.at(var).pop_back();
 			variables.at(var).push_back(variable_info{
 				.value_category = NodeStructs::Value{},
@@ -621,7 +621,7 @@ R transpile_statement_specific(
 			} );
 			return "";
 		}
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	else {
 		auto left = transpile_expression(state, variables, statement.left);
@@ -629,9 +629,9 @@ R transpile_statement_specific(
 		auto right = transpile_expression(state, variables, statement.right);
 		return_if_error(right);
 		if (!std::holds_alternative<non_type_information>(left.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		if (!std::holds_alternative<non_type_information>(right.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		return std::get<non_type_information>(left.value()).representation + " = " + std::get<non_type_information>(right.value()).representation + ";\n";
 	}
 }
@@ -664,7 +664,7 @@ R transpile_statement(
 	const NodeStructs::MetaType& expected_return_type,
 	const NodeStructs::Statement<grammar::type_context>& statement
 ) {
-	throw;
+	NOT_IMPLEMENTED;
 	//return transpile_statement_visitor<context>{ {}, state, variables, expected_return_type }(statement);
 }
 
@@ -674,6 +674,6 @@ R transpile_statement(
 	const NodeStructs::MetaType& expected_return_type,
 	const NodeStructs::Statement<grammar::top_level_context>& statement
 ) {
-	throw;
+	NOT_IMPLEMENTED;
 	//return transpile_statement_visitor<context>{ {}, state, variables, expected_return_type }(statement);
 }

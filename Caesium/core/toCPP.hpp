@@ -379,6 +379,6 @@ bool uses_auto(const NodeStructs::Statement<context>& statement) {
 		else
 			return false;
 	}
-	throw;
+	NOT_IMPLEMENTED;
 	// todo recursive impl and check for variable declarations and for statements
 }

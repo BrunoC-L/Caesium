@@ -7,6 +7,7 @@
 #include "structured/structurizer.hpp"
 #include "core/toCpp.hpp"
 #include "first_diff.hpp"
+#include "utility/replace_all.hpp"
 
 std::optional<std::string> open_read(const std::filesystem::path& file) {
 	std::ifstream f(file);
@@ -16,6 +17,7 @@ std::optional<std::string> open_read(const std::filesystem::path& file) {
 	}
 	std::string program;
 	std::getline(f, program, '\0');
+	program = replace_all(std::move(program), "\r", "");
 	return std::move(program);
 }
 
@@ -75,7 +77,7 @@ bool test_transpile_error_parse_error(const std::filesystem::path& folder, const
 	auto folder_name = folder.filename().string();
 	auto expected_error_opt = open_read(folder / "expected_error.txt");
 	if (!expected_error_opt.has_value())
-		throw;
+		NOT_IMPLEMENTED;
 	const auto& expected_error = expected_error_opt.value();
 
 	std::string_view error = e.what();
@@ -126,7 +128,7 @@ bool test_transpile_error(const std::filesystem::path& folder) {
 	else {
 		auto expected_error_opt = open_read(folder / "expected_error.txt");
 		if (!expected_error_opt.has_value())
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& expected_error = expected_error_opt.value();
 
 		auto error = std::move(produced_file_or_error).error().message;
@@ -185,12 +187,12 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 	if (std::holds_alternative<transpile_t>(produced_file_or_error) && std::get<transpile_t>(produced_file_or_error).has_value()) {
 		/*auto header_opt = open_read(folder / "expected.hpp");
 		if (!header_opt.has_value())
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& expected_header = header_opt.value();*/
 
 		auto cpp_opt = open_read(folder / "expected.cpp");
 		if (!cpp_opt.has_value())
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& expected_cpp = cpp_opt.value();
 
 		const auto& cpp = std::get<transpile_t>(produced_file_or_error).value();

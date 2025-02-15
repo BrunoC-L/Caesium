@@ -2,7 +2,7 @@
 #include "parse.hpp"
 
 std::string file_name_stub() {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 void parse_whitespaces(Iterator& it) {
@@ -113,7 +113,7 @@ bool build(grammar::TypenameOrExpression& x, Iterator& it) {
 		it.index = it_expr.index;
 		return true;
 	}
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 bool build(grammar::CompareOperator& op, Iterator& it) {

@@ -44,13 +44,13 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 
 	return std::visit(overload(
 		[](const auto& e) -> R {
-			throw;
+			NOT_IMPLEMENTED;
 		},
 		[&](const NodeStructs::EnumType& e) -> R {
 			const auto& _enum = e.enum_.get();
 			if (auto it = std::find(_enum.values.begin(), _enum.values.end(), type.name_in_name_space); it != _enum.values.end())
 				return _enum.name + "__" + type.name_in_name_space;
-			throw;
+			NOT_IMPLEMENTED;
 		},
 		[&](const NodeStructs::NamespaceType& e) -> R {
 			if (auto it = e.name_space.get().types.find(type.name_in_name_space); it != e.name_space.get().types.end())
@@ -61,7 +61,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 				return repr_of_typename + "__" + type.name_in_name_space;
 			if (auto it = e.name_space.get().templates.find(type.name_in_name_space); it != e.name_space.get().templates.end())
 				return repr_of_typename + "__" + type.name_in_name_space;
-			throw;
+			NOT_IMPLEMENTED;
 		}
 	), type_of_namespace.type.get()._value);
 }
@@ -74,9 +74,9 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 	bool is_map = cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Map" } }) == std::weak_ordering::equivalent;
 	if (is_vec_or_set || is_map || is_variant) {
 		if (is_vec_or_set && type.templated_with.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 		if (is_map && type.templated_with.size() != 2)
-			throw;
+			NOT_IMPLEMENTED;
 		std::stringstream single_word, with_brackets;
 		auto tmpl = type_template_of_typename(state, variables, type.templated_with, type.type);
 		return_if_error(tmpl);
@@ -98,23 +98,23 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 					auto test = transpile_expression(state, variables, s);
 					if (test.has_value()) {
 						if (!std::holds_alternative<type_information>(test.value()))
-							throw;
+							NOT_IMPLEMENTED;
 						return std::get<type_information>(test.value()).representation;
 					}
 					else {
 						auto test2 = transpile_typename(state, variables, NodeStructs::BaseTypename{ s });
 						if (test2.has_error())
-							throw;
+							NOT_IMPLEMENTED;
 						return test2.value();
 					}
-					throw;
+					NOT_IMPLEMENTED;
 				},
 				[&](const NodeStructs::Expression& e) -> std::string {
 					auto t = transpile_expression(state, variables, e);
 					if (t.has_error())
-						throw;
+						NOT_IMPLEMENTED;
 					if (!std::holds_alternative<type_information>(t.value()))
-						throw;
+						NOT_IMPLEMENTED;
 					return std::get<type_information>(t.value()).representation;
 				},
 				[&](const NodeStructs::Typename& t) -> std::string {
@@ -135,7 +135,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 			}
 		});
 		if (single_word.str() == "f_Int_") {
-			throw;
+			NOT_IMPLEMENTED;
 		}
 		state.state.aliases_to_transpile.insert({ single_word.str(), with_brackets.str() });
 		return single_word.str();
@@ -198,7 +198,7 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 	ss << "Union<";
 	auto ts = copy(type.ors);
 	if (ts.size() == 0)
-		throw;
+		NOT_IMPLEMENTED;
 	bubble_sort_swap(ts); // todo unique
 	bool first = true;
 	for (const auto& t : ts) {
@@ -222,12 +222,12 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 		}
 	});
 	if (replaced == "f_Int_") {
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	state.state.aliases_to_transpile.insert({ replaced, std::move(out) });
 	return replaced;
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

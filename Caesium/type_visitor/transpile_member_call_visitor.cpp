@@ -16,7 +16,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		return_if_error(mt);
 		auto expect_error = type_of_function_like_call_with_args(state, variables, arguments, mt.value());
 		return_if_error(expect_error);
-		throw;
+		NOT_IMPLEMENTED;
 	}
 
 	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
@@ -35,7 +35,7 @@ R T::operator()(const NodeStructs::Type& t) {
 			return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n" };
 
 		if (arguments.size() + 1 != fn.parameters.size())
-			throw;
+			NOT_IMPLEMENTED;
 
 		std::stringstream ss;
 		ss << fn.name << "(" << operand_info.representation;
@@ -46,10 +46,10 @@ R T::operator()(const NodeStructs::Type& t) {
 			auto nth_argument = transpile_arg(state, variables, arguments.at(i - 1));
 			return_if_error(nth_argument);
 			if (!std::holds_alternative<non_type_information>(nth_argument.value()))
-				throw;
+				NOT_IMPLEMENTED;
 			const non_type_information& nth_argument_ok = std::get<non_type_information>(nth_argument.value());
 			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, nth_param.value(), nth_argument_ok.type)._value))
-				throw;
+				NOT_IMPLEMENTED;
 			ss << ", " << nth_argument_ok.representation;
 		}
 		ss << ")";
@@ -72,7 +72,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		auto args_ok_maybe_wrong_type = std::move(args_).value();
 		auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(std::move(args_ok_maybe_wrong_type));
 		if (!opt.has_value())
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& args_ok = opt.value();
 		auto fn = realise_function_using_auto(
 			state,
@@ -99,9 +99,9 @@ R T::operator()(const NodeStructs::Type& t) {
 					.value_category = NodeStructs::Value{}
 				} };
 			}*/
-			throw;
+			NOT_IMPLEMENTED;
 		}
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
 }
@@ -110,7 +110,7 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 	if (holds<NodeStructs::PrimitiveType::NonValued<std::string>>(t.value)) {
 		if (property_name == "size") {
 			if (arguments.size() != 0)
-				throw;
+				NOT_IMPLEMENTED;
 			return expression_information{ non_type_information{
 				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
 				.representation = operand_info.representation + ".size()",
@@ -119,14 +119,14 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 		}
 		if (property_name == "at") {
 			if (arguments.size() != 1)
-				throw;
+				NOT_IMPLEMENTED;
 			auto arg_t = transpile_arg(state, variables, arguments.at(0));
 			return_if_error(arg_t);
 			if (!std::holds_alternative<non_type_information>(arg_t.value()))
-				throw;
+				NOT_IMPLEMENTED;
 			const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
 			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }, arg_t_ok.type)._value))
-				throw;
+				NOT_IMPLEMENTED;
 			return expression_information{ non_type_information{
 				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } },
 				.representation = operand_info.representation + ".at(" + arg_t_ok.representation + ")",
@@ -134,62 +134,62 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 			} };
 		}
 	}
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::InterfaceType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::NamespaceType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Builtin& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TemplateType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::EnumType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::EnumValueType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::OptionalType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::AggregateType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Vector& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::VectorType& t) {
 	if (property_name == "push") {
 		if (arguments.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 
 		auto arg_info = transpile_arg(state, variables, arguments.at(0));
 		return_if_error(arg_info);
 		if (!std::holds_alternative<non_type_information>(arg_info.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
@@ -207,7 +207,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 
 	if (property_name == "size") {
 		if (arguments.size() != 0)
-			throw;
+			NOT_IMPLEMENTED;
 		return expression_information{ non_type_information{
 			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} },
 			.representation = operand_info.representation + ".size()",
@@ -217,7 +217,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 
 	if (property_name == "back") {
 		if (arguments.size() != 0)
-			throw;
+			NOT_IMPLEMENTED;
 		return expression_information{ non_type_information{
 			.type = copy(t.value_type),
 			.representation = operand_info.representation + ".back()",
@@ -227,12 +227,12 @@ R T::operator()(const NodeStructs::VectorType& t) {
 
 	if (property_name == "reserve") {
 		if (arguments.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 
 		auto arg_info = transpile_arg(state, variables, arguments.at(0));
 		return_if_error(arg_info);
 		if (!std::holds_alternative<non_type_information>(arg_info.value()))
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
@@ -248,37 +248,37 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		} };
 	}
 
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Set& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::SetType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Map& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::MapType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeList& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeListType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeToken& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::CompileTimeType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

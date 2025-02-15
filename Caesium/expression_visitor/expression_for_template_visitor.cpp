@@ -6,7 +6,7 @@ using T = expression_for_template_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::ConditionalExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	if (expr.ifElseExprs.has_value()) {
 		return std::string("_") +
 			operator()(expr.ifElseExprs.value().first) +
@@ -19,7 +19,7 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::OrExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& e : expr.ors)
@@ -28,7 +28,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::AndExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& e : expr.ands)
@@ -37,7 +37,7 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::EqualityExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.equals)
@@ -46,7 +46,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CompareExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.comparisons)
@@ -55,7 +55,7 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::AdditiveExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.adds)
@@ -64,7 +64,7 @@ R T::operator()(const NodeStructs::AdditiveExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	std::stringstream ss;
 	ss << operator()(expr.expr);
 	for (const auto& [op, e] : expr.muls)
@@ -73,12 +73,12 @@ R T::operator()(const NodeStructs::MultiplicativeExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::UnaryExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	return operator()(expr.expr);
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	/*auto args = expr.arguments.args
 		| std::views::transform([&](auto&& e) { return e.expr; })
 		| std::views::transform([&](auto&& e) { return operator()(e); });
@@ -90,11 +90,11 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::NamespaceExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	/*auto args = expr.arguments.args
 		| std::views::transform([&](auto&& e) { return make_expression({ copy(e.expression.get()) }); })
 		| std::views::transform([&](auto&& e) { return operator()(e); });
@@ -107,23 +107,23 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::ConstructExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::PropertyAccessAndCallExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::ParenArguments& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	/*auto args = expr.args
 		| std::views::transform([&](auto&& e) { return e.expr; })
 		| std::views::transform([&](auto&& e) { return operator()(e); });
@@ -134,7 +134,7 @@ R T::operator()(const NodeStructs::ParenArguments& expr) {
 }
 
 R T::operator()(const NodeStructs::BraceArguments& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	/*auto args = expr.args
 		| std::views::transform([&](auto&& e) { return e.expr; })
 		| std::views::transform([&](auto&& e) { return operator()(e); });
@@ -146,22 +146,22 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 
 R T::operator()(const std::string& expr) {
 	if (expr == "Word")
-		throw;
+		NOT_IMPLEMENTED;
 	return expr;
 }
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	return operator()(expr.value);
 }
 
 R T::operator()(const Token<FLOATING_POINT_NUMBER>& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	return operator()(expr.value);
 }
 
 R T::operator()(const Token<STRING>& expr) {
-	throw;
+	NOT_IMPLEMENTED;
 	// value has quotes i think
 	return "_" + operator()(expr.value) + "_";
 }

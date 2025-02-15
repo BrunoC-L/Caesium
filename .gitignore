@@ -1,10 +1,9 @@
 !**.gitignore
 **.vcxproj.user
-**.produced_error.txt
-**.produced.cpp
-**.a.out
-**.out.log
-
+**/produced_error.txt
+**/produced.cpp
+**/*.out
+**/*.log
 
 **/x64/*
 **/Debug/*

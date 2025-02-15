@@ -13,7 +13,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 	/*auto args = t.templated_with
 		| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(state, variables, e); });
 	std::stringstream ss;
@@ -38,5 +38,5 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

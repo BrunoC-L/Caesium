@@ -38,6 +38,10 @@ jobs:
     - name: List Transpilation Tests
       run: dir "D:\a\Caesium\Caesium\Tests\Transpilation Tests"
 
+    - name: Test Base
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: D:\a\Caesium\Caesium\Tests\x64\Debug\tests.exe"
+
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: D:\a\Caesium\Caesium\Tests\x64\Debug\tests.exe "D:\a\Caesium\Caesium\Tests\Transpilation Tests"

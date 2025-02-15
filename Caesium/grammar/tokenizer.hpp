@@ -1,6 +1,7 @@
 #pragma once
 #include <sstream>
 #include <vector>
+#include "../utility/not_implemented_directive.hpp"
 
 using token_t = std::uint8_t;
 
@@ -424,10 +425,10 @@ private:
 				if (index < program.size() && program[index] == '*') {
 					index += 1;
 					if (index == program.size())
-						throw; // no end of comment
+						NOT_IMPLEMENTED; // no end of comment
 					while (index < program.size()) {
 						if (index + 1 == program.size())
-							throw; // no end of comment
+							NOT_IMPLEMENTED; // no end of comment
 						if (program[index] == '*' && program[index + 1] == '/') {
 							index += 2;
 							break;
@@ -531,7 +532,7 @@ private:
 
 			std::string num = parseInt();
 			if (!num.length())
-				throw;
+				NOT_IMPLEMENTED;
 			if (index != program.length() && program[index] == '.') {
 				index += 1;
 				std::string part2 = parseInt();

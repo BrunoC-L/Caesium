@@ -13,32 +13,32 @@ R T::operator()(const NodeStructs::Type& t) {
 			.transform([](NodeStructs::MetaType&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 		const auto& fn = it->second.back();
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	else
 		return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 //R T::operator()(const NodeStructs::AggregateType& t) {
 //	if (t.arguments.size() == 0)
-//		throw;
+//		NOT_IMPLEMENTED;
 //	if (t.arguments.size() == 1)
 //		return operator()(t.arguments.at(0).second);
 //	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
-//		throw;
+//		NOT_IMPLEMENTED;
 //	}
 //}
 //
 //R T::operator()(const NodeStructs::TypeType& t) {
-//	throw;
+//	NOT_IMPLEMENTED;
 //}
 
 R T::operator()(const NodeStructs::FunctionType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::InterfaceType& t) {
@@ -54,39 +54,39 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 }
 
 R T::operator()(const NodeStructs::NamespaceType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Builtin& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TemplateType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::EnumType& tmpl) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::EnumValueType& tmpl) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::OptionalType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::AggregateType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Vector& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::VectorType& t) {
@@ -101,37 +101,37 @@ R T::operator()(const NodeStructs::VectorType& t) {
 					}
 				}
 			};*/
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Set& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::SetType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Map& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::MapType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeList& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeListType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeToken& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::CompileTimeType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

@@ -158,7 +158,7 @@ NodeStructs::BlockStatement<context> getStatementStruct(
 	const grammar::BlockStatement<context>& statement
 ) {
 	// wtf even is this right now it doesn't make sense
-	throw;
+	NOT_IMPLEMENTED;
 	//return { getStruct(statement.template get<grammar::Typename>()) };
 }
 

@@ -17,14 +17,14 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (t.type == "Floating")
 		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } };
 	if (t.type == "None") {
-		throw;
+		NOT_IMPLEMENTED;
 		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::empty_optional_t>{} } };
 	}
 
 	if (auto it = state.state.global_namespace.types.find(t.type); it != state.state.global_namespace.types.end()) {
 		const auto& types = it->second;
 		if (types.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& type = types.at(0);
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
@@ -51,7 +51,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.global_namespace.interfaces.find(t.type); it != state.state.global_namespace.interfaces.end()) {
 		const auto& interfaces = it->second;
 		if (interfaces.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& interface = interfaces.at(0);
 		if (!state.state.traversed_interfaces.contains(interface)) {
 			state.state.traversed_interfaces.insert(copy(interface));
@@ -66,7 +66,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (auto it = state.state.global_namespace.enums.find(t.type); it != state.state.global_namespace.enums.end()) {
 		const auto& enums = it->second;
 		if (enums.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& enum_ = enums.at(0);
 		if (!state.state.enums_to_transpile.contains(enum_))
 			state.state.enums_to_transpile.insert(copy(enum_));
@@ -112,5 +112,5 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

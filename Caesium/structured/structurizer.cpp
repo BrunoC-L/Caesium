@@ -92,7 +92,7 @@ NodeStructs::Typename getStruct(
 		[&](const NodeStructs::VariadicExpansionTypename&) {
 			return getStruct(file_name, vec, t, exts, std::visit(overload(overload_default_error,
 				[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
-					throw;
+					NOT_IMPLEMENTED;
 				},
 				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
 					return make_typename(
@@ -110,10 +110,10 @@ NodeStructs::Typename getStruct(
 				},
 				[&](const grammar::UnionTypenameExtension& ext) -> NodeStructs::Typename {
 					// variadics dont support unions
-					throw;
+					NOT_IMPLEMENTED;
 				},
 				[&](const Token<QUESTION>& ext) -> NodeStructs::Typename {
-					throw;
+					NOT_IMPLEMENTED;
 				}
 			), ext.value()), i + 1);
 		},
@@ -134,7 +134,7 @@ NodeStructs::Typename getStruct(
 					auto temp = getStruct(file_name, vec, ext.template get<Alloc<grammar::Typename>>().get(), tag_allow_value_category_or_empty{});
 					if (holds<NodeStructs::UnionTypename>(res)) {
 						if (holds<NodeStructs::UnionTypename>(temp))
-							throw;
+							NOT_IMPLEMENTED;
 						get<NodeStructs::UnionTypename>(res).ors.push_back(std::move(temp));
 						return std::move(res);
 					}
@@ -253,7 +253,7 @@ NodeStructs::ParameterCategory getStruct(const std::string& file_name,
 	if (vc.has_value())
 		return getStruct(file_name, vec, vc.value());
 	else
-		throw;
+		NOT_IMPLEMENTED;
 }
 
 NodeStructs::ParameterCategory getStruct(const std::string& file_name,
@@ -261,7 +261,7 @@ NodeStructs::ParameterCategory getStruct(const std::string& file_name,
 	const Opt<grammar::ParameterCategory>& vc, tag_expect_empty_category
 ) {
 	if (vc.has_value())
-		throw;
+		NOT_IMPLEMENTED;
 	return NodeStructs::Value{};
 }
 
@@ -291,7 +291,7 @@ NodeStructs::Function getStruct(
 					type_and_name.template get<grammar::Word>().value
 				};
 				if (!res.typename_.category._value.has_value())
-					throw;
+					NOT_IMPLEMENTED;
 				return res;
 			})
 			| to_vec(),
@@ -842,7 +842,7 @@ NodeStructs::Expression getExpressionStruct(
 	const std::vector<TokenValue>& vec,
 	const grammar::BraceArguments&
 ) {
-	throw;
+	NOT_IMPLEMENTED;
 	/*NodeStructs::BraceArguments res;
 	for (const auto& arg : statement.template get<CommaStar<FunctionArgument>>().template get<FunctionArgument>())
 		res.args.push_back(getExpressionStruct(arg));
@@ -872,7 +872,7 @@ NodeStructs::Expression getExpressionStruct(
 		},
 		[&](const grammar::BracketArguments& /*e*/) -> NodeStructs::Expression {
 			//const auto& args = e.template get<CommaStar<FunctionArgument>>().template get<FunctionArgument>();
-			throw;
+			NOT_IMPLEMENTED;
 			//auto res = getExpressionStruct(e);
 			//return make_expression({ std::move(res) });
 		},
@@ -1267,7 +1267,7 @@ NodeStructs::Statement<context> getStatementStruct(
 				} };
 			}
 			else if constexpr (std::is_same_v<context, top_level_context>) {
-				throw;
+				NOT_IMPLEMENTED;
 			}
 			else {
 				static_assert(!sizeof(context*), "bad context...???");
@@ -1297,5 +1297,5 @@ NodeStructs::Statement<grammar::top_level_context> get_base_statement_struct(
 	const std::vector<TokenValue>& vec,
 	const grammar::Statement<grammar::top_level_context>& statement
 ) {
-	throw;
+	NOT_IMPLEMENTED;
 }

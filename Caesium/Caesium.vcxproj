@@ -186,6 +186,7 @@
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />
     <ClInclude Include="utility\fn_util.hpp" />
     <ClInclude Include="utility\is_specialization.hpp" />
+    <ClInclude Include="utility\not_implemented_directive.hpp" />
     <ClInclude Include="utility\range_join.hpp" />
     <ClInclude Include="utility\overload.hpp" />
     <ClInclude Include="utility\ranges_fold_left_pipe.hpp" />

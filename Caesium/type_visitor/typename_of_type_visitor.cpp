@@ -64,7 +64,7 @@ R T::operator()(const NodeStructs::UnionType& t) {
 
 R T::operator()(const NodeStructs::TemplateType& t) {
 	if (t.name_space.get().name != "")
-		throw; // return make_typename(NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name});
+		NOT_IMPLEMENTED; // return make_typename(NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name});
 	else
 		return make_typename(NodeStructs::BaseTypename{ t.name }, NodeStructs::Value{}, rule_info_stub_no_throw());
 }
@@ -88,11 +88,11 @@ R T::operator()(const NodeStructs::OptionalType& t) {
 }
 
 R T::operator()(const NodeStructs::AggregateType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Vector& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::VectorType& t) {
@@ -109,7 +109,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 }
 
 R T::operator()(const NodeStructs::Set& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::SetType& t) {
@@ -126,7 +126,7 @@ R T::operator()(const NodeStructs::SetType& t) {
 }
 
 R T::operator()(const NodeStructs::Map& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::MapType& t) {
@@ -148,17 +148,17 @@ R T::operator()(const NodeStructs::MapType& t) {
 }
 
 R T::operator()(const NodeStructs::TypeList& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeListType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeToken& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::CompileTimeType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

@@ -4,19 +4,19 @@ using T = type_of_resolution_operator_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::Type& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::FunctionType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::InterfaceType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::NamespaceType& nst) {
@@ -24,7 +24,7 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 	if (auto it = ns.types.find(accessed); it != ns.types.end()) {
 		const auto& types = it->second;
 		if (types.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& type = types.at(0);
 		auto opt_e = traverse_type(state, type);
 		if (opt_e.has_value())
@@ -42,7 +42,7 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 	if (auto it = ns.interfaces.find(accessed); it != ns.interfaces.end()) {
 		const auto& interfaces = it->second;
 		if (interfaces.size() != 1)
-			throw;
+			NOT_IMPLEMENTED;
 		const auto& interface = interfaces.at(0);
 		if (!state.state.traversed_interfaces.contains(interface)) {
 			state.state.traversed_interfaces.insert(copy(interface));
@@ -56,15 +56,15 @@ R T::operator()(const NodeStructs::NamespaceType& nst) {
 }
 
 R T::operator()(const NodeStructs::Builtin& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::UnionType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TemplateType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::EnumType& e) {
@@ -75,53 +75,53 @@ R T::operator()(const NodeStructs::EnumType& e) {
 }
 
 R T::operator()(const NodeStructs::EnumValueType& tmpl) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::OptionalType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::AggregateType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Vector& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::VectorType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Set& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::SetType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::Map& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::MapType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeList& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeListType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::TypeToken& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::CompileTimeType& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

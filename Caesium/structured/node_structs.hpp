@@ -38,7 +38,7 @@ constexpr inline empty<T> copy(const empty<T>&) { return {}; }
 template <typename T>
 rule_info rule_info_stub() {
 	empty<T> t{}; // for debug purposes
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 rule_info rule_info_stub_no_throw();

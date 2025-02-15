@@ -5,13 +5,15 @@
 
 #include "structured/structurizer.hpp"
 #include "core/toCpp.hpp"
+#include "utility/replace_all.hpp"
 
 static NodeStructs::File caesium2AST(const std::filesystem::path& file_name) {
 	std::ifstream caesium(file_name);
 	if (!caesium.is_open())
-		throw;
+		NOT_IMPLEMENTED;
 	std::string program;
 	std::getline(caesium, program, '\0');
+	program = replace_all(std::move(program), "\r", "");
 	grammar::File file(0);
 	auto tokens = Tokenizer(program).read();
 	Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = file_name.stem().generic_string() };
@@ -21,7 +23,7 @@ static NodeStructs::File caesium2AST(const std::filesystem::path& file_name) {
 	}
 	else {
 		std::cout << file_name << ": not built\n";
-		throw;
+		NOT_IMPLEMENTED;
 	}
 }
 

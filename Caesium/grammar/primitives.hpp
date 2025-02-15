@@ -35,7 +35,7 @@ struct Token {
 	std::weak_ordering operator<=>(const Token& other) const {
 		// might want to trim tokens for comparison but i cant figure if thats a problem right now, lets throw in case and fix later if it is
 		if (value.size() > 0 && value[0] == ' ' || value[value.size() - 1] == ' ')
-			throw;
+			NOT_IMPLEMENTED;
 		return value <=> other.value;
 	}
 };

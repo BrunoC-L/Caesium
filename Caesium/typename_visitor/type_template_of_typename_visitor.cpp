@@ -53,13 +53,13 @@ R f(transpilation_state_with_indent state, variables_t& variables, const std::ve
 		if (auto it = state.state.global_namespace.types.find(tmpl_name); it != state.state.global_namespace.types.end()) {
 			const auto& types = it->second;
 			if (types.size() != 1)
-				throw;
+				NOT_IMPLEMENTED;
 			return NodeStructs::MetaType{ copy(types.at(0)) };
 		}
 		if (auto it = state.state.global_namespace.functions.find(tmpl_name); it != state.state.global_namespace.functions.end()) {
 			const auto& fns = it->second;
 			if (fns.size() != 1)
-				throw;
+				NOT_IMPLEMENTED;
 			return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name, state.state.global_namespace } };
 		}
 
@@ -86,7 +86,7 @@ R f(transpilation_state_with_indent state, variables_t& variables, const std::ve
 				if (uses_auto(structured_f)) {
 					state.state.global_namespace.functions_using_auto[tmpl_name].push_back(std::move(structured_f));
 					//return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name } };
-					throw;
+					NOT_IMPLEMENTED;
 				}
 				else {
 					state.state.global_namespace.functions[tmpl_name].push_back(copy(structured_f));
@@ -94,7 +94,7 @@ R f(transpilation_state_with_indent state, variables_t& variables, const std::ve
 					auto transpiled_f = transpile(state.unindented(), structured_f);
 					return_if_error(transpiled_f);
 					if (uses_auto(structured_f))
-						throw;
+						NOT_IMPLEMENTED;
 					state.state.functions_to_transpile.insert(std::move(structured_f));
 
 					return NodeStructs::MetaType{ NodeStructs::FunctionType{ tmpl_name, state.state.global_namespace } };
@@ -173,7 +173,7 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 				std::move(ts).value()
 			} };
 		}
-		throw;
+		NOT_IMPLEMENTED;
 	}
 	return f(state, variables, templated_with, t.type, state.state.global_namespace);
 }
@@ -182,12 +182,12 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 	auto ns_or_e = type_of_typename(state, variables, t.name_space);
 	return_if_error(ns_or_e);
 	if (!std::holds_alternative<NodeStructs::NamespaceType>(ns_or_e.value().type.get()._value))
-		throw;
+		NOT_IMPLEMENTED;
 	return f(state, variables, templated_with, t.name_in_name_space, std::get<NodeStructs::NamespaceType>(ns_or_e.value().type.get()._value).name_space.get());
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 	//const auto& templated = operator()(t.type);
 	/*return NodeStructs::TypeCategory{ NodeStructs::TypeTemplateInstanceType{
 		::template_type_of_typename_visitor{ {}, state }(type.type),
@@ -198,13 +198,13 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
-	throw;
+	NOT_IMPLEMENTED;
 }

@@ -168,7 +168,7 @@ static std::weak_ordering cmp(const T& a, const T& b) {
 		else if (partial == partial.equivalent)
 			return std::weak_ordering::equivalent;
 		else
-			throw;
+			NOT_IMPLEMENTED;
 	}
 	else if constexpr (is_specialization<T, NodeStructs::PrimitiveType::NonValued>::value) {
 		return std::weak_ordering::equivalent;
