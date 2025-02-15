@@ -6,7 +6,7 @@ env:
   SOLUTION_FILE_PATH: .
   BUILD_CONFIGURATION: Debug
 jobs:
-- build:
+  build:
     runs-on: windows-latest
     steps:
     - name: Checkout repository
@@ -32,10 +32,10 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild Tests/Tests.vcxproj -t:build -property:Configuration=Debug -property:IncludePath=D:\a\Caesium\Caesium\caesium_lib\caesium_lib -property:LanguageStandard=stdcpp23 -property:Platform=x64
   
-- test:
-    - name: List Transpilation Tests
-      run: dir D:\a\Caesium\Caesium\Tests\Tests
-
+  test:
+    runs-on: windows-latest
+    needs: build
+    steps:
     - name: List Transpilation Tests
       run: dir "D:\a\Caesium\Caesium\Tests\Transpilation Tests"
 
