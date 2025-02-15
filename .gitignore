@@ -1,5 +1,11 @@
 !**.gitignore
 **.vcxproj.user
+**.produced_error.txt
+**.produced.cpp
+**.a.out
+**.out.log
+
+
 **/x64/*
 **/Debug/*
 **/.vs/*

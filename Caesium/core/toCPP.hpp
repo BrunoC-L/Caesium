@@ -145,11 +145,10 @@ std::string symbol_as_text(Token<token>) {
 
 template <token_t... tokens>
 std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) {
-	throw;
-	/*return std::visit(
+	return std::visit(
 		[&](const auto& tk) { return symbol_as_text(tk); },
 		token
-	);*/
+	);
 }
 
 static std::string indent(size_t n) {

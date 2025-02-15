@@ -126,14 +126,15 @@ std::optional<error> insert_all_named_recursive_with_imports(
 	return std::nullopt;
 }
 
-template <typename T>
-auto add(Namespace& named, std::map<std::string, std::vector<T>>& map_of_vec) {
+template <typename T, typename compare>
+auto add(Namespace& named, std::map<std::string, std::vector<T>, compare>& map_of_vec) {
 	for (const auto& [key, vec] : map_of_vec)
 		for (const T& e : vec)
 			add(named, ::copy(e));
 }
 
-auto add_auto_fns(Namespace& named, std::map<std::string, std::vector<NodeStructs::Function>>& map_of_vec) {
+template <typename compare>
+auto add_auto_fns(Namespace& named, std::map<std::string, std::vector<NodeStructs::Function>, compare>& map_of_vec) {
 	for (const auto& [key, vec] : map_of_vec)
 		for (const NodeStructs::Function& e : vec)
 			add_auto_fn(named, copy(e));
@@ -168,14 +169,13 @@ std::optional<error> insert_all_named_recursive_with_imports(
 					return opt_error;
 				Namespace& imported_named = named_by_file.at(i.imported);
 
-				throw;
-				/*add(named, imported_named.types);
+				add(named, imported_named.types);
 				add(named, imported_named.functions);
 				add_auto_fns(named, imported_named.functions_using_auto);
 				add(named, imported_named.interfaces);
 				add(named, imported_named.blocks);
 				add(named, imported_named.templates);
-				add(named, imported_named.enums);*/
+				add(named, imported_named.enums);
 				for (const auto& [k, e] : imported_named.namespaces)
 					named.namespaces.emplace(k, copy(e));
 			}

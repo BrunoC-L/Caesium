@@ -531,7 +531,7 @@ private:
 
 			std::string num = parseInt();
 			if (!num.length())
-				throw std::exception();
+				throw;
 			if (index != program.length() && program[index] == '.') {
 				index += 1;
 				std::string part2 = parseInt();

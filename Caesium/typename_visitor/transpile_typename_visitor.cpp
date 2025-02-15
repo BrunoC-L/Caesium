@@ -161,17 +161,11 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 	}
 }
 
-//template <typename T>
-//void swap(T& a, T& b) {
-//	T c = std::move(a);
-//	new (&a) T(std::move(b));
-//	new (&b) T(std::move(c));
-//}
- 
-void swap(NodeStructs::Typename& a, NodeStructs::Typename& b) {
-	NodeStructs::Typename c = std::move(a);
-	new (&a) NodeStructs::Typename(std::move(b));
-	new (&b) NodeStructs::Typename(std::move(c));
+template <typename T>
+void move_swap(T& a, T& b) {
+	T c = std::move(a);
+	new (&a) T(std::move(b));
+	new (&b) T(std::move(c));
 }
 
 template<typename T>
@@ -180,8 +174,7 @@ void bubble_sort_swap(std::vector<T>& arr) {
 	for (int i = 0; i < n - 1; ++i)
 		for (int j = 0; j < n - i - 1; ++j)
 			if (arr.at(j) > arr.at(j + 1))
-				throw;
-				//swap(arr.at(j), arr.at(j + 1));
+				move_swap(arr.at(j), arr.at(j + 1));
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& type) {

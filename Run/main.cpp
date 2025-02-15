@@ -9,7 +9,7 @@
 static NodeStructs::File caesium2AST(const std::filesystem::path& file_name) {
 	std::ifstream caesium(file_name);
 	if (!caesium.is_open())
-		throw std::exception();
+		throw;
 	std::string program;
 	std::getline(caesium, program, '\0');
 	grammar::File file(0);
