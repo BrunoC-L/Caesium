@@ -4,6 +4,7 @@
 **/produced.cpp
 **/*.out
 **/*.log
+**/*.gcno
 
 **/x64/*
 **/Debug/*
