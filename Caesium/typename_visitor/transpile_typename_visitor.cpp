@@ -167,6 +167,12 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 //	new (&a) T(std::move(b));
 //	new (&b) T(std::move(c));
 //}
+ 
+void swap(NodeStructs::Typename& a, NodeStructs::Typename& b) {
+	NodeStructs::Typename c = std::move(a);
+	new (&a) NodeStructs::Typename(std::move(b));
+	new (&b) NodeStructs::Typename(std::move(c));
+}
 
 template<typename T>
 void bubble_sort_swap(std::vector<T>& arr) {

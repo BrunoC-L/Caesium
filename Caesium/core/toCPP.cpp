@@ -223,13 +223,12 @@ std::optional<error> insert_aliases_recursive_with_imports(
 void mark_exists_as_traversed(transpilation_state& state, variables_t& variables, const NodeStructs::NameSpace& exists, std::stringstream& ss) {
 	for (const auto& e : exists.types) {
 		if (e.name_space.has_value()) {
-			throw;
-			/*auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
+			auto str_or_e = transpile_typename({ state }, variables, e.name_space.value());
 			if (str_or_e.has_error())
 				throw;
 			ss << "using " << str_or_e.value() << "__" << e.name << " = ";
 			std::string aliases_to = replace_all(std::move(str_or_e).value(), "__", "::");
-			ss << aliases_to << "::" << e.name << ";\n";*/
+			ss << aliases_to << "::" << e.name << ";\n";
 		}
 		state.traversed_types.insert(copy(e));
 	}
@@ -1162,7 +1161,6 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 }
 
 bool uses_auto(const NodeStructs::Function& fn) {
-	throw;
 	if (cmp(fn.returnType.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::weak_ordering::equivalent)
 		return true;
 	for (const auto& param : fn.parameters)
