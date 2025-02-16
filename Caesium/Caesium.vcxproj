@@ -149,7 +149,6 @@
   <ItemGroup>
     <ClCompile Include="structured\helpers.cpp" />
     <ClCompile Include="grammar\parse.cpp" />
-    <ClCompile Include="expression_visitor\expression_for_template_visitor.cpp" />
     <ClCompile Include="structured\structurizer.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
     <ClCompile Include="statement_visitor\transpile_statement.cpp" />
@@ -182,7 +181,6 @@
     <ClInclude Include="utility\colored_text.hpp" />
     <ClInclude Include="utility\enumerate.hpp" />
     <ClInclude Include="utility\expected.hpp" />
-    <ClInclude Include="expression_visitor\expression_for_template_visitor.hpp" />
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />
     <ClInclude Include="utility\fn_util.hpp" />
     <ClInclude Include="utility\is_specialization.hpp" />

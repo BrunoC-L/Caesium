@@ -1948,8 +1948,6 @@ expected<Arrangement> find_best_template(
 					return p.name + "...";
 				}
 			), parameter._value);
-			/*if (parameter.second.has_value())
-				parameters_ss << " = " << expression_for_template(parameter.second.value());*/
 		}
 		templates_ss << "template " + templates.at(0).name + "<" + parameters_ss.str() + ">";
 	}

@@ -3,8 +3,11 @@
 **/produced_error.txt
 **/produced.cpp
 **/*.out
+**/out/*
 **/*.log
 **/*.gcno
+**/*.gcda
+**/*.gcov
 
 **/x64/*
 **/Debug/*
