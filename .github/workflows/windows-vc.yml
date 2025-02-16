@@ -1,0 +1,30 @@
+name: Windows Build
+
+on: [push]
+
+env:
+  BUILD_CONFIGURATION: Debug
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore .
+
+    - name: Build
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild Tests/Tests.vcxproj -t:build -property:Configuration=Debug -property:IncludePath=caesium_lib/caesium_lib -property:LanguageStandard=stdcpp23 -property:Platform=x64
+
+    - name: Test
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: Tests/x64/Debug/tests.exe "Tests/Transpilation Tests"

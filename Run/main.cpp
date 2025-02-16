@@ -4,7 +4,7 @@
 #include <filesystem>
 
 #include "structured/structurizer.hpp"
-#include "core/toCpp.hpp"
+#include "core/toCPP.hpp"
 #include "utility/replace_all.hpp"
 
 static NodeStructs::File caesium2AST(const std::filesystem::path& file_name) {

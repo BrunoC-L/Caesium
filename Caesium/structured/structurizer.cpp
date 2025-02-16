@@ -372,7 +372,7 @@ NodeStructs::Template getStruct(
 			| to_vec(),
 		.templated = t.template get<TemplateBody>().value,
 		.indent = t.n_indent + 1,
-		.rule_info = rule_info_from_rule(file_name, vec, t)
+		.info = rule_info_from_rule(file_name, vec, t)
 	};
 }
 
@@ -459,7 +459,7 @@ NodeStructs::Type getStruct(
 			| std::views::transform([&](auto&& e) { return std::get<grammar::CompileTimeStatement<type_context>>(e); })
 			| std::views::transform([&](auto&& e) { return get_compile_time_statement(file_name, vec, e); })
 		| to_vec(),
-		.rule_info = rule_info_from_rule(file_name, vec, t.template get<grammar::Word>())
+		.info = rule_info_from_rule(file_name, vec, t.template get<grammar::Word>())
 	};
 }
 
@@ -497,7 +497,7 @@ NodeStructs::Interface getStruct(
 			| std::views::transform([&](auto&& e) { return std::get<grammar::CompileTimeStatement<type_context>>(e); })
 			| std::views::transform([&](auto&& e) { return get_compile_time_statement(file_name, vec, e); })
 			| to_vec(),
-		.rule_info = rule_info_from_rule(file_name, vec, t.template get<grammar::Word>())
+		.info = rule_info_from_rule(file_name, vec, t.template get<grammar::Word>())
 	};
 }
 
@@ -599,7 +599,7 @@ NodeStructs::NameSpace getNamespaceStruct(
 		.aliases = std::move(aliases),
 		.enums = std::move(enums),
 		.namespaces = std::move(namespaces),
-		.rule_info = std::move(info)
+		.info = std::move(info)
 	};
 }
 
@@ -663,7 +663,7 @@ NodeStructs::NameSpace getNamespaceStruct(
 		.aliases = std::move(aliases),
 		.enums = std::move(enums),
 		.namespaces = std::move(namespaces),
-		.rule_info = std::move(info)
+		.info = std::move(info)
 	};
 }
 
@@ -759,7 +759,7 @@ NodeStructs::File getStruct(
 				| std::views::transform([&](auto&& e) { return std::get<grammar::NameSpace>(e); })
 				| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e, std::nullopt); })
 				| to_vec(),
-			.rule_info = rule_info_from_rule(file_name, vec, f)
+			.info = rule_info_from_rule(file_name, vec, f)
 		}
 	};
 }

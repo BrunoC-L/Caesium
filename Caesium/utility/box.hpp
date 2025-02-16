@@ -60,7 +60,7 @@ public:
 	template <typename U>
 	Box(Box<U>&& other) : Box(std::move(other).get()) {};
 
-	std::weak_ordering operator<=>(const Box& other) const noexcept {
+	std::strong_ordering operator<=>(const Box& other) const noexcept {
 		return (*ptr) <=> (*other.ptr);
 	};
 
@@ -119,7 +119,7 @@ public:
 	template <typename U>
 	NonCopyableBox(NonCopyableBox<U>&& other) : NonCopyableBox(std::move(other).get()) {};
 
-	std::weak_ordering operator<=>(const NonCopyableBox& other) const noexcept {
+	std::strong_ordering operator<=>(const NonCopyableBox& other) const noexcept {
 		return (*ptr) <=> (*other.ptr);
 	};
 

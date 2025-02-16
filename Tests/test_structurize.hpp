@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include "core/toCpp.hpp"
+#include "core/toCPP.hpp"
 #include "structured/structurizer.hpp"
 #include "utility/colored_text.hpp"
 #include "utility/as_vec.hpp"
@@ -49,7 +49,7 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 			else
 				return getStruct(test_file_name_stub(), tokens, node);
 		}();
-	bool ok = expected <=> structurized == std::weak_ordering::equivalent;
+	bool ok = expected <=> structurized == std::strong_ordering::equivalent;
 	if (ok != exp_ok) {
 		std::cout << "Comparison " << colored_text_with_bool(exp_ok ? "FAILED" : "WORKED", false) << " for LINE " << line << "\n" << program << "\n\n";
 		auto index = it.index;
@@ -152,7 +152,7 @@ bool test_structurize_equals() {
 				}),
 			.templated = "\tInt f(Vector<`T`> ref vec):\n\t\treturn 0",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 		});
 
 	ok &= test_structurize_equals<Function>(__LINE__, 0, "A f(A ref a):\n\tprintln(a)\n",
