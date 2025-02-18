@@ -154,7 +154,6 @@ bool build(And<Ands...>& and_, Iterator& it) {
 
 template <typename... Ors>
 bool build(Or<Ors...>& or_, Iterator& it) {
-	using T = Or<Ors...>;
 	or_.beg_offset = it.index;
 	bool populated = false;
 	([&] {

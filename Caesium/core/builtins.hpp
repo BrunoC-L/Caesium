@@ -1,5 +1,5 @@
 #pragma once
-#include "toCpp.hpp"
+#include "toCPP.hpp"
 #include "../utility/as_vec.hpp"
 #include "../utility/as_map.hpp"
 
@@ -126,6 +126,6 @@ struct builtins {
 				)
 			}
 		),*/
-		.rule_info = rule_info_language_element("filesystem")
+		.info = rule_info_language_element("filesystem")
 	};
 };

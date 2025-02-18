@@ -40,10 +40,11 @@ using expression_information = std::variant<type_information, non_type_informati
 using transpile_t = expected<std::string>;
 using transpile_expression_information_t = expected<expression_information>;
 
+
 struct Namespace {
 	std::string name;
 
-	template <typename T> using map_to_vec = std::map<std::string, std::vector<T>, decltype([](const std::string& l, const std::string& r) { return l <=> r == std::weak_ordering::less; })>;
+	template <typename T> using map_to_vec = std::map<std::string, std::vector<T>, default_less_than>;
 
 	map_to_vec<NodeStructs::Function> functions;
 	map_to_vec<NodeStructs::Function> functions_using_auto;
@@ -54,12 +55,12 @@ struct Namespace {
 	map_to_vec<NodeStructs::Template> templates;
 
 	map_to_vec<NodeStructs::Block> blocks;
-	std::map<std::string, NodeStructs::Typename, decltype([](const std::string& l, const std::string& r) { return l <=> r == std::weak_ordering::less; })> aliases;
+	std::map<std::string, NodeStructs::Typename> aliases;
 	map_to_vec<NodeStructs::Enum> enums;
 
-	std::map<std::string, Namespace, decltype([](const std::string& l, const std::string& r) { return l <=> r == std::weak_ordering::less; })> namespaces;
+	std::map<std::string, Namespace> namespaces;
 	map_to_vec<NodeStructs::Builtin> builtins;
-	rule_info rule_info = rule_info_stub<Namespace>();
+	rule_info info = rule_info_stub<Namespace>();
 };
 
 template <>
@@ -80,30 +81,16 @@ struct transpilation_state {
 	) : global_namespace(std::move(global_namespace)) {}
 
 	// shouldnt those be pointers...?
-	std::set<NodeStructs::Function,
-		decltype([](const NodeStructs::Function& l, const NodeStructs::Function& r) { return l <=> r == std::weak_ordering::less; })>
-			traversed_functions;
-	std::set<NodeStructs::Type,
-		decltype([](const NodeStructs::Type& l, const NodeStructs::Type& r) { return l <=> r == std::weak_ordering::less; })>
-		traversed_types;
-	std::set<NodeStructs::Interface,
-		decltype([](const NodeStructs::Interface& l, const NodeStructs::Interface& r) { return l <=> r == std::weak_ordering::less; })>
-			traversed_interfaces;
+	std::set<NodeStructs::Function, default_less_than> traversed_functions;
+	std::set<NodeStructs::Type, default_less_than> traversed_types;
+	std::set<NodeStructs::Interface, default_less_than> traversed_interfaces;
 
-	std::set<NodeStructs::Function,
-		decltype([](const NodeStructs::Function& l, const NodeStructs::Function& r) { return l <=> r == std::weak_ordering::less; })>
-			functions_to_transpile;
+	std::set<NodeStructs::Function, default_less_than> functions_to_transpile;
 	std::vector<NodeStructs::Type> types_to_transpile;
-	std::set<NodeStructs::Interface,
-		decltype([](const NodeStructs::Interface& l, const NodeStructs::Interface& r) { return l <=> r == std::weak_ordering::less; })>
-			interfaces_to_transpile;
-	std::set<NodeStructs::Enum,
-		decltype([](const NodeStructs::Enum& l, const NodeStructs::Enum& r) { return l <=> r == std::weak_ordering::less; })>
-			enums_to_transpile;
+	std::set<NodeStructs::Interface, default_less_than> interfaces_to_transpile;
+	std::set<NodeStructs::Enum, default_less_than> enums_to_transpile;
 
-	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>,
-		decltype([](const NodeStructs::Typename& l, const NodeStructs::Typename& r) { return l <=> r == std::weak_ordering::less; })>
-			interface_symbol_to_members;
+	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>, default_less_than> interface_symbol_to_members;
 	std::set<std::pair<std::string, std::string>> aliases_to_transpile;
 };
 

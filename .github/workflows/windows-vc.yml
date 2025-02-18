@@ -1,10 +1,10 @@
-name: MSBuild debug
+name: Windows Build
 
 on: [push]
 
 env:
-  SOLUTION_FILE_PATH: .
   BUILD_CONFIGURATION: Debug
+
 jobs:
   build:
     runs-on: windows-latest
@@ -19,30 +19,12 @@ jobs:
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+      run: nuget restore .
 
-    - name: List files in caesium_lib submodule
-      run: dir D:\a\Caesium\Caesium\caesium_lib
-
-    - name: Build-Core
+    - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: msbuild Caesium/Caesium.vcxproj -t:rebuild -property:Configuration=Debug -property:IncludePath=D:\a\Caesium\Caesium\caesium_lib\caesium_lib -property:LanguageStandard=stdcpp23 -property:Platform=x64
-
-    - name: Build-Tests
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: msbuild Tests/Tests.vcxproj -t:build -property:Configuration=Debug -property:IncludePath=D:\a\Caesium\Caesium\caesium_lib\caesium_lib -property:LanguageStandard=stdcpp23 -property:Platform=x64
-  
-  test:
-    runs-on: windows-latest
-    needs: build
-    steps:
-    - name: List Transpilation Tests
-      run: dir "D:\a\Caesium\Caesium\Tests\Transpilation Tests"
-
-    - name: Test Base
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: D:\a\Caesium\Caesium\Tests\x64\Debug\tests.exe
+      run: msbuild Tests/Tests.vcxproj -t:build -property:Configuration=Debug -property:IncludePath=caesium_lib/caesium_lib -property:LanguageStandard=stdcpp23 -property:Platform=x64
 
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: D:\a\Caesium\Caesium\Tests\x64\Debug\tests.exe "D:\a\Caesium\Caesium\Tests\Transpilation Tests"
+      run: Tests/x64/Debug/tests.exe "Tests/Transpilation Tests"

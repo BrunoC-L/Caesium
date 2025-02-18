@@ -83,7 +83,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		auto& vec = state.state.global_namespace.functions[fn.value().name];
 		bool found = false;
 		for (const auto& f : vec)
-			if (cmp(f, fn.value()) == std::weak_ordering::equivalent)
+			if (cmp(f, fn.value()) == std::strong_ordering::equivalent)
 				found = true;
 		if (!found)
 			vec.push_back(std::move(fn).value());
@@ -92,7 +92,7 @@ R T::operator()(const NodeStructs::Type& t) {
 	if (auto it = state.state.global_namespace.builtins.find(property_name); it != state.state.global_namespace.builtins.end()) {
 		const std::string& name = it->second.back().name;
 		if (name == "size") {
-			/*if (auto is_str = t <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } } == std::weak_ordering::equivalent) {
+			/*if (auto is_str = t <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } } == std::strong_ordering::equivalent) {
 				return expression_information{ non_type_information{
 					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} },
 					.representation = operand_info.representation + ".size()",
@@ -236,7 +236,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
-		if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } })  != std::weak_ordering::equivalent)
+		if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } })  != std::strong_ordering::equivalent)
 			return error{
 				"user error",
 				"wrong type for vector reserve"

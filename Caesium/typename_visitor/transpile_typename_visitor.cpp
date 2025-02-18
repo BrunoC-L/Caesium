@@ -67,11 +67,11 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& type) {
-	bool is_variant = cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Union" } }) == std::weak_ordering::equivalent;
+	bool is_variant = cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Union" } }) == std::strong_ordering::equivalent;
 	bool is_vec_or_set =
-		cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Vector" } }) == std::weak_ordering::equivalent
-		|| cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Set" } }) == std::weak_ordering::equivalent;
-	bool is_map = cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Map" } }) == std::weak_ordering::equivalent;
+		cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Vector" } }) == std::strong_ordering::equivalent
+		|| cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Set" } }) == std::strong_ordering::equivalent;
+	bool is_map = cmp(type.type.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{ "Map" } }) == std::strong_ordering::equivalent;
 	if (is_vec_or_set || is_map || is_variant) {
 		if (is_vec_or_set && type.templated_with.size() != 1)
 			NOT_IMPLEMENTED;
@@ -131,7 +131,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 			NodeStructs::Typename{
 				.value = copy(type),
 				.category = NodeStructs::Value{},
-				.rule_info = copy(type.type.rule_info)
+				.info = copy(type.type.info)
 			}
 		});
 		if (single_word.str() == "f_Int_") {
@@ -186,7 +186,7 @@ R T::operator()(const NodeStructs::OptionalTypename& type) {
 		NodeStructs::Typename{
 			.value = copy(type),
 			.category = NodeStructs::Value{},
-			.rule_info = copy(type.type.rule_info)
+			.info = copy(type.type.info)
 		}
 	});
 	state.state.aliases_to_transpile.insert({ "Optional_" + out + "_", "Optional<" + out + ">" });
@@ -218,7 +218,7 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 		NodeStructs::Typename{
 			.value = copy(type),
 			.category = NodeStructs::Value{},
-			.rule_info = rule_info{.file_name = "todo:/", .content = "todo??" }
+			.info = rule_info{.file_name = "todo:/", .content = "todo??" }
 		}
 	});
 	if (replaced == "f_Int_") {

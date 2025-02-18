@@ -44,12 +44,12 @@ struct error {
 	}
 };
 
-template <typename Result>
+template <typename Result, typename error_t = error>
 struct expected {
 	static_assert(!is_specialization<Result, expected>::value, "expected<expected<E>> should be replaced with expected<E>");
 public:
 	using value_type = Result;
-	using error_type = error;
+	using error_type = error_t;
 protected:
 	std::variant<value_type, error_type> value_or_error;
 public:
@@ -61,11 +61,11 @@ public:
 
 	expected(value_type&& value) : value_or_error(std::move(value)) {}
 	expected(const value_type& value) : value_or_error(value) {}
-	expected(error&& err) : value_or_error(std::move(err)) {}
-	expected(const error& err) : value_or_error(err) {}
+	expected(error_type&& err) : value_or_error(std::move(err)) {}
+	expected(const error_type& err) : value_or_error(err) {}
 
 	template <typename T>
-		requires (std::is_constructible<Result, T>::value && !std::is_same_v<std::remove_cvref_t<T>, error>)
+		requires (std::is_constructible<Result, T>::value && !std::is_same_v<std::remove_cvref_t<T>, error_type>)
 	expected(T&& t) : value_or_error(std::forward<T>(t)) {}
 
 	bool has_value() const {

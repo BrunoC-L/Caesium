@@ -129,7 +129,7 @@ namespace NodeStructs {
 		using vt = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, UnionTypename, VariadicExpansionTypename>;
 		NonCopyableBox<vt> value;
 		Optional<ParameterCategory> category;
-		rule_info rule_info = rule_info_stub<Typename>();
+		rule_info info = rule_info_stub<Typename>();
 	};
 
 	struct TemplatedTypename {
@@ -189,7 +189,7 @@ namespace NodeStructs {
 			Token<STRING> // string token like "abc"
 		>;
 		NonCopyableBox<vt> expression;
-		rule_info rule_info = rule_info_stub<Expression>();
+		rule_info info = rule_info_stub<Expression>();
 	};
 
 	struct WordTypenameOrExpression {
@@ -424,7 +424,7 @@ namespace NodeStructs {
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
 		std::vector<CompileTimeStatement<type_context>> compile_time_statements;
-		rule_info rule_info = rule_info_stub<Type>();
+		rule_info info = rule_info_stub<Type>();
 	};
 
 	struct Interface {
@@ -433,7 +433,7 @@ namespace NodeStructs {
 		std::vector<Alias> aliases;
 		std::vector<MemberVariable> member_variables;
 		std::vector<CompileTimeStatement<type_context>> compile_time_statements;
-		rule_info rule_info = rule_info_stub<Interface>();
+		rule_info info = rule_info_stub<Interface>();
 	};
 
 	struct InterfaceType {
@@ -468,7 +468,7 @@ namespace NodeStructs {
 		std::vector<Variant<TemplateParameter, TemplateParameterWithDefaultValue, VariadicTemplateParameter>> parameters;
 		std::string templated;
 		int indent;
-		rule_info rule_info = rule_info_stub<Template>();
+		rule_info info = rule_info_stub<Template>();
 	};
 
 	struct MetaType {
@@ -629,7 +629,7 @@ namespace NodeStructs {
 
 		std::vector<NameSpace> namespaces;
 
-		rule_info rule_info = rule_info_stub<NameSpace>();
+		rule_info info = rule_info_stub<NameSpace>();
 	};
 
 	struct Exists {

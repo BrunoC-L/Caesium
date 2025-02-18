@@ -24,7 +24,7 @@ R f(
 		variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type) });
 
 		if (holds<NodeStructs::UnionType>(assigned_expression_ok.type)
-			&& (cmp(type, assigned_expression_ok.type) != std::weak_ordering::equivalent)) {
+			&& (cmp(type, assigned_expression_ok.type) != std::strong_ordering::equivalent)) {
 			std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
 			return type_repr + " " + statement.name + " = "
 				"std::visit([](const auto& " + lambda_var_name + ") -> " + type_repr + " {"
@@ -32,7 +32,7 @@ R f(
 				"}, " + assigned_expression_ok.representation + ");\n";
 		}
 		else {
-			if (cmp(assigned_expression_ok.type, type) == std::weak_ordering::equivalent)
+			if (cmp(assigned_expression_ok.type, type) == std::strong_ordering::equivalent)
 				return type_repr + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 			else
 				return type_repr + " " + statement.name + " = { " + assigned_expression_ok.representation + " };\n";
@@ -63,7 +63,7 @@ R transpile_statement_specific(
 	const NodeStructs::VariableDeclarationStatement<context>& statement
 ) {
 	bool is_aggregate_init = holds<NodeStructs::BraceArguments>(statement.expr);
-	bool is_auto = cmp(statement.type.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::weak_ordering::equivalent;
+	bool is_auto = cmp(statement.type.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::strong_ordering::equivalent;
 	if (is_auto) {
 		if (is_aggregate_init)
 			return error{
@@ -504,19 +504,19 @@ R transpile_statement_specific(
 }
 
 bool is_int(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) == std::weak_ordering::equivalent;
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) == std::strong_ordering::equivalent;
 }
 
 bool is_floating(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } }) == std::weak_ordering::equivalent;
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } }) == std::strong_ordering::equivalent;
 }
 
 bool is_char(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } }) == std::weak_ordering::equivalent;
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } }) == std::strong_ordering::equivalent;
 }
 
 bool is_string(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } }) == std::weak_ordering::equivalent;
+	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } }) == std::strong_ordering::equivalent;
 }
 
 template <typename T>

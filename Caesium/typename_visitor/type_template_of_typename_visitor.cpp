@@ -37,14 +37,14 @@ R f(transpilation_state_with_indent state, variables_t& variables, const std::ve
 		return_if_error(args_or_e);
 		const auto& args = args_or_e.value();
 		auto ex1 = NodeStructs::TemplateExpression{
-			.operand = NodeStructs::Expression{ .expression = name_to_find, .rule_info = rule_info{.file_name = "todo:/", .content = name_to_find } },
+			.operand = NodeStructs::Expression{ .expression = name_to_find, .info = rule_info{.file_name = "todo:/", .content = name_to_find } },
 			.args = copy(args)
 			| std::views::transform([&](const std::string& s) { return NodeStructs::WordTypenameOrExpression(s); })
 			| to_vec()
 		};
 		auto ex2 = NodeStructs::WordTypenameOrExpression{ NodeStructs::Expression{
 			.expression = std::move(ex1),
-			.rule_info = rule_info{.file_name = "todo:/", .content = name_to_find }
+			.info = rule_info{.file_name = "todo:/", .content = name_to_find }
 		} };
 		auto tmpl_name_or_e = word_typename_or_expression_for_template(state, variables, std::move(ex2));
 		return_if_error(tmpl_name_or_e);

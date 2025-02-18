@@ -51,7 +51,7 @@ R T::operator()(const NodeStructs::ConditionalExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(if_expr_info.value()))
 			NOT_IMPLEMENTED;
 		non_type_information& if_expr_info_ok = std::get<non_type_information>(condition_expr_info.value());
-		if (cmp(if_expr_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+		if (cmp(if_expr_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::strong_ordering::equivalent)
 		NOT_IMPLEMENTED;
 
 		auto else_expr_info = operator()(expr.ifElseExprs.value().second);
@@ -83,7 +83,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		NOT_IMPLEMENTED;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::strong_ordering::equivalent)
 	NOT_IMPLEMENTED;
 	ss << base_ok.representation;
 	for (const auto& e : expr.ors) {
@@ -92,7 +92,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(or_expr.value()))
 			NOT_IMPLEMENTED;
 		const non_type_information& or_expr_ok = std::get<non_type_information>(or_expr.value());
-		if (cmp(or_expr_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+		if (cmp(or_expr_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::strong_ordering::equivalent)
 		NOT_IMPLEMENTED;
 		ss << " || " << or_expr_ok.representation;
 	}
@@ -110,7 +110,7 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 	if (!std::holds_alternative<non_type_information>(base.value()))
 		NOT_IMPLEMENTED;
 	const non_type_information& base_ok = std::get<non_type_information>(base.value());
-	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+	if (cmp(base_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::strong_ordering::equivalent)
 		NOT_IMPLEMENTED;
 	ss << base_ok.representation;
 	for (const auto& e : expr.ands) {
@@ -119,7 +119,7 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 		if (!std::holds_alternative<non_type_information>(and_.value()))
 			NOT_IMPLEMENTED;
 		const non_type_information& and_ok = std::get<non_type_information>(and_.value());
-		if (cmp(and_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::weak_ordering::equivalent)
+		if (cmp(and_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } }) != std::strong_ordering::equivalent)
 			NOT_IMPLEMENTED;
 		ss << " || " << and_ok.representation;
 	}
@@ -177,7 +177,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 			NOT_IMPLEMENTED;
 		const type_information& right_ok = std::get<type_information>(right.value());
 		auto [str, val] = [&]() -> std::pair<std::string, bool> {
-			if (cmp(left.type, right_ok.type) == std::weak_ordering::equivalent)
+			if (cmp(left.type, right_ok.type) == std::strong_ordering::equivalent)
 				return { "True", true };
 			else
 				return { "False", false };
@@ -417,7 +417,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			auto& vec = state.state.global_namespace.functions[fn.value().name];
 			bool found = false;
 			for (const auto& f : vec)
-				if (cmp(f, fn.value()) == std::weak_ordering::equivalent)
+				if (cmp(f, fn.value()) == std::strong_ordering::equivalent)
 					found = true;
 			if (!found)
 				vec.push_back(std::move(fn).value());
@@ -613,7 +613,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		auto tmpl_name_or_e = word_typename_or_expression_for_template(
 			state,
 			variables,
-			{ NodeStructs::Expression{ .expression = copy(expr), .rule_info = copy(t.value().tmpl.get().rule_info) }}
+			{ NodeStructs::Expression{ .expression = copy(expr), .info = copy(t.value().tmpl.get().info) }}
 		);
 		return_if_error(tmpl_name_or_e);
 		const auto& tmpl_name = tmpl_name_or_e.value();
@@ -936,12 +936,12 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			if (expr.arguments.args.size() < 1)
 				return error{
 					"user error",
-					"unions require at least one argument, union type was `" + typename_of_type(state, union_t).value().rule_info.content + "`, expression was: `{}`"
+					"unions require at least one argument, union type was `" + typename_of_type(state, union_t).value().info.content + "`, expression was: `{}`"
 				};
 			if (expr.arguments.args.size() > 1)
 				return error{
 					"user error",
-					"unions require at most one argument, union type was `" + typename_of_type(state, union_t).value().rule_info.content + "`, expression was: `TODO`"
+					"unions require at most one argument, union type was `" + typename_of_type(state, union_t).value().info.content + "`, expression was: `TODO`"
 				};
 			auto expr_info = transpile_arg(state, variables, expr.arguments.args.at(0));
 			return_if_error(expr_info);
@@ -949,7 +949,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				NOT_IMPLEMENTED;
 			const non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
 			for (const auto& T : union_t.arguments)
-				if (cmp(T, expr_info_ok.type) == std::weak_ordering::equivalent)
+				if (cmp(T, expr_info_ok.type) == std::strong_ordering::equivalent)
 					return expression_information{ non_type_information{
 						.type = copy(union_t),
 						.representation = typename_repr.value() + "{" + expr_info_ok.representation + "}",
@@ -982,7 +982,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				NOT_IMPLEMENTED;
 			const non_type_information& arg_info_ok = std::get<non_type_information>(arg_info.value());
-			if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) != std::weak_ordering::equivalent)
+			if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) != std::strong_ordering::equivalent)
 				NOT_IMPLEMENTED;
 			return expression_information{ non_type_information{
 				.type = std::move(vt).value_type,
@@ -996,7 +996,7 @@ R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
 				NOT_IMPLEMENTED;
 			const non_type_information& arg_info_ok = std::get<non_type_information>(arg_info.value());
-			if (cmp(arg_info_ok.type, vt.key_type) != std::weak_ordering::equivalent)
+			if (cmp(arg_info_ok.type, vt.key_type) != std::strong_ordering::equivalent)
 				NOT_IMPLEMENTED;
 			return expression_information{ non_type_information{
 				.type = std::move(vt).value_type,

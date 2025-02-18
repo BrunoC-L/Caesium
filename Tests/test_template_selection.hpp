@@ -14,13 +14,13 @@ bool test_single_argument() {
 			}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		state.global_namespace.types.insert({ "SomeType", {} });
-		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .rule_info = tests_rule_info_stub() });
+		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .info = tests_rule_info_stub() });
 		variables_t variables;
 		auto res = find_best_template(
 			{ state, 0 },
@@ -30,7 +30,7 @@ bool test_single_argument() {
 				NodeStructs::WordTypenameOrExpression{ { "SomeType" } }
 			)
 		);
-		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::strong_ordering::equivalent)
 			return false;
 	}
 	{
@@ -41,7 +41,7 @@ bool test_single_argument() {
 					NodeStructs::TemplateParameter{.name = "A" }
 				}),
 				.templated = "\nInt f1():\n",
-				.rule_info = tests_rule_info_stub()
+				.info = tests_rule_info_stub()
 			},
 			NodeStructs::Template{
 				.name = "f2",
@@ -51,13 +51,13 @@ bool test_single_argument() {
 					}),
 				.templated = "\nInt f2():\n",
 				.indent = 1,
-				.rule_info = tests_rule_info_stub()
+				.info = tests_rule_info_stub()
 			});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		state.global_namespace.types.insert({ "SomeType", {} });
-		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .rule_info = tests_rule_info_stub() });
+		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .info = tests_rule_info_stub() });
 		variables_t variables;
 		/*variables.insert({ "x", {}}); // todo maybe try non type args
 		variables.at("x").push_back(variable_info{
@@ -82,13 +82,13 @@ bool test_single_argument() {
 			}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		state.global_namespace.types.insert({ "SomeType", {} });
-		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .rule_info = tests_rule_info_stub() });
+		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .info = tests_rule_info_stub() });
 		variables_t variables;
 		auto res = find_best_template(
 			{ state, 0 },
@@ -96,7 +96,7 @@ bool test_single_argument() {
 			templates,
 			as_vec(NodeStructs::WordTypenameOrExpression{ { "SomeType" } })
 		);
-		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::strong_ordering::equivalent)
 			return false;
 	}
 	{
@@ -108,7 +108,7 @@ bool test_single_argument() {
 				}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 			},
 			NodeStructs::Template{
 				.name = "f",
@@ -118,13 +118,13 @@ bool test_single_argument() {
 				}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 		});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		state.global_namespace.types.insert({ "SomeType", {} });
-		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .rule_info = tests_rule_info_stub() });
+		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .info = tests_rule_info_stub() });
 		variables_t variables;
 		auto res = find_best_template(
 			{ state, 0 },
@@ -132,7 +132,7 @@ bool test_single_argument() {
 			templates,
 			as_vec(NodeStructs::WordTypenameOrExpression{ { "SomeType" } })
 		);
-		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::strong_ordering::equivalent)
 			return false;
 	}
 	{
@@ -144,7 +144,7 @@ bool test_single_argument() {
 			}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 			},
 			NodeStructs::Template{
 				.name = "f",
@@ -154,14 +154,14 @@ bool test_single_argument() {
 					}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 			}
 		);
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		state.global_namespace.types.insert({ "SomeType", {} });
-		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .rule_info = tests_rule_info_stub() });
+		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .info = tests_rule_info_stub() });
 		variables_t variables;
 		auto res = find_best_template(
 			{ state, 0 },
@@ -169,7 +169,7 @@ bool test_single_argument() {
 			templates,
 			as_vec(NodeStructs::WordTypenameOrExpression{ { "SomeType" } })
 		);
-		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::strong_ordering::equivalent)
 			return false;
 	}
 	return true;
@@ -185,7 +185,7 @@ bool test_full_variadic_vs_split() {
 			}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 		},
 		NodeStructs::Template{
 			.name = "f",
@@ -203,13 +203,13 @@ bool test_full_variadic_vs_split() {
 			),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 			});
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		state.global_namespace.types.insert({ "SomeType", {} });
-		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .rule_info = tests_rule_info_stub() });
+		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .info = tests_rule_info_stub() });
 		variables_t variables;
 		auto res = find_best_template(
 			{ state, 0 },
@@ -217,7 +217,7 @@ bool test_full_variadic_vs_split() {
 			templates,
 			as_vec(NodeStructs::WordTypenameOrExpression{ { "SomeType" } })
 		);
-		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(1)) != std::strong_ordering::equivalent)
 			return false;
 	}
 	{
@@ -229,7 +229,7 @@ bool test_full_variadic_vs_split() {
 				}),
 			.templated = "\nInt f():\n",
 			.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 			},
 			NodeStructs::Template{
 				.name = "f",
@@ -246,14 +246,14 @@ bool test_full_variadic_vs_split() {
 					}),
 				.templated = "\nInt f():\n",
 				.indent = 1,
-			.rule_info = tests_rule_info_stub()
+			.info = tests_rule_info_stub()
 			}
 		);
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		state.global_namespace.types.insert({ "SomeType", {} });
-		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .rule_info = tests_rule_info_stub() });
+		state.global_namespace.types.at("SomeType").push_back(NodeStructs::Type{ .name = "SomeType", .info = tests_rule_info_stub() });
 		variables_t variables;
 		auto res = find_best_template(
 			{ state, 0 },
@@ -261,7 +261,7 @@ bool test_full_variadic_vs_split() {
 			templates,
 			as_vec(NodeStructs::WordTypenameOrExpression{ { "SomeType" } })
 		);
-		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::weak_ordering::equivalent)
+		if (res.has_error() || cmp(res.value().tmpl.get(), templates.at(0)) != std::strong_ordering::equivalent)
 			return false;
 	}
 	return true;
@@ -279,7 +279,7 @@ bool test_ambiguous() {
 				),
 				.templated = "\nInt f():\n",
 				.indent = 1,
-				.rule_info = tests_rule_info_stub()
+				.info = tests_rule_info_stub()
 			},
 			NodeStructs::Template{
 				.name = "f",
@@ -290,7 +290,7 @@ bool test_ambiguous() {
 				),
 				.templated = "\nInt f():\n",
 				.indent = 1,
-				.rule_info = tests_rule_info_stub()
+				.info = tests_rule_info_stub()
 			},
 			NodeStructs::Template{
 				.name = "f",
@@ -301,12 +301,12 @@ bool test_ambiguous() {
 				),
 				.templated = "\nInt f():\n",
 				.indent = 1,
-				.rule_info = tests_rule_info_stub()
+				.info = tests_rule_info_stub()
 			}
 		);
 		if (auto opt_e = validate_templates(templates); opt_e.has_value())
 			return false;
-		transpilation_state state(Namespace{ .rule_info = tests_rule_info_stub() });
+		transpilation_state state(Namespace{ .info = tests_rule_info_stub() });
 		variables_t variables;
 		auto res = find_best_template(
 			{ state, 0 },

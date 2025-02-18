@@ -11,7 +11,7 @@
 #include "../utility/default_includes.hpp"
 
 void add_impl(auto& v, auto&& e) {
-	if (std::find_if(v.begin(), v.end(), [&](const auto& x) { return cmp(x, e) == std::weak_ordering::equivalent; }) != v.end())
+	if (std::find_if(v.begin(), v.end(), [&](const auto& x) { return cmp(x, e) == std::strong_ordering::equivalent; }) != v.end())
 		return;
 	v.push_back(std::move(e));
 }
@@ -114,7 +114,7 @@ std::optional<error> insert_all_named_recursive_with_imports(
 		add(named, copy(e));
 
 	for (const auto& e : to_insert.namespaces) {
-		Namespace ns{ .rule_info = copy(to_insert.rule_info) };
+		Namespace ns{ .info = copy(to_insert.info) };
 		ns.name = e.name;
 		insert_all_named_recursive_with_imports(ns, e);
 		named.namespaces.insert({ e.name, std::move(ns) });
@@ -152,7 +152,7 @@ std::optional<error> insert_all_named_recursive_with_imports(
 	for (const NodeStructs::File& file : project)
 		if (file.content.name == file_name) {
 			if (!named_by_file.contains(file_name))
-				named_by_file.insert({ file_name, Namespace{ .rule_info = rule_info{ .file_name = "file:/" + file_name, .content = file_name, } } });
+				named_by_file.insert({ file_name, Namespace{ .info = rule_info{ .file_name = "file:/" + file_name, .content = file_name, } } });
 			Namespace& named = named_by_file.at(file_name);
 			auto x = insert_all_named_recursive_with_imports(named, file.content);
 			if (x.has_value())
@@ -290,7 +290,7 @@ expected<std::pair<std::map<std::string, Namespace>, std::set<std::string>>> cre
 
 	for (const auto& file2 : project) {
 		Namespace named_of_file = {
-			.rule_info = copy(file2.content.rule_info)
+			.info = copy(file2.content.info)
 		};
 		add_builtins(named_of_file);
 		named_by_file.emplace(file2.content.name, std::move(named_of_file));
@@ -405,7 +405,7 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 					if (size != state.functions_to_transpile.size()) {
 						puts("size != state.functions_to_transpile.size()");
 						for (const auto& f : state.functions_to_transpile)
-							if (std::find_if(v.begin(), v.end(), [&](const auto& e) { return cmp(f, e) == std::weak_ordering::equivalent; }) == v.end())
+							if (std::find_if(v.begin(), v.end(), [&](const auto& e) { return cmp(f, e) == std::strong_ordering::equivalent; }) == v.end())
 								puts(f.name.c_str());
 					}
 					{
@@ -443,7 +443,7 @@ transpile_declaration_definition_t transpile_main(
 		make_typename(NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{}, rule_info_language_element("Vector")),
 		as_vec(NodeStructs::WordTypenameOrExpression{ "String" })
 	}, NodeStructs::Reference{}, rule_info_language_element("Vector<String>"));
-	if (cmp(type, vector_str) != std::weak_ordering::equivalent)
+	if (cmp(type, vector_str) != std::strong_ordering::equivalent)
 		return error{ "user error","\"main\" function using 1 argument must be of `Vector<String> ref` type" };
 
 	return transpile(
@@ -637,7 +637,7 @@ std::optional<error> add_for_iterator_variables(
 		overload(overload_default_error,
 			[&](const NodeStructs::VariableDeclaration& it) -> std::optional<error> {
 				NodeStructs::MetaType iterator_type = type_of_typename(state, variables, it.type).value();
-				if (cmp(it_type, iterator_type) != std::weak_ordering::equivalent) {
+				if (cmp(it_type, iterator_type) != std::strong_ordering::equivalent) {
 					auto t = transpile_typename(state, variables, it.type);
 					return_if_error(t);
 					return error{ "user error","Invalid type of iterator " + t.value() };
@@ -928,7 +928,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 				}
 			},
 			[&](const NodeStructs::Type& param, const NodeStructs::Type& arg, const auto& state) -> R {
-				if (cmp(param, arg) == std::weak_ordering::equivalent)
+				if (cmp(param, arg) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				// if the parameter has 1 member, try to assign to that member
 				if (param.member_variables.size() == 1) {
@@ -1025,7 +1025,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 			},
 			
 			[&](const NodeStructs::EnumType& param, const NodeStructs::EnumValueType& arg, const auto& state) -> R {
-				if (cmp(param.enum_.get(), arg.enum_.get()) == std::weak_ordering::equivalent)
+				if (cmp(param.enum_.get(), arg.enum_.get()) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				else
 					return not_assignable{};
@@ -1037,13 +1037,13 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 					return not_assignable{};
 			},
 			[&](const NodeStructs::VectorType& param, const NodeStructs::VectorType& arg, const auto& state) -> R {
-				if (cmp(param.value_type, arg.value_type) == std::weak_ordering::equivalent)
+				if (cmp(param.value_type, arg.value_type) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				else
 					return not_assignable{};
 			},
 			[&](const NodeStructs::SetType& param, const NodeStructs::SetType& arg, const auto& state) -> R {
-				if (cmp(param.value_type, arg.value_type) == std::weak_ordering::equivalent)
+				if (cmp(param.value_type, arg.value_type) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				else
 					return not_assignable{};
@@ -1058,7 +1058,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 							auto t2 = type_of_typename(state, variables, source_type_name);
 							if (t2.has_error())
 								NOT_IMPLEMENTED;
-							if (cmp(t.value(), t2.value()) != std::weak_ordering::equivalent)
+							if (cmp(t.value(), t2.value()) != std::strong_ordering::equivalent)
 								return not_assignable{};
 						}
 				}
@@ -1067,7 +1067,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 				];
 				auto new_member = NodeStructs::MetaType{ copy(arg) };
 				for (const auto& member : interfacemembers)
-					if (cmp(member, new_member) == std::weak_ordering::equivalent)
+					if (cmp(member, new_member) == std::strong_ordering::equivalent)
 						return directly_assignable{};
 				interfacemembers.push_back(std::move(new_member));
 				return directly_assignable{};
@@ -1161,7 +1161,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 }
 
 bool uses_auto(const NodeStructs::Function& fn) {
-	if (cmp(fn.returnType.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::weak_ordering::equivalent)
+	if (cmp(fn.returnType.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::strong_ordering::equivalent)
 		return true;
 	for (const auto& param : fn.parameters)
 		if (uses_auto(param))
@@ -1395,7 +1395,7 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	//			return_if_error(else_res_t);
 
 	//			if (if_res_t.value().has_value() && else_res_t.value().has_value())
-	//				if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::weak_ordering::equivalent)
+	//				if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::strong_ordering::equivalent)
 	//					NOT_IMPLEMENTED;
 	//				else
 	//					return if_res_t;
@@ -1463,7 +1463,7 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 
 	//				if (deduced.value().has_value())
 	//					if (res.has_value())
-	//						if (cmp(res.value(), deduced.value().value()) != std::weak_ordering::equivalent)
+	//						if (cmp(res.value(), deduced.value().value()) != std::strong_ordering::equivalent)
 	//							NOT_IMPLEMENTED;
 	//						else
 	//							continue;
@@ -1521,7 +1521,7 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 
 		if (e.value().has_value())
 			if (res.has_value())
-				if (cmp(res.value(), e.value().value()) != std::weak_ordering::equivalent)
+				if (cmp(res.value(), e.value().value()) != std::strong_ordering::equivalent)
 					NOT_IMPLEMENTED;
 				else
 					continue;
@@ -1543,7 +1543,7 @@ expected<NodeStructs::Function> realise_function_using_auto(
 
 	for (const auto& [index, param] : enumerate(fn_using_auto.parameters))
 		if (uses_auto(param)) {
-			if (cmp(param.typename_.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{"auto"} }) == std::weak_ordering::equivalent) {
+			if (cmp(param.typename_.value.get(), NodeStructs::Typename::vt{ NodeStructs::BaseTypename{"auto"} }) == std::strong_ordering::equivalent) {
 				auto tn = typename_of_type(state, arg_types.at(index));
 				return_if_error(tn);
 				auto del = std::move(realised.parameters.at(index).typename_);
@@ -1577,7 +1577,7 @@ expected<NodeStructs::Function> realise_function_using_auto(
 	if (stack_params_opt_error.has_value())
 		return stack_params_opt_error.value();
 
-	if (cmp(realised.returnType.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_stub_no_throw()).value) != std::weak_ordering::equivalent) {
+	if (cmp(realised.returnType.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_stub_no_throw()).value) != std::strong_ordering::equivalent) {
 		auto fn_or_error = transpile(state, realised);
 		return_if_error(fn_or_error);
 		return NodeStructs::Function{
@@ -1759,7 +1759,7 @@ static std::vector<Arrangement> arrangements(
 			[&](const NodeStructs::TemplateParameterWithDefaultValue& non_variadic) -> std::vector<Arrangement> {
 				int a = 0;
 				if constexpr (std::is_same_v<T, NodeStructs::Expression>) {
-					if (cmp(non_variadic.value, args.at(arg_index)) == std::weak_ordering::equivalent) {
+					if (cmp(non_variadic.value, args.at(arg_index)) == std::strong_ordering::equivalent) {
 						current.arg_placements.push_back(param_index);
 						return arrangements(args, std::move(current), arg_index + 1, param_index + 1);
 					}
@@ -1895,7 +1895,7 @@ expected<Arrangement> find_best_template(
 		candidate_arrangements.begin(),
 		candidate_arrangements.end(),
 		[](const Arrangement& l, const Arrangement& r) {
-			return &l.tmpl.get() < &r.tmpl.get() || &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::weak_ordering::less;
+			return &l.tmpl.get() < &r.tmpl.get() || &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::strong_ordering::less;
 		}
 	);
 	candidate_arrangements.erase(
@@ -1903,7 +1903,7 @@ expected<Arrangement> find_best_template(
 			candidate_arrangements.begin(),
 			candidate_arrangements.end(),
 			[](const Arrangement& l, const Arrangement& r) {
-				return &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::weak_ordering::equivalent;
+				return &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::strong_ordering::equivalent;
 			}
 		),
 		candidate_arrangements.end()
@@ -2189,7 +2189,7 @@ expected<std::string> word_typename_or_expression_for_template(
 					NodeStructs::Typename{
 						.value = NodeStructs::BaseTypename{ get<std::string>(tmpl.operand.expression.get()) },
 						.category = NodeStructs::Value{},
-						.rule_info = rule_info{.file_name = "todo:/", .content = get<std::string>(tmpl.operand.expression.get()) }
+						.info = rule_info{.file_name = "todo:/", .content = get<std::string>(tmpl.operand.expression.get()) }
 					}
 					});
 				if (requires_alias)

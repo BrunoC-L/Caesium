@@ -6,9 +6,9 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::Type& t) {
 	if (t.name_space.has_value())
-		return make_typename(NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name}, NodeStructs::Value{}, copy(t.rule_info));
+		return make_typename(NodeStructs::NamespacedTypename{ copy(t.name_space.value()), t.name}, NodeStructs::Value{}, copy(t.info));
 	else
-		return make_typename(NodeStructs::BaseTypename{ t.name }, NodeStructs::Value{}, copy(t.rule_info));
+		return make_typename(NodeStructs::BaseTypename{ t.name }, NodeStructs::Value{}, copy(t.info));
 }
 
 R T::operator()(const NodeStructs::PrimitiveType& t) {
@@ -27,7 +27,7 @@ R T::operator()(const NodeStructs::InterfaceType& t) {
 	return make_typename(
 		NodeStructs::BaseTypename{ t.interface.get().name },
 		NodeStructs::Value{},
-		copy(t.interface.get().rule_info)
+		copy(t.interface.get().info)
 	);
 }
 
@@ -35,7 +35,7 @@ R T::operator()(const NodeStructs::NamespaceType& t) {
 	return make_typename(
 		NodeStructs::BaseTypename{ t.name_space.get().name },
 		NodeStructs::Value{},
-		copy(t.name_space.get().rule_info)
+		copy(t.name_space.get().info)
 	);
 }
 
@@ -55,7 +55,7 @@ R T::operator()(const NodeStructs::UnionType& t) {
 		if (has_prev)
 			ss << " | ";
 		has_prev = true;
-		ss << e.rule_info.content;
+		ss << e.info.content;
 	}
 	return make_typename(NodeStructs::UnionTypename{
 		std::move(vec).value()
