@@ -97,7 +97,7 @@ R T::operator()(const NodeStructs::OrExpression& expr) {
 		ss << " || " << or_expr_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
+		.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -124,7 +124,7 @@ R T::operator()(const NodeStructs::AndExpression& expr) {
 		ss << " || " << and_ok.representation;
 	}
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
+		.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -161,7 +161,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 				};
 		}
 		return expression_information{ non_type_information{
-			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
+			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } },
 			.representation = ss.str(),
 			.value_category = NodeStructs::Value{},
 		} };
@@ -183,7 +183,7 @@ R T::operator()(const NodeStructs::EqualityExpression& expr) {
 				return { "False", false };
 		}();
 		return expression_information{ non_type_information{
-			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<bool>{ val } },
+			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<bool>{ val } } },
 			.representation = std::move(str),
 			.value_category = NodeStructs::Value{},
 		} };
@@ -218,7 +218,7 @@ R T::operator()(const NodeStructs::CompareExpression& expr) {
 			return error{ "user error", "cannot compare types for CompareExpression" };
 	}
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} },
+		.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{},
 	} };
@@ -349,7 +349,7 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 			if (holds<NodeStructs::PrimitiveType::Valued<int>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value)) {
 				int val = get<NodeStructs::PrimitiveType::Valued<int>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value).value;
 				return expression_information{ non_type_information{
-					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ -val } },
+					.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ -val } } },
 					.representation = std::to_string(-val),
 					.value_category = NodeStructs::Value{},
 				} };
@@ -357,7 +357,7 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 			if (holds<NodeStructs::PrimitiveType::Valued<double>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value)) {
 				double val = get<NodeStructs::PrimitiveType::Valued<double>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value).value;
 				return expression_information{ non_type_information{
-					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<double>{ -val } },
+					.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<double>{ -val } } },
 					.representation = std::to_string(-val),
 					.value_category = NodeStructs::Value{},
 				} };
@@ -370,7 +370,7 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 			if (holds<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value)) {
 				bool val = get<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(base_ok.type).type).value).value;
 				return expression_information{ non_type_information{
-					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<bool>{ !val } },
+					.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<bool>{ !val } } },
 					.representation = std::to_string(!val),
 					.value_category = NodeStructs::Value{},
 				} };
@@ -552,7 +552,7 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 			const auto& ns = nst.name_space.get();
 			if (auto it = ns.types.find(expr.name_in_name_space); it != ns.types.end())
 				return expression_information{ type_information{
-					.type = copy(it->second.back()),
+					.type = { copy(it->second.back()) },
 					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
 				} };
 			if (auto it = ns.functions.find(expr.name_in_name_space); it != ns.functions.end())
@@ -580,7 +580,7 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 			const auto& enum_ = enumt.enum_.get();
 			if (auto it = std::find(enum_.values.begin(), enum_.values.end(), expr.name_in_name_space); it != enum_.values.end()) {
 				return expression_information{ non_type_information{
-					.type = NodeStructs::EnumValueType{ enum_, expr.name_in_name_space },
+					.type = { NodeStructs::EnumValueType{ enum_, expr.name_in_name_space } },
 					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space,
 					.value_category = NodeStructs::Value{}
 				} };
@@ -678,9 +678,9 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 					if (uses_auto(structured_f)) {
 						state.state.global_namespace.functions_using_auto[structured_f.name].push_back(std::move(structured_f));
 						return expression_information{ type_information{
-							.type = NodeStructs::FunctionType{
+							.type = { NodeStructs::FunctionType{
 								tmpl_name, state.state.global_namespace
-							},
+							} },
 							.representation = tmpl_name
 						} };
 					}
@@ -693,9 +693,9 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 							NOT_IMPLEMENTED;
 						state.state.functions_to_transpile.insert(std::move(structured_f));
 						return expression_information{ type_information{
-							.type = NodeStructs::FunctionType{
+							.type = { NodeStructs::FunctionType{
 								tmpl_name, state.state.global_namespace
-							},
+							} },
 							.representation = tmpl_name
 						} };
 					}
@@ -905,7 +905,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			}
 
 			return expression_information{ non_type_information{
-				.type = copy(tt),
+				.type = { copy(tt) },
 				.representation = typename_repr.value() + "{" + args_repr.str() + "}",
 				.value_category = NodeStructs::Value{},
 			} };
@@ -914,7 +914,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			if (expr.arguments.args.size() != 0)
 				NOT_IMPLEMENTED;
 			return expression_information{ non_type_information{
-				.type = copy(set_t),
+				.type = { copy(set_t) },
 				.representation = typename_repr.value() + "{}",
 				.value_category = NodeStructs::Value{},
 			} };
@@ -926,7 +926,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 					"vectors construction is done without arguments, expression was: `" + original_representation(expr.arguments.args[0].expr) + "`"
 				};
 			return expression_information{ non_type_information{
-				.type = copy(vec_t),
+				.type = { copy(vec_t) },
 				.representation = typename_repr.value() + "{}",
 				.value_category = NodeStructs::Value{},
 			} };
@@ -950,7 +950,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			for (const auto& T : union_t.arguments)
 				if (cmp(T, expr_info_ok.type) == std::strong_ordering::equivalent)
 					return expression_information{ non_type_information{
-						.type = copy(union_t),
+						.type = { copy(union_t) },
 						.representation = typename_repr.value() + "{" + expr_info_ok.representation + "}",
 						.value_category = NodeStructs::Value{},
 					} };
@@ -1015,7 +1015,7 @@ auto rewire(const NodeStructs::PropertyAccessAndCallExpression& expr, const auto
 		joined.push_back(copy(arg));
 	return NodeStructs::CallExpression{
 		.operand = make_expression({ expr.property_name }, rule_info_stub_no_throw()),
-		.arguments = std::move(joined)
+		.arguments = { std::move(joined) }
 	};
 }
 
@@ -1093,10 +1093,10 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 		ss << args_ok.at(i).representation << ", ";
 	ss << "}";
 	return expression_information{ non_type_information{
-		.type = NodeStructs::AggregateType{
+		.type = { NodeStructs::AggregateType{
 			copy(expr.args),
 			args_ok | std::views::transform([](non_type_information& e) { return std::move(e).type; }) | to_vec()
-		},
+		} },
 		.representation = ss.str(),
 		.value_category = NodeStructs::Value{}, // todo check conversion ok
 	} };
@@ -1147,22 +1147,22 @@ R T::operator()(const std::string& expr) {
 	}
 	if (auto it = state.state.global_namespace.templates.find(expr); it != state.state.global_namespace.templates.end())
 		return expression_information{ type_information{
-			.type = NodeStructs::TemplateType{ expr, state.state.global_namespace },
+			.type = { NodeStructs::TemplateType{ expr, state.state.global_namespace } },
 			.representation = expr
 		} };
 	if (auto it = state.state.global_namespace.namespaces.find(expr); it != state.state.global_namespace.namespaces.end())
 		return expression_information{ type_information{
-			.type = NodeStructs::NamespaceType{ it->second },
+			.type = { NodeStructs::NamespaceType{ it->second } },
 			.representation = expr
 		} };
 	if (auto it = state.state.global_namespace.builtins.find(expr); it != state.state.global_namespace.builtins.end())
 		return expression_information{ type_information{
-			.type = it->second.back(),
+			.type = { it->second.back() },
 			.representation = expr
 		} };
 	if (auto it = state.state.global_namespace.enums.find(expr); it != state.state.global_namespace.enums.end())
 		return expression_information{ type_information{
-			.type = NodeStructs::EnumType{ it->second.back() },
+			.type = { NodeStructs::EnumType{ it->second.back() } },
 			.representation = expr
 		} };
 	return error{ "user error", "Undeclared identifier `" + expr + "`" };
@@ -1170,7 +1170,7 @@ R T::operator()(const std::string& expr) {
 
 R T::operator()(const Token<INTEGER_NUMBER>& expr) {
 	return expression_information{ non_type_information{
-		.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ atoi(expr.value.c_str()) } },
+		.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ atoi(expr.value.c_str()) } } },
 		.representation = expr.value,
 		.value_category = NodeStructs::Value{}
 	} };

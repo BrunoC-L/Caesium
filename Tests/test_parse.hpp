@@ -41,16 +41,6 @@ bool test_parse(int line, int n_indent, std::string program) {
 		}
 	}
 	catch (const parse_error& e) {
-		size_t line = 1;
-		{
-			auto index = it.index;
-			while (index != e.beg_offset) {
-				for (const char& c : it.vec[index].second)
-					if (c == '\n')
-						++line;
-				++index;
-			}
-		}
 		std::stringstream ss;
 		ss << "Unable to parse in test "
 			<< e.name_of_rule

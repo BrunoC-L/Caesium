@@ -123,7 +123,7 @@ bool test_structurize_equals() {
 		make_expression(
 			NodeStructs::PropertyAccessExpression{
 				make_expression(NodeStructs::PropertyAccessExpression{
-					make_expression("a", tests_rule_info_stub()),
+					make_expression(std::string{ "a" }, tests_rule_info_stub()),
 					"b"
 				}, tests_rule_info_stub())
 			, "c"
@@ -164,18 +164,18 @@ bool test_structurize_equals() {
 				.typename_ = make_typename(NodeStructs::BaseTypename{ "A" }, NodeStructs::Reference{}, tests_rule_info_stub()),
 				.name = "a",
 			}),
-			.statements = as_vec(NodeStructs::Statement<function_context>{
+			.statements = as_vec(NodeStructs::Statement<function_context>{ Variant<NodeStructs::RunTimeStatement>{ NodeStructs::RunTimeStatement {
 				make_expression(
 					NodeStructs::CallExpression{
-						.operand = make_expression("println", tests_rule_info_stub()),
+						.operand = make_expression(std::string{ "println" }, tests_rule_info_stub()),
 						.arguments = NodeStructs::ParenArguments{
 							.args = as_vec(NodeStructs::FunctionArgument{
 								.category = std::nullopt,
-								.expr = make_expression("a", tests_rule_info_stub())
+								.expr = make_expression(std::string{ "a" }, tests_rule_info_stub())
 							})
 						}
 					}, tests_rule_info_stub())
-			})
+			} } })
 		});
 
 	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x",
@@ -185,7 +185,7 @@ bool test_structurize_equals() {
 
 	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x.x",
 		NodeStructs::WordTypenameOrExpression{
-			.value = make_expression(NodeStructs::PropertyAccessExpression{ make_expression("x", tests_rule_info_stub()),  std::string{"x"} }, tests_rule_info_stub())
+			.value = make_expression(NodeStructs::PropertyAccessExpression{ make_expression(std::string{ "x" }, tests_rule_info_stub()),  std::string{"x"} }, tests_rule_info_stub())
 		});
 
 	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x::x",

@@ -447,7 +447,7 @@ transpile_declaration_definition_t transpile_main(
 	const auto& [type, name] = fn.parameters.at(0);
 	auto vector_str = make_typename(NodeStructs::TemplatedTypename{
 		make_typename(NodeStructs::BaseTypename{ "Vector" }, NodeStructs::Value{}, rule_info_language_element("Vector")),
-		as_vec(NodeStructs::WordTypenameOrExpression{ "String" })
+		as_vec(NodeStructs::WordTypenameOrExpression{ std::string{ "String" } })
 	}, NodeStructs::Reference{}, rule_info_language_element("Vector<String>"));
 	if (cmp(type, vector_str) != std::strong_ordering::equivalent)
 		return error{ "user error","\"main\" function using 1 argument must be of `Vector<String> ref` type" };
@@ -784,7 +784,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> compile_time_a
 						), x.value._value);
 						return ss.str();
 					}();
-					return non_type_information{.type = copy(x), .representation = std::move(representation), .value_category = NodeStructs::Value{} };
+					return non_type_information{ .type = { copy(x) }, .representation = std::move(representation), .value_category = NodeStructs::Value{} };
 				}
 			};
 		}
@@ -795,10 +795,11 @@ Variant<not_assignable, directly_assignable, requires_conversion> compile_time_a
 
 struct no_previous_conversion {};
 
-requires_conversion get_converter(const NodeStructs::MetaType& to, auto previous_converter) {
+requires_conversion get_converter(const NodeStructs::MetaType& to, auto _previous_converter) {
 	return requires_conversion{
-		[T = copy(to), previous_converter = std::move(previous_converter)]
+		[T = copy(to), previous_converter = std::move(_previous_converter)]
 		(transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
+			(void)previous_converter; // causes unused warnings for some template instantiations
 			auto tn = typename_of_type(state, T);
 			if (tn.has_error())
 				NOT_IMPLEMENTED;
@@ -992,7 +993,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 								NOT_IMPLEMENTED;
 							non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
 							return expression_information{ non_type_information{
-								.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} },
+								.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } },
 								.representation = "String{" + expr_info_ok.representation + "}",
 								.value_category = std::move(expr_info_ok).value_category
 							} };

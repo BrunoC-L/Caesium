@@ -94,7 +94,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		if (name == "size") {
 			/*if (auto is_str = t <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } } == std::strong_ordering::equivalent) {
 				return expression_information{ non_type_information{
-					.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} },
+					.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
 					.representation = operand_info.representation + ".size()",
 					.value_category = NodeStructs::Value{}
 				} };
@@ -199,7 +199,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 				"wrong type pushed to Vector<T>"
 		};
 		return expression_information{ non_type_information{
-			.type = copy(t),
+			.type = { copy(t) },
 			.representation = "push(" + operand_info.representation + ", " + arg_info_ok.representation + ")",
 			.value_category = NodeStructs::Value{}
 		} };
@@ -209,7 +209,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		if (arguments.size() != 0)
 			NOT_IMPLEMENTED;
 		return expression_information{ non_type_information{
-			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} },
+			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
 			.representation = operand_info.representation + ".size()",
 			.value_category = NodeStructs::Value{}
 		} };
@@ -242,7 +242,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 				"wrong type for vector reserve"
 			};
 		return expression_information{ non_type_information{
-			.type = NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} },
+			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} } },
 			.representation = operand_info.representation + ".reserve(" + arg_info_ok.representation + ")",
 			.value_category = NodeStructs::Value{}
 		} };

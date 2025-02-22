@@ -15,8 +15,8 @@ namespace grammar {
 	using Newline = Token<NEWLINE>;
 
 	// tag types
-	struct function_context {}; constexpr inline function_context copy(function_context) { return {}; }
-	struct type_context {}; constexpr inline type_context copy(type_context) { return {}; }
+	struct function_context  {}; constexpr inline function_context  copy(function_context)  { return {}; }
+	struct type_context      {}; constexpr inline type_context      copy(type_context)      { return {}; }
 	struct top_level_context {}; constexpr inline top_level_context copy(top_level_context) { return {}; }
 
 	using Enum = And<Commit<Token<ENUM>>, Word, Token<COLON>, Newline, Star<Indent<And<IndentToken, Word, Newline>>>>;

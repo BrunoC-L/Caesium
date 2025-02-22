@@ -72,7 +72,7 @@ NodeStructs::Typename getStruct(
 	size_t i
 ) {
 	if (i == exts.size())
-		return std::move(res);
+		return res;
 	const auto& ext = exts.at(i);
 	return std::visit(overload(
 		[&](const NodeStructs::VariadicExpansionTypename&) {
@@ -844,10 +844,10 @@ NodeStructs::Expression getExpressionStruct(
 		[&](const grammar::Construct& e) -> NodeStructs::Expression {
 			return make_expression(NodeStructs::ConstructExpression{
 				.operand = getStruct(file_name, vec, e.template get<grammar::Typename>(), tag_expect_empty_category{}),
-				.arguments = e.template get<grammar::BraceArguments>().template get<CommaStar<grammar::FunctionArgument>>().template get<grammar::FunctionArgument>()
-				| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e); })
-				| to_vec()
-				}, rule_info_from_rule(file_name, vec, e));
+				.arguments = { e.template get<grammar::BraceArguments>().template get<CommaStar<grammar::FunctionArgument>>().template get<grammar::FunctionArgument>()
+					| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e); })
+					| to_vec()
+				} }, rule_info_from_rule(file_name, vec, e));
 		},
 		[&](const grammar::ParenArguments& e) -> NodeStructs::Expression {
 			return make_expression(NodeStructs::ParenArguments{
@@ -947,7 +947,7 @@ NodeStructs::Expression getExpressionStruct(
 	size_t i
 ) {
 	if (i == expressions.size())
-		return std::move(cur);
+		return cur;
 	return getExpressionStruct(file_name, vec, expr, getPostfixExpressionStruct(file_name, vec, std::move(cur), expressions.at(i)), expressions, i + 1);
 }
 

@@ -10,5 +10,5 @@ static std::string replace_all(std::string str, const std::string& from, const s
 		str.replace(start_pos, from.length(), to);
 		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
 	}
-	return std::move(str);
+	return str;
 }

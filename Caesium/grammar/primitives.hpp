@@ -9,6 +9,7 @@
 #include "../utility/fn_util.hpp"
 #include "../utility/is_specialization.hpp"
 #include "../utility/box.hpp"
+#include "../utility/compiler.hpp"
 
 struct parse_error {
 	std::string name_of_rule;
@@ -147,13 +148,13 @@ struct And {
 	unsigned beg_offset{};
 	unsigned end_offset{};
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#ifdef gcc
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 	And(int indent) : n_indent(indent), value(std::tuple<Ands...>{ Ands{ indent }... }) {}
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
+#ifdef gcc
+	#pragma GCC diagnostic pop
 #endif
 	And() = delete;
 

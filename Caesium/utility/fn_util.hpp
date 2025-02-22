@@ -2,6 +2,6 @@
 #include <ranges>
 #include <vector>
 
-static auto to_vec() {
+static inline auto to_vec() {
 	return std::ranges::to<std::vector>();
 }

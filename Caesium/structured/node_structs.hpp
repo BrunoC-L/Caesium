@@ -558,6 +558,7 @@ namespace NodeStructs {
 
 	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
+
 		template <typename T>
 		struct NonValued {};
 		template <typename T>

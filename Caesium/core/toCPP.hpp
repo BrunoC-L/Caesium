@@ -138,7 +138,7 @@ std::string symbol_variant_as_text(const std::variant<Token<tokens>...>& token) 
 	);
 }
 
-static std::string indent(size_t n) {
+static inline std::string indent(size_t n) {
 	std::string res;
 	res.reserve(n);
 	for (size_t i = 0; i < n; ++i)

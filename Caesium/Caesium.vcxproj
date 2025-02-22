@@ -167,6 +167,7 @@
   <ItemGroup>
     <ClInclude Include="core\builtins.hpp" />
     <ClInclude Include="structured\cmp_copy_all.hpp" />
+    <ClInclude Include="utility\compiler.hpp" />
     <ClInclude Include="utility\default_includes.hpp" />
     <ClInclude Include="structured\helpers.hpp" />
     <ClInclude Include="grammar\parse.hpp" />

@@ -1,11 +1,22 @@
-#include "grammar/grammar.hpp"
-#include "structured/structurizer.hpp"
-#include <set>
+//#include "grammar/grammar.hpp"
+//#include "structured/structurizer.hpp"
+//#include <set>
+
+#include "structured/helpers.hpp"
 
 int main() {
 	puts("Hello, World!\n");
-	grammar::File{ 0 };
-	getExpressions(std::string{}, {}, {});
+	NodeStructs::PrimitiveType pt{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} };
+	auto t2 = copy(pt);
+	puts("Hello, World!\n");
+	using vt = std::variant<Variant<char>, Variant<int>>;
+	vt m{ Variant<int>{1} };
+	/*vt n{ std::visit([](const auto& e) {
+		return vt{ []() ->std::remove_cvref_t<decltype(e)> {throw; }() };
+		}, m) };*/
+
+	//grammar::File{ 0 };
+	//getExpressions(std::string{}, {}, {});
 	/*NodeStructs::Typename t{ NodeStructs::BaseTypename{ "T" }, NodeStructs::Value{}, rule_info{
 		.file_name = "stub:/",
 		.content = "stub",

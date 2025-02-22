@@ -15,7 +15,7 @@ R f(
 		if (holds<NodeStructs::CompileTimeType>(type))
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(assigned_expression_ok.type) });
 		else if (holds<NodeStructs::PrimitiveType>(type))
-			variables[statement.name].push_back({ NodeStructs::MutableReference{}, NodeStructs::CompileTimeType{ copy(assigned_expression_ok.type) } });
+			variables[statement.name].push_back({ NodeStructs::MutableReference{}, { NodeStructs::CompileTimeType{ copy(assigned_expression_ok.type) } } });
 		else
 			NOT_IMPLEMENTED;
 		return "";
@@ -103,7 +103,7 @@ R transpile_statement_specific(
 				const auto& aggregate = get<NodeStructs::BraceArguments>(statement.expr);
 				auto as_construct = NodeStructs::ConstructExpression{
 					.operand = copy(tn.value()),
-					.arguments = copy(aggregate.args)
+					.arguments = { copy(aggregate.args) }
 				};
 				return transpile_expression(state, variables, as_construct);
 			}
@@ -608,7 +608,7 @@ R transpile_statement_specific(
 			if (variables.at(var).size() != 1)
 				NOT_IMPLEMENTED;
 			variables.at(var).pop_back();
-			variables.at(var).push_back(variable_info{ .value_category = NodeStructs::Value{}, .type = std::move(get<NodeStructs::CompileTimeType>(std::get<non_type_information>(right.value()).type)) });
+			variables.at(var).push_back(variable_info{ .value_category = NodeStructs::Value{}, .type = { std::move(get<NodeStructs::CompileTimeType>(std::get<non_type_information>(right.value()).type)) } });
 			return "";
 		}
 		if (holds<NodeStructs::PrimitiveType>(std::get<non_type_information>(right.value()).type)) {
@@ -617,7 +617,7 @@ R transpile_statement_specific(
 			variables.at(var).pop_back();
 			variables.at(var).push_back(variable_info{
 				.value_category = NodeStructs::Value{},
-				.type = NodeStructs::CompileTimeType{ std::move(get<NodeStructs::PrimitiveType>(std::get<non_type_information>(right.value()).type)) }
+				.type = { NodeStructs::CompileTimeType{ std::move(get<NodeStructs::PrimitiveType>(std::get<non_type_information>(right.value()).type)) } }
 			} );
 			return "";
 		}

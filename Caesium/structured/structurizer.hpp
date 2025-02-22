@@ -176,7 +176,7 @@ NodeStructs::IfStatement<context> getStatementStruct(
 			return std::visit(
 				overload(overload_default_error,
 					[&](const Alloc<grammar::IfStatement<context>>& e) -> T {
-						return getStatementStruct(file_name, vec, e.get());
+						return NonCopyableBox{ getStatementStruct(file_name, vec, e.get()) };
 					},
 					[&](const grammar::ColonIndentCodeBlock<context>& e) -> T {
 						return getStatements(file_name, vec, e);
