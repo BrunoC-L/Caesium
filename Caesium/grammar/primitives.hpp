@@ -25,16 +25,21 @@ struct Token {
 	static constexpr auto token = _token;
 	static_assert(token != TAB, "Using Token<TAB> will not work, trailing tabs are ignored, use IndentNode");
 	static_assert(token != SPACE, "Using Token<SPACE> will not work, trailing spaces are ignored");
-	unsigned beg_offset;
-	unsigned end_offset;
+	
+	int n_indent{};
 
-	std::string value;
-	int n_indent;
-	Token(int n_indent) : n_indent(n_indent) {}
+	std::string value{};
+
+	unsigned beg_offset{};
+	unsigned end_offset{};
+
+	Token(int indent) : n_indent(indent) {}
+	Token() = delete;
 
 	std::strong_ordering operator<=>(const Token& other) const {
 		// might want to trim tokens for comparison but i cant figure if thats a problem right now, lets throw in case and fix later if it is
-		if (value.size() > 0 && value[0] == ' ' || value[value.size() - 1] == ' ')
+		if (((value.size() > 0) && (value[0] == ' '))
+			|| (value[value.size() - 1] == ' '))
 			NOT_IMPLEMENTED;
 		return value <=> other.value;
 	}
@@ -42,45 +47,54 @@ struct Token {
 
 template <typename T>
 struct Until {
-	int n_indent;
-	unsigned beg_offset;
-	unsigned end_offset;
+	int n_indent{};
+
+	unsigned beg_offset{};
+	unsigned end_offset{};
+
+	Until(int indent) : n_indent(indent) {}
+	Until() = delete;
 };
 
 struct IndentToken {
-	int n_indent;
-	unsigned beg_offset;
-	unsigned end_offset;
+	int n_indent{};
+
+	unsigned beg_offset{};
+	unsigned end_offset{};
+
+	IndentToken(int indent) : n_indent(indent) {}
+	IndentToken() = delete;
 };
 
 template <typename T>
 struct Indent : T {
 	Indent(int n_indent) : T(n_indent + 1) {}
-	unsigned beg_offset;
-	unsigned end_offset;
+	Indent() = delete;
 };
 
 template <typename T>
 struct Commit : T {
 	Commit(int n_indent) : T(n_indent) {}
-	unsigned beg_offset;
-	unsigned end_offset;
+	Commit() = delete;
 };
 
 template <typename T>
 struct Expect : T {
 	Expect(int n_indent) : T(n_indent) {}
-	unsigned beg_offset;
-	unsigned end_offset;
+	Expect() = delete;
 };
 
 template <typename T>
 struct Alloc {
+	int n_indent{};
+
 	std::optional<Box<T>> value = std::nullopt;
-	int n_indent;
-	unsigned beg_offset;
-	unsigned end_offset;
-	Alloc(int n_indent) : n_indent(n_indent) {}
+
+	unsigned beg_offset{};
+	unsigned end_offset{};
+
+	Alloc(int indent) : n_indent(indent) {}
+	Alloc() = delete;
 
 	const T& get() const {
 		return value.value().get();
@@ -89,11 +103,14 @@ struct Alloc {
 
 template <typename T>
 struct Opt {
-	std::optional<T> node;
-	int n_indent;
-	unsigned beg_offset;
-	unsigned end_offset;
-	Opt(int n_indent) : n_indent(n_indent) {}
+	int n_indent{};
+
+	std::optional<T> node = std::nullopt;
+
+	unsigned beg_offset{};
+	unsigned end_offset{};
+	Opt(int indent) : n_indent(indent) {}
+	Opt() = delete;
 
 	bool has_value() const {
 		return node.has_value();
@@ -123,14 +140,22 @@ const T& get_tuple_smart_cursor(const TUPLE& tuple) {
 
 template <typename... Ands>
 struct And {
-	int n_indent;
-	using tuple_t = std::tuple<Ands...>;
+	int n_indent{};
 
-	tuple_t value;
-	unsigned beg_offset;
-	unsigned end_offset;
+	std::tuple<Ands...> value;
 
-	And(int n_indent) : n_indent(n_indent), value({ Ands(n_indent)... }) {}
+	unsigned beg_offset{};
+	unsigned end_offset{};
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+	And(int indent) : n_indent(indent), value(std::tuple<Ands...>{ Ands{ indent }... }) {}
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+	And() = delete;
 
 	template <typename T>
 	const T& get() const {
@@ -139,41 +164,50 @@ struct And {
 
 	template <typename T, int i>
 	const T& get() const {
-		return get_tuple_smart_cursor<tuple_t, T, i, 0, Ands...>(value);
+		return get_tuple_smart_cursor<std::tuple<Ands...>, T, i, 0, Ands...>(value);
 	}
 };
 
 template <typename... Ors>
 struct Or {
-	int n_indent;
-	using variant_t = std::variant<Ors...>;
+	int n_indent{};
 
-	std::optional<variant_t> _value;
-	unsigned beg_offset;
-	unsigned end_offset;
+	std::optional<std::variant<Ors...>> _value = std::nullopt;
 
-	Or(int n_indent) : n_indent(n_indent) {};
+	unsigned beg_offset{};
+	unsigned end_offset{};
 
-	const variant_t& value() const {
+	Or(int indent) : n_indent(indent) {};
+	Or() = delete;
+
+	const std::variant<Ors...>& value() const {
 		return _value.value();
 	}
 };
 
 struct TemplateBody {
-	int n_indent;
-	std::string value;
-	unsigned beg_offset;
-	unsigned end_offset;
-	TemplateBody(int n_indent) : n_indent(n_indent) {};
+	int n_indent{};
+
+	std::string value{};
+
+	unsigned beg_offset{};
+	unsigned end_offset{};
+
+	TemplateBody(int indent) : n_indent(indent) {};
+	TemplateBody() = delete;
 };
 
 template <typename T, typename CND, typename requiresComma>
 struct KNode {
-	std::vector<T> nodes;
-	int n_indent;
-	unsigned beg_offset;
-	unsigned end_offset;
-	KNode(int n_indent) : n_indent(n_indent) {}
+	int n_indent{};
+
+	std::vector<T> nodes{};
+
+	unsigned beg_offset{};
+	unsigned end_offset{};
+
+	KNode(int indent) : n_indent(indent) {}
+	KNode() = delete;
 
 	// to get `b*` from `(abc)*` for example
 	template <typename U>

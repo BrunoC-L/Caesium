@@ -146,28 +146,28 @@ static std::string indent(size_t n) {
 	return res;
 };
 
-static NodeStructs::ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory& cat) {
-	return std::visit(overload(
-		[](const NodeStructs::Reference&) -> NodeStructs::ValueCategory {
-			return NodeStructs::Reference{};
-		},
-		[](const NodeStructs::MutableReference&) -> NodeStructs::ValueCategory {
-			return NodeStructs::MutableReference{};
-		},
-		[](const NodeStructs::Move&) -> NodeStructs::ValueCategory {
-			return NodeStructs::Value{};
-		}
-	), cat._value);
-}
-
 std::optional<error> validate_templates(const std::vector<NodeStructs::Template>& templates);
 
-static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory>& cat) {
-	if (cat.has_value())
-		return argument_category_to_value_category(cat.value());
-	else
-		return NodeStructs::Value{};
-}
+//static NodeStructs::ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory& cat) {
+//	return std::visit(overload(
+//		[](const NodeStructs::Reference&) -> NodeStructs::ValueCategory {
+//			return NodeStructs::Reference{};
+//		},
+//		[](const NodeStructs::MutableReference&) -> NodeStructs::ValueCategory {
+//			return NodeStructs::MutableReference{};
+//		},
+//		[](const NodeStructs::Move&) -> NodeStructs::ValueCategory {
+//			return NodeStructs::Value{};
+//		}
+//	), cat._value);
+//}
+
+//static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory>& cat) {
+//	if (cat.has_value())
+//		return argument_category_to_value_category(cat.value());
+//	else
+//		return NodeStructs::Value{};
+//}
 
 transpile_t transpile(const std::vector<NodeStructs::File>& project);
 

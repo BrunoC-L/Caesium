@@ -137,11 +137,13 @@ struct Tokenizer {
 	}
 private:
 	bool isNum(char c) {
-		return c >= '0' && c <= '9';
+		return (c >= '0') && (c <= '9');
 	}
 
 	bool isStartOfWord(char c) {
-		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_';
+		return ((c >= 'a') && (c <= 'z'))
+			|| ((c >= 'A') && (c <= 'Z'))
+			|| (c == '_');
 	}
 
 	bool isPartWord(char c) {
@@ -526,6 +528,7 @@ private:
 				return_token(val, VAL);
 				/*if (word == "key")
 					return { KEY, word };*/
+#undef return_token
 
 				return { WORD, word };
 			}

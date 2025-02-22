@@ -182,7 +182,7 @@ template <typename T, typename CND, typename requiresComma>
 bool build(KNode<T, CND, requiresComma>& knode, Iterator& it) {
 	knode.beg_offset = it.index;
 	while (true) {
-		auto node = T(knode.n_indent);
+		auto node = T{ knode.n_indent };
 		node.beg_offset = it.index;
 		bool parsed = build(node, it);
 		node.end_offset = it.index;

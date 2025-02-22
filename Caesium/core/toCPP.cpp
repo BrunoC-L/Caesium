@@ -262,17 +262,23 @@ void mark_exists_as_traversed(transpilation_state& state, variables_t& variables
 	for (const auto& e : exists.functions)
 		state.traversed_functions.insert(copy(e));
 
-	for (const auto& e : exists.functions_using_auto)
+	for (const auto& e : exists.functions_using_auto) {
+		(void)e;
 		NOT_IMPLEMENTED;
+	}
 
 	for (const auto& e : exists.interfaces)
 		state.traversed_interfaces.insert(copy(e));
 
-	for (const auto& e : exists.blocks)
+	for (const auto& e : exists.blocks) {
+		(void)e;
 		NOT_IMPLEMENTED;
+	}
 
-	for (const auto& e : exists.enums)
+	for (const auto& e : exists.enums) {
+		(void)e;
 		NOT_IMPLEMENTED;
+	}
 	
 	for (const auto& e : exists.namespaces)
 		mark_exists_as_traversed(state, variables, e, ss);
@@ -756,7 +762,6 @@ Variant<not_assignable, directly_assignable, requires_conversion> compile_time_a
 	const NodeStructs::MetaType& parameter,
 	const NodeStructs::CompileTimeType& arg
 ) {
-	using R = Variant<not_assignable, directly_assignable, requires_conversion>;
 	auto res = assigned_to(state_, variables, parameter, arg.type);
 	if (holds<not_assignable>(res))
 		return not_assignable{};
@@ -895,7 +900,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 							const auto& assumed_aggregate = get<NodeStructs::BraceArguments>(expr);
 							std::stringstream ss;
 							std::vector<R>& non_const_assign_ts = const_cast<std::vector<R>&>(assign_ts);
-							for (int i = 0; i < assign_ts.size(); ++i) {
+							for (size_t i = 0; i < assign_ts.size(); ++i) {
 								R& assign_t = non_const_assign_ts.at(i);
 								const NodeStructs::FunctionArgument& expr = assumed_aggregate.args.at(i);
 								std::visit(overload(
@@ -1148,7 +1153,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 					return "String(\"None\")";
 				},
 				[&](const auto& e) -> std::string {
-					const auto& f = expr_repr_ok;
+					// const auto& f = expr_repr_ok;
 					NOT_IMPLEMENTED;
 				}
 			),
@@ -1178,9 +1183,9 @@ bool uses_auto(const NodeStructs::BaseTypename& t) {
 }
 
 bool uses_auto(const NodeStructs::NamespacedTypename& t) {
-	if (t.name_in_name_space == "auto")
+	if (t.name_in_name_space == "auto" || uses_auto(t.name_space))
 		NOT_IMPLEMENTED;
-	return uses_auto(t.name_space);
+	return false;
 }
 
 bool uses_auto(const NodeStructs::TemplatedTypename& t) {
@@ -1352,7 +1357,12 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 	variables_t& variables,
 	const NodeStructs::RunTimeStatement& statement
 ) {
-	return caesium_lib::variant::visit(statement, [&](const auto& statement) { return deduce_return_type(state, variables, statement); });
+	return caesium_lib::variant::visit(
+		statement,
+		[&](const auto& statement) {
+			return deduce_return_type(state, variables, statement);
+		}
+	);
 	NOT_IMPLEMENTED;
 	//return std::visit(
 	//	overload(
@@ -1519,14 +1529,19 @@ expected<std::optional<NodeStructs::MetaType>> deduce_return_type(
 		expected<std::optional<NodeStructs::MetaType>> e = deduce_return_type(state, variables, statement);
 		return_if_error(e);
 
-		if (e.value().has_value())
-			if (res.has_value())
-				if (cmp(res.value(), e.value().value()) != std::strong_ordering::equivalent)
+		if (e.value().has_value()) {
+			if (res.has_value()) {
+				if (cmp(res.value(), e.value().value()) != std::strong_ordering::equivalent) {
 					NOT_IMPLEMENTED;
-				else
+				}
+				else {
 					continue;
-			else
+				}
+			}
+			else {
 				res.emplace(std::move(e).value().value());
+			}
+		}
 	}
 	return res;
 }
@@ -1757,7 +1772,6 @@ static std::vector<Arrangement> arrangements(
 				return arrangements(state, variables, args, std::move(current), arg_index + 1, param_index + 1);
 			},
 			[&](const NodeStructs::TemplateParameterWithDefaultValue& non_variadic) -> std::vector<Arrangement> {
-				int a = 0;
 				if constexpr (std::is_same_v<T, NodeStructs::Expression>) {
 					if (cmp(non_variadic.value, args.at(arg_index)) == std::strong_ordering::equivalent) {
 						current.arg_placements.push_back(param_index);
@@ -1895,7 +1909,9 @@ expected<Arrangement> find_best_template(
 		candidate_arrangements.begin(),
 		candidate_arrangements.end(),
 		[](const Arrangement& l, const Arrangement& r) {
-			return &l.tmpl.get() < &r.tmpl.get() || &l.tmpl.get() == &r.tmpl.get() && cmp(l.arg_placements, r.arg_placements) == std::strong_ordering::less;
+			return (&l.tmpl.get() < &r.tmpl.get())
+				|| ((&l.tmpl.get() == &r.tmpl.get())
+					&& (cmp(l.arg_placements, r.arg_placements) == std::strong_ordering::less));
 		}
 	);
 	candidate_arrangements.erase(

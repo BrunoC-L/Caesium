@@ -33,7 +33,7 @@ bool test_parse(int line, int n_indent, std::string program) {
 				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 			std::cout << program << "\n\n";
-			auto index = it.index;
+			unsigned index = 0;
 			while (index != it.index)
 				std::cout << it.vec[index++].second << " ";
 			std::cout << "\n";

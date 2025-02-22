@@ -99,14 +99,14 @@ bool build(grammar::TypenameOrExpression& x, Iterator& it) {
 	expr.end_offset = it_expr.index;
 	if (!b_typename && !b_expr)
 		return false;
-	if (b_typename && !b_expr || it_typename.index >= it_expr.index) {
+	if ((b_typename && !b_expr) || (it_typename.index >= it_expr.index)) {
 		x.beg_offset = tn.beg_offset;
 		x.end_offset = tn.end_offset;
 		x._value.emplace(std::move(tn));
 		it.index = it_typename.index;
 		return true;
 	}
-	if (b_expr && !b_typename || it_expr.index > it_typename.index) {
+	if ((b_expr && !b_typename) || (it_expr.index > it_typename.index)) {
 		x.beg_offset = expr.beg_offset;
 		x.end_offset = expr.end_offset;
 		x._value.emplace(std::move(expr));
@@ -118,7 +118,6 @@ bool build(grammar::TypenameOrExpression& x, Iterator& it) {
 
 bool build(grammar::CompareOperator& op, Iterator& it) {
 	op.beg_offset = it.index;
-	using CompareOperator = And<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>, Token<QUESTION>>;
 	bool b1 = build(std::get<Or<Token<LT>, Token<LTE>, Token<GT>, Token<GTE>>>(op.value), it);
 	if (!b1)
 		return false;

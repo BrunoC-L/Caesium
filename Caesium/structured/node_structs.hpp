@@ -38,6 +38,7 @@ constexpr inline empty<T> copy(const empty<T>&) { return {}; }
 template <typename T>
 rule_info rule_info_stub() {
 	empty<T> t{}; // for debug purposes
+	(void)t; // silence unused warning, this variable only exists to show T in msvc debugger
 	NOT_IMPLEMENTED;
 }
 

@@ -30,7 +30,7 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 			<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 		std::cout << program << "\n\n";
-		auto index = 0;
+		unsigned index = 0;
 		while (index != it.index)
 			std::cout << it.vec[index++].second << " ";
 		std::cout << "\n";
@@ -52,7 +52,7 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 	bool ok = expected <=> structurized == std::strong_ordering::equivalent;
 	if (ok != exp_ok) {
 		std::cout << "Comparison " << colored_text_with_bool(exp_ok ? "FAILED" : "WORKED", false) << " for LINE " << line << "\n" << program << "\n\n";
-		auto index = 0;
+		unsigned index = 0;
 		while (index != it.index)
 			std::cout << it.vec[index++].second << " ";
 		std::cout << "\n";

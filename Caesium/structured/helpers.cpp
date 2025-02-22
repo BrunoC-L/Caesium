@@ -78,4 +78,6 @@ bool primitives_assignable(const NodeStructs::PrimitiveType& parameter, const No
 
 	if (param.index() + diff == arg.index()) // if param is nonvalued and param + diff matches valued arg, thats ok
 		return true;
+
+	return false;
 }

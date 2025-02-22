@@ -39,7 +39,7 @@ std::optional<NodeStructs::File> create_file_struct(const std::string& folder_na
 				<< ", entirely: " << colored_text_from_bool(programReadEntirely) << "\n";
 
 			std::cout << caesiumProgram << "\n\n";
-			auto index = it.index;
+			unsigned index = 0;
 			while (index != it.index) {
 				std::cout << it.vec[index].second << " ";
 				++index;

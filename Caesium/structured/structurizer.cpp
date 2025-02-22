@@ -1,19 +1,5 @@
-#pragma once
 #include "structurizer.hpp"
 #include <iostream>
-
-static std::string word_or_auto(const Or<Token<AUTO>, grammar::Word>& tk) {
-	return std::visit(
-		overload(
-			[&](const Token<AUTO>& _auto) -> std::string {
-				return "auto";
-			},
-			[&](const grammar::Word& w) -> std::string {
-				return w.value;
-			}
-		), tk.value()
-	);
-}
 
 NodeStructs::Import getStruct(
 	const std::string& file_name,
@@ -171,7 +157,7 @@ NodeStructs::Typename get_typename_struct(
 ) {
 	const auto& auto_or_tn = t.template get<Or<Token<AUTO>, grammar::NonAutoTypename>>();
 	NodeStructs::ParameterCategory value_cat = getStruct(file_name, vec, t.template get<Opt<grammar::ParameterCategory>>(), tag{});
-	const auto& optional = t.template get<Opt<Token<QUESTION>>>();
+	// const auto& optional = t.template get<Opt<Token<QUESTION>>>();
 
 	return std::visit(overload(
 		[&](const Token<AUTO>& a) -> NodeStructs::Typename {

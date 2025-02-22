@@ -12,7 +12,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		return type_of_typename(state, variables, it->type)
 			.transform([](NodeStructs::MetaType&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
 	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
-		const auto& fn = it->second.back();
+		// const auto& fn = it->second.back();
 		NOT_IMPLEMENTED;
 	}
 	else

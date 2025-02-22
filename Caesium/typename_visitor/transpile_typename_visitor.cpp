@@ -13,6 +13,7 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 	OK("Char");
 	OK("Void");
 	OK("Floating");
+#undef OK
 #define OK(X) if (auto it = state.state.global_namespace. X .find(type.type); it != state.state.global_namespace. X .end()) return type.type;
 	OK(types);
 	OK(functions);

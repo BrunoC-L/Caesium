@@ -13,6 +13,7 @@ struct output_stream_colors {
 	constexpr static self_t(cyan, "\033[0;36m");
 	constexpr static self_t(white, "\033[0;37m");
 	constexpr static self_t(reset, "\033[0m");
+#undef self_t
 };
 
 static std::string colored_text(auto&& text, auto&& color) {

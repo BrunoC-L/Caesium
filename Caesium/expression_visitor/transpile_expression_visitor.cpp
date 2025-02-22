@@ -480,7 +480,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 				.templates.at(get<NodeStructs::TemplateType>(ti.type).name);
 			if (options.size() != 1)
 				NOT_IMPLEMENTED;
-			const auto& tmpl = options.back();
+			// const auto& tmpl = options.back();
 			/*auto arg_ts = vec_of_expected_to_expected_of_vec(
 				expr.arguments.args
 				| std::views::transform([&](auto&& e) { return e.expr; })
@@ -797,8 +797,8 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 	variables_t& variables,
 	const std::vector<NodeStructs::MetaType>& v1,
 	std::vector<non_type_information>&& v2,
-	int i1,
-	int i2,
+	size_t i1,
+	size_t i2,
 	std::vector<int>&& mappings
 ) {
 	if (i1 == v1.size())
@@ -824,8 +824,7 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 ) {
 	if (v1.size() != v2.size())
 		return std::nullopt;
-	bool no_rearrange_is_fine = true;
-	for (int i = 0; i < v1.size(); ++i)
+	for (size_t i = 0; i < v1.size(); ++i)
 		if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, v1.at(i), v2.at(i).type)._value))
 			return rearrange_if_possible(state, variables, v1, std::move(v2), 0, 0, {});
 	return std::move(v2);

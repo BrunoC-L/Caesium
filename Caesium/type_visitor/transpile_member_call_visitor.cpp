@@ -40,7 +40,7 @@ R T::operator()(const NodeStructs::Type& t) {
 		std::stringstream ss;
 		ss << fn.name << "(" << operand_info.representation;
 
-		for (int i = 1; i < fn.parameters.size(); ++i) {
+		for (size_t i = 1; i < fn.parameters.size(); ++i) {
 			auto nth_param = type_of_typename(state, variables, fn.parameters.at(i).typename_);
 			return_if_error(nth_param);
 			auto nth_argument = transpile_arg(state, variables, arguments.at(i - 1));
