@@ -81,16 +81,19 @@ struct transpilation_state {
 	) : global_namespace(std::move(global_namespace)) {}
 
 	// shouldnt those be pointers...?
-	std::set<NodeStructs::Function, default_less_than> traversed_functions;
-	std::set<NodeStructs::Type, default_less_than> traversed_types;
-	std::set<NodeStructs::Interface, default_less_than> traversed_interfaces;
+	template <typename T>             using set = std::set<T,    default_less_than>;
+	template <typename K, typename V> using map = std::map<K, V, default_less_than>;
 
-	std::set<NodeStructs::Function, default_less_than> functions_to_transpile;
+	set<NodeStructs::Function> traversed_functions;
+	set<NodeStructs::Type> traversed_types;
+	set<NodeStructs::Interface> traversed_interfaces;
+
+	set<NodeStructs::Function> functions_to_transpile;
 	std::vector<NodeStructs::Type> types_to_transpile;
-	std::set<NodeStructs::Interface, default_less_than> interfaces_to_transpile;
-	std::set<NodeStructs::Enum, default_less_than> enums_to_transpile;
+	set<NodeStructs::Interface> interfaces_to_transpile;
+	set<NodeStructs::Enum> enums_to_transpile;
 
-	std::map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>, default_less_than> interface_symbol_to_members;
+	map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
 	std::set<std::pair<std::string, std::string>> aliases_to_transpile;
 };
 
@@ -187,14 +190,6 @@ std::optional<error> stack(
 	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
-template <typename context>
-transpile_t transpile(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const NodeStructs::Statement<context>& statement,
-	const NodeStructs::MetaType& expected_return_type
-);
-
 transpile_declaration_definition_t transpile_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
@@ -274,7 +269,6 @@ bool uses_auto(const NodeStructs::FunctionParameter& param);
 bool uses_auto(const NodeStructs::Typename& t);
 bool uses_auto(const NodeStructs::Expression& t);
 
-//#include "../type_visitor/transpile_type_visitor.hpp"
 #include "../type_visitor/traverse_type_visitor.hpp"
 #include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp"
 #include "../type_visitor/type_of_postfix_member_visitor.hpp"
@@ -282,16 +276,32 @@ bool uses_auto(const NodeStructs::Expression& t);
 #include "../type_visitor/typename_of_type_visitor.hpp"
 #include "../type_visitor/type_of_resolution_operator.hpp"
 
-//#include "../expression_visitor/expression_for_template_visitor.hpp"
 #include "../expression_visitor/transpile_expression_visitor.hpp"
-
-//#include "../statement_visitor/transpile_statement_visitor.hpp"
-#include "../statement_visitor/transpile_statement.hpp"
 
 #include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
-//#include "../typename_visitor/typename_for_template_visitor.hpp"
+
+transpile_t transpile_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Statement<function_context>& statement
+);
+
+transpile_t transpile_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Statement<type_context>& statement
+);
+
+transpile_t transpile_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::MetaType& expected_return_type,
+	const NodeStructs::Statement<top_level_context>& statement
+);
 
 expected<std::string> word_typename_or_expression_for_template(
 	transpilation_state_with_indent state,
@@ -366,6 +376,6 @@ bool uses_auto(const NodeStructs::Statement<context>& statement) {
 		else
 			return false;
 	}
-	NOT_IMPLEMENTED;
 	// todo recursive impl and check for variable declarations and for statements
+	NOT_IMPLEMENTED;
 }

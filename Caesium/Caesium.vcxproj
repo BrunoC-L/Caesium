@@ -147,11 +147,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
+    <ClCompile Include="statement_visitor\transpile_statement.cpp" />
     <ClCompile Include="structured\helpers.cpp" />
     <ClCompile Include="grammar\parse.cpp" />
     <ClCompile Include="structured\structurizer.cpp" />
-    <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
-    <ClCompile Include="statement_visitor\transpile_statement.cpp" />
     <ClCompile Include="typename_visitor\typename_for_template_visitor.cpp" />
     <ClCompile Include="type_visitor\transpile_member_call_visitor.cpp" />
     <ClCompile Include="typename_visitor\transpile_typename_visitor.cpp" />
@@ -166,12 +166,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\builtins.hpp" />
+    <ClInclude Include="expression_visitor\expression_visitor.hpp" />
+    <ClInclude Include="expression_visitor\transpile_expression_visitor.hpp" />
+    <ClInclude Include="statement_visitor\transpile_statement.hpp" />
     <ClInclude Include="structured\cmp_copy_all.hpp" />
     <ClInclude Include="utility\compiler.hpp" />
     <ClInclude Include="utility\default_includes.hpp" />
     <ClInclude Include="structured\helpers.hpp" />
     <ClInclude Include="grammar\parse.hpp" />
-    <ClInclude Include="statement_visitor\transpile_statement.hpp" />
     <ClInclude Include="typename_visitor\typename_for_template_visitor.hpp" />
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
     <ClInclude Include="type_visitor\typename_of_type_visitor.hpp" />
@@ -182,7 +184,6 @@
     <ClInclude Include="utility\colored_text.hpp" />
     <ClInclude Include="utility\enumerate.hpp" />
     <ClInclude Include="utility\expected.hpp" />
-    <ClInclude Include="expression_visitor\expression_visitor.hpp" />
     <ClInclude Include="utility\fn_util.hpp" />
     <ClInclude Include="utility\is_specialization.hpp" />
     <ClInclude Include="utility\not_implemented_directive.hpp" />
@@ -194,7 +195,6 @@
     <ClInclude Include="grammar\primitives.hpp" />
     <ClInclude Include="utility\replace_all.hpp" />
     <ClInclude Include="structured\structurizer.hpp" />
-    <ClInclude Include="expression_visitor\transpile_expression_visitor.hpp" />
     <ClInclude Include="typename_visitor\transpile_typename_visitor.hpp" />
     <ClInclude Include="type_visitor\traverse_type_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_postfix_member_visitor.hpp" />
