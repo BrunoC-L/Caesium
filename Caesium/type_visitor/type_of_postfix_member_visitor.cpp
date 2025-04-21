@@ -3,23 +3,24 @@
 using T = type_of_postfix_member_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::Type& t) {
+R T::operator()(const Realised::Type& t) {
 	if (auto it = std::find_if(
 		t.member_variables.begin(),
 			t.member_variables.end(),
-			[&](const auto& m) { return m.name == property_name; }
+			[&](const auto& m) { return m.name._value == property_name; }
 		); it != t.member_variables.end())
-		return type_of_typename(state, variables, it->type)
-			.transform([](NodeStructs::MetaType&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });
+		NOT_IMPLEMENTED;
+	/*return type_of_typename(state, variables, it->type)
+			.transform([](Realised::MetaType&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });*/
 	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
 		// const auto& fn = it->second.back();
 		NOT_IMPLEMENTED;
 	}
 	else
-		return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
+		return error{ "user error","Error: object of type `" + t.name._value + "` has no member `" + property_name + "`\n" };
 }
 
-R T::operator()(const NodeStructs::PrimitiveType& t) {
+R T::operator()(const Realised::PrimitiveType& t) {
 	NOT_IMPLEMENTED;
 }
 
@@ -37,63 +38,60 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 //	NOT_IMPLEMENTED;
 //}
 
-R T::operator()(const NodeStructs::FunctionType& t) {
+R T::operator()(const Realised::FunctionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::InterfaceType& t) {
+R T::operator()(const Realised::InterfaceType& t) {
 	if (auto it = std::find_if(
 		t.interface.get().member_variables.begin(),
 		t.interface.get().member_variables.end(),
-		[&](const auto& member) { return member.name == property_name; }
+		[&](const auto& member) { return member.name._value == property_name; }
 	); it != t.interface.get().member_variables.end())
-		return type_of_typename(state, variables, it->type)
-			.transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });
+		NOT_IMPLEMENTED;
+	/*return type_of_typename(state, variables, it->type)
+			.transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });*/
 	else
-		return error{ "user error", "Error: object of type `" + t.interface.get().name + "` has no member `" + property_name + "`\n" };
+		return error{ "user error", "Error: object of type `" + t.interface.get().name._value + "` has no member `" + property_name + "`\n" };
 }
 
-R T::operator()(const NodeStructs::NamespaceType& t) {
+R T::operator()(const Realised::NamespaceType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Builtin& t) {
+R T::operator()(const Realised::Builtin& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::UnionType& t) {
+R T::operator()(const Realised::UnionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::TemplateType& t) {
+R T::operator()(const Realised::TemplateType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::EnumType& tmpl) {
+R T::operator()(const Realised::EnumType& tmpl) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::EnumValueType& tmpl) {
+R T::operator()(const Realised::EnumValueType& tmpl) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::OptionalType& t) {
+R T::operator()(const Realised::OptionalType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::AggregateType& t) {
+R T::operator()(const Realised::AggregateType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Vector& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::VectorType& t) {
+R T::operator()(const Realised::VectorType& t) {
 	/*if (this->property_name == "push")
 		return std::pair{
 			NodeStructs::Value{},
-				NodeStructs::MetaType{
+				Realised::MetaType{
 					NodeStructs::BuiltInType{
 						NodeStructs::BuiltInType::push_t{
 							t
@@ -104,34 +102,18 @@ R T::operator()(const NodeStructs::VectorType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Set& t) {
+R T::operator()(const Realised::SetType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::SetType& t) {
+R T::operator()(const Realised::MapType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Map& t) {
+R T::operator()(const Realised::TypeListType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::MapType& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeList& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeListType& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeToken& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::CompileTimeType& t) {
+R T::operator()(const Realised::CompileTimeType& t) {
 	NOT_IMPLEMENTED;
 }

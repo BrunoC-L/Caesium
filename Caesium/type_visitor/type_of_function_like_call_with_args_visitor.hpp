@@ -9,12 +9,12 @@ struct type_of_function_like_call_with_args_visitor : TypeCategoryVisitor<type_o
 	variables_t& variables;
 	const std::vector<NodeStructs::FunctionArgument>& args;
 
-	using R = expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>>;
+	using R = expected<std::pair<NodeStructs::ParameterCategory, Realised::MetaType>>;
 
 	TypeCategoryVisitorDeclarations
 };
 
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>> type_of_function_like_call_with_args(
+expected<std::pair<NodeStructs::ParameterCategory, Realised::MetaType>> type_of_function_like_call_with_args(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::vector<NodeStructs::FunctionArgument>& arguments,

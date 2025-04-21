@@ -9,12 +9,12 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 	variables_t& variables;
 	const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with;
 
-	using R = expected<NodeStructs::MetaType>;
+	using R = expected<Realised::MetaType>;
 
 	TypenameVisitorDeclarations
 };
 
-expected<NodeStructs::MetaType> type_template_of_typename(
+expected<Realised::MetaType> type_template_of_typename(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with,

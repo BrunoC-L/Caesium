@@ -6,7 +6,7 @@
 
 int main() {
 	puts("Hello, World!\n");
-	NodeStructs::PrimitiveType pt{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} };
+	Realised::PrimitiveType pt{ Realised::PrimitiveType::NonValued<Realised::void_t>{} };
 	auto t2 = copy(pt);
 	puts("Hello, World!\n");
 	using vt = std::variant<Variant<char>, Variant<int>>;

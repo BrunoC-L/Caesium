@@ -49,35 +49,3 @@ const std::string& original_representation(
 ) {
 	return e.info.content;
 }
-
-bool primitives_assignable(const NodeStructs::PrimitiveType& parameter, const NodeStructs::PrimitiveType& argument) {
-	using vt = std::variant<
-		NodeStructs::PrimitiveType::NonValued<std::string>,
-		NodeStructs::PrimitiveType::NonValued<double>,
-		NodeStructs::PrimitiveType::NonValued<int>,
-		NodeStructs::PrimitiveType::NonValued<bool>,
-		NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>,
-		NodeStructs::PrimitiveType::NonValued<char>,
-		NodeStructs::PrimitiveType::NonValued<NodeStructs::empty_optional_t>,
-
-		NodeStructs::PrimitiveType::Valued<std::string>,
-		NodeStructs::PrimitiveType::Valued<double>,
-		NodeStructs::PrimitiveType::Valued<int>,
-		NodeStructs::PrimitiveType::Valued<bool>,
-		NodeStructs::PrimitiveType::Valued<NodeStructs::void_t>,
-		NodeStructs::PrimitiveType::Valued<char>,
-		NodeStructs::PrimitiveType::Valued<NodeStructs::empty_optional_t>
-	>;
-	constexpr unsigned diff = 7; // observe how the beginning indices are NonValued<T> and index + 7 is Valued<T>
-
-	const vt& param = parameter.value._value;
-	const vt& arg = argument.value._value;
-
-	if (param.index() == arg.index())
-		return true;
-
-	if (param.index() + diff == arg.index()) // if param is nonvalued and param + diff matches valued arg, thats ok
-		return true;
-
-	return false;
-}

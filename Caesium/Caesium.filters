@@ -51,9 +51,6 @@
     <ClCompile Include="transpile_expression_visitor.cpp">
       <Filter>Header Files\expression_visitors</Filter>
     </ClCompile>
-    <ClCompile Include="transpile_statement_visitor.cpp">
-      <Filter>Header Files\statement_visitors</Filter>
-    </ClCompile>
     <ClCompile Include="transpile_typename_visitor.cpp">
       <Filter>Header Files\typename_visitors</Filter>
     </ClCompile>
@@ -144,9 +141,6 @@
       <Filter>Header Files\expression_visitors</Filter>
     </ClInclude>
     <ClInclude Include="statement_visitor.hpp">
-      <Filter>Header Files\statement_visitors</Filter>
-    </ClInclude>
-    <ClInclude Include="transpile_statement_visitor.hpp">
       <Filter>Header Files\statement_visitors</Filter>
     </ClInclude>
     <ClInclude Include="transpile_typename_visitor.hpp">

@@ -62,7 +62,7 @@ bool test_single_argument() {
 		/*variables.insert({ "x", {}}); // todo maybe try non type args
 		variables.at("x").push_back(variable_info{
 			.value_category = NodeStructs::Value{},
-			.type = { NodeStructs::CompileTimeType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ 0 } } } },
+			.type = { Realised::CompileTimeType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<int>{ 0 } } } },
 		});*/
 		auto res = find_best_template(
 			{ state, 0 },

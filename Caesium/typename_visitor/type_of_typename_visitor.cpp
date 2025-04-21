@@ -5,20 +5,20 @@ using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
 	if (t.type == "Int")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } };
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } };
 	if (t.type == "Bool")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<bool>{} } };
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<bool>{} } };
 	if (t.type == "String")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } };
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<std::string>{} } };
 	if (t.type == "Char")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } };
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<char>{} } };
 	if (t.type == "Void")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} } };
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::void_t>{} } };
 	if (t.type == "Floating")
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } };
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<double>{} } };
 	if (t.type == "None") {
 		NOT_IMPLEMENTED;
-		return NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::empty_optional_t>{} } };
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::empty_optional_t>{} } };
 	}
 
 	if (auto it = state.state.global_namespace.types.find(t.type); it != state.state.global_namespace.types.end()) {
@@ -26,19 +26,30 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		if (types.size() != 1)
 			NOT_IMPLEMENTED;
 		const auto& type = types.at(0);
-		auto opt_e = traverse_type(state, type);
-		if (opt_e.has_value())
-			return opt_e.value();
-		return NodeStructs::MetaType{ NodeStructs::MetaType{ copy(type) } };
+		NOT_IMPLEMENTED;
+		//auto opt_e = traverse_type(state, type);
+		//if (opt_e.has_value())
+		//	return opt_e.value();
+		//// fall-through to next
 	}
+
+	if (auto it = state.state.types_traversal.traversed.find(t.type); it != state.state.types_traversal.traversed.end()) {
+		NOT_IMPLEMENTED;
+		/*for (const auto& t_ : state.state.types_to_transpile)
+			if (t_.name == t.type)
+				return Realised::MetaType{ copy(t_) };*/
+	}
+
 	bool has_f = state.state.global_namespace.functions.find(t.type) != state.state.global_namespace.functions.end();
-	bool has_f_using_auto = state.state.global_namespace.functions_using_auto.find(t.type) != state.state.global_namespace.functions_using_auto.end();
-	if (has_f || has_f_using_auto)
-		return NodeStructs::MetaType{ NodeStructs::FunctionType{
+	if (has_f) {
+		NOT_IMPLEMENTED;
+		/*return Realised::MetaType{ Realised::FunctionType{
 			t.type, state.state.global_namespace
-		} };
+		} };*/
+	}
 	if (auto it = state.state.global_namespace.templates.find(t.type); it != state.state.global_namespace.templates.end()) {
-		return NodeStructs::MetaType{ NodeStructs::TemplateType{ t.type, state.state.global_namespace } };
+		NOT_IMPLEMENTED;
+		//return Realised::MetaType{ Realised::TemplateType{ t.type, state.state.global_namespace } };
 	}
 	if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->second;
@@ -49,28 +60,32 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		return std::move(type).value();
 	}
 	if (auto it = state.state.global_namespace.interfaces.find(t.type); it != state.state.global_namespace.interfaces.end()) {
-		const auto& interfaces = it->second;
+		NOT_IMPLEMENTED;
+		/*const auto& interfaces = it->second;
 		if (interfaces.size() != 1)
 			NOT_IMPLEMENTED;
 		const auto& interface = interfaces.at(0);
-		if (!state.state.traversed_interfaces.contains(interface)) {
-			state.state.traversed_interfaces.insert(copy(interface));
+		if (!state.state.interfaces_traversal.traversed.contains(interface)) {
+			state.state.interfaces_traversal.traversed.insert(copy(interface));
 			state.state.interfaces_to_transpile.insert(copy(interface));
 		}
-		return NodeStructs::MetaType{ NodeStructs::InterfaceType{ interface } };
+		return Realised::MetaType{ NodeStructs::InterfaceType{ interface } };*/
 	}
 	if (auto it = state.state.global_namespace.namespaces.find(t.type); it != state.state.global_namespace.namespaces.end())
-		return NodeStructs::MetaType{ NodeStructs::NamespaceType{ it->second } };
-	if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end())
-		return NodeStructs::MetaType{ NodeStructs::Builtin{ t.type } };
+		return Realised::MetaType{ Realised::NamespaceType{ it->first, it->second } };
+	NOT_IMPLEMENTED;
+	/*if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end())
+		return Realised::MetaType{ Realised::Builtin{ t.type } };*/
 	if (auto it = state.state.global_namespace.enums.find(t.type); it != state.state.global_namespace.enums.end()) {
-		const auto& enums = it->second;
-		if (enums.size() != 1)
-			NOT_IMPLEMENTED;
-		const auto& enum_ = enums.at(0);
-		if (!state.state.enums_to_transpile.contains(enum_))
-			state.state.enums_to_transpile.insert(copy(enum_));
-		return NodeStructs::MetaType{ NodeStructs::EnumType{ enum_ } };
+		NOT_IMPLEMENTED;
+		//const std::vector<NodeStructs::Enum>& enums = it->second;
+		//if (enums.size() != 1)
+		//	NOT_IMPLEMENTED;
+		//const NodeStructs::Enum& enum_ = enums.at(0);
+		//if (!state.state.enums_to_transpile.contains(enum_))
+		//	state.state.enums_to_transpile.insert(copy(enum_));
+		//NOT_IMPLEMENTED;
+		////return Realised::MetaType{ NodeStructs::EnumType{ enum_ } };
 	}
 	return error{ "user error" , "Missing type `" + t.type + "`"};
 }
@@ -97,18 +112,20 @@ R T::operator()(const NodeStructs::TemplatedTypename& tt) {
 R T::operator()(const NodeStructs::OptionalTypename& t) {
 	auto t_or_e = operator()(t.type);
 	return_if_error(t_or_e);
-	return NodeStructs::MetaType{ NodeStructs::OptionalType{ std::move(t_or_e).value() } };
+	NOT_IMPLEMENTED;
+	//return Realised::MetaType{ Realised::OptionalType{ std::move(t_or_e).value() } };
 }
 
 R T::operator()(const NodeStructs::UnionTypename& t) {
-	std::vector<NodeStructs::MetaType> v;
+	std::vector<Realised::MetaType> v;
 	v.reserve(t.ors.size());
 	for (const auto& e : t.ors) {
 		auto exp = operator()(e);
 		return_if_error(exp);
 		v.push_back(std::move(exp).value());
 	}
-	return NodeStructs::MetaType{ NodeStructs::UnionType{ std::move(v) } };
+	NOT_IMPLEMENTED;
+	//return Realised::MetaType{ Realised::UnionType{ std::move(v) } };
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {

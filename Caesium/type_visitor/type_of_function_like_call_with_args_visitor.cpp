@@ -3,21 +3,21 @@
 using T = type_of_function_like_call_with_args_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::Type& t) {
+R T::operator()(const Realised::Type& t) {
 	return error{
 		"user error",
-		"Use of type like a function is prohibited. Type was `" + t.name + "`"
+		"Use of type like a function is prohibited. Type was `" + t.name._value + "`"
 	};
 }
 
-R T::operator()(const NodeStructs::PrimitiveType& t) {
+R T::operator()(const Realised::PrimitiveType& t) {
 	return error{
 		"user error",
 		"Use of type like a function is prohibited. Type was `" + transpile_typename(state, variables, typename_of_primitive(t)).value() + "`"
 	};
 }
 
-R T::operator()(const NodeStructs::FunctionType& t) {
+R T::operator()(const Realised::FunctionType& t) {
 	//if (args.size() != t.function.get().parameters.size()) {
 	//	std::stringstream ss;
 	//	ss << t.function.get().name << " has " << t.function.get().parameters.size() << " parameters but received " << args.size() << " arguments";
@@ -32,78 +32,58 @@ R T::operator()(const NodeStructs::FunctionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::InterfaceType& t) {
+R T::operator()(const Realised::InterfaceType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::NamespaceType& t) {
+R T::operator()(const Realised::NamespaceType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Builtin& t) {
+R T::operator()(const Realised::Builtin& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::UnionType& t) {
+R T::operator()(const Realised::UnionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::TemplateType& tmpl) {
+R T::operator()(const Realised::TemplateType& tmpl) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::EnumType& tmpl) {
+R T::operator()(const Realised::EnumType& tmpl) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::EnumValueType& tmpl) {
+R T::operator()(const Realised::EnumValueType& tmpl) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::OptionalType& t) {
+R T::operator()(const Realised::OptionalType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::AggregateType& t) {
+R T::operator()(const Realised::AggregateType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Vector& t) {
+R T::operator()(const Realised::VectorType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::VectorType& t) {
+R T::operator()(const Realised::SetType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Set& t) {
+R T::operator()(const Realised::MapType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::SetType& t) {
+R T::operator()(const Realised::TypeListType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Map& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::MapType& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeList& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeListType& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeToken& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::CompileTimeType& t) {
+R T::operator()(const Realised::CompileTimeType& t) {
 	NOT_IMPLEMENTED;
 }

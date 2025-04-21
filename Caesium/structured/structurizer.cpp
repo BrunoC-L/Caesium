@@ -571,13 +571,13 @@ NodeStructs::NameSpace getNamespaceStruct(
 		.name = name.value,
 		.name_space = copy(name_space),
 		.functions = functions
-		| std::views::filter([&](auto&& f) { return !uses_auto(f); })
+		//| std::views::filter([&](auto&& f) { return !uses_auto(f); })
 		| std::views::transform([&](auto&& fn) { return copy(fn); })
 		| to_vec(),
-		.functions_using_auto = functions
+		/*.functions_using_auto = functions
 		| std::views::filter([&](auto&& f) { return uses_auto(f); })
 		| std::views::transform([&](auto&& fn) { return copy(fn); })
-		| to_vec(),
+		| to_vec(),*/
 		.types = std::move(types),
 		.interfaces = std::move(interfaces),
 		.templates = std::move(templates),
@@ -635,13 +635,13 @@ NodeStructs::NameSpace getNamespaceStruct(
 		.name = "UNNAMED_NAMESPACE",
 		.name_space = std::nullopt,
 		.functions = functions
-		| std::views::filter([&](auto&& f) { return !uses_auto(f); })
+		//| std::views::filter([&](auto&& f) { return !uses_auto(f); })
 		| std::views::transform([&](auto&& fn) { return copy(fn); })
 		| to_vec(),
-		.functions_using_auto = functions
+		/*.functions_using_auto = functions
 		| std::views::filter([&](auto&& f) { return uses_auto(f); })
 		| std::views::transform([&](auto&& fn) { return copy(fn); })
-		| to_vec(),
+		| to_vec(),*/
 		.types = std::move(types),
 		.interfaces = std::move(interfaces),
 		.templates = std::move(templates),
@@ -708,11 +708,6 @@ NodeStructs::File getStruct(
 		.content = NodeStructs::NameSpace{
 			.name = std::string{ file_name },
 			.functions = functions
-				| std::views::filter([&](auto&& f) { return !uses_auto(f); })
-				| std::views::transform([&](auto&& fn) { return copy(fn); })
-				| to_vec(),
-			.functions_using_auto = functions
-				| std::views::filter([&](auto&& f) { return uses_auto(f); })
 				| std::views::transform([&](auto&& fn) { return copy(fn); })
 				| to_vec(),
 			.types = t

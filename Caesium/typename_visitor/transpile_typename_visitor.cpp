@@ -47,13 +47,13 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 		[](const auto& e) -> R {
 			NOT_IMPLEMENTED;
 		},
-		[&](const NodeStructs::EnumType& e) -> R {
+		[&](const Realised::EnumType& e) -> R {
 			const auto& _enum = e.enum_.get();
 			if (auto it = std::find(_enum.values.begin(), _enum.values.end(), type.name_in_name_space); it != _enum.values.end())
 				return _enum.name + "__" + type.name_in_name_space;
 			NOT_IMPLEMENTED;
 		},
-		[&](const NodeStructs::NamespaceType& e) -> R {
+		[&](const Realised::NamespaceType& e) -> R {
 			if (auto it = e.name_space.get().types.find(type.name_in_name_space); it != e.name_space.get().types.end())
 				return repr_of_typename + "__" + type.name_in_name_space;
 			if (auto it = e.name_space.get().aliases.find(type.name_in_name_space); it != e.name_space.get().aliases.end())

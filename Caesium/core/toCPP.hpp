@@ -5,26 +5,28 @@
 #include <map>
 #include <set>
 #include <functional>
+#include "../utility/tag_type.hpp"
 #include "../utility/expected.hpp"
 #include "../utility/enumerate.hpp"
 #include "../structured/node_structs.hpp"
 #include "../structured/structurizer.hpp"
 #include "../structured/helpers.hpp"
+#include "realised.hpp"
 
 struct variable_info {
 	NodeStructs::ValueCategory value_category;
-	NodeStructs::MetaType type;
+	Realised::MetaType type;
 };
 using variables_t = std::map<std::string, std::vector<variable_info>>;
 using transpile_declaration_definition_t = expected<std::pair<std::string, std::string>>;
 
 struct type_information{
-	NodeStructs::MetaType type;
+	Realised::MetaType type;
 	std::string representation;
 };
 
 struct non_type_information{
-	NodeStructs::MetaType type;
+	Realised::MetaType type;
 	std::string representation;
 	NodeStructs::ValueCategory value_category;
 };
@@ -40,34 +42,18 @@ using expression_information = std::variant<type_information, non_type_informati
 using transpile_t = expected<std::string>;
 using transpile_expression_information_t = expected<expression_information>;
 
+using Namespace = Realised::NameSpace;
 
-struct Namespace {
-	std::string name;
+// shouldnt those be pointers...?
+template <typename T>             using set = std::set<T, default_less_than>;
+template <typename K, typename V> using map = std::map<K, V, default_less_than>;
 
-	template <typename T> using map_to_vec = std::map<std::string, std::vector<T>, default_less_than>;
-
-	map_to_vec<NodeStructs::Function> functions;
-	map_to_vec<NodeStructs::Function> functions_using_auto;
-
-	map_to_vec<NodeStructs::Type> types;
-	map_to_vec<NodeStructs::Interface> interfaces;
-
-	map_to_vec<NodeStructs::Template> templates;
-
-	map_to_vec<NodeStructs::Block> blocks;
-	std::map<std::string, NodeStructs::Typename> aliases;
-	map_to_vec<NodeStructs::Enum> enums;
-
-	std::map<std::string, Namespace> namespaces;
-	map_to_vec<NodeStructs::Builtin> builtins;
-	rule_info info = rule_info_stub<Namespace>();
-};
-
-template <>
-struct copy_t<Namespace> {
-	static Namespace copy(const Namespace& ns) {
-		return copy12(ns);
-	}
+template <typename T>
+struct traversal {
+	std::set<std::string> traversing;
+	std::map<std::string, T> traversed;
+	std::map<std::string, std::vector<std::string>> definitions;
+	std::map<std::string, std::vector<std::string>> declarations;
 };
 
 struct transpilation_state {
@@ -80,20 +66,13 @@ struct transpilation_state {
 		Namespace&& global_namespace
 	) : global_namespace(std::move(global_namespace)) {}
 
-	// shouldnt those be pointers...?
-	template <typename T>             using set = std::set<T,    default_less_than>;
-	template <typename K, typename V> using map = std::map<K, V, default_less_than>;
+	traversal<Realised::Function> functions_traversal;
+	traversal<Realised::Type> types_traversal;
+	traversal<Realised::Interface> interfaces_traversal;
 
-	set<NodeStructs::Function> traversed_functions;
-	set<NodeStructs::Type> traversed_types;
-	set<NodeStructs::Interface> traversed_interfaces;
-
-	set<NodeStructs::Function> functions_to_transpile;
-	std::vector<NodeStructs::Type> types_to_transpile;
-	set<NodeStructs::Interface> interfaces_to_transpile;
 	set<NodeStructs::Enum> enums_to_transpile;
+	map<NodeStructs::Typename, std::vector<Realised::MetaType>> interface_symbol_to_members;
 
-	map<NodeStructs::Typename, std::vector<NodeStructs::MetaType>> interface_symbol_to_members;
 	std::set<std::pair<std::string, std::string>> aliases_to_transpile;
 };
 
@@ -151,27 +130,6 @@ static inline std::string indent(size_t n) {
 
 std::optional<error> validate_templates(const std::vector<NodeStructs::Template>& templates);
 
-//static NodeStructs::ValueCategory argument_category_to_value_category(const NodeStructs::ArgumentCategory& cat) {
-//	return std::visit(overload(
-//		[](const NodeStructs::Reference&) -> NodeStructs::ValueCategory {
-//			return NodeStructs::Reference{};
-//		},
-//		[](const NodeStructs::MutableReference&) -> NodeStructs::ValueCategory {
-//			return NodeStructs::MutableReference{};
-//		},
-//		[](const NodeStructs::Move&) -> NodeStructs::ValueCategory {
-//			return NodeStructs::Value{};
-//		}
-//	), cat._value);
-//}
-
-//static NodeStructs::ValueCategory argument_category_optional_to_value_category(const std::optional<NodeStructs::ArgumentCategory>& cat) {
-//	if (cat.has_value())
-//		return argument_category_to_value_category(cat.value());
-//	else
-//		return NodeStructs::Value{};
-//}
-
 transpile_t transpile(const std::vector<NodeStructs::File>& project);
 
 transpile_declaration_definition_t transpile_main(
@@ -192,7 +150,7 @@ std::optional<error> stack(
 
 transpile_declaration_definition_t transpile_type(
 	transpilation_state_with_indent state,
-	const NodeStructs::Type& type
+	const Realised::Type& type
 );
 
 transpile_declaration_definition_t transpile(
@@ -206,16 +164,16 @@ transpile_t transpile(
 	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
-std::vector<NodeStructs::MetaType> decompose_type(
+std::vector<Realised::MetaType> decompose_type(
 	transpilation_state_with_indent state,
-	const NodeStructs::MetaType& type
+	const Realised::MetaType& type
 );
 
 std::optional<error> add_for_iterator_variables(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::vector<Variant<NodeStructs::VariableDeclaration, std::string>>& iterators,
-	const NodeStructs::MetaType& it_type
+	const Realised::MetaType& it_type
 );
 
 transpile_expression_information_t transpile_arg(
@@ -230,9 +188,9 @@ transpile_t transpile_typenames(
 	const std::vector<NodeStructs::Typename>& args
 );
 
-NodeStructs::MetaType iterator_type(
+Realised::MetaType iterator_type(
 	transpilation_state_with_indent state,
-	const NodeStructs::MetaType& type
+	const Realised::MetaType& type
 );
 
 std::string template_name(
@@ -254,8 +212,8 @@ struct requires_conversion {
 Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 	transpilation_state_with_indent state_,
 	variables_t& variables,
-	const NodeStructs::MetaType& parameter,
-	const NodeStructs::MetaType& argument
+	const Realised::MetaType& parameter,
+	const Realised::MetaType& argument
 );
 
 transpile_t expr_to_printable(
@@ -285,21 +243,21 @@ bool uses_auto(const NodeStructs::Expression& t);
 transpile_t transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Statement<function_context>& statement
 );
 
 transpile_t transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Statement<type_context>& statement
 );
 
 transpile_t transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Statement<top_level_context>& statement
 );
 
@@ -309,7 +267,7 @@ expected<std::string> word_typename_or_expression_for_template(
 	const NodeStructs::WordTypenameOrExpression& value
 );
 
-expected<NodeStructs::MetaType> type_of_typename(
+expected<Realised::MetaType> type_of_typename(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::WordTypenameOrExpression& tn_or_expr
@@ -318,10 +276,10 @@ expected<NodeStructs::MetaType> type_of_typename(
 expected<NodeStructs::Function> realise_function_using_auto(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn_using_auto,
-	const std::vector<NodeStructs::MetaType>& arg_types
+	const std::vector<Realised::MetaType>& arg_types
 );
 
-NodeStructs::Typename typename_of_primitive(const NodeStructs::PrimitiveType& primitive_t);
+NodeStructs::Typename typename_of_primitive(const Realised::PrimitiveType& primitive_t);
 
 struct Arrangement {
 	std::reference_wrapper<const NodeStructs::Template> tmpl;
@@ -335,20 +293,20 @@ expected<Arrangement> find_best_template(
 	const std::vector<NodeStructs::WordTypenameOrExpression>& args
 );
 
-expected<std::optional<const NodeStructs::Function*>> find_best_function(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const std::string& name,
-	const Namespace& space,
-	const std::vector<NodeStructs::MetaType>& arg_types
-);
+//expected<std::optional<std::reference_wrapper<const NodeStructs::Function>>> find_best_function(
+//	transpilation_state_with_indent state,
+//	variables_t& variables,
+//	const std::string& name,
+//	const Namespace& space,
+//	const std::vector<Realised::MetaType>& arg_types
+//);
 
 template <typename context>
 transpile_t transpile(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::vector<NodeStructs::Statement<context>>& statements,
-	const NodeStructs::MetaType& expected_return_type
+	const Realised::MetaType& expected_return_type
 ) {
 	std::stringstream ss;
 	for (const NodeStructs::Statement<context>& statement : statements) {
@@ -379,3 +337,16 @@ bool uses_auto(const NodeStructs::Statement<context>& statement) {
 	// todo recursive impl and check for variable declarations and for statements
 	NOT_IMPLEMENTED;
 }
+
+variables_t make_base_variables();
+
+expected<Realised::Type> realise(
+	transpilation_state_with_indent state,
+	const NodeStructs::Type& type
+);
+
+expected<Realised::Type> get_existing_realised_type(
+	transpilation_state_with_indent state,
+	const std::string& name,
+	const std::optional<NodeStructs::NameSpace>& name_space
+);

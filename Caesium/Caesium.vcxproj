@@ -147,8 +147,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="core\realised.cpp" />
+    <ClCompile Include="core\transpile_statement.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
-    <ClCompile Include="statement_visitor\transpile_statement.cpp" />
     <ClCompile Include="structured\helpers.cpp" />
     <ClCompile Include="grammar\parse.cpp" />
     <ClCompile Include="structured\structurizer.cpp" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\builtins.hpp" />
+    <ClInclude Include="core\realised.hpp" />
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />
     <ClInclude Include="expression_visitor\transpile_expression_visitor.hpp" />
     <ClInclude Include="statement_visitor\transpile_statement.hpp" />
@@ -205,6 +207,7 @@
     <ClInclude Include="type_visitor\type_of_function_like_call_with_args_visitor.hpp" />
     <ClInclude Include="typename_visitor\type_of_typename_visitor.hpp" />
     <ClInclude Include="type_visitor\type_category_visitor.hpp" />
+    <ClInclude Include="utility\tag_type.hpp" />
     <ClInclude Include="utility\vec_of_expected_to_expected_of_vec.hpp" />
     <ClInclude Include="utility\vec_of_variant_to_optional_vector_single_type.hpp" />
   </ItemGroup>

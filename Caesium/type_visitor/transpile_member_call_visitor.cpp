@@ -6,25 +6,28 @@
 using T = transpile_member_call_visitor;
 using R = T::R;
 
-R T::operator()(const NodeStructs::Type& t) {
+R T::operator()(const Realised::Type& t) {
 	if (auto it = std::find_if(
 		t.member_variables.begin(),
 		t.member_variables.end(),
-		[&](const auto& m) { return m.name == property_name; }
+		[&](const auto& m) { return m.name._value == property_name; }
 	); it != t.member_variables.end()) {
-		auto mt = type_of_typename(state, variables, it->type);
+		NOT_IMPLEMENTED;
+		/*auto mt = type_of_typename(state, variables, it->type);
 		return_if_error(mt);
 		auto expect_error = type_of_function_like_call_with_args(state, variables, arguments, mt.value());
 		return_if_error(expect_error);
-		NOT_IMPLEMENTED;
+		NOT_IMPLEMENTED;*/
 	}
 
 	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
-		const auto& fn = it->second.back();
+		NOT_IMPLEMENTED;
+		/*const NodeStructs::Function& fn = it->second.back();
 		auto fn_or_e = transpile(state.unindented(), fn);
 		return_if_error(fn_or_e);
-		if (!state.state.traversed_functions.contains(fn)) {
-			state.state.traversed_functions.insert(copy(fn));
+		NOT_IMPLEMENTED;*/
+		/*if (!state.state.functions_traversal.traversed.contains(fn)) {
+			state.state.functions_traversal.traversed.insert(copy(fn));
 			state.state.functions_to_transpile.insert(copy(fn));
 		}
 		auto first_param_str = transpile_typename(state, variables, fn.parameters.at(0).typename_);
@@ -61,10 +64,11 @@ R T::operator()(const NodeStructs::Type& t) {
 			.type = std::move(return_t).value(),
 			.representation = ss.str(),
 			.value_category = NodeStructs::Value{},
-		} };
+		} };*/
 	}
 
-	if (auto it = state.state.global_namespace.functions_using_auto.find(property_name); it != state.state.global_namespace.functions_using_auto.end()) {
+	NOT_IMPLEMENTED;
+	/*if (auto it = state.state.global_namespace.functions_using_auto.find(property_name); it != state.state.global_namespace.functions_using_auto.end()) {
 		auto args_ = vec_of_expected_to_expected_of_vec(arguments
 			| std::views::transform([&](auto&& arg) { return transpile_arg(state, variables, arg); })
 			| to_vec());
@@ -80,7 +84,7 @@ R T::operator()(const NodeStructs::Type& t) {
 			args_ok | std::views::transform([](const auto& e) { return copy(e.type); }) | to_vec()
 		);
 		return_if_error(fn);
-		auto& vec = state.state.global_namespace.functions[fn.value().name];
+		std::vector<NodeStructs::Function>& vec = state.state.global_namespace.functions[fn.value().name];
 		bool found = false;
 		for (const auto& f : vec)
 			if (cmp(f, fn.value()) == std::strong_ordering::equivalent)
@@ -88,31 +92,33 @@ R T::operator()(const NodeStructs::Type& t) {
 		if (!found)
 			vec.push_back(std::move(fn).value());
 		return operator()(t);
-	}
+	}*/
 	if (auto it = state.state.global_namespace.builtins.find(property_name); it != state.state.global_namespace.builtins.end()) {
-		const std::string& name = it->second.back().name;
-		if (name == "size") {
-			/*if (auto is_str = t <=> NodeStructs::MetaType{ NodeStructs::PrimitiveType{ { std::string{} } } } == std::strong_ordering::equivalent) {
-				return expression_information{ non_type_information{
-					.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
-					.representation = operand_info.representation + ".size()",
-					.value_category = NodeStructs::Value{}
-				} };
-			}*/
-			NOT_IMPLEMENTED;
-		}
 		NOT_IMPLEMENTED;
+		//const std::string& name = it->second.back().builtin._value;
+		//if (name == "size") {
+		//	/*if (auto is_str = t <=> Realised::MetaType{ Realised::PrimitiveType{ { std::string{} } } } == std::strong_ordering::equivalent) {
+		//		return expression_information{ non_type_information{
+		//			.type = { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } },
+		//			.representation = operand_info.representation + ".size()",
+		//			.value_category = NodeStructs::Value{}
+		//		} };
+		//	}*/
+		//	NOT_IMPLEMENTED;
+		//}
+		//NOT_IMPLEMENTED;
 	}
-	return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
+	NOT_IMPLEMENTED;
+	//return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
 }
 
-R T::operator()(const NodeStructs::PrimitiveType& t) {
-	if (holds<NodeStructs::PrimitiveType::NonValued<std::string>>(t.value)) {
+R T::operator()(const Realised::PrimitiveType& t) {
+	if (holds<Realised::PrimitiveType::NonValued<std::string>>(t.value)) {
 		if (property_name == "size") {
 			if (arguments.size() != 0)
 				NOT_IMPLEMENTED;
 			return expression_information{ non_type_information{
-				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
+				.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } },
 				.representation = operand_info.representation + ".size()",
 				.value_category = NodeStructs::Value{},
 			} };
@@ -125,10 +131,10 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 			if (!std::holds_alternative<non_type_information>(arg_t.value()))
 				NOT_IMPLEMENTED;
 			const auto& arg_t_ok = std::get<non_type_information>(arg_t.value());
-			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }, arg_t_ok.type)._value))
+			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } }, arg_t_ok.type)._value))
 				NOT_IMPLEMENTED;
 			return expression_information{ non_type_information{
-				.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } },
+				.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<char>{} } },
 				.representation = operand_info.representation + ".at(" + arg_t_ok.representation + ")",
 				.value_category = NodeStructs::Value{},
 			} };
@@ -137,51 +143,47 @@ R T::operator()(const NodeStructs::PrimitiveType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::FunctionType& t) {
+R T::operator()(const Realised::FunctionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::InterfaceType& t) {
+R T::operator()(const Realised::InterfaceType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::NamespaceType& t) {
+R T::operator()(const Realised::NamespaceType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Builtin& t) {
+R T::operator()(const Realised::Builtin& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::UnionType& t) {
+R T::operator()(const Realised::UnionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::TemplateType& t) {
+R T::operator()(const Realised::TemplateType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::EnumType& t) {
+R T::operator()(const Realised::EnumType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::EnumValueType& t) {
+R T::operator()(const Realised::EnumValueType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::OptionalType& t) {
+R T::operator()(const Realised::OptionalType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::AggregateType& t) {
+R T::operator()(const Realised::AggregateType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Vector& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::VectorType& t) {
+R T::operator()(const Realised::VectorType& t) {
 	if (property_name == "push") {
 		if (arguments.size() != 1)
 			NOT_IMPLEMENTED;
@@ -209,7 +211,7 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		if (arguments.size() != 0)
 			NOT_IMPLEMENTED;
 		return expression_information{ non_type_information{
-			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } },
+			.type = { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } },
 			.representation = operand_info.representation + ".size()",
 			.value_category = NodeStructs::Value{}
 		} };
@@ -236,13 +238,13 @@ R T::operator()(const NodeStructs::VectorType& t) {
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
 		//todo check conversion
-		if (cmp(arg_info_ok.type, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } })  != std::strong_ordering::equivalent)
+		if (cmp(arg_info_ok.type, Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } })  != std::strong_ordering::equivalent)
 			return error{
 				"user error",
 				"wrong type for vector reserve"
 			};
 		return expression_information{ non_type_information{
-			.type = { NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<NodeStructs::void_t>{} } },
+			.type = { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::void_t>{} } },
 			.representation = operand_info.representation + ".reserve(" + arg_info_ok.representation + ")",
 			.value_category = NodeStructs::Value{}
 		} };
@@ -251,34 +253,18 @@ R T::operator()(const NodeStructs::VectorType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Set& t) {
+R T::operator()(const Realised::SetType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::SetType& t) {
+R T::operator()(const Realised::MapType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::Map& t) {
+R T::operator()(const Realised::TypeListType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const NodeStructs::MapType& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeList& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeListType& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::TypeToken& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const NodeStructs::CompileTimeType& t) {
+R T::operator()(const Realised::CompileTimeType& t) {
 	NOT_IMPLEMENTED;
 }

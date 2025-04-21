@@ -7,23 +7,24 @@ R f(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::VariableDeclarationStatement<context>& statement,
-	const NodeStructs::MetaType& type,
+	const Realised::MetaType& type,
 	const std::string& type_repr,
 	non_type_information assigned_expression_ok
 ) {
 	if constexpr (is_compile_time) {
-		if (holds<NodeStructs::CompileTimeType>(type))
+		NOT_IMPLEMENTED;
+		/*if (holds<Realised::CompileTimeType>(type))
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(assigned_expression_ok.type) });
-		else if (holds<NodeStructs::PrimitiveType>(type))
-			variables[statement.name].push_back({ NodeStructs::MutableReference{}, { NodeStructs::CompileTimeType{ copy(assigned_expression_ok.type) } } });
+		else if (holds<Realised::PrimitiveType>(type))
+			variables[statement.name].push_back({ NodeStructs::MutableReference{}, { Realised::CompileTimeType{ copy(assigned_expression_ok.type) } } });
 		else
 			NOT_IMPLEMENTED;
-		return "";
+		return "";*/
 	}
 	else {
 		variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type) });
 
-		if (holds<NodeStructs::UnionType>(assigned_expression_ok.type)
+		if (holds<Realised::UnionType>(assigned_expression_ok.type)
 			&& (cmp(type, assigned_expression_ok.type) != std::strong_ordering::equivalent)) {
 			std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
 			return type_repr + " " + statement.name + " = "
@@ -44,7 +45,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Expression& statement
 ) {
 	auto repr =  transpile_expression(state, variables, statement);
@@ -59,7 +60,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::VariableDeclarationStatement<context>& statement
 ) {
 	bool is_aggregate_init = holds<NodeStructs::BraceArguments>(statement.expr);
@@ -146,7 +147,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::IfStatement<context>& statement
 ) {
 	if constexpr (is_compile_time) {
@@ -157,16 +158,16 @@ R transpile_statement_specific(
 		const auto& cnd_ok = std::get<non_type_information>(cnd.value());
 
 		bool cnd_value = [&]() {
-			if (holds<NodeStructs::PrimitiveType>(cnd_ok.type)
-				&& holds<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(cnd_ok.type).value))
-					return get<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(cnd_ok.type).value).value;
-			if (!holds<NodeStructs::CompileTimeType>(cnd_ok.type))
+			if (holds<Realised::PrimitiveType>(cnd_ok.type)
+				&& holds<Realised::PrimitiveType::Valued<bool>>(get<Realised::PrimitiveType>(cnd_ok.type).value))
+					return get<Realised::PrimitiveType::Valued<bool>>(get<Realised::PrimitiveType>(cnd_ok.type).value).value;
+			if (!holds<Realised::CompileTimeType>(cnd_ok.type))
 				NOT_IMPLEMENTED;
-			if (!holds<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(cnd_ok.type).type))
+			if (!holds<Realised::PrimitiveType>(get<Realised::CompileTimeType>(cnd_ok.type).type))
 				NOT_IMPLEMENTED;
-			if (!holds<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(cnd_ok.type).type).value))
+			if (!holds<Realised::PrimitiveType::Valued<bool>>(get<Realised::PrimitiveType>(get<Realised::CompileTimeType>(cnd_ok.type).type).value))
 				NOT_IMPLEMENTED;
-			return get<NodeStructs::PrimitiveType::Valued<bool>>(get<NodeStructs::PrimitiveType>(get<NodeStructs::CompileTimeType>(cnd_ok.type).type).value).value;
+			return get<Realised::PrimitiveType::Valued<bool>>(get<Realised::PrimitiveType>(get<Realised::CompileTimeType>(cnd_ok.type).type).value).value;
 		}();
 
 
@@ -231,7 +232,7 @@ template <bool ifor, bool is_compile_time>
 R transpile_for_or_ifor_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const auto& statement,
 	const auto& index_or_none
 ) {
@@ -241,25 +242,26 @@ R transpile_for_or_ifor_statement(
 		if (!std::holds_alternative<type_information>(coll_type_or_e.value()))
 			NOT_IMPLEMENTED;
 		const auto& coll_type_or_e_ok = std::get<type_information>(coll_type_or_e.value());
-		if (holds<NodeStructs::TypeListType>(coll_type_or_e_ok.type)) {
-			const NodeStructs::TypeListType& tl = get<NodeStructs::TypeListType>(coll_type_or_e_ok.type);
+		if (holds<Realised::TypeListType>(coll_type_or_e_ok.type)) {
+			const Realised::TypeListType& tl = get<Realised::TypeListType>(coll_type_or_e_ok.type);
 			if (statement.iterators.size() != 1 || !std::holds_alternative<std::string>(statement.iterators[0]._value))
 				NOT_IMPLEMENTED;
 			const std::string& type_iterator = std::get<std::string>(statement.iterators[0]._value);
 			
 			int i = 0;
 			std::stringstream ss;
-			for (const NodeStructs::MetaType& type : tl.types) {
+			for (const Realised::MetaType& type : tl.types) {
 				auto tn = typename_of_type(state, type);
 				return_if_error(tn);
 				if constexpr (ifor) {
 					const std::string& index = index_or_none;
-					variables[index].push_back(variable_info{
+					NOT_IMPLEMENTED;
+					/*variables[index].push_back(variable_info{
 						NodeStructs::ValueCategory{ NodeStructs::Value{} },
-						NodeStructs::MetaType{ NodeStructs::CompileTimeType{
-							.type = NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::Valued<int>{ i } } }
+						Realised::MetaType{ Realised::CompileTimeType{
+							.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<int>{ i } } }
 						} }
-					});
+					});*/
 					i += 1;
 				}
 				state.state.global_namespace.aliases.insert({ type_iterator, std::move(tn).value() });
@@ -328,7 +330,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::ForStatement<context>& statement
 ) {
 	return transpile_for_or_ifor_statement<false, is_compile_time>(state, variables, expected_return_type, statement, empty_tag{});
@@ -338,7 +340,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::IForStatement<context>& statement
 ) {
 	return transpile_for_or_ifor_statement<true, is_compile_time>(state, variables, expected_return_type, statement.for_statement, statement.index_iterator);
@@ -348,7 +350,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::WhileStatement<context>& statement
 ) {
 	auto while_expr_info = transpile_expression(state, variables, statement.whileExpr);
@@ -365,7 +367,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::BreakStatement<context>& statement
 ) {
 	if (!statement.ifExpr.has_value())
@@ -382,7 +384,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::ReturnStatement<context>& statement
 ) {
 	if (statement.returnExpr.size() == 0)
@@ -435,7 +437,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::BlockStatement<context>& statement
 ) {
 	const auto& s = get<NodeStructs::BaseTypename>(statement.parametrized_block).type;
@@ -454,7 +456,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::MatchStatement<context>& statement
 ) {
 	std::stringstream ss;
@@ -504,19 +506,19 @@ R transpile_statement_specific(
 }
 
 bool is_int(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<int>{} } }) == std::strong_ordering::equivalent;
+	return cmp(t, Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } }) == std::strong_ordering::equivalent;
 }
 
 bool is_floating(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<double>{} } }) == std::strong_ordering::equivalent;
+	return cmp(t, Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<double>{} } }) == std::strong_ordering::equivalent;
 }
 
 bool is_char(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<char>{} } }) == std::strong_ordering::equivalent;
+	return cmp(t, Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<char>{} } }) == std::strong_ordering::equivalent;
 }
 
 bool is_string(const auto& t) {
-	return cmp(t, NodeStructs::MetaType{ NodeStructs::PrimitiveType{ NodeStructs::PrimitiveType::NonValued<std::string>{} } }) == std::strong_ordering::equivalent;
+	return cmp(t, Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<std::string>{} } }) == std::strong_ordering::equivalent;
 }
 
 template <typename T>
@@ -540,7 +542,7 @@ template <typename token_string_or_token_int, typename context>
 R int_or_char_switch(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::SwitchStatement<context>& statement,
 	const non_type_information& expr_info_ok
 ) {
@@ -566,7 +568,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::SwitchStatement<context>& statement
 ) {
 	auto expr_info = transpile_expression(state, variables, statement.expr);
@@ -593,7 +595,7 @@ template <typename context, bool is_compile_time>
 R transpile_statement_specific(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Assignment<context>& statement
 ) {
 	if constexpr (is_compile_time) {
@@ -604,21 +606,22 @@ R transpile_statement_specific(
 		return_if_error(right);
 		if (!std::holds_alternative<non_type_information>(right.value()))
 			NOT_IMPLEMENTED;
-		if (holds<NodeStructs::CompileTimeType>(std::get<non_type_information>(right.value()).type)) {
+		if (holds<Realised::CompileTimeType>(std::get<non_type_information>(right.value()).type)) {
 			if (variables.at(var).size() != 1)
 				NOT_IMPLEMENTED;
 			variables.at(var).pop_back();
-			variables.at(var).push_back(variable_info{ .value_category = NodeStructs::Value{}, .type = { std::move(get<NodeStructs::CompileTimeType>(std::get<non_type_information>(right.value()).type)) } });
+			variables.at(var).push_back(variable_info{ .value_category = NodeStructs::Value{}, .type = { std::move(get<Realised::CompileTimeType>(std::get<non_type_information>(right.value()).type)) } });
 			return "";
 		}
-		if (holds<NodeStructs::PrimitiveType>(std::get<non_type_information>(right.value()).type)) {
+		if (holds<Realised::PrimitiveType>(std::get<non_type_information>(right.value()).type)) {
 			if (variables.at(var).size() != 1)
 				NOT_IMPLEMENTED;
 			variables.at(var).pop_back();
-			variables.at(var).push_back(variable_info{
+			NOT_IMPLEMENTED;
+			/*variables.at(var).push_back(variable_info{
 				.value_category = NodeStructs::Value{},
-				.type = { NodeStructs::CompileTimeType{ std::move(get<NodeStructs::PrimitiveType>(std::get<non_type_information>(right.value()).type)) } }
-			} );
+				.type = { Realised::CompileTimeType{ std::move(get<Realised::PrimitiveType>(std::get<non_type_information>(right.value()).type)) } }
+			} );*/
 			return "";
 		}
 		NOT_IMPLEMENTED;
@@ -639,7 +642,7 @@ R transpile_statement_specific(
 R transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Statement<function_context>& statement
 ) {
 	return std::visit(overload(
@@ -661,19 +664,17 @@ R transpile_statement(
 R transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Statement<grammar::type_context>& statement
 ) {
 	NOT_IMPLEMENTED;
-	//return transpile_statement_visitor<context>{ {}, state, variables, expected_return_type }(statement);
 }
 
 R transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const NodeStructs::MetaType& expected_return_type,
+	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Statement<grammar::top_level_context>& statement
 ) {
 	NOT_IMPLEMENTED;
-	//return transpile_statement_visitor<context>{ {}, state, variables, expected_return_type }(statement);
 }

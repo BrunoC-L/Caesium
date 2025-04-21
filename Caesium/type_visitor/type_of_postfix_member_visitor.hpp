@@ -9,12 +9,12 @@ struct type_of_postfix_member_visitor : TypeCategoryVisitor<type_of_postfix_memb
 	variables_t& variables;
 	const std::string& property_name;
 
-	using R = expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>>;
+	using R = expected<std::pair<NodeStructs::ParameterCategory, Realised::MetaType>>;
 
 	TypeCategoryVisitorDeclarations
 };
 
-expected<std::pair<NodeStructs::ParameterCategory, NodeStructs::MetaType>> type_of_postfix_member(
+expected<std::pair<NodeStructs::ParameterCategory, Realised::MetaType>> type_of_postfix_member(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::string& property_name,

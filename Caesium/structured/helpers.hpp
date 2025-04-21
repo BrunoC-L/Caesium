@@ -1,5 +1,6 @@
 #pragma once
 #include "node_structs.hpp"
+#include "../core/realised.hpp"
 #include "../grammar/primitives.hpp"
 #include <set>
 
@@ -12,8 +13,13 @@ const auto& only(const auto& e) {
 }
 
 template <typename T, typename... Us>
+bool holds(const std::variant<Us...>& v) {
+	return std::holds_alternative<T>(v);
+}
+
+template <typename T, typename... Us>
 bool holds(const Variant<Us...>& v) {
-	return std::holds_alternative<T>(v._value);
+	return holds<T>(v._value);
 }
 
 template <typename T>
@@ -22,7 +28,7 @@ bool holds(const NodeStructs::Expression& x) {
 }
 
 template <typename T>
-bool holds(const NodeStructs::MetaType& x) {
+bool holds(const Realised::MetaType& x) {
 	return holds<T>(x.type.get());
 }
 
@@ -35,6 +41,9 @@ template <typename T, typename context>
 bool holds(const NodeStructs::Statement<context>& x) {
 	return holds<T>(x.statement.get());
 }
+
+template <typename T, typename... Us>
+const T& get(const std::variant<Us...>& v) { return std::get<T>(v); }
 
 template <typename T, typename... Us>
 const T& get(const Variant<Us...>& v) { return std::get<T>(v._value); }
@@ -55,13 +64,13 @@ template <typename T>
 T& get(NodeStructs::Expression& x) { return get<T>(x.expression.get()); }
 
 template <typename T>
-const T& get(const NodeStructs::MetaType& x) { return get<T>(x.type.get()); }
+const T& get(const Realised::MetaType& x) { return get<T>(x.type.get()); }
 
 template <typename T>
-T&& get(NodeStructs::MetaType&& x) { return get<T>(std::move(x).type.get()); }
+T&& get(Realised::MetaType&& x) { return get<T>(std::move(x).type.get()); }
 
 template <typename T>
-T& get(NodeStructs::MetaType& x) { return get<T>(x.type.get()); }
+T& get(Realised::MetaType& x) { return get<T>(x.type.get()); }
 
 template <typename T>
 const T& get(const NodeStructs::Typename& x) { return get<T>(x.value.get()); }
@@ -85,7 +94,6 @@ const std::string& original_representation(const NodeStructs::WordTypenameOrExpr
 const std::string& original_representation(const std::string& e);
 const std::string& original_representation(const NodeStructs::Typename& e);
 const std::string& original_representation(const NodeStructs::Expression& e);
-
 
 #define CMP_N(N, T) inline std::strong_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right);
 
@@ -177,49 +185,26 @@ CMP_N(6, Type)
 CMP_N(3, Alias)
 CMP_N(2, MemberVariable)
 
-CMP_N(2, FunctionType)
-CMP_N(1, InterfaceType)
-CMP_N(1, NamespaceType)
-CMP_N(1, UnionType)
-CMP_N(1, OptionalType)
-CMP_N(1, Builtin)
-CMP_N(1, EnumType)
-CMP_N(2, EnumValueType)
-CMP_N(2, AggregateType)
-CMP_N(0, Vector)
-CMP_N(0, Set)
-CMP_N(0, Map)
-CMP_N(1, VectorType)
-CMP_N(1, SetType)
-CMP_N(2, MapType)
-CMP_N(0, TypeToken)
-CMP_N(0, TypeList)
-CMP_N(1, TypeListType)
-CMP_N(1, CompileTimeType)
-CMP_N(6, Interface)
 CMP_N(2, Block)
 CMP_N(6, Template)
 CMP_N(3, Enum)
 
-CMP_N(2, TemplateType)
 CMP_N(1, TemplateParameter)
 CMP_N(2, TemplateParameterWithDefaultValue)
 CMP_N(1, VariadicTemplateParameter)
 
 CMP_N(5, Function)
 CMP_N(2, FunctionParameter)
-CMP_N(12, NameSpace)
+CMP_N(11, NameSpace)
 CMP_N(1, Exists)
 CMP_N(3, File)
 CMP_N(1, Import)
 #undef CMP_N
 
-inline std::strong_ordering operator<=>(const NodeStructs::MetaType& left, const NodeStructs::MetaType& right);
-inline std::strong_ordering operator<=>(const NodeStructs::PrimitiveType& left, const NodeStructs::PrimitiveType& right);
-
 template <typename T>
 std::strong_ordering cmp(const T& a, const T& b) {
-	if constexpr (is_specialization<T, std::vector>::value) {
+	NOT_IMPLEMENTED;
+	/*if constexpr (is_specialization<T, std::vector>::value) {
 		if (auto size_cmp = cmp(a.size(), b.size()); size_cmp != 0)
 			return size_cmp;
 
@@ -276,9 +261,9 @@ std::strong_ordering cmp(const T& a, const T& b) {
 		return a <=> b;
 	else if constexpr (std::is_same_v<T, bool>)
 		return a <=> b;
-	else if constexpr (std::is_same_v<T, NodeStructs::void_t>)
+	else if constexpr (std::is_same_v<T, Realised::void_t>)
 		return a <=> b;
-	else if constexpr (std::is_same_v<T, NodeStructs::empty_optional_t>)
+	else if constexpr (std::is_same_v<T, Realised::empty_optional_t>)
 		return a <=> b;
 	else if constexpr (std::is_same_v<T, rule_info>)
 		return std::strong_ordering::equivalent;
@@ -293,23 +278,23 @@ std::strong_ordering cmp(const T& a, const T& b) {
 		else
 			NOT_IMPLEMENTED;
 	}
-	else if constexpr (is_specialization<T, NodeStructs::PrimitiveType::NonValued>::value) {
+	else if constexpr (is_specialization<T, Realised::PrimitiveType::NonValued>::value) {
 		return std::strong_ordering::equivalent;
 	}
-	else if constexpr (is_specialization<T, NodeStructs::PrimitiveType::Valued>::value) {
+	else if constexpr (is_specialization<T, Realised::PrimitiveType::Valued>::value) {
 		return cmp(a.value, b.value);
 	}
 	else
-		return a <=> b;
+		return a <=> b;*/
 }
 
 template <typename T>
-auto cmp0(const T& x1, const T& x2) {
+std::strong_ordering cmp0(const T& x1, const T& x2) {
 	return std::strong_ordering::equivalent;
 }
 
 template <typename T>
-auto cmp1(const T& x1, const T& x2) {
+std::strong_ordering cmp1(const T& x1, const T& x2) {
 	const auto& [m1] = x1;
 	const auto& [n1] = x2;
 	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
@@ -318,7 +303,7 @@ auto cmp1(const T& x1, const T& x2) {
 }
 
 template <typename T>
-auto cmp2(const T& x1, const T& x2) {
+std::strong_ordering cmp2(const T& x1, const T& x2) {
 	const auto& [m1, m2] = x1;
 	const auto& [n1, n2] = x2;
 	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
@@ -329,7 +314,7 @@ auto cmp2(const T& x1, const T& x2) {
 }
 
 template <typename T>
-auto cmp3(const T& x1, const T& x2) {
+std::strong_ordering cmp3(const T& x1, const T& x2) {
 	const auto& [m1, m2, m3] = x1;
 	const auto& [n1, n2, n3] = x2;
 	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
@@ -342,7 +327,7 @@ auto cmp3(const T& x1, const T& x2) {
 }
 
 template <typename T>
-auto cmp4(const T& x1, const T& x2) {
+std::strong_ordering cmp4(const T& x1, const T& x2) {
 	const auto& [m1, m2, m3, m4] = x1;
 	const auto& [n1, n2, n3, n4] = x2;
 	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
@@ -357,7 +342,7 @@ auto cmp4(const T& x1, const T& x2) {
 }
 
 template <typename T>
-auto cmp5(const T& x1, const T& x2) {
+std::strong_ordering cmp5(const T& x1, const T& x2) {
 	const auto& [m1, m2, m3, m4, m5] = x1;
 	const auto& [n1, n2, n3, n4, n5] = x2;
 	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
@@ -374,7 +359,7 @@ auto cmp5(const T& x1, const T& x2) {
 }
 
 template <typename T>
-auto cmp6(const T& x1, const T& x2) {
+std::strong_ordering cmp6(const T& x1, const T& x2) {
 	const auto& [m1, m2, m3, m4, m5, m6] = x1;
 	const auto& [n1, n2, n3, n4, n5, n6] = x2;
 	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
@@ -393,7 +378,36 @@ auto cmp6(const T& x1, const T& x2) {
 }
 
 template <typename T>
-auto cmp12(const T& x1, const T& x2) {
+std::strong_ordering cmp11(const T& x1, const T& x2) {
+	const auto& [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11] = x1;
+	const auto& [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11] = x2;
+	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m2, n2); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m3, n3); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m4, n4); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m5, n5); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m6, n6); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m7, n7); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m8, n8); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m9, n9); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m10, n10); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m11, n11); c != std::strong_ordering::equivalent)
+		return c;
+	return std::strong_ordering::equivalent;
+}
+
+template <typename T>
+std::strong_ordering cmp12(const T& x1, const T& x2) {
 	const auto& [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12] = x1;
 	const auto& [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12] = x2;
 	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
@@ -423,7 +437,38 @@ auto cmp12(const T& x1, const T& x2) {
 	return std::strong_ordering::equivalent;
 }
 
-bool primitives_assignable(const NodeStructs::PrimitiveType& parameter, const NodeStructs::PrimitiveType& argument);
+template <typename T>
+std::strong_ordering cmp13(const T& x1, const T& x2) {
+	const auto& [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13] = x1;
+	const auto& [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13] = x2;
+	if (auto c = cmp(m1, n1); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m2, n2); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m3, n3); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m4, n4); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m5, n5); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m6, n6); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m7, n7); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m8, n8); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m9, n9); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m10, n10); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m11, n11); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m12, n12); c != std::strong_ordering::equivalent)
+		return c;
+	if (auto c = cmp(m13, n13); c != std::strong_ordering::equivalent)
+		return c;
+	return std::strong_ordering::equivalent;
+}
 
 template <typename T>
 T copy0(const T& x) {
@@ -494,6 +539,24 @@ T copy6(const T& x) {
 }
 
 template <typename T>
+T copy11(const T& x) {
+	const auto& [a, b, c, d, e, f, g, h, i, j, k] = x;
+	return {
+		copy(a),
+		copy(b),
+		copy(c),
+		copy(d),
+		copy(e),
+		copy(f),
+		copy(g),
+		copy(h),
+		copy(i),
+		copy(j),
+		copy(k),
+	};
+}
+
+template <typename T>
 T copy12(const T& x) {
 	const auto& [a, b, c, d, e, f, g, h, i, j, k, l] = x;
 	return {
@@ -509,6 +572,26 @@ T copy12(const T& x) {
 		copy(j),
 		copy(k),
 		copy(l),
+	};
+}
+
+template <typename T>
+T copy13(const T& x) {
+	const auto& [a, b, c, d, e, f, g, h, i, j, k, l, m] = x;
+	return {
+		copy(a),
+		copy(b),
+		copy(c),
+		copy(d),
+		copy(e),
+		copy(f),
+		copy(g),
+		copy(h),
+		copy(i),
+		copy(j),
+		copy(k),
+		copy(l),
+		copy(m),
 	};
 }
 
@@ -536,27 +619,6 @@ template <typename T>
 struct copy_t<NonCopyableBox<T>> {
 	static NonCopyableBox<T> copy(const NonCopyableBox<T>& box) {
 		return NonCopyableBox<T>{ ::copy(box.get()) };
-	}
-};
-
-template <typename T>
-struct copy_t<NodeStructs::PrimitiveType::NonValued<T>> {
-	static NodeStructs::PrimitiveType::NonValued<T> copy(const NodeStructs::PrimitiveType::NonValued<T>& v) {
-		return NodeStructs::PrimitiveType::NonValued<T>{};
-	}
-};
-
-template <typename T>
-struct copy_t<NodeStructs::PrimitiveType::Valued<T>> {
-	static NodeStructs::PrimitiveType::Valued<T> copy(const NodeStructs::PrimitiveType::Valued<T>& v) {
-		return NodeStructs::PrimitiveType::Valued<T>{ ::copy(v.value) };
-	}
-};
-
-template <>
-struct copy_t<NodeStructs::PrimitiveType> {
-	static NodeStructs::PrimitiveType copy(const NodeStructs::PrimitiveType& p) {
-		return NodeStructs::PrimitiveType{ ::copy(p.value) };
 	}
 };
 
@@ -664,45 +726,23 @@ COPY_N(6, Type)
 COPY_N(3, Alias)
 COPY_N(2, MemberVariable)
 
-COPY_N(2, FunctionType)
-COPY_N(1, InterfaceType)
-COPY_N(1, NamespaceType)
-COPY_N(1, UnionType)
-COPY_N(1, OptionalType)
-COPY_N(1, Builtin)
-COPY_N(1, EnumType)
-COPY_N(2, EnumValueType)
-COPY_N(2, AggregateType)
-COPY_N(0, Vector)
-COPY_N(0, Set)
-COPY_N(0, Map)
-COPY_N(1, VectorType)
-COPY_N(1, SetType)
-COPY_N(2, MapType)
-COPY_N(0, TypeToken)
-COPY_N(0, TypeList)
-COPY_N(1, TypeListType)
-COPY_N(1, CompileTimeType)
 COPY_N(6, Interface)
 COPY_N(2, Block)
 COPY_N(6, Template)
 COPY_N(3, Enum)
 
-COPY_N(2, TemplateType)
 COPY_N(1, TemplateParameter)
 COPY_N(2, TemplateParameterWithDefaultValue)
 COPY_N(1, VariadicTemplateParameter)
 
 COPY_N(5, Function)
 COPY_N(2, FunctionParameter)
-COPY_N(12, NameSpace)
+COPY_N(11, NameSpace)
 COPY_N(1, Exists)
 COPY_N(3, File)
 COPY_N(1, Import)
-COPY_N(1, MetaType)
 #undef COPY_N
 
-using default_less_than = decltype([](const auto& l, const auto& r) { return l <=> r == std::weak_ordering::less; });
 #define CMP_N(N, T) inline std::strong_ordering operator<=>(const NodeStructs::T& left, const NodeStructs::T& right) { return cmp##N (left, right); }
 
 CMP_N(1, WordTypenameOrExpression)
@@ -793,60 +833,130 @@ CMP_N(6, Type)
 CMP_N(3, Alias)
 CMP_N(2, MemberVariable)
 
-CMP_N(2, FunctionType)
-CMP_N(1, InterfaceType)
-CMP_N(1, NamespaceType)
-CMP_N(1, UnionType)
-CMP_N(1, OptionalType)
-CMP_N(1, Builtin)
-CMP_N(1, EnumType)
-CMP_N(2, EnumValueType)
-CMP_N(2, AggregateType)
-CMP_N(0, Vector)
-CMP_N(0, Set)
-CMP_N(0, Map)
-CMP_N(1, VectorType)
-CMP_N(1, SetType)
-CMP_N(2, MapType)
-CMP_N(0, TypeToken)
-CMP_N(0, TypeList)
-CMP_N(1, TypeListType)
-CMP_N(1, CompileTimeType)
 CMP_N(6, Interface)
 CMP_N(2, Block)
 CMP_N(6, Template)
 CMP_N(3, Enum)
 
-CMP_N(2, TemplateType)
 CMP_N(1, TemplateParameter)
 CMP_N(2, TemplateParameterWithDefaultValue)
 CMP_N(1, VariadicTemplateParameter)
 
 CMP_N(5, Function)
 CMP_N(2, FunctionParameter)
-CMP_N(12, NameSpace)
+CMP_N(11, NameSpace)
 CMP_N(1, Exists)
 CMP_N(3, File)
 CMP_N(1, Import)
 #undef CMP_N
 
-inline std::strong_ordering operator<=>(const NodeStructs::MetaType& left, const NodeStructs::MetaType& right) {
-	if (holds<NodeStructs::EnumType>(left) &&
-		holds<NodeStructs::EnumValueType>(right)) {
-		const auto& a = get<NodeStructs::EnumType>(left);
-		const auto& b = get<NodeStructs::EnumValueType>(right);
+#define ExpandAll(M) \
+M(3, Type); \
+M(1, FunctionType); \
+M(2, InterfaceType); \
+M(2, NamespaceType); \
+M(1, TemplateType); \
+M(2, EnumType); \
+M(3, EnumValueType); \
+M(2, OptionalType); \
+M(2, AggregateType); \
+M(2, UnionType); \
+M(2, VectorType); \
+M(2, SetType); \
+M(3, MapType); \
+M(1, TypeListType); \
+M(2, Parameter); \
+M(4, Function); \
+M(2, MemberVariable); \
+M(13, NameSpace); \
+M(2, Argument); \
+M(1, Builtin); \
+M(2, CompileTimeType); \
+M(3, Interface);
+
+#define COPY_N(N, T) template <> struct copy_t<Realised::T> { static Realised::T copy(const Realised::T& e) { return copy##N (e); } };
+#define CMP_N(N, T) inline std::strong_ordering operator<=>(const Realised::T& left, const Realised::T& right);
+#define CMP_COPY_N(N, T) COPY_N(N, T) CMP_N(N, T)
+ExpandAll(CMP_COPY_N);
+COPY_N(1, MetaType);
+#undef CMP_COPY_N
+#undef COPY_N
+#undef CMP_N
+
+inline std::strong_ordering operator<=>(const Realised::Builtin& left, const Realised::Builtin& right);
+inline std::strong_ordering operator<=>(const Realised::MetaType& left, const Realised::MetaType& right);
+inline std::strong_ordering operator<=>(const Realised::PrimitiveType& left, const Realised::PrimitiveType& right);
+
+inline bool primitives_assignable(const Realised::PrimitiveType& parameter, const Realised::PrimitiveType& argument) {
+	using vt = std::variant<
+		Realised::PrimitiveType::NonValued<std::string>,
+		Realised::PrimitiveType::NonValued<double>,
+		Realised::PrimitiveType::NonValued<int>,
+		Realised::PrimitiveType::NonValued<bool>,
+		Realised::PrimitiveType::NonValued<Realised::void_t>,
+		Realised::PrimitiveType::NonValued<char>,
+		Realised::PrimitiveType::NonValued<Realised::empty_optional_t>,
+
+		Realised::PrimitiveType::Valued<std::string>,
+		Realised::PrimitiveType::Valued<double>,
+		Realised::PrimitiveType::Valued<int>,
+		Realised::PrimitiveType::Valued<bool>,
+		Realised::PrimitiveType::Valued<Realised::void_t>,
+		Realised::PrimitiveType::Valued<char>,
+		Realised::PrimitiveType::Valued<Realised::empty_optional_t>
+	>;
+	constexpr unsigned diff = 7; // observe how the beginning indices are NonValued<T> and index + 7 is Valued<T>
+
+	const vt& param = parameter.value._value;
+	const vt& arg = argument.value._value;
+
+	if (param.index() == arg.index())
+		return true;
+
+	if (param.index() + diff == arg.index()) // if param is nonvalued and param + diff matches valued arg, thats ok
+		return true;
+
+	return false;
+}
+
+template <typename T>
+struct copy_t<Realised::PrimitiveType::NonValued<T>> {
+	static Realised::PrimitiveType::NonValued<T> copy(const Realised::PrimitiveType::NonValued<T>& v) {
+		return Realised::PrimitiveType::NonValued<T>{};
+	}
+};
+
+template <typename T>
+struct copy_t<Realised::PrimitiveType::Valued<T>> {
+	static Realised::PrimitiveType::Valued<T> copy(const Realised::PrimitiveType::Valued<T>& v) {
+		return Realised::PrimitiveType::Valued<T>{ ::copy(v.value) };
+	}
+};
+
+template <>
+struct copy_t<Realised::PrimitiveType> {
+	static Realised::PrimitiveType copy(const Realised::PrimitiveType& p) {
+		return Realised::PrimitiveType{ ::copy(p.value) };
+	}
+};
+
+inline std::strong_ordering operator<=>(const Realised::MetaType& left, const Realised::MetaType& right) {
+	if (holds<Realised::EnumType>(left) &&
+		holds<Realised::EnumValueType>(right)) {
+		const auto& a = get<Realised::EnumType>(left);
+		const auto& b = get<Realised::EnumValueType>(right);
 		return cmp(a.enum_.get(), b.enum_.get());
 	}
-	if (holds<NodeStructs::EnumValueType>(left) &&
-		holds<NodeStructs::EnumType>(right)) {
-		const auto& a = get<NodeStructs::EnumValueType>(left);
-		const auto& b = get<NodeStructs::EnumType>(right);
+	if (holds<Realised::EnumValueType>(left) &&
+		holds<Realised::EnumType>(right)) {
+		const auto& a = get<Realised::EnumValueType>(left);
+		const auto& b = get<Realised::EnumType>(right);
 		return cmp(a.enum_.get(), b.enum_.get());
 	}
 	return cmp(left.type.get()._value, right.type.get()._value);
 }
 
-inline std::strong_ordering operator<=>(const NodeStructs::PrimitiveType& left, const NodeStructs::PrimitiveType& right) {
+inline std::strong_ordering operator<=>(const Realised::PrimitiveType& left, const Realised::PrimitiveType& right) {
 	const auto& a = left.value._value;
 	const auto& b = right.value._value;
 	return cmp(a.index(), b.index());

@@ -9,12 +9,12 @@ struct type_of_resolution_operator_visitor : TypeCategoryVisitor<type_of_resolut
 	variables_t& variables;
 	const std::string& accessed;
 
-	using R = expected<NodeStructs::MetaType>;
+	using R = expected<Realised::MetaType>;
 
 	TypeCategoryVisitorDeclarations
 };
 
-expected<NodeStructs::MetaType> type_of_resolution_operator(
+expected<Realised::MetaType> type_of_resolution_operator(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const auto& type,

@@ -38,7 +38,7 @@ constexpr inline empty<T> copy(const empty<T>&) { return {}; }
 template <typename T>
 rule_info rule_info_stub() {
 	empty<T> t{}; // for debug purposes
-	(void)t; // silence unused warning, this variable only exists to show T in msvc debugger
+	(void)t; // silence unused warning, this variable only exists to show T when debugging
 	NOT_IMPLEMENTED;
 }
 
@@ -57,8 +57,6 @@ namespace grammar {
 using type_context = grammar::type_context;
 using function_context = grammar::function_context;
 using top_level_context = grammar::top_level_context;
-
-struct Namespace;
 
 namespace NodeStructs {
 	struct TemplatedTypename;
@@ -94,29 +92,7 @@ namespace NodeStructs {
 	struct ParenArguments;
 	struct BraceArguments;
 
-	struct Builtin;
-	struct PrimitiveType;
 	struct Type;
-	struct FunctionType;
-	struct InterfaceType;
-	struct NamespaceType;
-	struct UnionType;
-	struct TemplateType;
-	struct EnumType;
-	struct EnumValueType;
-	struct OptionalType;
-	struct AggregateType;
-	struct Vector;
-	struct VectorType;
-	struct Set;
-	struct SetType;
-	struct Map;
-	struct MapType;
-	struct TypeList;
-	struct TypeListType;
-	struct TypeToken;
-	struct CompileTimeType;
-	struct MetaType;
 
 	struct Reference {};
 	struct MutableReference {};
@@ -437,19 +413,6 @@ namespace NodeStructs {
 		rule_info info = rule_info_stub<Interface>();
 	};
 
-	struct InterfaceType {
-		std::reference_wrapper<const Interface> interface;
-	};
-
-	struct NamespaceType {
-		std::reference_wrapper<const Namespace> name_space;
-	};
-
-	struct FunctionType {
-		std::string name;
-		std::reference_wrapper<const Namespace> name_space;
-	};
-
 	struct TemplateParameter {
 		std::string name;
 	};
@@ -472,140 +435,10 @@ namespace NodeStructs {
 		rule_info info = rule_info_stub<Template>();
 	};
 
-	struct MetaType {
-		using vt = Variant <
-			PrimitiveType, // ex. type(1)
-			Type, // ex. type Dog -> type(Dog{})
-
-			FunctionType, // ex. Bool has_bone(...) -> type(has_bone)
-			InterfaceType, // ex. interface Animal -> type(Animal)
-			NamespaceType, // ex. namespace std -> type(std)
-			UnionType, // ex. type A, type B -> type(A | B)
-			TemplateType, // ex. template X -> type(X)
-			Builtin,
-			EnumType, // ex. enum E -> type(E)
-			EnumValueType, // ex enum E: A, B... -> type(E::A)
-			OptionalType, // A?
-			AggregateType, // type({A, B, C})
-
-			Vector, // type(Vector)
-			VectorType, // type(Vector<Int>)
-			Set, // type(Set)
-			SetType, // type(Set<Int>)
-			Map, // type(Map)
-			MapType, // type(Map<Int, Int>)
-			TypeList, // type(type_list)
-			TypeListType, // type(type_list<Int, String, Cat>)
-			TypeToken, // type(type)
-
-			CompileTimeType // type of a variable declared with #type var = ...
-		>;
-		NonCopyableBox<vt> type;
-	};
-
-	struct Builtin {
-		std::string name;
-	};
-
-	struct TemplateType {
-		std::string name;
-		std::reference_wrapper<const Namespace> name_space;
-	};
-
-	struct AggregateType {
-		std::vector<FunctionArgument> arguments;
-		std::vector<MetaType> arg_types;
-	};
-
-	struct UnionType {
-		std::vector<MetaType> arguments;
-	};
-
-	struct Vector {
-	};
-
-	struct VectorType {
-		MetaType value_type;
-	};
-
-	struct Set {
-	};
-
-	struct SetType {
-		MetaType value_type;
-	};
-
-	struct Map {
-	};
-
-	struct MapType {
-		MetaType key_type;
-		MetaType value_type;
-	};
-
-	struct TypeToken {
-	};
-
-	struct TypeList {
-	};
-
-	struct TypeListType {
-		std::vector<MetaType> types;
-	};
-
-	struct void_t {};
-	struct empty_optional_t {};
-
-	// these types also hold their value for compile-time stuff
-	struct PrimitiveType {
-
-		template <typename T>
-		struct NonValued {};
-		template <typename T>
-		struct Valued {
-			T value;
-		};
-		using vt = Variant<
-			NonValued<std::string>,
-			NonValued<double>,
-			NonValued<int>,
-			NonValued<bool>,
-			NonValued<void_t>,
-			NonValued<char>,
-			NonValued<empty_optional_t>,
-			Valued<std::string>,
-			Valued<double>,
-			Valued<int>,
-			Valued<bool>,
-			Valued<void_t>,
-			Valued<char>,
-			Valued<empty_optional_t>
-		>;
-		vt value;
-	};
-
 	struct Enum {
 		std::string name;
 		std::vector<std::string> values;
 		std::optional<Typename> name_space;
-
-	};
-
-	struct EnumType {
-		std::reference_wrapper<const Enum> enum_;
-	};
-
-	struct EnumValueType {
-		std::reference_wrapper<const Enum> enum_;
-		std::string value;
-	};
-
-	struct OptionalType {
-		MetaType value_type;
-	};
-
-	struct CompileTimeType {
-		MetaType type;
 	};
 
 	struct Block {
@@ -615,10 +448,10 @@ namespace NodeStructs {
 
 	struct NameSpace {
 		std::string name;
+
 		std::optional<Typename> name_space;
 
 		std::vector<Function> functions;
-		std::vector<Function> functions_using_auto;
 
 		std::vector<Type> types;
 		std::vector<Interface> interfaces;

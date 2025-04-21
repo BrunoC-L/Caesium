@@ -2,7 +2,7 @@
 #include "../structured/node_structs.hpp"
 
 template <typename T>
-concept TypeCategoryVisitorConcept = requires(T&& t, const NodeStructs::MetaType& v) {
+concept TypeCategoryVisitorConcept = requires(T&& t, const Realised::MetaType& v) {
 	t(v);
 	std::visit(t, v.type);
 };
@@ -10,7 +10,7 @@ concept TypeCategoryVisitorConcept = requires(T&& t, const NodeStructs::MetaType
 template <typename T>
 struct TypeCategoryVisitor {
 	template <typename Self>
-	auto operator()(this Self&& self, const NodeStructs::MetaType& t) {
+	auto operator()(this Self&& self, const Realised::MetaType& t) {
 		return std::visit(
 			[&](const auto& t) {
 				return self(t);
@@ -19,30 +19,25 @@ struct TypeCategoryVisitor {
 		);
 	}
 #define TypeCategoryVisitorDeclarations \
-	R operator()(const NodeStructs::PrimitiveType& t);\
-	R operator()(const NodeStructs::Type& t);\
+	R operator()(const Realised::PrimitiveType& t);\
+	R operator()(const Realised::Type& t);\
 \
-	R operator()(const NodeStructs::FunctionType& t);\
-	R operator()(const NodeStructs::InterfaceType& t);\
-	R operator()(const NodeStructs::NamespaceType& t);\
-	R operator()(const NodeStructs::Builtin& t);\
-	R operator()(const NodeStructs::UnionType& t);\
-	R operator()(const NodeStructs::TemplateType& t);\
-	R operator()(const NodeStructs::EnumType& t);\
-	R operator()(const NodeStructs::EnumValueType& t);\
-	R operator()(const NodeStructs::AggregateType& t);\
-	R operator()(const NodeStructs::OptionalType& t);\
+	R operator()(const Realised::FunctionType& t);\
+	R operator()(const Realised::InterfaceType& t);\
+	R operator()(const Realised::NamespaceType& t);\
+	R operator()(const Realised::Builtin& t);\
+	R operator()(const Realised::UnionType& t);\
+	R operator()(const Realised::TemplateType& t);\
+	R operator()(const Realised::EnumType& t);\
+	R operator()(const Realised::EnumValueType& t);\
+	R operator()(const Realised::AggregateType& t);\
+	R operator()(const Realised::OptionalType& t);\
 \
-	R operator()(const NodeStructs::Vector& t);\
-	R operator()(const NodeStructs::VectorType& t);\
-	R operator()(const NodeStructs::Set& t);\
-	R operator()(const NodeStructs::SetType& t);\
-	R operator()(const NodeStructs::Map& t);\
-	R operator()(const NodeStructs::MapType& t);\
-	R operator()(const NodeStructs::TypeList& t);\
-	R operator()(const NodeStructs::TypeListType& t);\
-	R operator()(const NodeStructs::TypeToken& t);\
+	R operator()(const Realised::VectorType& t);\
+	R operator()(const Realised::SetType& t);\
+	R operator()(const Realised::MapType& t);\
+	R operator()(const Realised::TypeListType& t);\
 \
-	R operator()(const NodeStructs::CompileTimeType& t);
+	R operator()(const Realised::CompileTimeType& t);
 };
 
