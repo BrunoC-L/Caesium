@@ -10,7 +10,7 @@
 #include "../utility/enumerate.hpp"
 #include "../structured/node_structs.hpp"
 #include "../structured/structurizer.hpp"
-#include "../structured/helpers.hpp"
+#include "../helpers.hpp"
 #include "realised.hpp"
 
 struct variable_info {

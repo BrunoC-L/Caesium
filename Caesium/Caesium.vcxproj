@@ -147,10 +147,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="core\realised.cpp" />
     <ClCompile Include="core\transpile_statement.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
-    <ClCompile Include="structured\helpers.cpp" />
+    <ClCompile Include="helpers.cpp" />
     <ClCompile Include="grammar\parse.cpp" />
     <ClCompile Include="structured\structurizer.cpp" />
     <ClCompile Include="typename_visitor\typename_for_template_visitor.cpp" />
@@ -166,6 +165,8 @@
     <ClCompile Include="type_visitor\type_of_resolution_operator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cmp.hpp" />
+    <ClInclude Include="copy.hpp" />
     <ClInclude Include="core\builtins.hpp" />
     <ClInclude Include="core\realised.hpp" />
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />
@@ -174,7 +175,7 @@
     <ClInclude Include="structured\cmp_copy_all.hpp" />
     <ClInclude Include="utility\compiler.hpp" />
     <ClInclude Include="utility\default_includes.hpp" />
-    <ClInclude Include="structured\helpers.hpp" />
+    <ClInclude Include="helpers.hpp" />
     <ClInclude Include="grammar\parse.hpp" />
     <ClInclude Include="typename_visitor\typename_for_template_visitor.hpp" />
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />

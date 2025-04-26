@@ -2,7 +2,7 @@
 //#include "structured/structurizer.hpp"
 //#include <set>
 
-#include "structured/helpers.hpp"
+#include "helpers.hpp"
 
 int main() {
 	puts("Hello, World!\n");
