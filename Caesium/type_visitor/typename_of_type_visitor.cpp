@@ -16,7 +16,7 @@ R T::operator()(const Realised::FunctionType& t) {
 	return make_typename(
 		NodeStructs::BaseTypename{ t.name._value },
 		NodeStructs::Value{},
-		rule_info{ .file_name = "function type:/" + t.name._value, .content = t.name._value }
+		caesium_source_location{ .file_name = "function type:/" + t.name._value, .content = t.name._value }
 	);
 }
 
@@ -57,7 +57,7 @@ R T::operator()(const Realised::UnionType& t) {
 	}
 	return make_typename(NodeStructs::UnionTypename{
 		std::move(vec).value()
-	}, NodeStructs::Value{}, rule_info{ .file_name = "todo?", .content = ss.str() });
+	}, NodeStructs::Value{}, caesium_source_location{ .file_name = "todo?", .content = ss.str() });
 }
 
 R T::operator()(const Realised::TemplateType& t) {

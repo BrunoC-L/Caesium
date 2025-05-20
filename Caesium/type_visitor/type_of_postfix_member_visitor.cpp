@@ -6,13 +6,14 @@ using R = T::R;
 R T::operator()(const Realised::Type& t) {
 	if (auto it = std::find_if(
 		t.member_variables.begin(),
-			t.member_variables.end(),
-			[&](const auto& m) { return m.name._value == property_name; }
-		); it != t.member_variables.end())
-		NOT_IMPLEMENTED;
-	/*return type_of_typename(state, variables, it->type)
-			.transform([](Realised::MetaType&& val) { return R::value_type{ NodeStructs::Value{}, std::move(val) }; });*/
-	else if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
+		t.member_variables.end(),
+		[&](const auto& m) { return m.name._value == property_name; }
+	); it != t.member_variables.end())
+		return std::pair{
+			NodeStructs::ValueCategory{ NodeStructs::Reference{} }, // TODO
+			copy(it->type)
+		};
+	else if (auto it = find_by_name(state.state.global_namespace.functions, property_name); it != state.state.global_namespace.functions.end()) {
 		// const auto& fn = it->second.back();
 		NOT_IMPLEMENTED;
 	}
@@ -88,6 +89,7 @@ R T::operator()(const Realised::AggregateType& t) {
 }
 
 R T::operator()(const Realised::VectorType& t) {
+	NOT_IMPLEMENTED;
 	/*if (this->property_name == "push")
 		return std::pair{
 			NodeStructs::Value{},
@@ -99,7 +101,6 @@ R T::operator()(const Realised::VectorType& t) {
 					}
 				}
 			};*/
-	NOT_IMPLEMENTED;
 }
 
 R T::operator()(const Realised::SetType& t) {

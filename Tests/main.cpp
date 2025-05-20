@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
 		std::cerr << colored_text("Expected a test folder argument. DEV TODO MESSAGE\n", output_stream_colors::red);
 		return 0;
 	}
+
 	else {
 		if (!test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }))
 			return bad_exit;

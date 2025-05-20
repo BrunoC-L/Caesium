@@ -264,17 +264,19 @@ R transpile_for_or_ifor_statement(
 					});*/
 					i += 1;
 				}
-				state.state.global_namespace.aliases.insert({ type_iterator, std::move(tn).value() });
+				NOT_IMPLEMENTED;
+				/*state.state.global_namespace.aliases.insert({ type_iterator, std::move(tn).value() });
 				auto statements = transpile(state, variables, statement.statements, expected_return_type);
 				if constexpr (ifor) {
 					const std::string& index = index_or_none;
 					variables[index].pop_back();
 				}
 				return_if_error(statements);
-				ss << statements.value();
+				ss << statements.value();*/
 			}
-			state.state.global_namespace.aliases.erase(type_iterator);
-			return ss.str();
+			NOT_IMPLEMENTED;
+			/*state.state.global_namespace.aliases.erase(type_iterator);
+			return ss.str();*/
 		}
 		NOT_IMPLEMENTED;
 	}
@@ -441,7 +443,8 @@ R transpile_statement_specific(
 	const NodeStructs::BlockStatement<context>& statement
 ) {
 	const auto& s = get<NodeStructs::BaseTypename>(statement.parametrized_block).type;
-	if (state.state.global_namespace.blocks.contains(s)) {
+	NOT_IMPLEMENTED;
+	/*if (state.state.global_namespace.blocks.contains(s)) {
 		const NodeStructs::Block& block = state.state.global_namespace.blocks.at(s).back();
 		std::stringstream ss;
 		for (const auto& statement_in_block : block.statements)
@@ -449,7 +452,7 @@ R transpile_statement_specific(
 		return ss.str();
 	}
 	else
-		return error{ "user error", "bad block name" + s };
+		return error{ "user error", "bad block name" + s };*/
 }
 
 template <typename context, bool is_compile_time>

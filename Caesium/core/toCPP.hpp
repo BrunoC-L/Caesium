@@ -42,8 +42,6 @@ using expression_information = std::variant<type_information, non_type_informati
 using transpile_t = expected<std::string>;
 using transpile_expression_information_t = expected<expression_information>;
 
-using Namespace = Realised::NameSpace;
-
 // shouldnt those be pointers...?
 template <typename T>             using set = std::set<T, default_less_than>;
 template <typename K, typename V> using map = std::map<K, V, default_less_than>;
@@ -52,19 +50,17 @@ template <typename T>
 struct traversal {
 	std::set<std::string> traversing;
 	std::map<std::string, T> traversed;
-	std::map<std::string, std::vector<std::string>> definitions;
-	std::map<std::string, std::vector<std::string>> declarations;
+	std::vector<std::string> definitions;
+	std::vector<std::string> declarations;
 };
 
 struct transpilation_state {
-	Namespace global_namespace;
+	NodeStructs::NameSpace global_namespace;
 	unsigned current_variable_unique_id = 1;
 
 	transpilation_state(const transpilation_state& other) = delete;
 	transpilation_state(transpilation_state&& other) = delete;
-	transpilation_state(
-		Namespace&& global_namespace
-	) : global_namespace(std::move(global_namespace)) {}
+	transpilation_state(NodeStructs::NameSpace global_namespace) : global_namespace(std::move(global_namespace)) {}
 
 	traversal<Realised::Function> functions_traversal;
 	traversal<Realised::Type> types_traversal;
@@ -227,7 +223,7 @@ bool uses_auto(const NodeStructs::FunctionParameter& param);
 bool uses_auto(const NodeStructs::Typename& t);
 bool uses_auto(const NodeStructs::Expression& t);
 
-#include "../type_visitor/traverse_type_visitor.hpp"
+#include "../typename_visitor/realise_typename_visitor.hpp"
 #include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp"
 #include "../type_visitor/type_of_postfix_member_visitor.hpp"
 #include "../type_visitor/transpile_member_call_visitor.hpp"
@@ -340,7 +336,7 @@ bool uses_auto(const NodeStructs::Statement<context>& statement) {
 
 variables_t make_base_variables();
 
-expected<Realised::Type> realise(
+expected<Realised::Type> realise_type(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
 );
@@ -350,3 +346,5 @@ expected<Realised::Type> get_existing_realised_type(
 	const std::string& name,
 	const std::optional<NodeStructs::NameSpace>& name_space
 );
+
+std::string_view name_of_builtin(const Realised::Builtin& builtin);

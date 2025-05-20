@@ -6,7 +6,12 @@
 using T = type_template_of_typename_visitor;
 using R = T::R;
 
-R f(transpilation_state_with_indent state, variables_t& variables, const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with, const std::string& name_to_find, const Namespace& ns) {
+R f(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with, const std::string& name_to_find,
+	const NodeStructs::NameSpace& ns
+) {
 	NOT_IMPLEMENTED;
 	//if (auto it = ns.templates.find(name_to_find); it != ns.templates.end()) {
 	//	const auto& templates = it->second;
@@ -149,41 +154,39 @@ R f(transpilation_state_with_indent state, variables_t& variables, const std::ve
 }
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
-	if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end()) {
-		if (t.type == "Vector") {
-			auto x = type_of_typename(state, variables, templated_with.at(0));
-			return_if_error(x);
-			NOT_IMPLEMENTED;
-			//return Realised::MetaType{ Realised::VectorType{ NonCopyableBox<Realised::MetaType>{ std::move(x).value() } } };
-		}
-		if (t.type == "Set") {
-			auto x = type_of_typename(state, variables, templated_with.at(0));
-			return_if_error(x);
-			NOT_IMPLEMENTED;
-			//return Realised::MetaType{ Realised::SetType{ NonCopyableBox<Realised::MetaType>{ std::move(x).value() } } };
-		}
-		if (t.type == "Map") {
-			auto k = type_of_typename(state, variables, templated_with.at(0));
-			return_if_error(k);
-			auto v = type_of_typename(state, variables, templated_with.at(1));
-			return_if_error(v);
-			NOT_IMPLEMENTED;
-			/*return Realised::MetaType{ Realised::MapType{
-				NonCopyableBox<Realised::MetaType>{ std::move(k).value() },
-				NonCopyableBox<Realised::MetaType>{ std::move(v).value() }
-			} };*/
-		}
-		if (t.type == "Union") {
-			auto ts = vec_of_expected_to_expected_of_vec(templated_with
-				| std::views::transform([&](auto&& tn) { return type_of_typename(state, variables, tn); })
-				| to_vec());
-			return_if_error(ts);
-			NOT_IMPLEMENTED;
-			/*return Realised::MetaType{ Realised::UnionType{
-				std::move(ts).value()
-			} };*/
-		}
+	if (t.type == "Vector") {
+		auto x = type_of_typename(state, variables, templated_with.at(0));
+		return_if_error(x);
+		return Realised::MetaType{ Realised::VectorType{
+			.name = "TODO type_template_of_typename", // todo TODO
+			.value_type = NonCopyableBox<Realised::MetaType>{ std::move(x).value() }
+		} };
+	}
+	if (t.type == "Set") {
+		auto x = type_of_typename(state, variables, templated_with.at(0));
+		return_if_error(x);
+		return Realised::MetaType{ Realised::SetType{ "TODO??", NonCopyableBox<Realised::MetaType>{ std::move(x).value() }}};
+	}
+	if (t.type == "Map") {
+		auto k = type_of_typename(state, variables, templated_with.at(0));
+		return_if_error(k);
+		auto v = type_of_typename(state, variables, templated_with.at(1));
+		return_if_error(v);
 		NOT_IMPLEMENTED;
+		/*return Realised::MetaType{ Realised::MapType{
+			NonCopyableBox<Realised::MetaType>{ std::move(k).value() },
+			NonCopyableBox<Realised::MetaType>{ std::move(v).value() }
+		} };*/
+	}
+	if (t.type == "Union") {
+		auto ts = vec_of_expected_to_expected_of_vec(templated_with
+			| std::views::transform([&](auto&& tn) { return type_of_typename(state, variables, tn); })
+			| to_vec());
+		return_if_error(ts);
+		return Realised::MetaType{ Realised::UnionType{
+			"TODO??",
+			std::move(ts).value()
+		} };
 	}
 	return f(state, variables, templated_with, t.type, state.state.global_namespace);
 }

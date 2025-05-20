@@ -20,14 +20,14 @@ struct cursor_info {
 
 constexpr inline cursor_info copy(const cursor_info& e) { return e; }
 
-struct rule_info {
+struct caesium_source_location {
 	std::string file_name;
 	std::string content;
 	cursor_info beg;
 	cursor_info end;
 };
 
-constexpr inline rule_info copy(const rule_info& e) { return e; }
+constexpr inline caesium_source_location copy(const caesium_source_location& e) { return e; }
 
 template <typename T>
 struct empty {};
@@ -36,14 +36,14 @@ template <typename T>
 constexpr inline empty<T> copy(const empty<T>&) { return {}; }
 
 template <typename T>
-rule_info rule_info_stub() {
+caesium_source_location rule_info_stub() {
 	empty<T> t{}; // for debug purposes
 	(void)t; // silence unused warning, this variable only exists to show T when debugging
 	NOT_IMPLEMENTED;
 }
 
-rule_info rule_info_stub_no_throw();
-rule_info rule_info_language_element(std::string s);
+caesium_source_location rule_info_stub_no_throw();
+caesium_source_location rule_info_language_element(std::string s);
 
 template <typename... Ts> using Variant = caesium_lib::variant::type<Ts...>;
 template <typename T> using Optional = caesium_lib::optional::type<T>;
@@ -106,7 +106,7 @@ namespace NodeStructs {
 		using vt = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, UnionTypename, VariadicExpansionTypename>;
 		NonCopyableBox<vt> value;
 		Optional<ParameterCategory> category;
-		rule_info info = rule_info_stub<Typename>();
+		caesium_source_location info = rule_info_stub<Typename>();
 	};
 
 	struct TemplatedTypename {
@@ -136,7 +136,7 @@ namespace NodeStructs {
 	};
 
 	struct Alias {
-		std::string aliasFrom;
+		std::string name;
 		Typename aliasTo;
 		std::optional<Typename> name_space;
 	};
@@ -166,7 +166,7 @@ namespace NodeStructs {
 			Token<STRING> // string token like "abc"
 		>;
 		NonCopyableBox<vt> expression;
-		rule_info info = rule_info_stub<Expression>();
+		caesium_source_location info = rule_info_stub<Expression>();
 	};
 
 	struct WordTypenameOrExpression {
@@ -393,24 +393,21 @@ namespace NodeStructs {
 		Typename returnType;
 		std::vector<FunctionParameter> parameters;
 		std::vector<Statement<function_context>> statements;
+		caesium_source_location info = rule_info_stub<Function>();
 	};
 
 	struct Type {
 		std::string name;
 		std::optional<Typename> name_space;
-		std::vector<Alias> aliases;
-		std::vector<MemberVariable> member_variables;
-		std::vector<CompileTimeStatement<type_context>> compile_time_statements;
-		rule_info info = rule_info_stub<Type>();
+		std::vector<Statement<type_context>> members;
+		caesium_source_location info = rule_info_stub<Type>();
 	};
 
 	struct Interface {
 		std::string name;
 		std::optional<Typename> name_space;
-		std::vector<Alias> aliases;
-		std::vector<MemberVariable> member_variables;
-		std::vector<CompileTimeStatement<type_context>> compile_time_statements;
-		rule_info info = rule_info_stub<Interface>();
+		std::vector<Statement<type_context>> members;
+		caesium_source_location info = rule_info_stub<Interface>();
 	};
 
 	struct TemplateParameter {
@@ -432,7 +429,7 @@ namespace NodeStructs {
 		std::vector<Variant<TemplateParameter, TemplateParameterWithDefaultValue, VariadicTemplateParameter>> parameters;
 		std::string templated;
 		int indent;
-		rule_info info = rule_info_stub<Template>();
+		caesium_source_location info = rule_info_stub<Template>();
 	};
 
 	struct Enum {
@@ -464,7 +461,7 @@ namespace NodeStructs {
 
 		std::vector<NameSpace> namespaces;
 
-		rule_info info = rule_info_stub<NameSpace>();
+		caesium_source_location info = rule_info_stub<NameSpace>();
 	};
 
 	struct Exists {

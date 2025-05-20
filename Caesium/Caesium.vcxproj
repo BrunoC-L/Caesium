@@ -155,7 +155,7 @@
     <ClCompile Include="typename_visitor\typename_for_template_visitor.cpp" />
     <ClCompile Include="type_visitor\transpile_member_call_visitor.cpp" />
     <ClCompile Include="typename_visitor\transpile_typename_visitor.cpp" />
-    <ClCompile Include="type_visitor\traverse_type_visitor.cpp" />
+    <ClCompile Include="typename_visitor\realise_typename_visitor.cpp" />
     <ClCompile Include="type_visitor\typename_of_type_visitor.cpp" />
     <ClCompile Include="type_visitor\type_of_postfix_member_visitor.cpp" />
     <ClCompile Include="core\toCPP.cpp" />
@@ -199,7 +199,7 @@
     <ClInclude Include="utility\replace_all.hpp" />
     <ClInclude Include="structured\structurizer.hpp" />
     <ClInclude Include="typename_visitor\transpile_typename_visitor.hpp" />
-    <ClInclude Include="type_visitor\traverse_type_visitor.hpp" />
+    <ClInclude Include="typename_visitor\realise_typename_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_postfix_member_visitor.hpp" />
     <ClInclude Include="typename_visitor\type_template_of_typename_visitor.hpp" />
     <ClInclude Include="core\toCPP.hpp" />

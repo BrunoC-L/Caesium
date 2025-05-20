@@ -80,8 +80,8 @@ M(2, NodeStructs::Assignment<top_level_context>)\
 M(1, NodeStructs::BlockStatement<function_context>)\
 M(1, NodeStructs::BlockStatement<type_context>)\
 M(1, NodeStructs::BlockStatement<top_level_context>)\
-M(6, NodeStructs::Interface)\
-M(6, NodeStructs::Type)\
+M(4, NodeStructs::Interface)\
+M(4, NodeStructs::Type)\
 M(3, NodeStructs::Alias)\
 M(2, NodeStructs::MemberVariable)\
 M(2, NodeStructs::Block)\
@@ -90,7 +90,7 @@ M(3, NodeStructs::Enum)\
 M(1, NodeStructs::TemplateParameter)\
 M(2, NodeStructs::TemplateParameterWithDefaultValue)\
 M(1, NodeStructs::VariadicTemplateParameter)\
-M(5, NodeStructs::Function)\
+M(6, NodeStructs::Function)\
 M(2, NodeStructs::FunctionParameter)\
 M(11, NodeStructs::NameSpace)\
 M(1, NodeStructs::Exists)\
@@ -121,7 +121,6 @@ M(3, Realised::Interface);
 ExpandAll(CMP_N);
 CMP_N(1, Realised::PrimitiveType);
 CMP_N(1, Realised::MetaType);
-CMP_N(13, Realised::NameSpace);
 CMP_N(1, Realised::Builtin);
 #undef CMP_N
 
@@ -183,7 +182,7 @@ std::strong_ordering cmp(const T& a, const T& b) {
 		return a <=> b;
 	else if constexpr (std::is_same_v<T, Realised::empty_optional_t>)
 		return a <=> b;
-	else if constexpr (std::is_same_v<T, rule_info>)
+	else if constexpr (std::is_same_v<T, caesium_source_location>)
 		return std::strong_ordering::equivalent;
 	else if constexpr (std::is_same_v<T, double>) {
 		std::partial_ordering partial = a <=> b;
@@ -411,10 +410,6 @@ inline std::strong_ordering operator<=>(const Realised::MetaType& left, const Re
 		return cmp(a.enum_.get(), b.enum_.get());
 	}
 	return cmp(left.type.get()._value, right.type.get()._value);
-}
-
-inline std::strong_ordering operator<=>(const Realised::NameSpace& left, const Realised::NameSpace& right) {
-	NOT_IMPLEMENTED;
 }
 
 inline std::strong_ordering operator<=>(const Realised::Builtin& left, const Realised::Builtin& right) {

@@ -13,21 +13,32 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 	OK("Char");
 	OK("Void");
 	OK("Floating");
+
+	OK(Realised::Builtin::builtin_compile_time_error::name);
+	OK(Realised::Builtin::builtin_typeof::name);
+	OK(Realised::Builtin::builtin_type_list::name);
+	OK(Realised::Builtin::builtin_exit::name);
+
+	OK(Realised::Builtin::builtin_vector::name);
+	OK(Realised::Builtin::builtin_set::name);
+	OK(Realised::Builtin::builtin_map::name);
+	OK(Realised::Builtin::builtin_union::name);
+
 #undef OK
-#define OK(X) if (auto it = state.state.global_namespace. X .find(type.type); it != state.state.global_namespace. X .end()) return type.type;
+#define OK(X) if (auto it = find_by_name(state.state.global_namespace. X , type.type); it != state.state.global_namespace. X .end()) return type.type;
 	OK(types);
 	OK(functions);
 	OK(interfaces);
 	OK(namespaces);
-	OK(builtins);
 	OK(blocks);
 	OK(templates);
 #undef OK
-
-	if (auto it = state.state.global_namespace.aliases.find(type.type); it != state.state.global_namespace.aliases.end())
-		return operator()(it->second);
-	if (auto it = state.state.global_namespace.enums.find(type.type); it != state.state.global_namespace.enums.end())
+	if (auto it = find_by_name(state.state.global_namespace.aliases, type.type); it != state.state.global_namespace.aliases.end())
+		return operator()(it->aliasTo);
+	if (auto it = find_by_name(state.state.global_namespace.enums, type.type); it != state.state.global_namespace.enums.end())
 		return "Int";
+	if (auto it = state.state.types_traversal.traversed.find(type.type); it != state.state.types_traversal.traversed.end())
+		return it->second.name._value;
 	return error{
 		"user error",
 		"undeclared identifier `" + type.type + "`"
@@ -43,6 +54,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 	return_if_error(repr_of_typename_or_e);
 	const auto& repr_of_typename = repr_of_typename_or_e.value();
 
+	// A::B is only valid if A is an enum or namespace
 	return std::visit(overload(
 		[](const auto& e) -> R {
 			NOT_IMPLEMENTED;
@@ -54,13 +66,13 @@ R T::operator()(const NodeStructs::NamespacedTypename& type) {
 			NOT_IMPLEMENTED;
 		},
 		[&](const Realised::NamespaceType& e) -> R {
-			if (auto it = e.name_space.get().types.find(type.name_in_name_space); it != e.name_space.get().types.end())
+			if (auto it = find_by_name(e.name_space.get().types, type.name_in_name_space); it != e.name_space.get().types.end())
 				return repr_of_typename + "__" + type.name_in_name_space;
-			if (auto it = e.name_space.get().aliases.find(type.name_in_name_space); it != e.name_space.get().aliases.end())
-				return operator()(it->second);
-			if (auto it = e.name_space.get().namespaces.find(type.name_in_name_space); it != e.name_space.get().namespaces.end())
+			if (auto it = find_by_name(e.name_space.get().aliases, type.name_in_name_space); it != e.name_space.get().aliases.end())
+				return operator()(it->aliasTo);
+			if (auto it = find_by_name(e.name_space.get().namespaces, type.name_in_name_space); it != e.name_space.get().namespaces.end())
 				return repr_of_typename + "__" + type.name_in_name_space;
-			if (auto it = e.name_space.get().templates.find(type.name_in_name_space); it != e.name_space.get().templates.end())
+			if (auto it = find_by_name(e.name_space.get().templates, type.name_in_name_space); it != e.name_space.get().templates.end())
 				return repr_of_typename + "__" + type.name_in_name_space;
 			NOT_IMPLEMENTED;
 		}
@@ -127,7 +139,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 		}
 		single_word << "_";
 		with_brackets << ">";
-		state.state.global_namespace.aliases.insert({
+		state.state.global_namespace.aliases.push_back({
 			single_word.str(),
 			NodeStructs::Typename{
 				.value = copy(type),
@@ -135,9 +147,6 @@ R T::operator()(const NodeStructs::TemplatedTypename& type) {
 				.info = copy(type.type.info)
 			}
 		});
-		if (single_word.str() == "f_Int_") {
-			NOT_IMPLEMENTED;
-		}
 		state.state.aliases_to_transpile.insert({ single_word.str(), with_brackets.str() });
 		return single_word.str();
 	}
@@ -182,7 +191,8 @@ R T::operator()(const NodeStructs::OptionalTypename& type) {
 	auto inner_or_e = operator()(type.type);
 	return_if_error(inner_or_e);
 	auto out = replace_all(copy(inner_or_e.value()), "<", "_", ">", "_", " ", "", ",", "_");
-	state.state.global_namespace.aliases.insert({
+	NOT_IMPLEMENTED;
+	/*state.state.global_namespace.aliases.insert({
 		out,
 		NodeStructs::Typename{
 			.value = copy(type),
@@ -191,7 +201,7 @@ R T::operator()(const NodeStructs::OptionalTypename& type) {
 		}
 	});
 	state.state.aliases_to_transpile.insert({ "Optional_" + out + "_", "Optional<" + out + ">" });
-	return "Optional_" + std::move(out) + "_";
+	return "Optional_" + std::move(out) + "_";*/
 }
 
 R T::operator()(const NodeStructs::UnionTypename& type) {
@@ -214,17 +224,15 @@ R T::operator()(const NodeStructs::UnionTypename& type) {
 	ss << ">";
 	auto out = ss.str();
 	auto replaced = replace_all(copy(out), "<", "_", ">", "_", " ", "", ",", "_");
-	state.state.global_namespace.aliases.insert({
+	state.state.global_namespace.aliases.push_back({
 		replaced,
 		NodeStructs::Typename{
 			.value = copy(type),
 			.category = NodeStructs::Value{},
-			.info = rule_info{.file_name = "todo:/", .content = "todo??" }
-		}
+			.info = caesium_source_location{.file_name = "todo:/", .content = "todo??" }
+		},
+		std::nullopt
 	});
-	if (replaced == "f_Int_") {
-		NOT_IMPLEMENTED;
-	}
 	state.state.aliases_to_transpile.insert({ replaced, std::move(out) });
 	return replaced;
 }

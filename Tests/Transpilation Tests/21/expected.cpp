@@ -3,14 +3,11 @@
 
 
 using Vector_String_ = Vector<String>;
-struct T {
-    Int a;
-}
 Int _redirect_main(const Vector_String_& args);
 
 Int _redirect_main(const Vector_String_& args) {
-    T t = { 3 };
-    return t.a;
+	T t = T{3};
+	return t.a;
 };
 
 int main(int argc, char** argv) {

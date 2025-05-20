@@ -281,7 +281,8 @@ NodeStructs::Function getStruct(
 				return res;
 			})
 			| to_vec(),
-		.statements = getStatements(file_name, vec, f.template get<grammar::ColonIndentCodeBlock<function_context>>())
+		.statements = getStatements(file_name, vec, f.template get<grammar::ColonIndentCodeBlock<function_context>>()),
+		.info = rule_info_from_rule(file_name, vec, f)
 	};
 }
 
@@ -379,7 +380,7 @@ NodeStructs::Alias getStruct(
 	const grammar::Alias& f, std::optional<NodeStructs::Typename> name_space
 ) {
 	return NodeStructs::Alias{
-		.aliasFrom = f.template get<grammar::Word>().value,
+		.name = f.template get<grammar::Word>().value,
 		.aliasTo = getStruct(file_name, vec, f.template get<grammar::Typename>(), tag_allow_value_category_or_empty{}),
 		.name_space = std::move(name_space)
 	};
@@ -417,34 +418,16 @@ NodeStructs::CompileTimeStatement<context> get_compile_time_statement(
 NodeStructs::Type getStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
-	const grammar::Type& t, std::optional<NodeStructs::Typename> name_space
+	const grammar::Type& t,
+	std::optional<NodeStructs::Typename> name_space
 ) {
-	auto elems = t.template get<Indent<Star<grammar::Statement<type_context>>>>().template get_view<grammar::Statement<type_context>>()
-		| std::views::transform([&](const And<IndentToken, Or<grammar::CompileTimeStatement<type_context>, Or<grammar::Alias, grammar::MemberVariable>>>& e) {
-			return e.template get<Or<grammar::CompileTimeStatement<type_context>, Or<grammar::Alias, grammar::MemberVariable>>>().value();
-		});
+	auto elems = t.template get<Indent<Star<grammar::Statement<type_context>>>>().template get_view<grammar::Statement<type_context>>();
 	return {
 		.name = t.template get<grammar::Word>().value,
 		.name_space = copy(name_space),
-		.aliases = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<Or<grammar::Alias, grammar::MemberVariable>>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<Or<grammar::Alias, grammar::MemberVariable>>(e).value(); })
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e, copy(name_space)); })
+		.members = elems
+			| std::views::transform([&](auto&& e) { return get_base_statement_struct(file_name, vec, e); })
 			| to_vec(),
-		.member_variables = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<Or<grammar::Alias, grammar::MemberVariable>>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<Or<grammar::Alias, grammar::MemberVariable>>(e).value(); })
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e); })
-			| to_vec(),
-		.compile_time_statements = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::CompileTimeStatement<type_context>>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::CompileTimeStatement<type_context>>(e); })
-			| std::views::transform([&](auto&& e) { return get_compile_time_statement(file_name, vec, e); })
-		| to_vec(),
 		.info = rule_info_from_rule(file_name, vec, t.template get<grammar::Word>())
 	};
 }
@@ -455,33 +438,12 @@ NodeStructs::Interface getStruct(
 	const grammar::Interface& t,
 	std::optional<NodeStructs::Typename> name_space
 ) {
-	auto elems = t
-		.template get<Indent<Star<grammar::Statement<type_context>>>>()
-		.template get_view<grammar::Statement<type_context>>()
-		| std::views::transform([&](const grammar::Statement<type_context>& e) {
-			return e.template get<Or<grammar::CompileTimeStatement<type_context>, Or<grammar::Alias, grammar::MemberVariable>>>().value();
-		});
-	auto contextuals = elems
-		| std::views::filter([&](auto&& e) { return std::holds_alternative<Or<grammar::Alias, grammar::MemberVariable>>(e); })
-		| std::views::transform([&](auto&& e) { return std::get<Or<grammar::Alias, grammar::MemberVariable>>(e); })
-		| std::views::transform([&](auto&& e) { return e.value(); });
+	auto elems = t.template get<Indent<Star<grammar::Statement<type_context>>>>().template get_view<grammar::Statement<type_context>>();
 	return {
 		.name = t.template get<grammar::Word>().value,
 		.name_space = copy(name_space),
-		.aliases = contextuals
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::Alias>(e); })
-			| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e, copy(name_space)); })
-			| to_vec(),
-		.member_variables = contextuals
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::MemberVariable>(e); })
-			| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e); })
-			| to_vec(),
-		.compile_time_statements = elems
-			| std::views::filter([&](auto&& e) { return std::holds_alternative<grammar::CompileTimeStatement<type_context>>(e); })
-			| std::views::transform([&](auto&& e) { return std::get<grammar::CompileTimeStatement<type_context>>(e); })
-			| std::views::transform([&](auto&& e) { return get_compile_time_statement(file_name, vec, e); })
+		.members = elems
+			| std::views::transform([&](auto&& e) { return get_base_statement_struct(file_name, vec, e); })
 			| to_vec(),
 		.info = rule_info_from_rule(file_name, vec, t.template get<grammar::Word>())
 	};
@@ -507,17 +469,11 @@ NodeStructs::Enum getStruct(
 
 bool uses_auto(const NodeStructs::Function& fn);
 
-NodeStructs::NameSpace getStruct(
-	const std::string& file_name,
-	const std::vector<TokenValue>& vec,
-	const grammar::NameSpace& ns, std::optional<NodeStructs::Typename> name_space
-);
-
 NodeStructs::NameSpace getNamespaceStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	const auto& indent_named_range,
-	rule_info info,
+	caesium_source_location info,
 	std::optional<NodeStructs::Typename> name_space,
 	const grammar::Word& name
 ) {
@@ -532,7 +488,7 @@ NodeStructs::NameSpace getNamespaceStruct(
 	NodeStructs::Typename composed_ns = [&]() {
 		if (name_space.has_value())
 			return make_typename(NodeStructs::NamespacedTypename{
-				std::move(name_space).value(),
+				copy(name_space.value()),
 				name.value,
 				}, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, name));
 		else
@@ -571,13 +527,8 @@ NodeStructs::NameSpace getNamespaceStruct(
 		.name = name.value,
 		.name_space = copy(name_space),
 		.functions = functions
-		//| std::views::filter([&](auto&& f) { return !uses_auto(f); })
-		| std::views::transform([&](auto&& fn) { return copy(fn); })
-		| to_vec(),
-		/*.functions_using_auto = functions
-		| std::views::filter([&](auto&& f) { return uses_auto(f); })
-		| std::views::transform([&](auto&& fn) { return copy(fn); })
-		| to_vec(),*/
+			| std::views::transform([&](auto&& fn) { return copy(fn); })
+			| to_vec(),
 		.types = std::move(types),
 		.interfaces = std::move(interfaces),
 		.templates = std::move(templates),
@@ -593,7 +544,7 @@ NodeStructs::NameSpace getNamespaceStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	const auto& indent_named_range,
-	rule_info info
+	caesium_source_location info
 ) {
 	std::vector<NodeStructs::Type> types;
 	std::vector<NodeStructs::Function> functions;

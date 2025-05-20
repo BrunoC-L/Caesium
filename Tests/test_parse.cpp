@@ -126,6 +126,7 @@ bool test_parse() {
 	ok &= test_parse_correct<Type>(__LINE__, 1, "type ServerServiceProvider:\n\t\tstd::reference_wrapper<DB> ? services");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider:\n\tTuple<std::reference_wrapper<DB> ?> services");
 	ok &= test_parse_correct<Type>(__LINE__, 0, "type ServerServiceProvider2 :\n\tTuple<DB ref ?> services");
+	ok &= test_parse_correct<Exists>(__LINE__, 0, "exists:\n\tdummy:\n\t\tfilesystem:\n\t\t\ttype directory:\n\n");
 
 
 	ok &= test_parse_correct<Exists>(__LINE__, 0, "exists:\n");

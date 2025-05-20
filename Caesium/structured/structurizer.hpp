@@ -74,8 +74,8 @@ std::vector<NodeStructs::Expression> getExpressions(const std::string& file_name
 
 std::string accumulate_content(const std::vector<TokenValue>& vec, const unsigned& beg, const unsigned& end);
 
-rule_info rule_info_from_rule(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& rule) {
-	auto x = rule_info{
+caesium_source_location rule_info_from_rule(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& rule) {
+	auto x = caesium_source_location{
 		.file_name = file_name,
 		.content = accumulate_content(vec, rule.beg_offset, rule.end_offset),
 		.beg = cursor_info{ 0, rule.beg_offset },
@@ -380,3 +380,16 @@ NodeStructs::Assignment<context> getStatementStruct(
 ) {
 	return { getExpressionStruct(file_name, vec, statement.template get<grammar::Expression, 0>()), getExpressionStruct(file_name, vec, statement.template get<grammar::Expression, 1>()) };
 }
+
+NodeStructs::Exists getStruct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::Exists& e
+);
+
+NodeStructs::NameSpace getStruct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::NameSpace& ns,
+	std::optional<NodeStructs::Typename> name_space
+);

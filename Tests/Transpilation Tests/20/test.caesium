@@ -1,0 +1,9 @@
+exists:
+    filesystem:
+        type directory:
+            #if True:
+                String dir
+
+Int main(Vector<String> ref args):
+    filesystem::directory d = { "Hello World!\n" }
+    return 0

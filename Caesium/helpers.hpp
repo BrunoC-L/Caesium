@@ -4,8 +4,23 @@
 #include "grammar/primitives.hpp"
 #include <set>
 
-NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr, rule_info info);
-NodeStructs::Typename make_typename(NodeStructs::Typename::vt tn, Optional<NodeStructs::ParameterCategory> cat, rule_info info);
+NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr, caesium_source_location info);
+NodeStructs::Typename make_typename(NodeStructs::Typename::vt tn, Optional<NodeStructs::ParameterCategory> cat, caesium_source_location info);
+NodeStructs::NameSpace make_namespace(
+	std::string name,
+	std::optional<NodeStructs::Typename> name_space,
+	std::vector<NodeStructs::Function> functions,
+	std::vector<NodeStructs::Type> types,
+	std::vector<NodeStructs::Interface> interfaces,
+	std::vector<NodeStructs::Template> templates,
+	std::vector<NodeStructs::Block> blocks,
+	std::vector<NodeStructs::Alias> aliases,
+	std::vector<NodeStructs::Enum> enums,
+	std::vector<NodeStructs::NameSpace> namespaces,
+	caesium_source_location info
+);
+Realised::MetaType make_type(Realised::MetaType::vt t);
+Realised::Parameter make_parameter(Realised::MetaType t, NodeStructs::ParameterCategory cat);
 
 const auto& only(const auto& e) {
 	const auto& [res] = e;
@@ -125,6 +140,11 @@ inline bool primitives_assignable(const Realised::PrimitiveType& parameter, cons
 		return true;
 
 	return false;
+}
+
+template <typename T>
+std::vector<T>::const_iterator find_by_name(const std::vector<T>& vec, std::string_view name) {
+	return std::find_if(vec.begin(), vec.end(), [&](const T& e) { return e.name == name; });
 }
 
 #include "cmp.hpp"

@@ -21,30 +21,21 @@ R T::operator()(const Realised::InterfaceType& t) {
 
 R T::operator()(const Realised::NamespaceType& nst) {
 	const auto& ns = nst.name_space.get();
-	if (auto it = ns.types.find(accessed); it != ns.types.end()) {
-		const auto& types = it->second;
-		if (types.size() != 1)
-			NOT_IMPLEMENTED;
-		const auto& type = types.at(0);
-		NOT_IMPLEMENTED;
-		/*auto opt_e = traverse_type(state, type);
-		if (opt_e.has_value())
-			return opt_e.value();
-		return Realised::MetaType{ copy(type) };*/
+	if (auto it = find_by_name(ns.types, accessed); it != ns.types.end()) {
+		const auto& type = *it;
+		auto e_or_t = realise_type(state, type);
+		return_if_error(e_or_t);
+		return Realised::MetaType{ std::move(e_or_t).value() };
 	}
-	if (auto it = ns.aliases.find(accessed); it != ns.aliases.end()) {
-		auto e_t = type_of_typename(state, variables, it->second);
+	if (auto it = find_by_name(ns.aliases, accessed); it != ns.aliases.end()) {
+		if (std::optional<error> err = realise_typename(state, it->aliasTo); err.has_value())
+			return err.value();
+		auto e_t = type_of_typename(state, variables, it->aliasTo);
 		return_if_error(e_t);
-		auto opt_e = traverse_type(state, e_t.value());
-		if (opt_e.has_value())
-			return opt_e.value();
 		return std::move(e_t).value();
 	}
-	if (auto it = ns.interfaces.find(accessed); it != ns.interfaces.end()) {
-		const auto& interfaces = it->second;
-		if (interfaces.size() != 1)
-			NOT_IMPLEMENTED;
-		const auto& interface = interfaces.at(0);
+	if (auto it = find_by_name(ns.interfaces, accessed); it != ns.interfaces.end()) {
+		const auto& interface = *it;
 		NOT_IMPLEMENTED;
 		/*if (!state.state.interfaces_traversal.traversed.contains(interface)) {
 			state.state.interfaces_traversal.traversed.insert(copy(interface));
@@ -52,9 +43,8 @@ R T::operator()(const Realised::NamespaceType& nst) {
 		}
 		return Realised::MetaType{ Realised::InterfaceType{ interface } };*/
 	}
-	NOT_IMPLEMENTED;
-	/*if (auto it = ns.namespaces.find(accessed); it != ns.namespaces.end())
-		return Realised::MetaType{ Realised::NamespaceType{ it->second } };*/
+	if (auto it = find_by_name(ns.namespaces, accessed); it != ns.namespaces.end())
+		return Realised::MetaType{ Realised::NamespaceType{ accessed, *it } };
 	return error{ "user error" , "Missing type `" + accessed + "` in namespace `" + ns.name + "`" };
 }
 

@@ -167,7 +167,7 @@ struct copy_t<std::pair<T, U>> {
 };
 
 #define COPY_N(N, T) template <> struct copy_t<T> { static T copy(const T& e) { return copy##N (e); } };
-ExpandAll(COPY_N); // defined from include order cmp.hpp
+ExpandAll(COPY_N); // ExpandAll is defined in cmp.hpp and is included before this file so we can access it
 
 template <typename T>
 struct copy_t<Realised::PrimitiveType::NonValued<T>> {
@@ -191,12 +191,5 @@ struct copy_t<Realised::PrimitiveType> {
 };
 
 COPY_N(1, Realised::MetaType);
-
-template <>
-struct copy_t<Realised::NameSpace> {
-	static Realised::NameSpace copy(const Realised::NameSpace& p) {
-		NOT_IMPLEMENTED; // return Realised::NameSpace{ ::copy(p.value) };
-	}
-};
 
 COPY_N(1, Realised::Builtin);

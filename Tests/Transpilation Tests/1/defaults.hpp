@@ -11,10 +11,8 @@ using Bool = bool;
 using Void = void;
 using Floating = double;
 template <typename First, typename Second> using Pair = std::pair<First, Second>;
-#include <optional>
-template <typename T> using Optional = std::optional<T>;
 #include <variant>
-template <typename... Ts> using Union = std::variant<Ts...>;
+template <typename... Ts> using Variant = std::variant<Ts...>;
 #include <vector>
 template <typename T> using Vector = std::vector<T>;
 #include <string>
@@ -78,51 +76,52 @@ constexpr std::string join(std::string str1, std::string str2, auto&&... strs) {
 	return join(join(std::move(str1), std::move(str2)), std::move(strs)...);
 }
 
-struct builtin_filesystem_file {
+struct filesystem__file {
 	std::filesystem::directory_entry e;
 };
 
-struct builtin_filesystem_directory {
+struct filesystem__directory {
 	std::filesystem::directory_entry e;
 };
 
-Vector<Union<builtin_filesystem_file, builtin_filesystem_directory>> filesystem__entries(const builtin_filesystem_directory& dir) {
-	Vector<Union<builtin_filesystem_file, builtin_filesystem_directory>> res{};
+Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(const filesystem__directory& dir) {
+	Vector<Variant<filesystem__file, filesystem__directory>> res{};
 	for (const auto& file_or_folder : std::filesystem::directory_iterator(dir.e.path()))
 		if (file_or_folder.is_directory())
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
+			res.push_back(filesystem__directory{ file_or_folder });
 		else
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
+			res.push_back(filesystem__directory{ file_or_folder });
 	return res;
 }
 
 Int str_size_(const std::string& s) {
-	return s.size();
+    return s.size();
 }
 
 Int str_size_(const char* s) {
-	return strlen(s);
+    return strlen(s);
 }
 
 Int str_size_(char) {
-	return 1;
+    return 1;
 }
 
 Int str_size(auto&& s, auto&&... strs) {
-	if constexpr (sizeof...(strs) > 0) {
-		return str_size_(s) + str_size(strs...);
-	}
-	else {
-		return str_size_(s);
-	}
+    if constexpr (sizeof...(strs) > 0) {
+        return str_size_(s) + str_size(strs...);
+    }
+    else {
+        return str_size_(s);
+    }
 }
 
 String sum_strings(auto&& s1, auto&& s2, auto&&... strs) {
-	String res;
-	res.reserve(str_size(s1, s2, strs...));
-	Int n_strs = 2 + sizeof...(strs);
-	res += s1;
-	res += s2;
+    String res;
+    res.reserve(str_size(s1, s2, strs...));
+    Int n_strs = 2 + sizeof...(strs);
+    res += s1;
+    res += s2;
 	((res += strs), ...);
-	return res;
+    return res;
 }
+

@@ -5,7 +5,7 @@
 #include "utility/colored_text.hpp"
 #include "utility/as_vec.hpp"
 
-rule_info tests_rule_info_stub() {
+caesium_source_location tests_rule_info_stub() {
 	return {
 		"tests_rule_info_stub",
 		{ 0, 0 },
@@ -41,6 +41,8 @@ bool test_structurize(int line, int n_indent, std::string program, auto&& expect
 			if constexpr (std::is_same_v<DT, NodeStructs::Expression>)
 				return getExpressionStruct(test_file_name_stub(), tokens, node);
 			else if constexpr (std::is_same_v<DT, NodeStructs::Function>)
+				return getStruct(test_file_name_stub(), tokens, node, std::nullopt);
+			else if constexpr (std::is_same_v<DT, NodeStructs::NameSpace>)
 				return getStruct(test_file_name_stub(), tokens, node, std::nullopt);
 			else if constexpr (std::is_same_v<DT, NodeStructs::Typename>)
 				return getStruct(test_file_name_stub(), tokens, node, tag_allow_value_category_or_empty{});
@@ -175,7 +177,8 @@ bool test_structurize_equals() {
 							})
 						}
 					}, tests_rule_info_stub())
-			} } })
+			} } }),
+			.info = tests_rule_info_stub()
 		});
 
 	ok &= test_structurize_equals<TypenameOrExpression>(__LINE__, 0, "x",
@@ -197,6 +200,52 @@ bool test_structurize_equals() {
 				},
 				NodeStructs::Value{}, tests_rule_info_stub()
 			)
+		});
+
+	ok &= test_structurize_equals<NameSpace>(__LINE__, 0, "dummy:\n\tfilesystem:\n\n",
+		NodeStructs::NameSpace{
+			.name = "dummy",
+			.name_space = std::nullopt,
+			.functions = {},
+			.types = {},
+			.interfaces = {},
+			.templates = {},
+			.blocks = {},
+			.aliases = {},
+			.enums = {},
+			.namespaces = as_vec(
+				make_namespace(
+					"filesystem",
+					make_typename(NodeStructs::BaseTypename{ "dummy" }, NodeStructs::Value{}, tests_rule_info_stub()),
+					{},
+					{},
+					{},
+					{},
+					{},
+					{},
+					{},
+					{},
+					tests_rule_info_stub()
+				)
+			),
+			.info = tests_rule_info_stub()
+		});
+
+	ok &= test_structurize_equals<Exists>(__LINE__, 0, "exists:\n",
+		NodeStructs::Exists{
+			.global_exists = NodeStructs::NameSpace{
+				.name = "UNNAMED_NAMESPACE",
+				.name_space = {},
+				.functions = {},
+				.types = {},
+				.interfaces = {},
+				.templates = {},
+				.blocks = {},
+				.aliases = {},
+				.enums = {},
+				.namespaces = {},
+				.info = tests_rule_info_stub()
+			}
 		});
 
 	return ok;

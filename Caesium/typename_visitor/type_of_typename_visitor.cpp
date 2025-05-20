@@ -16,50 +16,39 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::void_t>{} } };
 	if (t.type == "Floating")
 		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<double>{} } };
-	if (t.type == "None") {
-		NOT_IMPLEMENTED;
+	if (t.type == "None")
 		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::empty_optional_t>{} } };
+
+	if (auto it = find_by_name(state.state.global_namespace.types, t.type); it != state.state.global_namespace.types.end()) {
+		const auto& type = *it;
+		auto t_or_e = realise_type(state, type);
+		return_if_error(t_or_e);
+		// fall-through to next
 	}
 
-	if (auto it = state.state.global_namespace.types.find(t.type); it != state.state.global_namespace.types.end()) {
-		const auto& types = it->second;
-		if (types.size() != 1)
-			NOT_IMPLEMENTED;
-		const auto& type = types.at(0);
-		NOT_IMPLEMENTED;
-		//auto opt_e = traverse_type(state, type);
-		//if (opt_e.has_value())
-		//	return opt_e.value();
-		//// fall-through to next
-	}
+	if (auto it = state.state.types_traversal.traversed.find(t.type); it != state.state.types_traversal.traversed.end())
+		return Realised::MetaType{ copy(it->second) };
 
-	if (auto it = state.state.types_traversal.traversed.find(t.type); it != state.state.types_traversal.traversed.end()) {
-		NOT_IMPLEMENTED;
-		/*for (const auto& t_ : state.state.types_to_transpile)
-			if (t_.name == t.type)
-				return Realised::MetaType{ copy(t_) };*/
-	}
-
-	bool has_f = state.state.global_namespace.functions.find(t.type) != state.state.global_namespace.functions.end();
+	bool has_f = find_by_name(state.state.global_namespace.functions, t.type) != state.state.global_namespace.functions.end();
 	if (has_f) {
 		NOT_IMPLEMENTED;
 		/*return Realised::MetaType{ Realised::FunctionType{
 			t.type, state.state.global_namespace
 		} };*/
 	}
-	if (auto it = state.state.global_namespace.templates.find(t.type); it != state.state.global_namespace.templates.end()) {
+	if (auto it = find_by_name(state.state.global_namespace.templates, t.type); it != state.state.global_namespace.templates.end()) {
 		NOT_IMPLEMENTED;
 		//return Realised::MetaType{ Realised::TemplateType{ t.type, state.state.global_namespace } };
 	}
-	if (auto it = state.state.global_namespace.aliases.find(t.type); it != state.state.global_namespace.aliases.end()) {
-		const auto& type_name = it->second;
+	if (auto it = find_by_name(state.state.global_namespace.aliases, t.type); it != state.state.global_namespace.aliases.end()) {
+		const auto& type_name = it->aliasTo;
+		if (std::optional<error> err = realise_typename(state, type_name); err.has_value())
+			return err.value();
 		auto type = type_of_typename(state, variables, type_name);
 		return_if_error(type);
-		if (std::optional<error> err = traverse_type(state, type.value()); err.has_value())
-			return err.value();
 		return std::move(type).value();
 	}
-	if (auto it = state.state.global_namespace.interfaces.find(t.type); it != state.state.global_namespace.interfaces.end()) {
+	if (auto it = find_by_name(state.state.global_namespace.interfaces, t.type); it != state.state.global_namespace.interfaces.end()) {
 		NOT_IMPLEMENTED;
 		/*const auto& interfaces = it->second;
 		if (interfaces.size() != 1)
@@ -71,12 +60,12 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		}
 		return Realised::MetaType{ NodeStructs::InterfaceType{ interface } };*/
 	}
-	if (auto it = state.state.global_namespace.namespaces.find(t.type); it != state.state.global_namespace.namespaces.end())
-		return Realised::MetaType{ Realised::NamespaceType{ it->first, it->second } };
+	if (auto it = find_by_name(state.state.global_namespace.namespaces, t.type); it != state.state.global_namespace.namespaces.end())
+		return Realised::MetaType{ Realised::NamespaceType{ it->name, *it } };
 	NOT_IMPLEMENTED;
 	/*if (auto it = state.state.global_namespace.builtins.find(t.type); it != state.state.global_namespace.builtins.end())
 		return Realised::MetaType{ Realised::Builtin{ t.type } };*/
-	if (auto it = state.state.global_namespace.enums.find(t.type); it != state.state.global_namespace.enums.end()) {
+	if (auto it = find_by_name(state.state.global_namespace.enums, t.type); it != state.state.global_namespace.enums.end()) {
 		NOT_IMPLEMENTED;
 		//const std::vector<NodeStructs::Enum>& enums = it->second;
 		//if (enums.size() != 1)
@@ -124,8 +113,7 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 		return_if_error(exp);
 		v.push_back(std::move(exp).value());
 	}
-	NOT_IMPLEMENTED;
-	//return Realised::MetaType{ Realised::UnionType{ std::move(v) } };
+	return Realised::MetaType{ Realised::UnionType{ "TODO??", std::move(v) } };
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {

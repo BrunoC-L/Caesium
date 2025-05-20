@@ -12,59 +12,57 @@ R T::operator()(const Realised::Type& t) {
 		t.member_variables.end(),
 		[&](const auto& m) { return m.name._value == property_name; }
 	); it != t.member_variables.end()) {
-		NOT_IMPLEMENTED;
-		/*auto mt = type_of_typename(state, variables, it->type);
-		return_if_error(mt);
-		auto expect_error = type_of_function_like_call_with_args(state, variables, arguments, mt.value());
+		auto expect_error = type_of_function_like_call_with_args(state, variables, arguments, it->type);
 		return_if_error(expect_error);
-		NOT_IMPLEMENTED;*/
+		NOT_IMPLEMENTED;
 	}
 
-	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
+	if (auto it = find_by_name(state.state.global_namespace.functions, property_name); it != state.state.global_namespace.functions.end()) {
 		NOT_IMPLEMENTED;
-		/*const NodeStructs::Function& fn = it->second.back();
-		auto fn_or_e = transpile(state.unindented(), fn);
-		return_if_error(fn_or_e);
-		NOT_IMPLEMENTED;*/
-		/*if (!state.state.functions_traversal.traversed.contains(fn)) {
-			state.state.functions_traversal.traversed.insert(copy(fn));
-			state.state.functions_to_transpile.insert(copy(fn));
-		}
-		auto first_param_str = transpile_typename(state, variables, fn.parameters.at(0).typename_);
-		return_if_error(first_param_str);
-		auto first_param = type_of_typename(state, variables, fn.parameters.at(0).typename_);
-		return_if_error(first_param);
-		if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, first_param.value(), { copy(t) })._value))
-			return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n" };
+	NOT_IMPLEMENTED;
+	//	/*const NodeStructs::Function& fn = it->second.back();
+	//	auto fn_or_e = transpile(state.unindented(), fn);
+	//	return_if_error(fn_or_e);
+	//	NOT_IMPLEMENTED;*/
+	//	/*if (!state.state.functions_traversal.traversed.contains(fn)) {
+	//		state.state.functions_traversal.traversed.insert(copy(fn));
+	//		state.state.functions_to_transpile.insert(copy(fn));
+	//	}
+	//	auto first_param_str = transpile_typename(state, variables, fn.parameters.at(0).typename_);
+	//	return_if_error(first_param_str);
+	//	auto first_param = type_of_typename(state, variables, fn.parameters.at(0).typename_);
+	//	return_if_error(first_param);
+	//	if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, first_param.value(), { copy(t) })._value))
+	//		return error{ "user error", "Error: object of type `" + t.name + "` is not assignable to `" + first_param_str.value() + "`\n" };
 
-		if (arguments.size() + 1 != fn.parameters.size())
-			NOT_IMPLEMENTED;
+	//	if (arguments.size() + 1 != fn.parameters.size())
+	//		NOT_IMPLEMENTED;
 
-		std::stringstream ss;
-		ss << fn.name << "(" << operand_info.representation;
+	//	std::stringstream ss;
+	//	ss << fn.name << "(" << operand_info.representation;
 
-		for (size_t i = 1; i < fn.parameters.size(); ++i) {
-			auto nth_param = type_of_typename(state, variables, fn.parameters.at(i).typename_);
-			return_if_error(nth_param);
-			auto nth_argument = transpile_arg(state, variables, arguments.at(i - 1));
-			return_if_error(nth_argument);
-			if (!std::holds_alternative<non_type_information>(nth_argument.value()))
-				NOT_IMPLEMENTED;
-			const non_type_information& nth_argument_ok = std::get<non_type_information>(nth_argument.value());
-			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, nth_param.value(), nth_argument_ok.type)._value))
-				NOT_IMPLEMENTED;
-			ss << ", " << nth_argument_ok.representation;
-		}
-		ss << ")";
+	//	for (size_t i = 1; i < fn.parameters.size(); ++i) {
+	//		auto nth_param = type_of_typename(state, variables, fn.parameters.at(i).typename_);
+	//		return_if_error(nth_param);
+	//		auto nth_argument = transpile_arg(state, variables, arguments.at(i - 1));
+	//		return_if_error(nth_argument);
+	//		if (!std::holds_alternative<non_type_information>(nth_argument.value()))
+	//			NOT_IMPLEMENTED;
+	//		const non_type_information& nth_argument_ok = std::get<non_type_information>(nth_argument.value());
+	//		if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, nth_param.value(), nth_argument_ok.type)._value))
+	//			NOT_IMPLEMENTED;
+	//		ss << ", " << nth_argument_ok.representation;
+	//	}
+	//	ss << ")";
 
-		auto return_t = type_of_typename(state, variables, fn.returnType);
-		return_if_error(return_t);
+	//	auto return_t = type_of_typename(state, variables, fn.returnType);
+	//	return_if_error(return_t);
 
-		return expression_information{ non_type_information{
-			.type = std::move(return_t).value(),
-			.representation = ss.str(),
-			.value_category = NodeStructs::Value{},
-		} };*/
+	//	return expression_information{ non_type_information{
+	//		.type = std::move(return_t).value(),
+	//		.representation = ss.str(),
+	//		.value_category = NodeStructs::Value{},
+	//	} };*/
 	}
 
 	NOT_IMPLEMENTED;
@@ -93,23 +91,22 @@ R T::operator()(const Realised::Type& t) {
 			vec.push_back(std::move(fn).value());
 		return operator()(t);
 	}*/
-	if (auto it = state.state.global_namespace.builtins.find(property_name); it != state.state.global_namespace.builtins.end()) {
-		NOT_IMPLEMENTED;
-		//const std::string& name = it->second.back().builtin._value;
-		//if (name == "size") {
-		//	/*if (auto is_str = t <=> Realised::MetaType{ Realised::PrimitiveType{ { std::string{} } } } == std::strong_ordering::equivalent) {
-		//		return expression_information{ non_type_information{
-		//			.type = { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } },
-		//			.representation = operand_info.representation + ".size()",
-		//			.value_category = NodeStructs::Value{}
-		//		} };
-		//	}*/
-		//	NOT_IMPLEMENTED;
-		//}
-		//NOT_IMPLEMENTED;
-	}
-	NOT_IMPLEMENTED;
-	//return error{ "user error","Error: object of type `" + t.name + "` has no member `" + property_name + "`\n" };
+	//if (auto it = state.state.global_namespace.builtins.find(property_name); it != state.state.global_namespace.builtins.end()) {
+	//	NOT_IMPLEMENTED;
+	//	//const std::string& name = it->second.back().builtin._value;
+	//	//if (name == "size") {
+	//	//	/*if (auto is_str = t <=> Realised::MetaType{ Realised::PrimitiveType{ { std::string{} } } } == std::strong_ordering::equivalent) {
+	//	//		return expression_information{ non_type_information{
+	//	//			.type = { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } },
+	//	//			.representation = operand_info.representation + ".size()",
+	//	//			.value_category = NodeStructs::Value{}
+	//	//		} };
+	//	//	}*/
+	//	//	NOT_IMPLEMENTED;
+	//	//}
+	//	//NOT_IMPLEMENTED;
+	//}
+	return error{ "user error","Error: object of type `" + t.name._value + "` has no member `" + property_name + "`\n" };
 }
 
 R T::operator()(const Realised::PrimitiveType& t) {

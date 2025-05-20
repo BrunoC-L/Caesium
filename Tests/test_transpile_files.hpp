@@ -8,6 +8,7 @@
 #include "core/toCPP.hpp"
 #include "first_diff.hpp"
 #include "utility/replace_all.hpp"
+#include "utility/default_includes.hpp"
 
 std::optional<std::string> open_read(const std::filesystem::path& file) {
 	std::ifstream f(file);
@@ -236,6 +237,15 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 }
 
 bool test_transpile_folder(const std::filesystem::path& folder) {
+	std::cout << "Transpile Test " << folder << "\n";
+
+	{
+		std::remove((folder / "defaults.hpp").string().c_str());
+		std::ofstream defaults{ folder / "defaults.hpp" };
+		defaults << default_includes;
+		defaults.close();
+	}
+
 	std::remove((folder / "produced_error.txt").string().c_str());
 	std::remove((folder / "produced.cpp").string().c_str());
 

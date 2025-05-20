@@ -23,7 +23,7 @@ namespace Realised {
 	struct TypeListType;
 	struct CompileTimeType;
 
-	struct NameSpace {
+	/*struct NameSpace {
 		std::string name;
 
 		template <typename T> using map_to_vec = std::map<std::string, std::vector<T>, default_less_than>;
@@ -43,8 +43,8 @@ namespace Realised {
 
 		std::map<std::string, NameSpace> namespaces;
 		map_to_vec<Builtin> builtins;
-		rule_info info = rule_info_stub<NameSpace>();
-	};
+		caesium_source_location info = rule_info_stub<NameSpace>();
+	};*/
 
 	struct MetaType {
 		using vt = Variant<
@@ -73,45 +73,47 @@ namespace Realised {
 	};
 
 	struct Builtin {
-		struct VectorToken {}; // type(Vector)
-		struct SetToken {}; // type(Set)
-		struct MapToken {}; // type(Map)
-		struct TypeToken {}; // type(type)
-		struct TypeListToken {}; // type(typelist)
-		struct builtin_compile_time_error {};
-		struct builtin_type_list {};
-		struct builtin_union {};
-		struct builtin_vector {};
-		struct builtin_push {};
-		struct builtin_size {};
-		struct builtin_set {};
-		struct builtin_map {};
-		struct builtin_insert {};
-		struct builtin_exit {};
-		struct builtin_print {};
-		struct builtin_println {};
-		struct builtin_file {};
-		struct builtin_directory {};
+		// lang
+		struct builtin_compile_time_error { static constexpr char name[]{ "compile_time_error" }; };
+		struct builtin_typeof { static constexpr char name[]{ "typeof" }; };
+		struct builtin_type_list { static constexpr char name[]{ "type_list" }; };
+		struct builtin_exit { static constexpr char name[]{ "exit" }; };
+
+		struct builtin_vector { static constexpr char name[]{ "Vector" }; };
+		struct builtin_set { static constexpr char name[]{ "Set" }; };
+		struct builtin_map { static constexpr char name[]{ "Map" }; };
+		struct builtin_union { static constexpr char name[]{ "Union" }; };
+		
+
+		//// these are done wrong
+		//// lib
+		//struct builtin_print { static constexpr char name[]{ "print" }; };
+		//struct builtin_println { static constexpr char name[]{ "println" }; };
+		//struct builtin_file { static constexpr char name[]{ "file" }; };
+		//struct builtin_directory { static constexpr char name[]{ "directory" }; };
+		//struct builtin_push { static constexpr char name[]{ "push" }; };
+		//struct builtin_size { static constexpr char name[]{ "size" }; };
+		//struct builtin_insert { static constexpr char name[]{ "insert" }; };
+
+
 		caesium_lib::variant::type<
-			VectorToken,
-			SetToken,
-			MapToken,
-			TypeToken,
-			TypeListToken,
 			builtin_compile_time_error,
+			builtin_typeof,
 			builtin_type_list,
-			builtin_union,
+			builtin_exit,
+
 			builtin_vector,
-			builtin_push,
-			builtin_size,
 			builtin_set,
 			builtin_map,
-			builtin_insert,
-			builtin_exit,
+			builtin_union/*,
+
 			builtin_print,
 			builtin_println,
 			builtin_file,
-			builtin_directory
+			builtin_directory,
+			builtin_push,
+			builtin_size,
+			builtin_insert*/
 		> builtin;
 	};
 
@@ -207,15 +209,15 @@ namespace Realised {
 	};
 
 	struct Parameter {
-		NodeStructs::ParameterCategory category;
 		MetaType type;
+		NodeStructs::ParameterCategory category;
 	};
 
 	struct Function {
 		caesium_lib::string::type name;
 		MetaType returnType;
 		std::vector<Parameter> parameters;
-		rule_info info = rule_info_stub<Function>();
+		caesium_source_location info = rule_info_stub<Function>();
 	};
 
 	struct MemberVariable {
@@ -226,13 +228,13 @@ namespace Realised {
 	struct Type {
 		caesium_lib::string::type name;
 		std::vector<MemberVariable> member_variables;
-		rule_info info = rule_info_stub<Type>();
+		caesium_source_location info = rule_info_stub<Type>();
 	};
 
 	struct Interface {
 		caesium_lib::string::type name;
 		std::vector<MemberVariable> member_variables;
-		rule_info info = rule_info_stub<Interface>();
+		caesium_source_location info = rule_info_stub<Interface>();
 	};
 
 	struct InterfaceType {
@@ -242,11 +244,11 @@ namespace Realised {
 
 	struct NamespaceType {
 		caesium_lib::string::type name;
-		std::reference_wrapper<const NameSpace> name_space;
+		std::reference_wrapper<const NodeStructs::NameSpace> name_space;
 	};
 
 	struct FunctionType {
 		caesium_lib::string::type name;
-		//std::vector<std::reference_wrapper<const Function>> overload_set;
+		// std::vector<std::reference_wrapper<const Function>> overload_set;
 	};
 }

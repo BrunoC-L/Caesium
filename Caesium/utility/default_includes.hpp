@@ -77,21 +77,21 @@ constexpr std::string join(std::string str1, std::string str2, auto&&... strs) {
 	return join(join(std::move(str1), std::move(str2)), std::move(strs)...);
 }
 
-struct builtin_filesystem_file {
+struct filesystem__file {
 	std::filesystem::directory_entry e;
 };
 
-struct builtin_filesystem_directory {
+struct filesystem__directory {
 	std::filesystem::directory_entry e;
 };
 
-Vector<Variant<builtin_filesystem_file, builtin_filesystem_directory>> filesystem__entries(const builtin_filesystem_directory& dir) {
-	Vector<Variant<builtin_filesystem_file, builtin_filesystem_directory>> res{};
+Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(const filesystem__directory& dir) {
+	Vector<Variant<filesystem__file, filesystem__directory>> res{};
 	for (const auto& file_or_folder : std::filesystem::directory_iterator(dir.e.path()))
 		if (file_or_folder.is_directory())
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
+			res.push_back(filesystem__directory{ file_or_folder });
 		else
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
+			res.push_back(filesystem__directory{ file_or_folder });
 	return res;
 }
 

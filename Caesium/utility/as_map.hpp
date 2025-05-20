@@ -16,3 +16,11 @@ std::map<K, V> as_map(std::pair<K, V> e, auto&&... es) {
 	emplace(res, std::forward<decltype(es)>(es)...);
 	return res;
 }
+
+template <typename cmp, typename K, typename V>
+std::map<K, V, cmp> as_map_cmp(std::pair<K, V> e, auto&&... es) {
+	std::map<K, V, cmp> res;
+	emplace(res, std::move(e));
+	emplace(res, std::forward<decltype(es)>(es)...);
+	return res;
+}
