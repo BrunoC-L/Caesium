@@ -476,71 +476,33 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 				};
 			}*/
 		}
-		NOT_IMPLEMENTED;
-		//if (holds<Realised::TemplateType>(ti.type)) {
-		//	const auto& options = get<Realised::TemplateType>(ti.type)
-		//		.name_space.get()
-		//		.templates.at(get<Realised::TemplateType>(ti.type).name);
-		//	if (options.size() != 1)
-		//		NOT_IMPLEMENTED;
-		//	// const auto& tmpl = options.back();
-		//	/*auto arg_ts = vec_of_expected_to_expected_of_vec(
-		//		expr.arguments.args
-		//		| std::views::transform([&](auto&& e) { return e.expr; })
-		//		| std::views::transform([&](auto&& e) { return transpile_expression(state, e); })
-		//		| to_vec()
-		//	);*/
-		//	NOT_IMPLEMENTED;
-		//}
+		if (holds<Realised::TemplateType>(ti.type)) {
+			NOT_IMPLEMENTED;
+			//	const auto& options = get<Realised::TemplateType>(ti.type)
+			//		.name_space.get()
+			//		.templates.at(get<Realised::TemplateType>(ti.type).name);
+			//	if (options.size() != 1)
+			//		NOT_IMPLEMENTED;
+			//	// const auto& tmpl = options.back();
+			//	/*auto arg_ts = vec_of_expected_to_expected_of_vec(
+			//		expr.arguments.args
+			//		| std::views::transform([&](auto&& e) { return e.expr; })
+			//		| std::views::transform([&](auto&& e) { return transpile_expression(state, e); })
+			//		| to_vec()
+			//	);*/
+		}
 		if (holds<Realised::FunctionType>(ti.type)) {
-			auto args_ = vec_of_expected_to_expected_of_vec(expr.arguments.args
+			auto args_or_e = vec_of_expected_to_expected_of_vec(expr.arguments.args
 				| std::views::transform([&](auto&& arg) { return transpile_arg(state, variables, arg); })
 				| to_vec());
-			return_if_error(args_);
-			auto args_ok_maybe_wrong_type = std::move(args_).value();
-			auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(std::move(args_ok_maybe_wrong_type));
-			if (!opt.has_value())
-				NOT_IMPLEMENTED;
-			const auto& args_ok = opt.value();
-			NOT_IMPLEMENTED;
-			/*auto expected_f = find_best_function(
+			return_if_error(args_or_e);
+			return realise_function_and_produce_call(
 				state,
 				variables,
-				get<Realised::FunctionType>(ti.type).name,
-				get<Realised::FunctionType>(ti.type).name_space,
-				args_ok | std::views::transform([](const auto& e) { return copy(e.type); }) | to_vec()
+				get<Realised::FunctionType>(ti.type).name._value,
+				state.state.global_namespace,
+				args_or_e.value()
 			);
-			return_if_error(expected_f);
-			if (!expected_f.value().has_value())
-				return error{ "user error", "no matching function" };
-			const NodeStructs::Function& fn = expected_f.value().value().get();
-
-			if (!state.state.functions_traversal.traversed.count(fn.name)) {
-				state.state.functions_traversal.traversing.insert(fn.name);
-				auto transpiled_f = transpile(state.unindented(), fn);
-				return_if_error(transpiled_f);
-				if (uses_auto(fn))
-					NOT_IMPLEMENTED;
-				state.state.functions_traversal.traversing.erase(fn.name);
-				state.state.functions_traversal.traversed.insert({ fn.name, copy(fn) });
-			}
-			auto args_repr = [&]() {
-				std::stringstream ss;
-				bool has_prev = false;
-				for (const auto& arg : args_ok) {
-					if (has_prev)
-						ss << ", ";
-					else
-						has_prev = true;
-					ss << arg.representation;
-				}
-				return ss.str();
-			}();
-			return expression_information{ non_type_information{
-				.type = type_of_typename(state, variables, fn.returnType).value(),
-				.representation = ti.representation + "(" + std::move(args_repr) + ")",
-				.value_category = NodeStructs::Value{}
-			} };*/
 		}
 		NOT_IMPLEMENTED;
 	}
@@ -610,142 +572,125 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		NOT_IMPLEMENTED;
 	const auto& operand = get<std::string>(expr.operand);
 
-	NOT_IMPLEMENTED;
-	//if (auto it = state.state.global_namespace.templates.find(operand);
-	//	it != state.state.global_namespace.templates.end()) {
-	//	NOT_IMPLEMENTED;
-	//	//auto t = find_best_template(state, variables, it->second, expr.args);
-	//	//return_if_error(t);
-	//	//const auto& tmpl = t.value().tmpl.get();
-	//	//expected<std::vector<std::string>> args = vec_of_expected_to_expected_of_vec(expr.args
-	//	//	| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(state, variables, e); })
-	//	//	| to_vec());
-	//	//return_if_error(args);
-	//	//auto tmpl_name_or_e = word_typename_or_expression_for_template(
-	//	//	state,
-	//	//	variables,
-	//	//	{ NodeStructs::Expression{ .expression = copy(expr), .info = copy(t.value().tmpl.get().info) }}
-	//	//);
-	//	//return_if_error(tmpl_name_or_e);
-	//	//const auto& tmpl_name = tmpl_name_or_e.value();
+	std::vector<NodeStructs::Template> templates{};
 
-	//	//size_t max_params = it->second.at(0).parameters.size();
-	//	//for (unsigned i = 1; i < it->second.size(); ++i)
-	//	//	max_params = std::max(max_params, it->second.at(i).parameters.size());
+	for (const auto& tmpl : state.state.global_namespace.templates)
+		if (tmpl.name == operand)
+			templates.push_back(copy(tmpl));
 
-	//	//const auto& arg_placements = t.value().arg_placements;
-	//	//auto grab_nth_with_commas = [&](size_t i) {
-	//	//	std::stringstream ss;
-	//	//	bool has_previous = false;
-	//	//	for (size_t j = 0; j < arg_placements.size(); ++j) {
-	//	//		size_t k = arg_placements.at(j);
-	//	//		if (k == i) {
-	//	//			const auto& arg = args.value().at(j);
-	//	//			if (has_previous)
-	//	//				ss << ", ";
-	//	//			has_previous = true;
-	//	//			ss << arg;
-	//	//		}
-	//	//	}
-	//	//	return ss.str();
-	//	//};
-	//	//std::string replaced = tmpl.templated;
-	//	//for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
-	//	//	replaced = replace_all(
-	//	//		std::move(replaced),
-	//	//		std::visit(overload(
-	//	//			[](const auto& e) { return "`" + e.name + "`"; },
-	//	//			[](const NodeStructs::VariadicTemplateParameter& e) { return "`" + e.name + "...`"; }
-	//	//		), tmpl.parameters.at(i)._value),
-	//	//		grab_nth_with_commas(i)
-	//	//	);
-	//	//}
+	if (templates.size() > 0) {
+		auto t = find_best_template(state, variables, templates, expr.args);
+		return_if_error(t);
+		const auto& tmpl = t.value().tmpl.get();
+		expected<std::vector<std::string>> args = vec_of_expected_to_expected_of_vec(expr.args
+			| std::views::transform([&](auto&& e) { return word_typename_or_expression_for_template(state, variables, e); })
+			| to_vec());
+		return_if_error(args);
+		auto tmpl_name_or_e = word_typename_or_expression_for_template(
+			state,
+			variables,
+			{ NodeStructs::Expression{ .expression = copy(expr), .info = copy(t.value().tmpl.get().info) }}
+		);
+		return_if_error(tmpl_name_or_e);
+		const auto& tmpl_name = tmpl_name_or_e.value();
 
-	//	//bool has_f = state.state.global_namespace.functions.find(tmpl_name) != state.state.global_namespace.functions.end();
-	//	//NOT_IMPLEMENTED;
-	//	///*if (has_f)
-	//	//	return expression_information{ type_information{
-	//	//		.type = Realised::MetaType{ Realised::FunctionType{
-	//	//			tmpl_name, state.state.global_namespace
-	//	//		} },
-	//	//		.representation = tmpl_name
-	//	//	} };*/
+		size_t max_params = templates.at(0).parameters.size();
+		for (unsigned i = 1; i < templates.size(); ++i)
+			max_params = std::max(max_params, templates.at(i).parameters.size());
 
-	//	//if (auto it = state.state.global_namespace.types.find(tmpl_name); it != state.state.global_namespace.types.end()) {
-	//	//	NOT_IMPLEMENTED;
-	//	//	/*return expression_information{ type_information{
-	//	//		.type = Realised::MetaType{ copy(it->second.back()) },
-	//	//		.representation = tmpl_name
-	//	//	} };*/
-	//	//}
+		const auto& arg_placements = t.value().arg_placements;
+		auto grab_nth_with_commas = [&](size_t i) {
+			std::stringstream ss;
+			bool has_previous = false;
+			for (size_t j = 0; j < arg_placements.size(); ++j) {
+				size_t k = arg_placements.at(j);
+				if (k == i) {
+					const auto& arg = args.value().at(j);
+					if (has_previous)
+						ss << ", ";
+					has_previous = true;
+					ss << arg;
+				}
+			}
+			return ss.str();
+		};
+		std::string replaced = tmpl.templated;
+		for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
+			replaced = replace_all(
+				std::move(replaced),
+				std::visit(overload(
+					[](const auto& e) { return "`" + e.name + "`"; },
+					[](const NodeStructs::VariadicTemplateParameter& e) { return "`" + e.name + "...`"; }
+				), tmpl.parameters.at(i)._value),
+				grab_nth_with_commas(i)
+			);
+		}
 
-	//	//{
-	//	//	And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
-	//	//	auto tokens = Tokenizer(replaced).read();
-	//	//	Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
-	//	//	try {
-	//	//		if (build(f, it)) {
-	//	//			auto structured_f = getStruct("template:/" + tmpl_name, tokens, f.template get<grammar::Function>(), std::nullopt);
-	//	//			structured_f.name = tmpl_name;
-	//	//			NOT_IMPLEMENTED;
-	//	//			/*if (uses_auto(structured_f)) {
-	//	//				state.state.global_namespace.functions_using_auto[structured_f.name].push_back(std::move(structured_f));
-	//	//				return expression_information{ type_information{
-	//	//					.type = { NodeStructs::FunctionType{
-	//	//						tmpl_name, state.state.global_namespace
-	//	//					} },
-	//	//					.representation = tmpl_name
-	//	//				} };
-	//	//			}
-	//	//			else {
-	//	//				state.state.global_namespace.functions[structured_f.name].push_back(copy(structured_f));
-	//	//				state.state.functions_traversal.traversed.insert({ structured_f.name, copy(structured_f) });
-	//	//				auto transpiled_f = transpile(state.unindented(), structured_f);
-	//	//				return_if_error(transpiled_f);
-	//	//				if (uses_auto(structured_f))
-	//	//					NOT_IMPLEMENTED;
-	//	//				state.state.functions_traversal.declarations.try_emplace({  });
-	//	//				state.state.functions_to_transpile.insert(std::move(structured_f));
-	//	//				return expression_information{ type_information{
-	//	//					.type = { NodeStructs::FunctionType{
-	//	//						tmpl_name, state.state.global_namespace
-	//	//					} },
-	//	//					.representation = tmpl_name
-	//	//				} };
-	//	//			}*/
-	//	//		}
-	//	//	}
-	//	//	catch (...) {
-	//	//		std::cout << "TEMPLATE WAS\n\n" << replaced << "\n\n";
-	//	//		NOT_IMPLEMENTED;
-	//	//	}
-	//	//}
-	//	//{
-	//	//	And<IndentToken, grammar::Type, Token<END>> t{ tmpl.indent };
-	//	//	auto tokens = Tokenizer(replaced).read();
-	//	//	Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
-	//	//	if (build(t, it)) {
-	//	//		auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.template get<grammar::Type>(), std::nullopt);
-	//	//		NOT_IMPLEMENTED;
-	//	//		/*auto opt_e = traverse_type(state, structured_t);
-	//	//		if (opt_e.has_value())
-	//	//			return opt_e.value();
-	//	//		structured_t.name = tmpl_name;
-	//	//		state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
-	//	//		auto opt_error = traverse_type(state, structured_t);
-	//	//		if (opt_error.has_value())
-	//	//			return opt_error.value();
-	//	//		return expression_information{ type_information{
-	//	//			.type = Realised::MetaType{ std::move(structured_t) },
-	//	//			.representation = tmpl_name
-	//	//		} };*/
-	//	//	}
-	//	//}
-	//	//return error{
-	//	//	"user error",
-	//	//	"Template expansion does not result in a type or function: |begin|\n" + replaced + "\n|end|"
-	//	//};
-	//}
+		bool has_f = find_by_name(state.state.global_namespace.functions, tmpl_name) != state.state.global_namespace.functions.end();
+		if (has_f)
+			return expression_information{ type_information{
+				.type = Realised::MetaType{ Realised::FunctionType{
+					tmpl_name
+				} },
+				.representation = tmpl_name
+			} };
+
+		if (auto it = find_by_name(state.state.global_namespace.types, tmpl_name); it != state.state.global_namespace.types.end()) {
+			NOT_IMPLEMENTED;
+			/*return expression_information{ type_information{
+				.type = Realised::MetaType{ copy(templates.back()) },
+				.representation = tmpl_name
+			} };*/
+		}
+
+		{
+			And<IndentToken, grammar::Function, Token<END>> f{ tmpl.indent };
+			auto tokens = Tokenizer(replaced).read();
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
+			try {
+				if (build(f, it)) {
+					auto structured_f = getStruct("template:/" + tmpl_name, tokens, f.template get<grammar::Function>(), std::nullopt);
+					structured_f.name = tmpl_name;
+					state.state.global_namespace.functions.push_back(copy(structured_f));
+					return expression_information{ type_information{
+						.type = { Realised::FunctionType{
+							tmpl_name
+						} },
+						.representation = tmpl_name
+					} };
+				}
+			}
+			catch (...) {
+				std::cout << "TEMPLATE WAS\n\n" << replaced << "\n\n";
+				NOT_IMPLEMENTED;
+			}
+		}
+		{
+			And<IndentToken, grammar::Type, Token<END>> t{ tmpl.indent };
+			auto tokens = Tokenizer(replaced).read();
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
+			if (build(t, it)) {
+				auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.template get<grammar::Type>(), std::nullopt);
+				NOT_IMPLEMENTED;
+				/*auto opt_e = traverse_type(state, structured_t);
+				if (opt_e.has_value())
+					return opt_e.value();
+				structured_t.name = tmpl_name;
+				state.state.global_namespace.types[structured_t.name].push_back(copy(structured_t));
+				auto opt_error = traverse_type(state, structured_t);
+				if (opt_error.has_value())
+					return opt_error.value();
+				return expression_information{ type_information{
+					.type = Realised::MetaType{ std::move(structured_t) },
+					.representation = tmpl_name
+				} };*/
+			}
+		}
+		return error{
+			"user error",
+			"Template expansion does not result in a type or function: |begin|\n" + replaced + "\n|end|"
+		};
+	}
 
 	if (operand == "type_list") {
 		std::vector<Realised::MetaType> types;
@@ -833,7 +778,6 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 	else
 		return rearrange_if_possible(state, variables, v1, std::move(v2), i1, i2 + 1, std::move(mappings));
 }
-
 
 std::optional<std::vector<non_type_information>> rearrange_if_possible(
 	const auto& state,
@@ -1160,11 +1104,10 @@ R T::operator()(const std::string& expr) {
 		} };
 	}
 	if (auto it = find_by_name(state.state.global_namespace.templates, expr); it != state.state.global_namespace.templates.end())
-		NOT_IMPLEMENTED;
-		/*return expression_information{ type_information{
-			.type = { Realised::TemplateType{ expr, state.state.global_namespace } },
+		return expression_information{ type_information{
+			.type = { Realised::TemplateType{ expr } },
 			.representation = expr
-		} };*/
+		} };
 	if (auto it = find_by_name(state.state.global_namespace.namespaces, expr); it != state.state.global_namespace.namespaces.end())
 		NOT_IMPLEMENTED;
 		/*return expression_information{ type_information{

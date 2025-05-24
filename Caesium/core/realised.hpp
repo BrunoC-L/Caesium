@@ -161,7 +161,6 @@ namespace Realised {
 
 	// these types also hold their value for compile-time stuff
 	struct PrimitiveType {
-
 		template <typename T>
 		struct NonValued {};
 		template <typename T>
@@ -185,6 +184,13 @@ namespace Realised {
 			Valued<empty_optional_t>
 		>;
 		vt value;
+
+		using String = NonValued<std::string>;
+		using Floating = NonValued<double>;
+		using Int = NonValued<int>;
+		using Bool = NonValued<bool>;
+		using Void = NonValued<void_t>;
+		using Char = NonValued<char>;
 	};
 
 	struct EnumType {

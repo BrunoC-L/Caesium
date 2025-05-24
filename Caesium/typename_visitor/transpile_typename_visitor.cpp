@@ -6,13 +6,9 @@ using T = transpile_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& type) {
+#define OK(X) if (type.type == #X) return #X;
+	expand_language_typenames_that_can_appear_in_cpp(OK);
 #define OK(X) if (type.type == X) return X;
-	OK("Int");
-	OK("Bool");
-	OK("String");
-	OK("Char");
-	OK("Void");
-	OK("Floating");
 
 	OK(Realised::Builtin::builtin_compile_time_error::name);
 	OK(Realised::Builtin::builtin_typeof::name);
@@ -24,7 +20,6 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 	OK(Realised::Builtin::builtin_map::name);
 	OK(Realised::Builtin::builtin_union::name);
 
-#undef OK
 #define OK(X) if (auto it = find_by_name(state.state.global_namespace. X , type.type); it != state.state.global_namespace. X .end()) return type.type;
 	OK(types);
 	OK(functions);
@@ -36,7 +31,7 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 	if (auto it = find_by_name(state.state.global_namespace.aliases, type.type); it != state.state.global_namespace.aliases.end())
 		return operator()(it->aliasTo);
 	if (auto it = find_by_name(state.state.global_namespace.enums, type.type); it != state.state.global_namespace.enums.end())
-		return "Int";
+		return Int_tn_base.type;
 	if (auto it = state.state.types_traversal.traversed.find(type.type); it != state.state.types_traversal.traversed.end())
 		return it->second.name._value;
 	return error{

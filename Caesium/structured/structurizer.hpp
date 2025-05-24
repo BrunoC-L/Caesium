@@ -4,6 +4,28 @@
 #include "../grammar/parse.hpp"
 #include "../utility/overload.hpp"
 
+#define expand_language_typenames(M) M(auto) M(Void) M(Bool) M(Int) M(Floating) M(Char) M(String)
+#define expand_language_typenames_that_can_appear_in_cpp(M) M(Void) M(Bool) M(Int) M(Floating) M(Char) M(String)
+
+#define plus1(keyword) + 1
+static const size_t n_language_typename_keywords = 0 + expand_language_typenames(plus1);
+static const size_t n_language_typename_keywords_that_can_appear_in_cpp = 0 + expand_language_typenames_that_can_appear_in_cpp(plus1);
+#undef count
+
+#define define_base_typename(language_keyword) \
+static const NodeStructs::BaseTypename language_keyword##_tn_base = NodeStructs::BaseTypename{ #language_keyword };
+expand_language_typenames(define_base_typename)
+#undef define_base_typename
+
+#define define_typename(language_keyword) \
+static const NodeStructs::Typename language_keyword##_tn = { \
+	NodeStructs::BaseTypename{ #language_keyword },\
+	NodeStructs::Value{},\
+	rule_info_language_element(#language_keyword) \
+};
+expand_language_typenames(define_typename)
+#undef define_typename
+
 struct tag_expect_value_category {};
 struct tag_expect_empty_category {};
 struct tag_allow_value_category_or_empty {};

@@ -4,20 +4,15 @@ using T = type_of_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& t) {
-	if (t.type == "Int")
-		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } };
-	if (t.type == "Bool")
-		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<bool>{} } };
-	if (t.type == "String")
-		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<std::string>{} } };
-	if (t.type == "Char")
-		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<char>{} } };
-	if (t.type == "Void")
-		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::void_t>{} } };
-	if (t.type == "Floating")
-		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<double>{} } };
-	if (t.type == "None")
-		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::empty_optional_t>{} } };
+#define case(language_keyword)\
+	if (t.type == language_keyword##_tn_base.type)\
+		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::language_keyword{} } };
+	expand_language_typenames_that_can_appear_in_cpp(case)
+#undef case
+
+	// getting the type of auto wouldnt make sense
+	if (t.type == auto_tn_base.type)
+		NOT_IMPLEMENTED_BUT_PROBABLY_ERROR;
 
 	if (auto it = find_by_name(state.state.global_namespace.types, t.type); it != state.state.global_namespace.types.end()) {
 		const auto& type = *it;

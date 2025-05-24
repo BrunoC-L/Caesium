@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="core\deduce_return_type.hpp" />
     <ClCompile Include="core\transpile_statement.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
     <ClCompile Include="helpers.cpp" />

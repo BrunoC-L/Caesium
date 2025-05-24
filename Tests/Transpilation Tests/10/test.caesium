@@ -2,5 +2,11 @@ type A:
 type B:
 
 Int main(Vector<String> ref s):
-    Union<A, B> v1 = {A{}}
-    B | A v2 = {B{}}
+    Union<A, B> union_A_B_A = A{}
+    Union<B, A> union_B_A_A = A{}
+    Union<A, B> union_A_B_B = B{}
+    Union<B, A> union_B_A_B = B{}
+    A | B or_A_B_A = A{}
+    B | A or_B_A_A = A{}
+    A | B or_A_B_B = B{}
+    B | A or_B_A_B = B{}

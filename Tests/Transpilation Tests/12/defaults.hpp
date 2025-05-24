@@ -11,10 +11,8 @@ using Bool = bool;
 using Void = void;
 using Floating = double;
 template <typename First, typename Second> using Pair = std::pair<First, Second>;
-#include <optional>
-template <typename T> using Optional = std::optional<T>;
 #include <variant>
-template <typename... Ts> using Union = std::variant<Ts...>;
+template <typename... Ts> using Variant = std::variant<Ts...>;
 #include <vector>
 template <typename T> using Vector = std::vector<T>;
 #include <string>
@@ -78,21 +76,21 @@ constexpr std::string join(std::string str1, std::string str2, auto&&... strs) {
 	return join(join(std::move(str1), std::move(str2)), std::move(strs)...);
 }
 
-struct builtin_filesystem_file {
+struct filesystem__file {
 	std::filesystem::directory_entry e;
 };
 
-struct builtin_filesystem_directory {
+struct filesystem__directory {
 	std::filesystem::directory_entry e;
 };
 
-Vector<Union<builtin_filesystem_file, builtin_filesystem_directory>> filesystem__entries(const builtin_filesystem_directory& dir) {
-	Vector<Union<builtin_filesystem_file, builtin_filesystem_directory>> res{};
+Vector<Variant<filesystem__file, filesystem__directory>> filesystem__entries(const filesystem__directory& dir) {
+	Vector<Variant<filesystem__file, filesystem__directory>> res{};
 	for (const auto& file_or_folder : std::filesystem::directory_iterator(dir.e.path()))
 		if (file_or_folder.is_directory())
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
+			res.push_back(filesystem__directory{ file_or_folder });
 		else
-			res.push_back(builtin_filesystem_directory{ file_or_folder });
+			res.push_back(filesystem__directory{ file_or_folder });
 	return res;
 }
 
@@ -126,3 +124,4 @@ String sum_strings(auto&& s1, auto&& s2, auto&&... strs) {
 	((res += strs), ...);
     return res;
 }
+

@@ -161,7 +161,7 @@ NodeStructs::Typename get_typename_struct(
 
 	return std::visit(overload(
 		[&](const Token<AUTO>& a) -> NodeStructs::Typename {
-			return make_typename(NodeStructs::BaseTypename{ "auto" }, std::move(value_cat), rule_info_from_rule(file_name, vec, a));
+			return make_typename(copy(auto_tn_base), std::move(value_cat), rule_info_from_rule(file_name, vec, a));
 		},
 		[&](const grammar::NonAutoTypename& e) -> NodeStructs::Typename {
 			NodeStructs::Typename res = std::visit(overload(

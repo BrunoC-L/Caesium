@@ -17,12 +17,27 @@ struct variable_info {
 	NodeStructs::ValueCategory value_category;
 	Realised::MetaType type;
 };
+
+template <>
+struct copy_t<variable_info> {
+	static variable_info copy(const variable_info& info) {
+		return copy2(info);
+	}
+};
+
 using variables_t = std::map<std::string, std::vector<variable_info>>;
 using transpile_declaration_definition_t = expected<std::pair<std::string, std::string>>;
 
 struct type_information{
 	Realised::MetaType type;
 	std::string representation;
+};
+
+template <>
+struct copy_t<type_information> {
+	static type_information copy(const type_information& info) {
+		return copy2(info);
+	}
 };
 
 struct non_type_information{
@@ -128,12 +143,7 @@ std::optional<error> validate_templates(const std::vector<NodeStructs::Template>
 
 transpile_t transpile(const std::vector<NodeStructs::File>& project);
 
-transpile_declaration_definition_t transpile_main(
-	transpilation_state_with_indent state,
-	const NodeStructs::Function& fn
-);
-
-transpile_declaration_definition_t transpile(
+std::optional<error> realise_main(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
 );
@@ -144,9 +154,9 @@ std::optional<error> stack(
 	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
-transpile_declaration_definition_t transpile_type(
+transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
-	const Realised::Type& type
+	const NodeStructs::Type& type
 );
 
 transpile_declaration_definition_t transpile(
@@ -289,16 +299,31 @@ expected<Arrangement> find_best_template(
 	const std::vector<NodeStructs::WordTypenameOrExpression>& args
 );
 
-//expected<std::optional<std::reference_wrapper<const NodeStructs::Function>>> find_best_function(
-//	transpilation_state_with_indent state,
-//	variables_t& variables,
-//	const std::string& name,
-//	const Namespace& space,
-//	const std::vector<Realised::MetaType>& arg_types
-//);
+expected<Realised::Function> realise_function(
+	transpilation_state_with_indent state,
+	variables_t variables, // by value
+	const NodeStructs::Function& function,
+	const std::vector<expression_information>& args
+);
+
+
+transpile_expression_information_t produce_call(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const Realised::Function& function,
+	const std::vector<expression_information>& args
+);
+
+transpile_expression_information_t realise_function_and_produce_call(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const std::string& name,
+	const NodeStructs::NameSpace& space,
+	const std::vector<expression_information>& args
+);
 
 template <typename context>
-transpile_t transpile(
+transpile_t transpile_statements(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const std::vector<NodeStructs::Statement<context>>& statements,
@@ -348,3 +373,7 @@ expected<Realised::Type> get_existing_realised_type(
 );
 
 std::string_view name_of_builtin(const Realised::Builtin& builtin);
+
+NodeStructs::ValueCategory optional_parameter_category_to_value_category(const Optional<NodeStructs::ParameterCategory>& opt_cat);
+NodeStructs::ValueCategory optional_parameter_category_to_value_category(const std::optional<NodeStructs::ParameterCategory>& opt_cat);
+NodeStructs::ValueCategory parameter_category_to_value_category(const NodeStructs::ParameterCategory& cat);

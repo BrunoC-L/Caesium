@@ -26,7 +26,11 @@ R f(
 
 		if (holds<Realised::UnionType>(assigned_expression_ok.type)
 			&& (cmp(type, assigned_expression_ok.type) != std::strong_ordering::equivalent)) {
-			std::string lambda_var_name = [&]() { std::stringstream ss; ss << "auto" << state.state.current_variable_unique_id++; return ss.str(); }();
+			std::string lambda_var_name = [&]() {
+				std::stringstream ss;
+				ss << auto_tn_base.type << state.state.current_variable_unique_id++;
+				return ss.str();
+			}();
 			return type_repr + " " + statement.name + " = "
 				"std::visit([](const auto& " + lambda_var_name + ") -> " + type_repr + " {"
 				" return " + lambda_var_name + "; "
@@ -36,7 +40,7 @@ R f(
 			if (cmp(assigned_expression_ok.type, type) == std::strong_ordering::equivalent)
 				return type_repr + " " + statement.name + " = " + assigned_expression_ok.representation + ";\n";
 			else
-				return type_repr + " " + statement.name + " = { " + assigned_expression_ok.representation + " };\n";
+				return type_repr + " " + statement.name + " = { " + assigned_expression_ok.representation + " }; \n";
 		}
 	}
 }
@@ -64,7 +68,7 @@ R transpile_statement_specific(
 	const NodeStructs::VariableDeclarationStatement<context>& statement
 ) {
 	bool is_aggregate_init = holds<NodeStructs::BraceArguments>(statement.expr);
-	bool is_auto = cmp(statement.type.value, make_typename(NodeStructs::BaseTypename{ "auto" }, std::nullopt, rule_info_language_element("auto")).value) == std::strong_ordering::equivalent;
+	bool is_auto = cmp(statement.type, auto_tn) == std::strong_ordering::equivalent;
 	if (is_auto) {
 		if (is_aggregate_init)
 			return error{
@@ -172,7 +176,7 @@ R transpile_statement_specific(
 
 
 		if (cnd_value) {
-			auto if_statements = transpile(state.indented(), variables, statement.ifStatements, expected_return_type);
+			auto if_statements = transpile_statements(state.indented(), variables, statement.ifStatements, expected_return_type);
 			return_if_error(if_statements);
 			return if_statements.value();
 		}
@@ -184,7 +188,7 @@ R transpile_statement_specific(
 	}
 	else {
 
-		auto if_statements = transpile(state.indented(), variables, statement.ifStatements, expected_return_type);
+		auto if_statements = transpile_statements(state.indented(), variables, statement.ifStatements, expected_return_type);
 		return_if_error(if_statements);
 
 		auto if_expr = transpile_expression(state, variables, statement.ifExpr);
@@ -205,7 +209,7 @@ R transpile_statement_specific(
 						return transpile_statement_specific<context, is_compile_time>(state, variables, expected_return_type, elseif.get()).value();
 					},
 					[&](const std::vector<NodeStructs::Statement<context>>& justelse) {
-						return "{\n" + transpile(state.indented(), variables, justelse, expected_return_type).value() + indent(state.indent) + "}\n";
+						return "{\n" + transpile_statements(state.indented(), variables, justelse, expected_return_type).value() + indent(state.indent) + "}\n";
 					}
 				),
 				statement.elseExprStatements.value()._value
@@ -311,7 +315,7 @@ R transpile_for_or_ifor_statement(
 		if (!std::holds_alternative<non_type_information>(s1.value()))
 			NOT_IMPLEMENTED;
 		const auto& s1_ok = std::get<non_type_information>(s1.value());
-		auto s2 = transpile(state.indented(), variables, statement.statements, expected_return_type);
+		auto s2 = transpile_statements(state.indented(), variables, statement.statements, expected_return_type);
 		return_if_error(s2);
 
 		ss << " : "
@@ -360,7 +364,7 @@ R transpile_statement_specific(
 	if (!std::holds_alternative<non_type_information>(while_expr_info.value()))
 		NOT_IMPLEMENTED;
 	const auto& while_expr_info_ok = std::get<non_type_information>(while_expr_info.value());
-	auto transpiled_statements = transpile(state.indented(), variables, statement.statements, expected_return_type);
+	auto transpiled_statements = transpile_statements(state.indented(), variables, statement.statements, expected_return_type);
 	return_if_error(transpiled_statements);
 	return "while (" + while_expr_info_ok.representation + ") {\n" + transpiled_statements.value() + indent(state.indent) + "}\n";
 }
@@ -488,7 +492,7 @@ R transpile_statement_specific(
 				.value_category = NodeStructs::Reference{},
 				.type = type_of_typename(state, variables, match_case.variable_declarations.at(0).first).value()
 			});
-		auto statements = transpile(state.indented(), variables, match_case.statements, expected_return_type);
+		auto statements = transpile_statements(state.indented(), variables, match_case.statements, expected_return_type);
 		variables[varname].pop_back();
 		return_if_error(statements);
 
@@ -558,7 +562,7 @@ R int_or_char_switch(
 		const auto& val = std::get<token_string_or_token_int>(switch_expr.expression.get()._value);
 		ss << indent(state.indent + 1) << "case " << case_fix<token_string_or_token_int>(val.value) << ":\n";
 		if (switch_statements.size() > 0) {
-			auto statements = transpile(state.indented().indented(), variables, switch_statements, expected_return_type);
+			auto statements = transpile_statements(state.indented().indented(), variables, switch_statements, expected_return_type);
 			return_if_error(statements);
 			ss << statements.value();
 		}

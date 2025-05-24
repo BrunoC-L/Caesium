@@ -56,4 +56,4 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < argc; ++i)
 		args.push_back(std::string(argv[i]));
 	return _redirect_main(args);
-};
+}

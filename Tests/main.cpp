@@ -26,7 +26,16 @@ int main(int argc, char** argv) {
 	}
 
 	else {
-		if (!test_transpile_all_folders(std::filesystem::directory_iterator{ argv[1] }))
+		auto target_dir = [&](std::filesystem::path target_dir) -> std::filesystem::path {
+			auto _current_folder_path = target_dir / "_current";
+			if (std::filesystem::exists(_current_folder_path) && std::filesystem::is_directory(_current_folder_path))
+				for (const auto& folder : std::filesystem::directory_iterator{ _current_folder_path })
+					if (folder.is_directory())
+						return _current_folder_path;
+			return target_dir;
+		}(std::filesystem::path{ argv[1] });
+		
+		if (!test_transpile_all_folders(std::filesystem::directory_iterator{ target_dir }))
 			return bad_exit;
 		std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
 	}
