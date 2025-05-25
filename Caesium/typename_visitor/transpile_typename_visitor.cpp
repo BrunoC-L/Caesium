@@ -8,6 +8,7 @@ using R = T::R;
 R T::operator()(const NodeStructs::BaseTypename& type) {
 #define OK(X) if (type.type == #X) return #X;
 	expand_language_typenames_that_can_appear_in_cpp(OK);
+#undef OK
 #define OK(X) if (type.type == X) return X;
 
 	OK(Realised::Builtin::builtin_compile_time_error::name);
@@ -20,6 +21,7 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 	OK(Realised::Builtin::builtin_map::name);
 	OK(Realised::Builtin::builtin_union::name);
 
+#undef OK
 #define OK(X) if (auto it = find_by_name(state.state.global_namespace. X , type.type); it != state.state.global_namespace. X .end()) return type.type;
 	OK(types);
 	OK(functions);
