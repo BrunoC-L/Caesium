@@ -57,9 +57,6 @@
     <ClCompile Include="type_of_template_instantiation_with_args_visitor.cpp">
       <Filter>Header Files\type_category_visitors</Filter>
     </ClCompile>
-    <ClCompile Include="traverse_type_visitor.cpp">
-      <Filter>Header Files\type_category_visitors</Filter>
-    </ClCompile>
     <ClCompile Include="structurizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -160,9 +157,6 @@
     </ClInclude>
     <ClInclude Include="vec_of_expected_to_expected_of_vec.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="traverse_type_visitor.hpp">
-      <Filter>Header Files\type_category_visitors</Filter>
     </ClInclude>
     <ClInclude Include="replace_all.hpp">
       <Filter>Header Files</Filter>

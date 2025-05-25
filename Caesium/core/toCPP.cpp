@@ -334,12 +334,12 @@ std::optional<error> realise_main(
 	if (fn.parameters.size())
 		args.push_back(
 			expression_information{ non_type_information{
-				.type = Realised::VectorType{
+				.type = { Realised::VectorType{
 					.name = "Vector_String_",
-					.value_type = Realised::PrimitiveType{ Realised::PrimitiveType::String{} }
-				},
+					.value_type = { Realised::PrimitiveType{ Realised::PrimitiveType::String{} } }
+				} },
 				.representation = "args",
-				.value_category = NodeStructs::Reference{}
+				.value_category = { NodeStructs::Reference{} }
 			} }
 		);
 	auto res = realise_function(

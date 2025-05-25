@@ -529,20 +529,18 @@ bool is_string(const auto& t) {
 }
 
 template <typename T>
-std::string case_fix(std::string case_expr);
+std::string case_fix(std::string case_expr) {
+	if constexpr (std::is_same_v<T, Token<INTEGER_NUMBER>>) {
+		return case_expr;
 
-template <>
-std::string case_fix<Token<INTEGER_NUMBER>>(std::string case_expr) {
-	return case_expr;
-}
-
-template <>
-std::string case_fix<Token<STRING>>(std::string case_expr) {
-	if (case_expr == "\"\\\"\"") return "'\"'";  // "\"" -> '"'
-	if (case_expr == "\"'\"")    return "'\\''"; // "'"  -> '\''
-	case_expr[0] = '\'';
-	case_expr[case_expr.length() - 1] = '\'';
-	return case_expr;
+	}
+	else { // Token<STRING>
+		if (case_expr == "\"\\\"\"") return "'\"'";  // "\"" -> '"'
+		if (case_expr == "\"'\"")    return "'\\''"; // "'"  -> '\''
+		case_expr[0] = '\'';
+		case_expr[case_expr.length() - 1] = '\'';
+		return case_expr;
+	}
 }
 
 template <typename token_string_or_token_int, typename context>
@@ -646,7 +644,7 @@ R transpile_statement_specific(
 	}
 }
 
-R transpile_statement(
+transpile_t transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const Realised::MetaType& expected_return_type,
@@ -668,7 +666,7 @@ R transpile_statement(
 	), statement.statement.get()._value);
 }
 
-R transpile_statement(
+transpile_t transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const Realised::MetaType& expected_return_type,
@@ -677,7 +675,7 @@ R transpile_statement(
 	NOT_IMPLEMENTED;
 }
 
-R transpile_statement(
+transpile_t transpile_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const Realised::MetaType& expected_return_type,
