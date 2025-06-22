@@ -12,14 +12,13 @@ R f(
 	non_type_information assigned_expression_ok
 ) {
 	if constexpr (is_compile_time) {
-		NOT_IMPLEMENTED;
-		/*if (holds<Realised::CompileTimeType>(type))
+		if (holds<Realised::CompileTimeType>(type))
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(assigned_expression_ok.type) });
 		else if (holds<Realised::PrimitiveType>(type))
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, { Realised::CompileTimeType{ copy(assigned_expression_ok.type) } } });
 		else
 			NOT_IMPLEMENTED;
-		return "";*/
+		return "";
 	}
 	else {
 		variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type) });
@@ -52,7 +51,7 @@ R transpile_statement_specific(
 	const Realised::MetaType& expected_return_type,
 	const NodeStructs::Expression& statement
 ) {
-	auto repr =  transpile_expression(state, variables, statement);
+	auto repr = transpile_expression(state, variables, statement);
 	return_if_error(repr);
 	if (!std::holds_alternative<non_type_information>(repr.value()))
 		NOT_IMPLEMENTED;
@@ -81,10 +80,7 @@ R transpile_statement_specific(
 		if (std::holds_alternative<non_type_information>(assigned_expression.value())) {
 			auto assigned_expression_ok = std::get<non_type_information>(std::move(assigned_expression).value());
 
-			auto deduced_typename = typename_of_type(state, assigned_expression_ok.type);
-			return_if_error(deduced_typename);
-
-			auto deduced_typename_repr = transpile_typename(state, variables, deduced_typename.value());
+			auto deduced_typename_repr = name_of_type(state, assigned_expression_ok.type);
 			return_if_error(deduced_typename_repr);
 
 			variables[statement.name].push_back({ NodeStructs::MutableReference{}, std::move(assigned_expression_ok).type });
@@ -97,17 +93,18 @@ R transpile_statement_specific(
 		auto type = type_of_typename(state, variables, statement.type);
 		return_if_error(type);
 
-		auto tn = typename_of_type(state, type.value());
-		return_if_error(tn);
-
-		auto type_repr = transpile_typename(state, variables, tn.value());
+		auto type_repr = name_of_type(state, type.value());
 		return_if_error(type_repr);
 
 		auto assigned_expression = [&]() {
 			if (is_aggregate_init) {
 				const auto& aggregate = get<NodeStructs::BraceArguments>(statement.expr);
 				auto as_construct = NodeStructs::ConstructExpression{
-					.operand = copy(tn.value()),
+					.operand = NodeStructs::Typename{
+						NodeStructs::BaseTypename{ copy(type_repr.value()) },
+						copy(statement.type.category),
+						copy(statement.type.info)
+					},
 					.arguments = { copy(aggregate.args) }
 				};
 				return transpile_expression(state, variables, as_construct);
@@ -255,8 +252,8 @@ R transpile_for_or_ifor_statement(
 			int i = 0;
 			std::stringstream ss;
 			for (const Realised::MetaType& type : tl.types) {
-				auto tn = typename_of_type(state, type);
-				return_if_error(tn);
+				auto tn_repr = name_of_type(state, type);
+				return_if_error(tn_repr);
 				if constexpr (ifor) {
 					const std::string& index = index_or_none;
 					NOT_IMPLEMENTED;
@@ -406,12 +403,17 @@ R transpile_statement_specific(
 		auto assign = assigned_to(state, variables, expected_return_type, expr_info_ok.type)._value;
 		if (std::holds_alternative<not_assignable>(assign)) {
 			auto assign2 = assigned_to(state, variables, expected_return_type, expr_info_ok.type)._value;
-			return error{
-				"user error",
-				"returned expression does not match declared return type, expression was `"
-				+ original_representation(statement.returnExpr.at(0).expr)
-				+ "`, type was `" + original_representation(typename_of_type(state, expected_return_type).value()) + "`"
-			};
+			NOT_IMPLEMENTED;
+			//return error{
+			//	"user error",
+			//	"returned expression does not match declared return type, expression was `"
+			//	+ original_representation(statement.returnExpr.at(0).expr)
+			//	+ "`, type was `" + original_representation(NodeStructs::Typename{
+			//		NodeStructs::BaseTypename{ name_of_type(state, expected_return_type).value() },
+			//		NodeStructs::Value{},
+			//		rule_info_stub_no_throw() // todo
+			//	}) + "`"
+			//};
 		}
 		else if (std::holds_alternative<directly_assignable>(assign)) {
 			return expr_info_ok.representation;
@@ -476,14 +478,14 @@ R transpile_statement_specific(
 	if (!std::holds_alternative<non_type_information>(expr_info.value()))
 		NOT_IMPLEMENTED;
 	const auto& expr_ok = std::get<non_type_information>(expr_info.value());
-	auto tn = typename_of_type(state, expr_ok.type);
-	return_if_error(tn);
-	auto tn_repr = transpile_typename(state, variables, tn.value());
+	auto tn_repr = name_of_type(state, expr_ok.type);
 	return_if_error(tn_repr);
 	unsigned id = state.state.current_variable_unique_id++;
 	ss << "const " << tn_repr.value() << "& matchval" << id << " = " << expr_ok.representation << ";\n";
 	for (const NodeStructs::MatchCase<context>& match_case : statement.cases) {
-		auto tn = transpile_typename(state, variables, match_case.variable_declarations.at(0).first);
+		auto t_or_e = type_of_typename(state, variables, match_case.variable_declarations.at(0).first);
+		return_if_error(t_or_e);
+		transpile_t tn = name_of_type(state, t_or_e.value());
 		return_if_error(tn);
 		const auto& varname = match_case.variable_declarations.at(0).second;
 

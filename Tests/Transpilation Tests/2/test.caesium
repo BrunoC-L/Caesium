@@ -1,4 +1,0 @@
-Int main(Vector<String> ref cli_args):
-    for arg in cli_args:
-        println(arg)
-    return 0

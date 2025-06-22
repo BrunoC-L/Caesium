@@ -1,13 +1,18 @@
 #include "defaults.hpp"
 
+struct T;
+
+struct T {
+	Int a;
+};
 
 
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& args);
 
 Int _redirect_main(const Vector_String_& args) {
-	filesystem__directory d = filesystem__directory{String{"Hello World!\n"}};
-	return 0;
+	T t = T{3};
+	return t.a;
 }
 
 int main(int argc, char** argv) {

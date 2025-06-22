@@ -11,9 +11,13 @@ R T::operator()(const Realised::Type& t) {
 }
 
 R T::operator()(const Realised::PrimitiveType& t) {
+	auto t_or_e = type_of_typename(state, variables, typename_of_primitive(t));
+	return_if_error(t_or_e);
+	transpile_t name = name_of_type(state, t_or_e.value());
+	return_if_error(name);
 	return error{
 		"user error",
-		"Use of type like a function is prohibited. Type was `" + transpile_typename(state, variables, typename_of_primitive(t)).value() + "`"
+		"Use of type like a function is prohibited. Type was `" + name.value() + "`"
 	};
 }
 
@@ -32,7 +36,7 @@ R T::operator()(const Realised::FunctionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const Realised::InterfaceType& t) {
+R T::operator()(const Realised::Interface& t) {
 	NOT_IMPLEMENTED;
 }
 
@@ -85,5 +89,9 @@ R T::operator()(const Realised::TypeListType& t) {
 }
 
 R T::operator()(const Realised::CompileTimeType& t) {
+	NOT_IMPLEMENTED;
+}
+
+R T::operator()(const Realised::TemplateInstanceType& t) {
 	NOT_IMPLEMENTED;
 }

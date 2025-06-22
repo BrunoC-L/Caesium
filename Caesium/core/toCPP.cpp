@@ -115,15 +115,7 @@ std::optional<error> insert_all_named_recursive_with_imports(
 					return opt_error;
 				NodeStructs::NameSpace& imported_named = named_by_file.at(i.imported);
 
-				NOT_IMPLEMENTED;
-				/*add(named, imported_named.types);
-				add(named, imported_named.functions);
-				add(named, imported_named.interfaces);
-				add(named, imported_named.blocks);
-				add(named, imported_named.templates);
-				add(named, imported_named.enums);*/
-				/*for (const auto& [k, e] : imported_named.namespaces)
-					named.namespaces.emplace(k, copy(e));*/
+				insert_all_named_recursive_with_imports(named, imported_named);
 			}
 			return std::nullopt;
 		}
@@ -135,11 +127,18 @@ std::optional<error> insert_all_named_recursive_with_imports(
 
 void mark_exists_as_traversed(transpilation_state& state, variables_t& variables, const NodeStructs::NameSpace& exists, std::stringstream& ss) {
 	for (const auto& e : exists.types) {
-		auto rt_or_e = realise_type({ state, 0 }, e);
-		if (rt_or_e.has_error())
+		auto types_or_e = realise_type_or_interface_unchecked({ state, 0 }, e);
+		if (types_or_e.has_error())
 			NOT_IMPLEMENTED;
+		auto [nt, rt] = std::move(types_or_e).value();
 
-		state.types_traversal.traversed.insert({ rt_or_e.value().name._value, std::move(rt_or_e).value()});
+		auto types_declarations_before = copy(state.types_traversal.declarations);
+		auto types_definitions_before = copy(state.types_traversal.definitions);
+
+		state.types_traversal.declarations = std::move(types_declarations_before);
+		state.types_traversal.definitions = std::move(types_definitions_before);
+
+		state.types_traversal.traversed.insert({ rt.name._value, std::move(rt) });
 	}
 
 	for (const auto& e : exists.templates) {
@@ -234,11 +233,13 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 
 				std::stringstream exists_aliases;
 
-				variables_t variables = make_base_variables();
+				{
+					variables_t variables = make_base_variables();
 
-				for (const auto& file : project)
-					for (const auto& exists : file.exists)
-						mark_exists_as_traversed(state, variables, exists, exists_aliases);
+					for (const auto& file : project)
+						for (const auto& exists : file.exists)
+							mark_exists_as_traversed(state, variables, exists, exists_aliases);
+				}
 
 				std::optional<error> res = realise_main({ state, 0 }, fn);
 				if (res.has_value())
@@ -256,34 +257,29 @@ transpile_t transpile(const std::vector<NodeStructs::File>& project) {
 					for (const auto definition : state.types_traversal.definitions)
 						definitions << definition;
 
-					for (const auto& enum_ : state.enums_to_transpile) {
+					for (const auto& name_and_enum : state.enums_to_transpile) {
 						size_t val = 0;
-						std::string enum_prefix = enum_.name + "__";
-						for (const auto& enum_val : enum_.values)
+						std::string enum_prefix = name_and_enum.first + "__";
+						for (const auto& enum_val : name_and_enum.second.values)
 							declarations << "static constexpr Int " << enum_prefix << enum_val << " = " << val++ << ";\n";
 					}
-					for (const auto& i : state.interfaces_traversal.traversed) {
-					// for (const auto& i : state.interfaces_traversal.definitions) {
-						NOT_IMPLEMENTED;
-						//if (!state.traversed_interfaces.contains(i))
-						//	NOT_IMPLEMENTED;
-						//if (i.name_space.has_value())
-						//	NOT_IMPLEMENTED;
-						//const auto& members = state.interface_symbol_to_members.at(make_typename(NodeStructs::BaseTypename{ i.name }, NodeStructs::Value{}, rule_info_stub_no_throw()));
-						//if (members.size() == 0)
-						//	NOT_IMPLEMENTED;
-						//auto unindented = transpilation_state_with_indent{ state, 0 };
-						///*auto interface_repr = transpile_typename(unindented, make_typename( NodeStructs::BaseTypename{ i.name } });
-						//return_if_error(interface_repr);*/
-						//auto k = members
-						//	| std::views::transform([&](auto&& T) { return typename_of_type(unindented, T); })
-						//	| to_vec();
-						//auto v = vec_of_expected_to_expected_of_vec(std::move(k));
-						//return_if_error(v);
-						//auto members_repr = transpile_typenames(unindented, variables, v.value());
-						//return_if_error(members_repr);
-						//declarations << "struct " << i.name << ";\n";
-						//definitions << "struct " << i.name << " {\n\tUnion<" << members_repr.value() << "> value;\n};\n";
+					for (const auto& name_and_interface : state.interfaces_traversal.traversed) {
+						const std::string& name = name_and_interface.first;
+
+						if (state.interface_to_members.count(name) == 0)
+							continue;
+
+						declarations << "struct " << name << ";\n";
+						definitions << "struct " << name << " {\n\tUnion<";
+						bool first = true;
+						for (const auto& e : state.interface_to_members.at(name)) {
+							if (first)
+								first = false;
+							else
+								definitions << ", ";
+							definitions << e;
+						}
+						definitions << "> value;\n};\n";
 					}
 					cpp << declarations.str() << "\n"
 						<< definitions.str() << "\n";
@@ -344,7 +340,7 @@ std::optional<error> realise_main(
 		);
 	auto res = realise_function(
 		state,
-		variables_t{},
+		make_base_variables(),
 		NodeStructs::Function{
 			.name = "_redirect_main",
 			.name_space = std::nullopt,
@@ -361,60 +357,6 @@ std::optional<error> realise_main(
 		return std::nullopt;
 }
 
-std::optional<error> stack(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const std::vector<NodeStructs::FunctionParameter>& parameters
-) {
-	for (auto&& [type_name, name] : parameters) {
-		auto t = type_of_typename(state, variables, type_name);
-		return_if_error(t);
-	}
-	for (auto&& [type_name, name] : parameters) {
-		const auto& cat = type_name.category;
-		if (!cat._value.has_value())
-			NOT_IMPLEMENTED;
-		auto t = type_of_typename(state, variables, type_name);
-		if (t.has_error())
-			NOT_IMPLEMENTED;
-		if (std::holds_alternative<NodeStructs::Value>(cat._value.value()._value))
-			variables[name].push_back({ NodeStructs::MutableReference{}, std::move(t).value() });
-		else
-			variables[name].push_back({ copy(cat._value.value()), std::move(t).value() });
-	}
-	return std::nullopt;
-}
-
-//transpile_declaration_definition_t transpile(
-//	transpilation_state_with_indent state,
-//	const NodeStructs::Function& fn
-//) {
-//	variables_t variables = make_base_variables();
-//	auto return_typename = transpile_typename(state, variables, fn.returnType);
-//	return_if_error(return_typename);
-//	auto return_type = type_of_typename(state, variables, fn.returnType);
-//	return_if_error(return_type);
-//	auto parameters = transpile(state, variables, fn.parameters);
-//	return_if_error(parameters);
-//	auto stack_params_opt_error = stack(state, variables, fn.parameters);
-//	if (stack_params_opt_error.has_value())
-//		return stack_params_opt_error.value();
-//	auto statements = transpile_statements(state.indented(), variables, fn.statements, return_type.value());
-//	return_if_error(statements);
-//	if (fn.name_space.has_value()) {
-//		std::string common = return_typename.value() + " " + transpile_typename(state, variables, fn.name_space.value()).value() + "__" + fn.name + "(" + parameters.value() + ")";
-//		std::string declaration = common + ";\n";
-//		std::string definition = common + " {\n" + statements.value() + "};\n";
-//		return std::pair{ declaration, definition };
-//	}
-//	else {
-//		std::string common = return_typename.value() + " " + fn.name + "(" + parameters.value() + ")";
-//		std::string declaration = common + ";\n";
-//		std::string definition = common + " {\n" + statements.value() + "};\n";
-//		return std::pair{ declaration, definition };
-//	}
-//}
-
 transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Type& type
@@ -425,14 +367,21 @@ transpile_declaration_definition_t transpile(
 
 	variables_t variables = make_base_variables();
 	for (const auto& member : type.members) {
-		std::visit(overload(
-			[&](const NodeStructs::Alias& alias) {
+		std::optional<error> opt_e = std::visit(overload(
+			[&](const NodeStructs::Alias& alias) -> std::optional<error> {
 				NOT_IMPLEMENTED;
 			},
-			[&](const NodeStructs::MemberVariable& member) {
-				definition << "\t" << transpile_typename(state, variables, member.type).value() << " " << member.name << ";\n";
+			[&](const NodeStructs::MemberVariable& member) -> std::optional<error> {
+				auto t_or_e = type_of_typename(state, variables, member.type);
+				return_if_error(t_or_e);
+				transpile_t name_or_e = name_of_type(state, t_or_e.value());
+				return_if_error(name_or_e);
+				definition << "\t" << name_or_e.value() << " " << member.name << ";\n";
+				return std::nullopt;
 			}
 		), std::get<NodeStructs::contextual_options<type_context>>(member.statement.get()._value)._value);
+		if (opt_e.has_value())
+			return opt_e.value();
 	}
 
 	definition << "};\n\n";
@@ -444,35 +393,6 @@ transpile_declaration_definition_t transpile(
 	const NodeStructs::Interface& interface
 ) {
 	return std::pair{ "//generatedtodo const NodeStructs::Interface& interface;", "//generatedtodo const NodeStructs::Interface& interface;"};
-}
-
-transpile_t transpile(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const std::vector<NodeStructs::FunctionParameter>& parameters
-) {
-	std::stringstream ss;
-	bool first = true;
-	for (const auto& [type, name] : parameters) {
-		const auto& cat = type.category;
-		if (!cat._value.has_value())
-			NOT_IMPLEMENTED;
-		auto tn = transpile_typename(state, variables, type);
-		return_if_error(tn);
-		auto s = tn.value();
-		if (std::holds_alternative<NodeStructs::Reference>(cat._value.value()._value))
-			s = "const " + std::move(s) + "&";
-		else if (std::holds_alternative<NodeStructs::MutableReference>(cat._value.value()._value))
-			s = std::move(s) + "&";
-		else if (std::holds_alternative<NodeStructs::Value>(cat._value.value()._value))
-			s = std::move(s) + "&&";
-		if (first)
-			first = false;
-		else
-			ss << ", ";
-		ss << s << " " << name;
-	}
-	return ss.str();
 }
 
 Realised::MetaType iterator_type(
@@ -509,9 +429,11 @@ std::optional<error> add_for_iterator_variables(
 			[&](const NodeStructs::VariableDeclaration& it) -> std::optional<error> {
 				Realised::MetaType iterator_type = type_of_typename(state, variables, it.type).value();
 				if (cmp(it_type, iterator_type) != std::strong_ordering::equivalent) {
-					auto t = transpile_typename(state, variables, it.type);
-					return_if_error(t);
-					return error{ "user error","Invalid type of iterator " + t.value() };
+					auto t_or_e = type_of_typename(state, variables, it.type);
+					return_if_error(t_or_e);
+					transpile_t name_or_e = name_of_type(state, t_or_e.value());
+					return_if_error(name_or_e);
+					return error{ "user error","Invalid type of iterator " + std::move(name_or_e).value()};
 				}
 				NOT_IMPLEMENTED;
 			},
@@ -595,7 +517,11 @@ transpile_t transpile_typenames(
 	if (args.size() == 0)
 		return "";
 	auto vec = vec_of_expected_to_expected_of_vec(args
-		| std::views::transform([&](auto&& T) { return transpile_typename(state, variables, T); })
+		| std::views::transform([&](auto&& T) -> transpile_t {
+			auto t_or_e = type_of_typename(state, variables, T);
+			return_if_error(t_or_e);
+			return name_of_type(state, t_or_e.value());
+		})
 		| to_vec());
 	return_if_error(vec);
 	return std::accumulate(
@@ -622,12 +548,12 @@ std::string template_name(std::string original_name, const std::vector<NodeStruc
 }
 
 Variant<not_assignable, directly_assignable, requires_conversion> compile_time_assigned_to(
-	transpilation_state_with_indent state_,
+	transpilation_state_with_indent state,
 	variables_t& variables,
 	const Realised::MetaType& parameter,
 	const Realised::CompileTimeType& arg
 ) {
-	auto res = assigned_to(state_, variables, parameter, arg.type);
+	auto res = assigned_to(state, variables, parameter, arg.type);
 	if (holds<not_assignable>(res))
 		return not_assignable{};
 	else if (holds<directly_assignable>(res)) {
@@ -658,18 +584,16 @@ Variant<not_assignable, directly_assignable, requires_conversion> compile_time_a
 	NOT_IMPLEMENTED;
 }
 
-struct no_previous_conversion {};
+namespace {
+	struct no_previous_conversion {};
+}
 
 requires_conversion get_converter(const Realised::MetaType& to, auto _previous_converter) {
 	return requires_conversion{
 		[T = copy(to), previous_converter = std::move(_previous_converter)]
 		(transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
 			(void)previous_converter; // causes unused warnings for some template instantiations
-			auto tn = typename_of_type(state, T);
-			if (tn.has_error())
-				NOT_IMPLEMENTED;
-
-			auto tn_str = transpile_typename(state, variables, tn.value());
+			auto tn_str = name_of_type(state, T);
 			if (tn_str.has_error())
 				NOT_IMPLEMENTED;
 
@@ -695,7 +619,7 @@ requires_conversion get_converter(const Realised::MetaType& to, auto _previous_c
 }
 
 Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
-	transpilation_state_with_indent state_,
+	transpilation_state_with_indent state,
 	variables_t& variables,
 	const Realised::MetaType& parameter,
 	const Realised::MetaType& argument
@@ -706,23 +630,23 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 	using R = Variant<not_assignable, directly_assignable, requires_conversion>;
 
 	if (holds<Realised::CompileTimeType>(argument))
-		return compile_time_assigned_to(state_, variables, parameter, get<Realised::CompileTimeType>(argument));
+		return compile_time_assigned_to(state, variables, parameter, get<Realised::CompileTimeType>(argument));
 
 	return std::visit(
 		overload(
-			[&](const auto& param, const auto& arg, const auto& state) -> R {
+			[&](const auto& param, const auto& arg) -> R {
 				NOT_IMPLEMENTED;
 			},
-			[&](const Realised::OptionalType& param, const auto& arg, const auto& state) -> R {
-				return assigned_to(state_, variables, param.value_type, { copy(arg) });
+			[&](const Realised::OptionalType& param, const auto& arg) -> R {
+				return assigned_to(state, variables, param.value_type, { copy(arg) });
 			},
-			[&](const Realised::Builtin& param, const auto& arg, const auto& state) -> R {
+			[&](const Realised::Builtin& param, const auto& arg) -> R {
 				NOT_IMPLEMENTED;
 				/*if (param.name == "filesystem__directory") {
 					return assigned_to(state, variables, Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<std::string>{} } }, { copy(arg) });
 				}*/
 			},
-			[&](const Realised::UnionType& param, const auto& arg, const auto& state) -> R {
+			[&](const Realised::UnionType& param, const auto& arg) -> R {
 				if constexpr (std::is_same_v<std::remove_cvref_t<decltype(arg)>, Realised::UnionType>) {
 					// check each union type of u is assignable into e
 					for (const auto& arg : arg.arguments) {
@@ -741,7 +665,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 					return not_assignable{};
 				}
 			},
-			[&](const Realised::Type& param, const Realised::AggregateType& arg, const auto& state) -> R {
+			[&](const Realised::Type& param, const Realised::AggregateType& arg) -> R {
 				NOT_IMPLEMENTED;
 				//if (param.member_variables.size() != arg.arguments.size())
 				//	return not_assignable{};
@@ -802,53 +726,56 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 				//	};
 				//}
 			},
-			[&](const Realised::Type& param, const Realised::Type& arg, const auto& state) -> R {
+			[&](const Realised::Type& param, const Realised::Type& arg) -> R {
 				if (cmp(param, arg) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				// if the parameter has 1 member, try to assign to that member
-				if (param.member_variables.size() == 1) {
-					// in the event where assignment can work, we still need a `requires_conversion`
-					R mem_assigned = assigned_to(state, variables, param.member_variables.at(0).type, argument);
-					if (std::holds_alternative<directly_assignable>(mem_assigned._value)) {
-						return requires_conversion{
-							[s = param.name._value, cp = copy(param)](transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
-								transpile_expression_information_t expr_info = transpile_expression(state, variables, expr);
-								return_if_error(expr_info);
-								if (!std::holds_alternative<non_type_information>(expr_info.value()))
-									NOT_IMPLEMENTED;
-								non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
-								return expression_information{ non_type_information{
-									.type = Realised::MetaType{ std::move(const_cast<Realised::Type&>(cp)) },
-									.representation = s + "{" + expr_info_ok.representation + "}",
-									.value_category = std::move(expr_info_ok).value_category
-								} };
-							}
-						};
-					}
-					else if (std::holds_alternative<requires_conversion>(mem_assigned._value)) {
-						return requires_conversion{
-							[s = param.name._value, cp = copy(param), mem_assigned = std::get<requires_conversion>(std::move(mem_assigned)._value)]
-							(transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
-								requires_conversion& rc = const_cast<requires_conversion&>(mem_assigned);
-								transpile_expression_information_t expr_info = rc.converter(state, variables, expr);
-								return_if_error(expr_info);
-								if (!std::holds_alternative<non_type_information>(expr_info.value()))
-									NOT_IMPLEMENTED;
-								non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
-								return expression_information{ non_type_information{
-									.type = Realised::MetaType{ std::move(const_cast<Realised::Type&>(cp)) },
-									.representation = s + "{" + expr_info_ok.representation + "}",
-									.value_category = std::move(expr_info_ok).value_category
-								} };
-							}
-						};
-					}
-					else
-						return not_assignable{};
-				}
+				//if (param.member_variables.size() == 1) {
+				//	// in the event where assignment can work, we still need a `requires_conversion`
+				//	R mem_assigned = assigned_to(state, variables, param.member_variables.at(0).type, argument);
+				//	if (std::holds_alternative<directly_assignable>(mem_assigned._value)) {
+				//		return requires_conversion{
+				//			[s = param.name._value, cp = copy(param)](transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
+				//				transpile_expression_information_t expr_info = transpile_expression(state, variables, expr);
+				//				return_if_error(expr_info);
+				//				if (!std::holds_alternative<non_type_information>(expr_info.value()))
+				//					NOT_IMPLEMENTED;
+				//				non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
+				//				return expression_information{ non_type_information{
+				//					.type = Realised::MetaType{ std::move(const_cast<Realised::Type&>(cp)) },
+				//					.representation = s + "{" + expr_info_ok.representation + "}",
+				//					.value_category = std::move(expr_info_ok).value_category
+				//				} };
+				//			}
+				//		};
+				//	}
+				//	else if (std::holds_alternative<requires_conversion>(mem_assigned._value)) {
+				//		return requires_conversion{
+				//			[s = param.name._value, cp = copy(param), mem_assigned = std::get<requires_conversion>(std::move(mem_assigned)._value)]
+				//			(transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
+				//				requires_conversion& rc = const_cast<requires_conversion&>(mem_assigned);
+				//				transpile_expression_information_t expr_info = rc.converter(state, variables, expr);
+				//				return_if_error(expr_info);
+				//				if (!std::holds_alternative<non_type_information>(expr_info.value()))
+				//					NOT_IMPLEMENTED;
+				//				non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
+				//				return expression_information{ non_type_information{
+				//					.type = Realised::MetaType{ std::move(const_cast<Realised::Type&>(cp)) },
+				//					.representation = s + "{" + expr_info_ok.representation + "}",
+				//					.value_category = std::move(expr_info_ok).value_category
+				//				} };
+				//			}
+				//		};
+				//	}
+				//	else
+				//		return not_assignable{};
+				//}
 				return not_assignable{};
 			},
-			[&](const Realised::PrimitiveType& param, const Realised::PrimitiveType& arg, const auto& state) -> R {
+			[&](const Realised::PrimitiveType& param, const auto& arg) -> R {
+				NOT_IMPLEMENTED;
+			},
+			[&](const Realised::PrimitiveType& param, const Realised::PrimitiveType& arg) -> R {
 				if (holds<Realised::PrimitiveType::NonValued<std::string>>(param.value) && (holds<Realised::PrimitiveType::NonValued<char>>(arg.value) || holds<Realised::PrimitiveType::Valued<char>>(arg.value)))
 					return requires_conversion{
 						[](transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
@@ -869,7 +796,7 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 				else
 					return not_assignable{};
 			},
-			[&](const Realised::OptionalType& param, const Realised::PrimitiveType& arg, const auto& state) -> R {
+			[&](const Realised::OptionalType& param, const Realised::PrimitiveType& arg) -> R {
 				NOT_IMPLEMENTED;
 				//if (holds<Realised::PrimitiveType::Valued<Realised::empty_optional_t>>(only(arg)))
 				//	return directly_assignable{};
@@ -883,70 +810,73 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 				//		return not_assignable{};
 				//}
 			},
-			[&](const Realised::Builtin& param, const Realised::PrimitiveType& arg, const auto& state) -> R {
+			[&](const Realised::Builtin& param, const Realised::PrimitiveType& arg) -> R {
 				NOT_IMPLEMENTED; 
 			},
-			[&](const Realised::UnionType& param, const Realised::PrimitiveType& arg, const auto& state) -> R {
+			[&](const Realised::UnionType& param, const Realised::PrimitiveType& arg) -> R {
 				NOT_IMPLEMENTED;
 			},
-			[&](const auto& param, const Realised::PrimitiveType& arg, const auto& state) -> R {
+			[&](const auto& param, const Realised::PrimitiveType& arg) -> R {
 				return not_assignable{};
 			},
 			
-			[&](const Realised::EnumType& param, const Realised::EnumValueType& arg, const auto& state) -> R {
-				if (cmp(param.enum_.get(), arg.enum_.get()) == std::strong_ordering::equivalent)
+			[&](const Realised::EnumType& param, const Realised::EnumValueType& arg) -> R {
+				if (cmp(param.enum_.get(), arg.enum_.enum_.get()) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				else
 					return not_assignable{};
 			},
-			[&](const Realised::Builtin& param, const Realised::Builtin& arg, const auto& state) -> R {
+			[&](const Realised::Builtin& param, const Realised::Builtin& arg) -> R {
 				if (param.builtin._value.index() == arg.builtin._value.index())
 					return directly_assignable{};
 				else
 					return not_assignable{};
 			},
-			[&](const Realised::VectorType& param, const Realised::VectorType& arg, const auto& state) -> R {
+			[&](const Realised::VectorType& param, const Realised::VectorType& arg) -> R {
 				if (cmp(param.value_type, arg.value_type) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				else
 					return not_assignable{};
 			},
-			[&](const Realised::SetType& param, const Realised::SetType& arg, const auto& state) -> R {
+			[&](const Realised::SetType& param, const Realised::SetType& arg) -> R {
 				if (cmp(param.value_type, arg.value_type) == std::strong_ordering::equivalent)
 					return directly_assignable{};
 				else
 					return not_assignable{};
 			},
-			[&](const Realised::InterfaceType& param, const Realised::Type& arg, const auto& state) -> R {
-				NOT_IMPLEMENTED;
-				//for (const auto& [type_name, name] : param.interface.get().member_variables) {
-				//	auto t = type_of_typename(state, variables, type_name);
-				//	if (t.has_error())
-				//		NOT_IMPLEMENTED;
-				//	for (const auto& [source_type_name, source_name] : arg.member_variables) {
-				//		NOT_IMPLEMENTED;
-				//		/*if (name == source_name) {
-				//			auto t2 = type_of_typename(state, variables, source_type_name);
-				//			if (t2.has_error())
-				//				NOT_IMPLEMENTED;
-				//			if (cmp(t.value(), t2.value()) != std::strong_ordering::equivalent)
-				//				return not_assignable{};
-				//		}*/
-				//	}
-				//}
-				NOT_IMPLEMENTED;
-				/*auto& interfacemembers = state.state.interface_symbol_to_members[
-					make_typename(NodeStructs::BaseTypename{ param.interface.get().name }, NodeStructs::Value{}, rule_info_stub_no_throw())
-				];
-				auto new_member = Realised::MetaType{ copy(arg) };
-				for (const auto& member : interfacemembers)
-					if (cmp(member, new_member) == std::strong_ordering::equivalent)
-						return directly_assignable{};
-				interfacemembers.push_back(std::move(new_member));*/
-				return directly_assignable{};
+			[&](const Realised::Interface& param, const Realised::Type& arg) -> R {
+				for (const auto& [parameter_member_name, parameter_member_type] : param.member_variables) {
+					bool found = false;
+					for (const auto& [argument_member_name, argument_member_type] : arg.member_variables)
+						if (parameter_member_name._value == argument_member_name._value)
+							if (cmp(parameter_member_type, argument_member_type) != std::strong_ordering::equivalent)
+								return not_assignable{};
+							else
+								found = true;
+					if (!found)
+						return not_assignable{};
+				}
+				if (!state.state.interface_to_members.contains(param.name._value))
+					state.state.interface_to_members.insert({ param.name._value, std::vector{ arg.name._value } });
+				else
+					state.state.interface_to_members.at(param.name._value).push_back(arg.name._value);
+				return requires_conversion{
+					[name=param.name._value](transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) -> transpile_expression_information_t {
+						transpile_expression_information_t expr_info = transpile_expression(state, variables, expr);
+						return_if_error(expr_info);
+						if (!std::holds_alternative<non_type_information>(expr_info.value()))
+							NOT_IMPLEMENTED;
+						non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
+						return expression_information{ non_type_information{
+							.type = { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<std::string>{} } },
+							.representation = name + "{" + expr_info_ok.representation + "}",
+							.value_category = std::move(expr_info_ok).value_category
+						} };
+					}
+				};
 			}
 		),
-		parameter.type.get()._value, argument.type.get()._value, std::variant<transpilation_state_with_indent>{state_}
+		parameter.type.get()._value, argument.type.get()._value
 	);
 }
 
@@ -970,8 +900,7 @@ transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t
 		}
 		return ss.str();
 	}
-	else if (holds<Realised::InterfaceType>(t_ok.type)) {
-		const auto& t_ref = get<Realised::InterfaceType>(t_ok.type).interface.get();
+	else if (holds<Realised::Interface>(t_ok.type)) {
 		std::stringstream ss;
 		NOT_IMPLEMENTED;
 		/*ss << "\"" << t_ref.name << "{";
@@ -1093,6 +1022,53 @@ bool uses_auto(const NodeStructs::VariadicExpansionTypename& t) {
 
 bool uses_auto(const NodeStructs::Typename& t) {
 	return std::visit([](const auto& t_) { return uses_auto(t_); }, t.value.get()._value);
+}
+
+std::string name_of_primitive(const Realised::PrimitiveType& primitive_t) {
+	return std::visit(overload(overload_default_error,
+		[&](const Realised::PrimitiveType::NonValued<std::string>&) {
+			return copy(String_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::Valued<std::string>&) {
+			return copy(String_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::NonValued<double>&) {
+			return copy(Floating_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::Valued<double>&) {
+			return copy(Floating_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::NonValued<int>&) {
+			return copy(Int_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::Valued<int>&) {
+			return copy(Int_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::NonValued<bool>&) {
+			return copy(Bool_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::Valued<bool>&) {
+			return copy(Bool_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::NonValued<Realised::void_t>&) {
+			return copy(Void_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::Valued<Realised::void_t>&) {
+			return copy(Void_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::NonValued<Realised::empty_optional_t>&) -> std::string {
+			NOT_IMPLEMENTED;
+		},
+		[&](const Realised::PrimitiveType::Valued<Realised::empty_optional_t>&) -> std::string {
+			NOT_IMPLEMENTED;
+		},
+		[&](const Realised::PrimitiveType::NonValued<char>&) {
+			return copy(Char_tn_base.type);
+		},
+		[&](const Realised::PrimitiveType::Valued<char>&) {
+			return copy(Char_tn_base.type);
+		}
+	), primitive_t.value._value);
 }
 
 NodeStructs::Typename typename_of_primitive(const Realised::PrimitiveType& primitive_t) {
@@ -1445,6 +1421,9 @@ expected<Realised::Function> realise_function(
 	const NodeStructs::Function& function,
 	const std::vector<expression_information>& args
 ) {
+	std::string fkey = function.name; // todo args embedded in name for uniqueness
+	if (state.state.functions_traversal.traversed.contains(fkey))
+		return copy(state.state.functions_traversal.traversed.at(fkey));
 	if (function.name_space.has_value())
 		NOT_IMPLEMENTED;
 	if (function.parameters.size() != args.size())
@@ -1461,6 +1440,9 @@ expected<Realised::Function> realise_function(
 		if (holds<NodeStructs::VariadicExpansionTypename>(param.typename_))
 			NOT_IMPLEMENTED_BUT_PROBABLY_CORRECT;
 
+		if (cmp(auto_tn, param.typename_) == std::strong_ordering::equivalent) {
+			NOT_IMPLEMENTED_BUT_PROBABLY_CORRECT;
+		}
 		auto t_or_e = type_of_typename(state, variables, param.typename_);
 		return_if_error(t_or_e);
 
@@ -1476,25 +1458,10 @@ expected<Realised::Function> realise_function(
 			};
 	}
 
-	std::string fkey = function.name; // todo args embedded in name for uniqueness
 	state.state.functions_traversal.traversing.insert(fkey);
 
 	std::stringstream declaration{};
 	std::stringstream definition{};
-
-	if (function.returnType <=> auto_tn == std::strong_ordering::equivalent)
-		NOT_IMPLEMENTED;
-	bool is_void = function.returnType <=> Void_tn == std::strong_ordering::equivalent;
-
-	auto rt_or_e = type_of_typename(state, variables, function.returnType);
-	return_if_error(rt_or_e);
-	auto tn_or_e = typename_of_type(state, rt_or_e.value());
-	return_if_error(tn_or_e);
-	auto tn_str_or_e = transpile_typename(state, variables, tn_or_e.value());
-	return_if_error(tn_str_or_e);
-
-	declaration << tn_str_or_e.value() << " " << fkey << "(";
-	definition << tn_str_or_e.value() << " " << fkey << "(";
 	bool is_first = true;
 
 	std::vector<Realised::Parameter> parameters{};
@@ -1503,10 +1470,7 @@ expected<Realised::Function> realise_function(
 	for (const auto& param : function.parameters) {
 		auto t_or_e = type_of_typename(state, variables, param.typename_);
 		return_if_error(t_or_e);
-		auto tn_or_e = typename_of_type(state, t_or_e.value());
-		return_if_error(tn_or_e);
-		auto tn_str_or_e = transpile_typename(state, variables, tn_or_e.value());
-		return_if_error(tn_str_or_e);
+		auto param_tn_str_or_e = name_of_type(state, t_or_e.value());
 
 		if (is_first)
 			is_first = false;
@@ -1517,7 +1481,7 @@ expected<Realised::Function> realise_function(
 
 		auto cat = param.typename_.category._value.has_value() 
 			? copy(param.typename_.category._value.value())
-			: NodeStructs::ParameterCategory{ NodeStructs::Reference{} };
+			: NodeStructs::ValueCategory{ NodeStructs::Reference{} };
 		parameters.push_back(Realised::Parameter{ .type = copy(t_or_e.value()), .category = copy(cat) });
 		variables[param.name].push_back(variable_info{
 			.value_category = parameter_category_to_value_category(cat),
@@ -1525,17 +1489,44 @@ expected<Realised::Function> realise_function(
 		});
 		std::string param_def = [&]() {
 			if (holds<NodeStructs::Value>(cat))
-				return tn_str_or_e.value() + " " + param.name;
+				return param_tn_str_or_e.value() + "&& " + param.name;
 			else if (holds<NodeStructs::Reference>(cat))
-				return "const " + tn_str_or_e.value() + "& " + param.name;
+				return "const " + param_tn_str_or_e.value() + "& " + param.name;
 			else if (holds<NodeStructs::MutableReference>(cat))
-				return tn_str_or_e.value() + "& " + param.name;
+				return param_tn_str_or_e.value() + "& " + param.name;
 			else
 				NOT_IMPLEMENTED;
 		}();
 		declaration << param_def;
-		definition  << param_def;
+		definition << param_def;
 	}
+
+	auto rt_or_e = [&]() -> expected<Realised::MetaType> {
+		if (function.returnType <=> auto_tn == std::strong_ordering::equivalent) {
+			auto res = deduce_return_type(state, variables, function.statements);
+			return_if_error(res);
+			if (res.value().has_value())
+				return std::move(res).value().value();
+			else
+				return copy(void_metatype);
+		}
+		else
+			return type_of_typename(state, variables, function.returnType);
+		}();
+	return_if_error(rt_or_e);
+	auto return_type_tn_str_or_e = name_of_type(state, rt_or_e.value());
+	return_if_error(return_type_tn_str_or_e);
+
+	auto place_before_in_stream_in_place = [](std::stringstream& stream, std::string place_before) {
+		std::stringstream res;
+		res << place_before;
+		res << std::move(stream).str();
+		std::swap(res, stream);
+	};
+
+	auto f_declaration = return_type_tn_str_or_e.value() + " " + fkey + "(";
+	place_before_in_stream_in_place(declaration, f_declaration);
+	place_before_in_stream_in_place(definition, f_declaration);
 
 	auto statement_str_or_e = transpile_statements(state.indented(), variables, function.statements, rt_or_e.value());
 	return_if_error(statement_str_or_e);
@@ -1566,8 +1557,32 @@ transpile_expression_information_t produce_call(
 ) {
 	std::stringstream repr{};
 	repr << function.name._value << "(";
-	if (function.parameters.size() != 0)
-		NOT_IMPLEMENTED;
+	if (function.parameters.size() != args.size())
+		return error{
+			"user error",
+			"function " +
+			function.name._value +
+			"has " +
+			std::to_string(function.parameters.size()) +
+			" parameters but was called with " +
+			std::to_string(args.size()) +
+			" arguments"
+	};
+	bool first = true;
+	for (const auto& arg : args) {
+		std::visit(overload(
+			[&](const non_type_information& info) {
+				if (first)
+					first = false;
+				else
+					repr << ", ";
+				repr << info.representation;
+			},
+			[&](const type_information& info) {
+				NOT_IMPLEMENTED_BUT_PROBABLY_CORRECT;
+			}
+		), arg);
+	}
 	repr << ")";
 	return expression_information{ non_type_information {
 		.type = copy(function.returnType),
@@ -1604,26 +1619,29 @@ std::string replace_for_template(std::string in) {
 	return replace_all(std::move(in), "<", "_", ">", "_", " ", "", ",", "_");
 }
 
-expected<std::string> word_typename_or_expression_for_template(
+transpile_t word_typename_or_expression_for_template(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::WordTypenameOrExpression& value
 ) {
 	// todo no way this works without recursion, it has to add aliases for inner expressions/typenames
 	auto base_or_e = std::visit(overload(
-		[&](const std::string& s) -> expected<std::string> {
+		[&](const std::string& s) -> transpile_t {
+			// try expr
 			auto test = transpile_expression(state, variables, s);
 			if (test.has_value()) {
 				if (!std::holds_alternative<type_information>(test.value()))
 					NOT_IMPLEMENTED;
 				return std::get<type_information>(test.value()).representation;
 			}
+			// then try typename
 			else {
-				auto test2 = transpile_typename(state, variables, NodeStructs::BaseTypename{ s });
-				return test2;
+				auto t_or_e = type_of_typename(state, variables, NodeStructs::BaseTypename{ s });
+				return_if_error(t_or_e);
+				return name_of_type(state, t_or_e.value());
 			}
 		},
-		[&](const NodeStructs::Expression& e) -> expected<std::string> {
+		[&](const NodeStructs::Expression& e) -> transpile_t {
 			if (holds<NodeStructs::TemplateExpression>(e)) {
 				const auto& tmpl = get<NodeStructs::TemplateExpression>(e);
 				auto operand_or_e = transpile_expression(state, variables, tmpl.operand);
@@ -1661,7 +1679,7 @@ expected<std::string> word_typename_or_expression_for_template(
 						caesium_source_location{.file_name = "todo:/", .content = get<std::string>(tmpl.operand.expression.get()) }
 					),
 					std::nullopt
-				});
+					});
 				if (requires_alias)
 					state.state.aliases_to_transpile.insert({ out, base });
 				return out;
@@ -1674,8 +1692,10 @@ expected<std::string> word_typename_or_expression_for_template(
 				return std::get<type_information>(t.value()).representation;
 			}
 		},
-		[&](const NodeStructs::Typename& t) -> expected<std::string> {
-			return transpile_typename(state, variables, t).value();
+		[&](const NodeStructs::Typename& t) -> transpile_t {
+			auto t_or_e = type_of_typename(state, variables, t);
+			return_if_error(t_or_e);
+			return name_of_type(state, t_or_e.value());
 		}
 	), value.value._value);
 	return_if_error(base_or_e);
@@ -1730,228 +1750,6 @@ variables_t make_base_variables() {
 	return variables;
 }
 
-// realise
-
-expected<NodeStructs::Type> realise_many_compile_time_statements(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	NodeStructs::Type type,
-	const std::vector<NodeStructs::CompileTimeStatement<type_context>>& statements
-);
-
-expected<NodeStructs::Type> realise_many_compile_time_statements(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	NodeStructs::Type type,
-	const std::vector<NodeStructs::Statement<type_context>>& statements
-);
-
-template <template <typename> typename CompileTimeStatement>
-expected<NodeStructs::Type> realise_one_compile_time_statement(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	NodeStructs::Type t,
-	const CompileTimeStatement<type_context>& statement
-) {
-	NOT_IMPLEMENTED;
-}
-
-expected<NodeStructs::Type> realise_one_compile_time_statement(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	NodeStructs::Type type,
-	const NodeStructs::IfStatement<type_context>& statement
-) {
-	auto expr_info_or_e = transpile_expression(state, variables, statement.ifExpr);
-
-	return_if_error(expr_info_or_e);
-	if (!holds<non_type_information>(expr_info_or_e.value()))
-		NOT_IMPLEMENTED_BUT_PROBABLY_ERROR;
-	const non_type_information& expr_info = get<non_type_information>(expr_info_or_e.value());
-
-	if (!holds<Realised::PrimitiveType>(expr_info.type))
-		NOT_IMPLEMENTED_BUT_PROBABLY_ERROR;
-	const Realised::PrimitiveType& primitive = get<Realised::PrimitiveType>(expr_info.type.type.get());
-
-	if (!holds<Realised::PrimitiveType::Valued<bool>>(primitive.value))
-		NOT_IMPLEMENTED_BUT_PROBABLY_ERROR;
-	const Realised::PrimitiveType::Valued<bool>& boolean_compile_time_condition = get<Realised::PrimitiveType::Valued<bool>>(primitive.value);
-
-	if (boolean_compile_time_condition.value)
-		return realise_many_compile_time_statements(state, variables, std::move(type), statement.ifStatements);
-	else if (statement.elseExprStatements.has_value())
-		NOT_IMPLEMENTED_BUT_PROBABLY_CORRECT;
-	else
-		return type;
-}
-
-expected<NodeStructs::Type> realise_one_compile_time_statement(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	NodeStructs::Type t,
-	const NodeStructs::CompileTimeStatement<type_context>& statement
-) {
-	return std::visit([&](const auto& stmt) { return realise_one_compile_time_statement(state, variables, std::move(t), stmt); }, statement._value);
-}
-
-expected<NodeStructs::Type> realise_many_compile_time_statements(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	NodeStructs::Type type,
-	const std::vector<NodeStructs::CompileTimeStatement<type_context>>& statements
-) {
-	if (statements.size() == 0)
-		return type;
-
-	// keeping a vector of intermediates is not technically needed,
-	// we could go with a recursive approach, but this way we keep the intermediates
-	// at hand so if it leads to an error we can provide them to the user (or to the dev!)
-	auto intermediates = caesium_lib::vector::push(
-		caesium_lib::vector::make_with_capacity<NodeStructs::Type>(statements.size() + 1),
-		std::move(type)
-	);
-
-	for (const NodeStructs::CompileTimeStatement<type_context>& compile_time_statement : statements) {
-		variables_t variables = make_base_variables();
-		expected<NodeStructs::Type> next = caesium_lib::variant::visit(compile_time_statement, [&](const auto& compile_time_statement) {
-			return realise_one_compile_time_statement(state, variables, copy(intermediates._value.back()), compile_time_statement);
-		});
-		return_if_error(next);
-		intermediates = caesium_lib::vector::push(
-			std::move(intermediates),
-			std::move(next).value()
-		);
-	}
-
-	const auto& finished = intermediates._value.back();
-	NOT_IMPLEMENTED;
-	//return Realised::Type{ finished.name, copy(finished.aliases), copy(finished.member_variables), finished.info };
-}
-
-NodeStructs::Type add_member_to_type(
-	NodeStructs::Type type,
-	Variant<NodeStructs::Alias, NodeStructs::MemberVariable> member
-) {
-	caesium_lib::variant::visit(std::move(member), [&](auto m) {
-		type.members.push_back(NodeStructs::Statement<type_context>{ NodeStructs::contextual_options<type_context>{ std::move(m) } });
-	});
-	return type;
-}
-
-expected<NodeStructs::Type> realise_many_compile_time_statements(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	NodeStructs::Type type,
-	const std::vector<NodeStructs::Statement<type_context>>& statements
-) {
-	if (statements.size() == 0)
-		return type;
-
-	// keeping a vector of intermediates is not technically needed,
-	// we could go with a recursive approach, but this way we keep the intermediates
-	// at hand so if it leads to an error we can provide them to the user (or to the dev!)
-	auto intermediates = caesium_lib::vector::push(
-		caesium_lib::vector::make_with_capacity<NodeStructs::Type>(statements.size() + 1),
-		std::move(type)
-	);
-
-	for (const NodeStructs::Statement<type_context>& compile_time_statement : statements) {
-		variables_t variables = make_base_variables();
-		expected<NodeStructs::Type> next = caesium_lib::variant::visit(compile_time_statement.statement.get(), overload(
-			[&](const Variant<NodeStructs::Alias, NodeStructs::MemberVariable>& member) -> expected<NodeStructs::Type> {
-				return add_member_to_type(copy(intermediates._value.back()), copy(member));
-			},
-			[&](const NodeStructs::CompileTimeStatement<type_context>& compile_time_statement) -> expected<NodeStructs::Type> {
-				return realise_one_compile_time_statement(state, variables, copy(intermediates._value.back()), compile_time_statement);
-			}
-		));
-		return_if_error(next);
-		intermediates = caesium_lib::vector::push(
-			std::move(intermediates),
-			std::move(next).value()
-		);
-	}
-
-	return std::move(intermediates._value.back());
-}
-
-expected<Realised::Type> realise_type(transpilation_state_with_indent state, const NodeStructs::Type& type) {
-	expected<std::string> name_or_e = [&]() -> expected<std::string> {
-		if (type.name_space.has_value()) {
-			auto variables_temp = make_base_variables();
-			auto tn_or_e = transpile_typename(state, variables_temp, type.name_space.value());
-			return_if_error(tn_or_e);
-			return tn_or_e.value() + "__" + type.name;
-		}
-		else {
-			return type.name;
-		}
-	}();
-	return_if_error(name_or_e);
-	const std::string& name = name_or_e.value();
-
-	if (state.state.types_traversal.traversing.contains(name))
-		NOT_IMPLEMENTED; // return traversed
-	if (state.state.types_traversal.traversed.count(name))
-		return copy(state.state.types_traversal.traversed.at(name));
-
-	NodeStructs::Type without_members{
-		.name = name,
-		.name_space = copy(type.name_space),
-		.members = {},
-		.info = copy(type.info)
-	};
-
-	variables_t variables = make_base_variables();
-	state.state.types_traversal.traversing.insert(name);
-	expected<NodeStructs::Type> rt_or_e = realise_many_compile_time_statements(state, variables, std::move(without_members), type.members);
-	state.state.types_traversal.traversing.erase(name);
-	return_if_error(rt_or_e);
-
-	const NodeStructs::Type& realised_type = rt_or_e.value();
-
-	std::vector<std::pair<std::string, expected<Realised::MetaType>>> expected_types = realised_type.members
-		| std::views::filter([&](const NodeStructs::Statement<type_context>& member) -> bool {
-			return holds<NodeStructs::contextual_options<type_context>>(member);
-		})
-		| std::views::transform([&](const NodeStructs::Statement<type_context>& member) -> const NodeStructs::contextual_options<type_context>& {
-			return get<NodeStructs::contextual_options<type_context>>(member);
-		})
-		| std::views::filter([&](const NodeStructs::contextual_options<type_context>& member) -> bool {
-			return holds<NodeStructs::MemberVariable>(member);
-		})
-		| std::views::transform([&](const NodeStructs::contextual_options<type_context>& member) -> std::reference_wrapper<const NodeStructs::MemberVariable> {
-			return std::reference_wrapper{ get<NodeStructs::MemberVariable>(member) };
-		})
-		| std::views::transform([&](const std::reference_wrapper<const NodeStructs::MemberVariable>& member) {
-			return std::pair{ copy(member.get().name), type_of_typename(state, variables, member.get().type)};
-		})
-		| to_vec();
-
-	for (const std::pair<std::string, expected<Realised::MetaType>>& member : expected_types)
-		if (member.second.has_error())
-			return member.second.error();
-
-	auto declaration_definition_or_e = transpile(state, realised_type);
-	return_if_error(declaration_definition_or_e);
-
-
-	Realised::Type res{
-		.name = copy(realised_type.name),
-		.member_variables = expected_types
-		| std::views::transform([&](std::pair<std::string, expected<Realised::MetaType>>& member) -> Realised::MemberVariable {
-			return { std::move(member.first), std::move(member.second).value() };
-		})
-		| to_vec(),
-		.info = copy(realised_type.info)
-	};
-
-	state.state.types_traversal.traversed.insert({ type.name, copy(res) });
-	state.state.types_traversal.declarations.push_back(std::move(declaration_definition_or_e).value().first);
-	state.state.types_traversal.definitions.push_back(std::move(declaration_definition_or_e).value().second);
-	return res;
-}
-
 expected<Realised::Type> get_existing_realised_type(
 	transpilation_state_with_indent state,
 	const std::string& name,
@@ -1973,139 +1771,136 @@ expected<std::optional<Realised::MetaType>> deduce_return_type(
 	variables_t& variables,
 	const NodeStructs::RunTimeStatement& statement
 ) {
-	NOT_IMPLEMENTED;
-	//return std::visit(
-	//	overload(
-	//		overload_default_error,
-	//		[&](const NodeStructs::ReturnStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			if (statement.ifExpr.has_value())
-	//				NOT_IMPLEMENTED;
-	//			if (statement.returnExpr.size() != 1)
-	//				NOT_IMPLEMENTED;
-	//			auto res_info = transpile_expression(state, variables, statement.returnExpr.at(0).expr);
-	//			return_if_error(res_info);
-	//			if (!std::holds_alternative<non_type_information>(res_info.value()))
-	//				NOT_IMPLEMENTED;
-	//			return std::get<non_type_information>(std::move(res_info).value()).type;
-	//		},
-	//		[&](const NodeStructs::Expression& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			return std::nullopt;
-	//		},
-	//		[&](const NodeStructs::VariableDeclarationStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			return std::nullopt;
-	//		},
-	//		[&](const NodeStructs::IfStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			auto if_res_t = deduce_return_type(state, variables, statement.ifStatements);
-	//			return_if_error(if_res_t);
+	return caesium_lib::variant::visit(statement, overload(
+		overload_default_error,
+		[&](const NodeStructs::ReturnStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			if (statement.ifExpr.has_value())
+				NOT_IMPLEMENTED;
+			if (statement.returnExpr.size() != 1)
+				NOT_IMPLEMENTED;
+			auto res_info = transpile_expression(state, variables, statement.returnExpr.at(0).expr);
+			return_if_error(res_info);
+			if (!std::holds_alternative<non_type_information>(res_info.value()))
+				NOT_IMPLEMENTED;
+			return std::get<non_type_information>(std::move(res_info).value()).type;
+		},
+		[&](const NodeStructs::Expression& statement) -> expected<std::optional<Realised::MetaType>> {
+			return std::nullopt;
+		},
+		[&](const NodeStructs::VariableDeclarationStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			return std::nullopt;
+		},
+		[&](const NodeStructs::IfStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			auto if_res_t = deduce_return_type(state, variables, statement.ifStatements);
+			return_if_error(if_res_t);
 
-	//			if (!statement.elseExprStatements.has_value())
-	//				return if_res_t;
+			if (!statement.elseExprStatements.has_value())
+				return if_res_t;
 
-	//			auto else_res_t = std::visit(
-	//				overload(
-	//					[&](const std::vector<NodeStructs::Statement<context>>& statements) -> expected<std::optional<Realised::MetaType>> {
-	//						return deduce_return_type(state, variables, statements);
-	//					},
-	//					[&](const NonCopyableBox<NodeStructs::IfStatement<context>>& inner_if) -> expected<std::optional<Realised::MetaType>> {
-	//						return deduce_return_type(state, variables, NodeStructs::Statement<context>{ copy(inner_if.get()) });
-	//					}
-	//				),
-	//				statement.elseExprStatements.value()._value
-	//			);
-	//			return_if_error(else_res_t);
+			auto else_res_t = std::visit(
+				overload(
+					[&](const std::vector<NodeStructs::Statement<function_context>>& statements) -> expected<std::optional<Realised::MetaType>> {
+						return deduce_return_type(state, variables, statements);
+					},
+					[&](const NonCopyableBox<NodeStructs::IfStatement<function_context>>& inner_if) -> expected<std::optional<Realised::MetaType>> {
+						return deduce_return_type(state, variables, inner_if.get());
+					}
+				),
+				statement.elseExprStatements.value()._value
+			);
+			return_if_error(else_res_t);
+			NOT_IMPLEMENTED;
+			/*if (if_res_t.value().has_value() && else_res_t.value().has_value())
+				if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::strong_ordering::equivalent)
+					NOT_IMPLEMENTED;
+				else
+					return if_res_t;
+			if (if_res_t.value().has_value())
+				return if_res_t;
+			return std::move(else_res_t);*/
+		},
+		[&](const NodeStructs::IForStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			NOT_IMPLEMENTED;
+		},
+		[&](const NodeStructs::ForStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
+			return_if_error(coll_type_or_e);
+			if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
+				NOT_IMPLEMENTED;
+			const auto& coll_type_or_e_ok = std::get<non_type_information>(coll_type_or_e.value());
+			auto it_type = iterator_type(state, coll_type_or_e_ok.type);
+			if (statement.iterators.size() > 1)
+				NOT_IMPLEMENTED;
+			auto opt_e = add_for_iterator_variables(state, variables, statement.iterators, it_type);
+			if (opt_e.has_value())
+				return opt_e.value();
+			return deduce_return_type(state, variables, statement.statements);
+		},
+		[&](const NodeStructs::WhileStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			return deduce_return_type(state, variables, statement.statements);
+		},
+		[&](const NodeStructs::BreakStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			return std::nullopt;
+		},
+		[&](const NodeStructs::BlockStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			NOT_IMPLEMENTED;
+		},
+		[&](const NodeStructs::MatchStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			// for each match case copy variables, add the match variables, note the return type from the case, compare with stored
+			if (statement.expressions.size() != 1)
+				NOT_IMPLEMENTED;
+			if (statement.cases.size() == 0)
+				NOT_IMPLEMENTED;
+			/*auto expr_info = transpile_expression(state, variables, statement.expressions.at(0));
+			return_if_error(expr_info);
+			if (!std::holds_alternative<non_type_information>(expr_info.value()))
+				NOT_IMPLEMENTED;
+			const auto& expr_ok = std::get<non_type_information>(expr_info.value());
+			auto tn = typename_of_type(state, expr_ok.type.type);
+			return_if_error(tn);
+			auto tn_repr = transpile_typename(state, variables, tn.value());
+			return_if_error(tn_repr);*/
 
-	//			if (if_res_t.value().has_value() && else_res_t.value().has_value())
-	//				if (cmp(if_res_t.value().value(), else_res_t.value().value()) != std::strong_ordering::equivalent)
-	//					NOT_IMPLEMENTED;
-	//				else
-	//					return if_res_t;
-	//			if (if_res_t.value().has_value())
-	//				return if_res_t;
-	//			return std::move(else_res_t);
-	//		},
-	//		[&](const NodeStructs::IForStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			NOT_IMPLEMENTED;
-	//		},
-	//		[&](const NodeStructs::ForStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			auto coll_type_or_e = transpile_expression(state, variables, statement.collection);
-	//			return_if_error(coll_type_or_e);
-	//			if (!std::holds_alternative<non_type_information>(coll_type_or_e.value()))
-	//				NOT_IMPLEMENTED;
-	//			const auto& coll_type_or_e_ok = std::get<non_type_information>(coll_type_or_e.value());
-	//			auto it_type = iterator_type(state, coll_type_or_e_ok.type);
-	//			if (statement.iterators.size() > 1)
-	//				NOT_IMPLEMENTED;
-	//			auto opt_e = add_for_iterator_variables(state, variables, statement.iterators, it_type);
-	//			if (opt_e.has_value())
-	//				return opt_e.value();
-	//			return deduce_return_type(state, variables, statement.statements);
-	//		},
-	//		[&](const NodeStructs::WhileStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			return deduce_return_type(state, variables, statement.statements);
-	//		},
-	//		[&](const NodeStructs::BreakStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			return std::nullopt;
-	//		},
-	//		[&](const NodeStructs::BlockStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			NOT_IMPLEMENTED;
-	//		},
-	//		[&](const NodeStructs::MatchStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			// for each match case copy variables, add the match variables, note the return type from the case, compare with stored
-	//			if (statement.expressions.size() != 1)
-	//				NOT_IMPLEMENTED;
-	//			if (statement.cases.size() == 0)
-	//				NOT_IMPLEMENTED;
-	//			/*auto expr_info = transpile_expression(state, variables, statement.expressions.at(0));
-	//			return_if_error(expr_info);
-	//			if (!std::holds_alternative<non_type_information>(expr_info.value()))
-	//				NOT_IMPLEMENTED;
-	//			const auto& expr_ok = std::get<non_type_information>(expr_info.value());
-	//			auto tn = typename_of_type(state, expr_ok.type.type);
-	//			return_if_error(tn);
-	//			auto tn_repr = transpile_typename(state, variables, tn.value());
-	//			return_if_error(tn_repr);*/
+			std::optional<Realised::MetaType> res = std::nullopt;
+			for (const NodeStructs::MatchCase<function_context>& match_case : statement.cases) {
+				if (match_case.variable_declarations.size() != 1)
+					NOT_IMPLEMENTED;
+				NOT_IMPLEMENTED;
+				/*auto tn = transpile_typename(state, variables, match_case.variable_declarations.at(0).first);
+				return_if_error(tn);
+				const auto& varname = match_case.variable_declarations.at(0).second;
+				variables[varname]
+					.push_back(variable_info{
+						.value_category = NodeStructs::Reference{},
+						.type = type_of_typename(state, variables, match_case.variable_declarations.at(0).first).value()
+						});
+				auto deduced = deduce_return_type(state, variables, match_case.statements);
+				variables[varname].pop_back();
+				return_if_error(deduced);
 
-	//			std::optional<Realised::MetaType> res = std::nullopt;
-	//			for (const NodeStructs::MatchCase<context>& match_case : statement.cases) {
-	//				if (match_case.variable_declarations.size() != 1)
-	//					NOT_IMPLEMENTED;
-	//				auto tn = transpile_typename(state, variables, match_case.variable_declarations.at(0).first);
-	//				return_if_error(tn);
-	//				const auto& varname = match_case.variable_declarations.at(0).second;
-	//				variables[varname]
-	//					.push_back(variable_info{
-	//						.value_category = NodeStructs::Reference{},
-	//						.type = type_of_typename(state, variables, match_case.variable_declarations.at(0).first).value()
-	//						});
-	//				auto deduced = deduce_return_type(state, variables, match_case.statements);
-	//				variables[varname].pop_back();
-	//				return_if_error(deduced);
-
-	//				if (deduced.value().has_value())
-	//					if (res.has_value())
-	//						if (cmp(res.value(), deduced.value().value()) != std::strong_ordering::equivalent)
-	//							NOT_IMPLEMENTED;
-	//						else
-	//							continue;
-	//					else
-	//						res.emplace(std::move(deduced).value().value());
-	//			}
-	//			return res;
-	//			// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw, it will be removed eventually
-	//		},
-	//		[&](const NodeStructs::SwitchStatement<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			NOT_IMPLEMENTED;
-	//		},
-	//		[&](const NodeStructs::Assignment<context>& statement) -> expected<std::optional<Realised::MetaType>> {
-	//			return std::nullopt;
-	//		}
-	//	),
-	//	statement.statement.get()._value
-	//);
+				if (deduced.value().has_value())
+					if (res.has_value())
+						if (cmp(res.value(), deduced.value().value()) != std::strong_ordering::equivalent)
+							NOT_IMPLEMENTED;
+						else
+							continue;
+					else
+						res.emplace(std::move(deduced).value().value());*/
+			}
+			return res;
+			// here we would actually know at compile time that this cant be hit so we wouldnt actually insert a throw, it will be removed eventually
+		},
+		[&](const NodeStructs::SwitchStatement<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			NOT_IMPLEMENTED;
+		},
+		[&](const NodeStructs::Assignment<function_context>& statement) -> expected<std::optional<Realised::MetaType>> {
+			return std::nullopt;
+		}
+	));
 }
 
 NodeStructs::ValueCategory parameter_category_to_value_category(
-	const NodeStructs::ParameterCategory& cat
+	const NodeStructs::ValueCategory& cat
 ) {
 	return caesium_lib::variant::visit(cat, overload(overload_default_error,
 		[](const NodeStructs::Reference) -> NodeStructs::ValueCategory {
@@ -2121,7 +1916,7 @@ NodeStructs::ValueCategory parameter_category_to_value_category(
 }
 
 NodeStructs::ValueCategory optional_parameter_category_to_value_category(
-	const std::optional<NodeStructs::ParameterCategory>& opt_cat
+	const std::optional<NodeStructs::ValueCategory>& opt_cat
 ) {
 	if (opt_cat.has_value())
 		return parameter_category_to_value_category(opt_cat.value());
@@ -2130,7 +1925,85 @@ NodeStructs::ValueCategory optional_parameter_category_to_value_category(
 }
 
 NodeStructs::ValueCategory optional_parameter_category_to_value_category(
-	const Optional<NodeStructs::ParameterCategory>& opt_cat
+	const Optional<NodeStructs::ValueCategory>& opt_cat
 ) {
 	return optional_parameter_category_to_value_category(opt_cat._value);
+}
+
+NodeStructs::ValueCategory category_of_word_typename_or_expression(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::WordTypenameOrExpression& wte
+) {
+	return caesium_lib::variant::visit(
+		wte.value,
+		overload(
+			[&](const std::string& e) -> NodeStructs::ValueCategory {
+				return NodeStructs::Value{};
+			},
+			[&](const NodeStructs::Typename& e) -> NodeStructs::ValueCategory {
+				return optional_parameter_category_to_value_category(e.category);
+			},
+			[&](const NodeStructs::Expression& e) -> NodeStructs::ValueCategory {
+				NOT_IMPLEMENTED;
+			}
+		)
+	);
+}
+
+caesium_source_location info_of_word_typename_or_expression(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::WordTypenameOrExpression& wte
+) {
+	return caesium_lib::variant::visit(
+		wte.value,
+		overload(
+			[&](const std::string& e) -> caesium_source_location {
+				return rule_info_stub_no_throw(); // todo check if variable or type or smth? surely i have code for this somewhere
+			},
+			[&](const NodeStructs::Typename& e) -> caesium_source_location {
+				return copy(e.info);
+			},
+			[&](const NodeStructs::Expression& e) -> caesium_source_location {
+				return copy(e.info);
+			}
+		)
+	);
+}
+
+transpile_t name_of_namespace(const NodeStructs::Typename& ns) {
+	// i assume namespaces' namespaces can only be base typenames or namespaced typenames...
+	return caesium_lib::variant::visit(ns.value.get(), overload(
+		[&](const NodeStructs::TemplatedTypename&) -> transpile_t {
+			NOT_IMPLEMENTED;
+		},
+		[&](const NodeStructs::NamespacedTypename& ns) -> transpile_t {
+			auto ns_or_e = name_of_namespace(ns.name_space);
+			return_if_error(ns_or_e);
+			return std::move(ns_or_e).value() + "__" + ns.name_in_name_space;
+		},
+		[&](const NodeStructs::BaseTypename& tn) -> transpile_t {
+			return tn.type;
+		},
+		[&](const NodeStructs::OptionalTypename&) -> transpile_t {
+			NOT_IMPLEMENTED;
+		},
+		[&](const NodeStructs::UnionTypename&) -> transpile_t {
+			NOT_IMPLEMENTED;
+		},
+		[&](const NodeStructs::VariadicExpansionTypename&) -> transpile_t {
+			NOT_IMPLEMENTED;
+		}
+	));
+}
+
+transpile_t name_of_namespace(const NodeStructs::NameSpace& ns) {
+	if (ns.name_space.has_value()) {
+		auto ns_or_e = name_of_namespace(ns.name_space.value());
+		return_if_error(ns_or_e);
+		return std::move(ns_or_e).value() + "__" + ns.name;
+	}
+	else
+		return ns.name;
 }

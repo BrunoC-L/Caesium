@@ -144,7 +144,7 @@ R T::operator()(const Realised::FunctionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const Realised::InterfaceType& t) {
+R T::operator()(const Realised::Interface& t) {
 	NOT_IMPLEMENTED;
 }
 
@@ -191,17 +191,32 @@ R T::operator()(const Realised::VectorType& t) {
 			NOT_IMPLEMENTED;
 		const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 
-		//todo check conversion
-		if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, t.value_type, arg_info_ok.type)._value))
-			return error{
-				"user error",
-				"wrong type pushed to Vector<T>"
-		};
-		return expression_information{ non_type_information{
-			.type = { copy(t) },
-			.representation = "push(" + operand_info.representation + ", " + arg_info_ok.representation + ")",
-			.value_category = NodeStructs::Value{}
-		} };
+		auto assigned = assigned_to(state, variables, t.value_type, arg_info_ok.type);
+		return caesium_lib::variant::visit(std::move(assigned), overload(
+			[&](not_assignable) -> R {
+				return error{
+					"user error",
+					"wrong type pushed to Vector<T>"
+				};
+			},
+			[&](directly_assignable) -> R {
+				return expression_information{ non_type_information{
+					.type = { copy(t) },
+					.representation = "push(" + operand_info.representation + ", " + arg_info_ok.representation + ")",
+					.value_category = NodeStructs::Value{}
+				} };
+			},
+			[&](requires_conversion rc) -> R {
+				auto assigned = rc.converter(state, variables, this->arguments.at(0).expr).value();
+				if (holds<type_information>(assigned))
+					NOT_IMPLEMENTED;
+				return expression_information{ non_type_information{
+					.type = { copy(t) },
+					.representation = "push(" + operand_info.representation + ", " + get<non_type_information>(assigned).representation + ")",
+					.value_category = NodeStructs::Value{}
+				} };
+			}
+		));
 	}
 
 	if (property_name == "size") {
@@ -263,5 +278,9 @@ R T::operator()(const Realised::TypeListType& t) {
 }
 
 R T::operator()(const Realised::CompileTimeType& t) {
+	NOT_IMPLEMENTED;
+}
+
+R T::operator()(const Realised::TemplateInstanceType& t) {
 	NOT_IMPLEMENTED;
 }

@@ -3,10 +3,16 @@
 
 
 using Vector_String_ = Vector<String>;
-Int _redirect_main(const Vector_String_& args);
+Void println(const String& x);
+Int _redirect_main(const Vector_String_& cli_args);
 
-Int _redirect_main(const Vector_String_& args) {
-	filesystem__directory d = filesystem__directory{String{"Hello World!\n"}};
+Void println(const String& x) {
+	return;
+}
+Int _redirect_main(const Vector_String_& cli_args) {
+	for (auto&& arg : cli_args) {
+		println(arg);
+	}
 	return 0;
 }
 

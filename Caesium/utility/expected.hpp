@@ -6,6 +6,24 @@
 
 #define return_if_error(expr) if (expr.has_error()) return expr.error();
 
+namespace select_ {
+	template <bool, typename, typename>
+	struct select;
+
+	template <typename T, typename U>
+	struct select<true, T, U> {
+		using type = T;
+	};
+
+	template <typename T, typename U>
+	struct select<false, T, U> {
+		using type = U;
+	};
+}
+
+template <bool b, typename T, typename U>
+using select_t = typename select_::select<b, T, U>::type;
+
 struct error {
 	std::string error_class;
 	std::string message;
@@ -86,27 +104,14 @@ public:
 		return std::get<error_type>(std::forward<Self>(self).value_or_error);
 	}
 
-	template <bool, typename, typename>
-	struct select;
-
-	template <typename T, typename U>
-	struct select<true, T, U> {
-		using type = T;
-	};
-
-	template <typename T, typename U>
-	struct select<false, T, U> {
-		using type = U;
-	};
-
 	template <typename Self>
 	decltype(auto) transform(this Self&& self, auto&& f) {
 		using transform_return_type = decltype(f(std::declval<value_type>()));
-		using return_type = select<
+		using return_type = select_t<
 			is_specialization<transform_return_type, expected>::value,
 			transform_return_type,
 			expected<transform_return_type>
-		>::type;
+		>;
 		return std::forward<Self>(self).has_value() ? return_type{ f(std::forward<Self>(self).value()) } : return_type{ std::forward<Self>(self).error() };
 	}
 };

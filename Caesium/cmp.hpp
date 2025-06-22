@@ -96,14 +96,14 @@ M(11, NodeStructs::NameSpace)\
 M(1, NodeStructs::Exists)\
 M(3, NodeStructs::File)\
 M(1, NodeStructs::Import)\
+\
 M(3, Realised::Type); \
 M(1, Realised::FunctionType); \
-M(2, Realised::InterfaceType); \
 M(2, Realised::NamespaceType); \
 M(1, Realised::TemplateType); \
 M(2, Realised::EnumType); \
 M(3, Realised::EnumValueType); \
-M(2, Realised::OptionalType); \
+M(1, Realised::OptionalType); \
 M(2, Realised::AggregateType); \
 M(2, Realised::UnionType); \
 M(2, Realised::VectorType); \
@@ -114,8 +114,9 @@ M(2, Realised::Parameter); \
 M(4, Realised::Function); \
 M(2, Realised::MemberVariable); \
 M(2, Realised::Argument); \
-M(2, Realised::CompileTimeType); \
-M(3, Realised::Interface);
+M(1, Realised::CompileTimeType); \
+M(3, Realised::Interface); \
+M(2, Realised::TemplateInstanceType);
 
 #define CMP_N(N, T) inline std::strong_ordering operator<=>(const T& left, const T& right);
 ExpandAll(CMP_N);
@@ -148,6 +149,9 @@ std::strong_ordering cmp(const T& a, const T& b) {
 		return a.has_value() && b.has_value() ? cmp(a.value(), b.value()) : cmp(a.has_value(), b.has_value());
 	}
 	else if constexpr (is_specialization<T, caesium_lib::variant::type>::value) {
+		return cmp(a._value, b._value);
+	}
+	else if constexpr (is_specialization<T, caesium_lib::vector::type>::value) {
 		return cmp(a._value, b._value);
 	}
 	else if constexpr (is_specialization<T, std::variant>::value) {
@@ -397,7 +401,7 @@ inline std::strong_ordering operator<=>(const Realised::PrimitiveType& left, con
 }
 
 inline std::strong_ordering operator<=>(const Realised::MetaType& left, const Realised::MetaType& right) {
-	if (holds<Realised::EnumType>(left) &&
+	/*if (holds<Realised::EnumType>(left) &&
 		holds<Realised::EnumValueType>(right)) {
 		const auto& a = get<Realised::EnumType>(left);
 		const auto& b = get<Realised::EnumValueType>(right);
@@ -408,7 +412,7 @@ inline std::strong_ordering operator<=>(const Realised::MetaType& left, const Re
 		const auto& a = get<Realised::EnumValueType>(left);
 		const auto& b = get<Realised::EnumType>(right);
 		return cmp(a.enum_.get(), b.enum_.get());
-	}
+	}*/
 	return cmp(left.type.get()._value, right.type.get()._value);
 }
 

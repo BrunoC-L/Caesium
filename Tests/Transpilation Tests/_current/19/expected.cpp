@@ -6,8 +6,7 @@ using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& args);
 
 Int _redirect_main(const Vector_String_& args) {
-	filesystem__directory d = filesystem__directory{String{"Hello World!\n"}};
-	return 0;
+		return 0;
 }
 
 int main(int argc, char** argv) {

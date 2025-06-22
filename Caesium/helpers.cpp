@@ -22,8 +22,8 @@ NodeStructs::Expression make_expression(NodeStructs::Expression::vt expr, caesiu
 	return { std::move(expr), std::move(info)};
 }
 
-NodeStructs::Typename make_typename(NodeStructs::Typename::vt tn, Optional<NodeStructs::ParameterCategory> cat, caesium_source_location info) {
-	return { std::move(tn), std::move(cat), std::move(info)};
+NodeStructs::Typename make_typename(NodeStructs::Typename::vt tn, Optional<NodeStructs::ValueCategory> cat, caesium_source_location info) {
+	return { std::move(tn), std::move(cat), std::move(info) };
 }
 
 NodeStructs::NameSpace make_namespace(
@@ -58,7 +58,7 @@ Realised::MetaType make_type(Realised::MetaType::vt t) {
 	return { std::move(t) };
 }
 
-Realised::Parameter make_parameter(Realised::MetaType t, NodeStructs::ParameterCategory cat) {
+Realised::Parameter make_parameter(Realised::MetaType t, NodeStructs::ValueCategory cat) {
 	return { std::move(t), std::move(cat) };
 }
 

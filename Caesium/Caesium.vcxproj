@@ -155,9 +155,8 @@
     <ClCompile Include="structured\structurizer.cpp" />
     <ClCompile Include="typename_visitor\typename_for_template_visitor.cpp" />
     <ClCompile Include="type_visitor\transpile_member_call_visitor.cpp" />
-    <ClCompile Include="typename_visitor\transpile_typename_visitor.cpp" />
     <ClCompile Include="typename_visitor\realise_typename_visitor.cpp" />
-    <ClCompile Include="type_visitor\typename_of_type_visitor.cpp" />
+    <ClCompile Include="type_visitor\name_of_type_visitor.cpp" />
     <ClCompile Include="type_visitor\type_of_postfix_member_visitor.cpp" />
     <ClCompile Include="core\toCPP.cpp" />
     <ClCompile Include="type_visitor\type_of_function_like_call_with_args_visitor.cpp" />
@@ -169,6 +168,7 @@
     <ClInclude Include="cmp.hpp" />
     <ClInclude Include="copy.hpp" />
     <ClInclude Include="core\builtins.hpp" />
+    <ClInclude Include="core\realise.hpp" />
     <ClInclude Include="core\realised.hpp" />
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />
     <ClInclude Include="expression_visitor\transpile_expression_visitor.hpp" />
@@ -180,7 +180,7 @@
     <ClInclude Include="grammar\parse.hpp" />
     <ClInclude Include="typename_visitor\typename_for_template_visitor.hpp" />
     <ClInclude Include="type_visitor\transpile_member_call_visitor.hpp" />
-    <ClInclude Include="type_visitor\typename_of_type_visitor.hpp" />
+    <ClInclude Include="type_visitor\name_of_type_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_resolution_operator.hpp" />
     <ClInclude Include="utility\as_map.hpp" />
     <ClInclude Include="utility\as_vec.hpp" />
@@ -199,7 +199,6 @@
     <ClInclude Include="grammar\primitives.hpp" />
     <ClInclude Include="utility\replace_all.hpp" />
     <ClInclude Include="structured\structurizer.hpp" />
-    <ClInclude Include="typename_visitor\transpile_typename_visitor.hpp" />
     <ClInclude Include="typename_visitor\realise_typename_visitor.hpp" />
     <ClInclude Include="type_visitor\type_of_postfix_member_visitor.hpp" />
     <ClInclude Include="typename_visitor\type_template_of_typename_visitor.hpp" />

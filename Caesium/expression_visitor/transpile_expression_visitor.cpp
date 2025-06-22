@@ -396,34 +396,6 @@ R T::operator()(const NodeStructs::UnaryExpression& expr) {
 }
 
 R T::operator()(const NodeStructs::CallExpression& expr) {
-	if (holds<std::string>(expr.operand)) {
-		NOT_IMPLEMENTED;
-		/*const std::string& operand = get<std::string>(expr.operand);
-		if (auto it = state.state.global_namespace.functions_using_auto.find(operand); it != state.state.global_namespace.functions_using_auto.end()) {
-			auto args_ = vec_of_expected_to_expected_of_vec(expr.arguments.args
-				| std::views::transform([&](auto&& arg) { return transpile_arg(state, variables, arg); })
-				| to_vec());
-			return_if_error(args_);
-			auto args_ok_maybe_wrong_type = std::move(args_).value();
-			auto opt = vec_of_variant_to_optional_vector_single_type<non_type_information>(std::move(args_ok_maybe_wrong_type));
-			if (!opt.has_value())
-				NOT_IMPLEMENTED;
-			const auto& args_ok = opt.value();
-			auto fn = realise_function_using_auto(
-				state,
-				it->second.back(),
-				args_ok | std::views::transform([](const auto& e) { return copy(e.type); }) | to_vec()
-			);
-			return_if_error(fn);
-			auto& vec = state.state.global_namespace.functions[fn.value().name];
-			bool found = false;
-			for (const auto& f : vec)
-				if (cmp(f, fn.value()) == std::strong_ordering::equivalent)
-					found = true;
-			if (!found)
-				vec.push_back(std::move(fn).value());
-		}*/
-	}
 	auto t = operator()(expr.operand);
 	return_if_error(t);
 	if (std::holds_alternative<type_information>(t.value())) {
@@ -737,10 +709,7 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 		), expr.args[0].value._value);
 		return_if_error(arg_t);
 
-		auto tn = typename_of_type(state, arg_t.value());
-		return_if_error(tn);
-
-		auto repr = transpile_typename(state, variables, tn.value());
+		auto repr = name_of_type(state, arg_t.value());
 		return_if_error(repr);
 
 		NOT_IMPLEMENTED;
@@ -796,18 +765,25 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 R T::operator()(const NodeStructs::ConstructExpression& expr) {
 	auto t = type_of_typename(state, variables, expr.operand);
 	return_if_error(t);
-	auto typename_repr = transpile_typename(state, variables, expr.operand);
+	auto t_or_e = type_of_typename(state, variables, expr.operand);
+	return_if_error(t_or_e);
+	transpile_t typename_repr = name_of_type(state, t_or_e.value());
 	return_if_error(typename_repr);
 	return std::visit(overload(
 		[&](const auto& e) -> R {
 			NOT_IMPLEMENTED;
 		},
 		[&](const Realised::PrimitiveType& e) -> R {
-			if (expr.arguments.args.size() != 1)
+			if (expr.arguments.args.size() != 1) {
+				auto t_or_e = type_of_typename(state, variables, typename_of_primitive(e));
+				return_if_error(t_or_e);
+				transpile_t name = name_of_type(state, t_or_e.value());
+				return_if_error(name);
 				return error{
 					"user error",
-					"expected 1 argument to initialize object of type `" + transpile_typename(state, variables, typename_of_primitive(e)).value() + "`"
-			};
+					"expected 1 argument to initialize object of type `" + name.value() + "`"
+				};
+			}
 			auto arg_info = transpile_arg(state, variables, expr.arguments.args.at(0));
 			return_if_error(arg_info);
 			if (!std::holds_alternative<non_type_information>(arg_info.value()))
@@ -815,9 +791,13 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			const auto& arg_info_ok = std::get<non_type_information>(arg_info.value());
 			if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, { copy(e) }, arg_info_ok.type)._value))
 				NOT_IMPLEMENTED;
+			auto t_or_e = type_of_typename(state, variables, typename_of_primitive(e));
+			return_if_error(t_or_e);
+			transpile_t name = name_of_type(state, t_or_e.value());
+			return_if_error(name);
 			return expression_information{ non_type_information{
 				.type = { copy(e) },
-				.representation = transpile_typename(state, variables, typename_of_primitive(e)).value() + "{ " + arg_info_ok.representation + " }",
+				.representation = name.value() + "{ " + arg_info_ok.representation + " }",
 				.value_category = NodeStructs::Value{},
 			} };
 		},
@@ -830,7 +810,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			auto arg_ts = vec_of_expected_to_expected_of_vec(expr.arguments.args
 				| std::views::transform([&](auto&& arg) -> R {
 					return transpile_arg(state, variables, arg);
-				})
+					})
 				| to_vec());
 			return_if_error(arg_ts);
 			auto sz = arg_ts.value().size();
@@ -851,7 +831,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				return error{
 					"user error",
 					"could not arrange"
-				};
+			};
 
 			std::stringstream args_repr;
 			bool has_previous = false;
@@ -883,7 +863,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				return error{
 					"user error",
 					"vectors construction is done without arguments, expression was: `" + original_representation(expr.arguments.args[0].expr) + "`"
-				};
+			};
 			return expression_information{ non_type_information{
 				.type = { copy(vec_t) },
 				.representation = typename_repr.value() + "{}",
@@ -891,16 +871,20 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 			} };
 		},
 		[&](const Realised::UnionType& union_t) -> R {
-			if (expr.arguments.args.size() < 1)
+			if (expr.arguments.args.size() < 1) {
+				auto name_or_e = name_of_type(state, union_t);
+				return_if_error(name_or_e);
 				return error{
 					"user error",
-					"unions require at least one argument, union type was `" + typename_of_type(state, union_t).value().info.content + "`, expression was: `{}`"
+					"unions require at least one argument, union type was `" + name_or_e.value() + "`, expression was: `{}`"
 				};
+			}
 			if (expr.arguments.args.size() > 1)
-				return error{
-					"user error",
-					"unions require at most one argument, union type was `" + typename_of_type(state, union_t).value().info.content + "`, expression was: `TODO`"
-				};
+				NOT_IMPLEMENTED;
+			/*return error{
+				"user error",
+				"unions require at most one argument, union type was `" + NodeStructs::Typename{ NodeStructs::BaseTypename{ name_of_type(state, union_t).value() } }.info.content + "`, expression was: `TODO`"
+			};*/
 			auto expr_info = transpile_arg(state, variables, expr.arguments.args.at(0));
 			return_if_error(expr_info);
 			if (!std::holds_alternative<non_type_information>(expr_info.value()))
@@ -1006,7 +990,7 @@ R T::operator()(const NodeStructs::PropertyAccessExpression& expr) {
 	auto t = type_of_postfix_member(state, variables, expr.property_name, type);
 	return_if_error(t);
 
-	if (holds<Realised::InterfaceType>(type.type.get()._value))
+	if (holds<Realised::Interface>(type.type.get()._value))
 		return expression_information{ non_type_information{
 			.type = std::move(t).value().second,
 			.representation = "std::visit(overload([&](auto&& XX){ return XX." + expr.property_name + "; }), " + std::move(repr) + ".value)",
@@ -1085,7 +1069,7 @@ R T::operator()(const std::string& expr) {
 		} };
 	if (auto it = find_by_name(state.state.global_namespace.types, expr); it != state.state.global_namespace.types.end()) {
 		const auto& T = *it;
-		auto rt_or_e = realise_type(state, T);
+		auto rt_or_e = realise_type_or_interface(state, T);
 		return_if_error(rt_or_e);
 		return expression_information{ type_information{
 			.type = Realised::MetaType{ std::move(rt_or_e.value()) },
@@ -1094,13 +1078,15 @@ R T::operator()(const std::string& expr) {
 	}
 	if (auto it = find_by_name(state.state.global_namespace.aliases, expr); it != state.state.global_namespace.aliases.end()) {
 		const auto& type_name = it->aliasTo;
-		if (std::optional<error> err = realise_typename(state, type_name); err.has_value())
+		if (std::optional<error> err = realise_typename(state, variables, type_name); err.has_value())
 			return err.value();
 		auto type = type_of_typename(state, variables, type_name);
 		return_if_error(type);
+		transpile_t name = name_of_type(state, type.value());
+		return_if_error(name);
 		return expression_information{ type_information{
 			.type = std::move(type).value(),
-			.representation = transpile_typename(state, variables, type_name).value()
+			.representation = name.value()
 		} };
 	}
 	if (auto it = find_by_name(state.state.global_namespace.templates, expr); it != state.state.global_namespace.templates.end())

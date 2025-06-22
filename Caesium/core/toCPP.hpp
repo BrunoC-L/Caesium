@@ -13,6 +13,8 @@
 #include "../helpers.hpp"
 #include "realised.hpp"
 
+static const auto void_metatype = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Void{} } };
+
 struct variable_info {
 	NodeStructs::ValueCategory value_category;
 	Realised::MetaType type;
@@ -81,10 +83,12 @@ struct transpilation_state {
 	traversal<Realised::Type> types_traversal;
 	traversal<Realised::Interface> interfaces_traversal;
 
-	set<NodeStructs::Enum> enums_to_transpile;
-	map<NodeStructs::Typename, std::vector<Realised::MetaType>> interface_symbol_to_members;
+	std::map<std::string, Realised::MetaType> types;
 
-	std::set<std::pair<std::string, std::string>> aliases_to_transpile;
+	std::map<std::string, NodeStructs::Enum> enums_to_transpile;
+	map<std::string, std::vector<std::string>> interface_to_members;
+
+	std::map<std::string, std::string> aliases_to_transpile;
 };
 
 struct transpilation_state_with_indent {
@@ -143,15 +147,12 @@ std::optional<error> validate_templates(const std::vector<NodeStructs::Template>
 
 transpile_t transpile(const std::vector<NodeStructs::File>& project);
 
+transpile_t name_of_namespace(const NodeStructs::NameSpace&);
+transpile_t name_of_namespace(const NodeStructs::Typename&);
+
 std::optional<error> realise_main(
 	transpilation_state_with_indent state,
 	const NodeStructs::Function& fn
-);
-
-std::optional<error> stack(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
 transpile_declaration_definition_t transpile(
@@ -162,12 +163,6 @@ transpile_declaration_definition_t transpile(
 transpile_declaration_definition_t transpile(
 	transpilation_state_with_indent state,
 	const NodeStructs::Interface& interface
-);
-
-transpile_t transpile(
-	transpilation_state_with_indent state,
-	variables_t& variables,
-	const std::vector<NodeStructs::FunctionParameter>& parameters
 );
 
 std::vector<Realised::MetaType> decompose_type(
@@ -216,7 +211,7 @@ struct requires_conversion {
 };
 
 Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
-	transpilation_state_with_indent state_,
+	transpilation_state_with_indent state,
 	variables_t& variables,
 	const Realised::MetaType& parameter,
 	const Realised::MetaType& argument
@@ -237,12 +232,11 @@ bool uses_auto(const NodeStructs::Expression& t);
 #include "../type_visitor/type_of_function_like_call_with_args_visitor.hpp"
 #include "../type_visitor/type_of_postfix_member_visitor.hpp"
 #include "../type_visitor/transpile_member_call_visitor.hpp"
-#include "../type_visitor/typename_of_type_visitor.hpp"
+#include "../type_visitor/name_of_type_visitor.hpp"
 #include "../type_visitor/type_of_resolution_operator.hpp"
 
 #include "../expression_visitor/transpile_expression_visitor.hpp"
 
-#include "../typename_visitor/transpile_typename_visitor.hpp"
 #include "../typename_visitor/type_of_typename_visitor.hpp"
 #include "../typename_visitor/type_template_of_typename_visitor.hpp"
 
@@ -267,7 +261,7 @@ transpile_t transpile_statement(
 	const NodeStructs::Statement<top_level_context>& statement
 );
 
-expected<std::string> word_typename_or_expression_for_template(
+transpile_t word_typename_or_expression_for_template(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::WordTypenameOrExpression& value
@@ -279,12 +273,7 @@ expected<Realised::MetaType> type_of_typename(
 	const NodeStructs::WordTypenameOrExpression& tn_or_expr
 );
 
-expected<NodeStructs::Function> realise_function_using_auto(
-	transpilation_state_with_indent state,
-	const NodeStructs::Function& fn_using_auto,
-	const std::vector<Realised::MetaType>& arg_types
-);
-
+std::string name_of_primitive(const Realised::PrimitiveType& primitive_t);
 NodeStructs::Typename typename_of_primitive(const Realised::PrimitiveType& primitive_t);
 
 struct Arrangement {
@@ -361,19 +350,33 @@ bool uses_auto(const NodeStructs::Statement<context>& statement) {
 
 variables_t make_base_variables();
 
-expected<Realised::Type> realise_type(
-	transpilation_state_with_indent state,
-	const NodeStructs::Type& type
-);
-
-expected<Realised::Type> get_existing_realised_type(
-	transpilation_state_with_indent state,
-	const std::string& name,
-	const std::optional<NodeStructs::NameSpace>& name_space
-);
-
 std::string_view name_of_builtin(const Realised::Builtin& builtin);
 
-NodeStructs::ValueCategory optional_parameter_category_to_value_category(const Optional<NodeStructs::ParameterCategory>& opt_cat);
-NodeStructs::ValueCategory optional_parameter_category_to_value_category(const std::optional<NodeStructs::ParameterCategory>& opt_cat);
-NodeStructs::ValueCategory parameter_category_to_value_category(const NodeStructs::ParameterCategory& cat);
+NodeStructs::ValueCategory optional_parameter_category_to_value_category(const Optional<NodeStructs::ValueCategory>& opt_cat);
+NodeStructs::ValueCategory optional_parameter_category_to_value_category(const std::optional<NodeStructs::ValueCategory>& opt_cat);
+NodeStructs::ValueCategory parameter_category_to_value_category(const NodeStructs::ValueCategory& cat);
+
+#include "realise.hpp"
+
+NodeStructs::ValueCategory category_of_word_typename_or_expression(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::WordTypenameOrExpression& wte
+);
+
+caesium_source_location info_of_word_typename_or_expression(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::WordTypenameOrExpression& wte
+);
+
+template <typename T>
+void add_to_traversal_if_missing(
+	traversal<T>& traversal,
+	const std::string& name,
+	const T& to_insert
+) {
+	if (traversal.traversing.contains(name) || traversal.traversed.contains(name))
+		return;
+	traversal.traversed.insert(name, copy(to_insert));
+}

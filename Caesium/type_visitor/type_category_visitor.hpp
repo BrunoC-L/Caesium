@@ -23,7 +23,7 @@ struct TypeCategoryVisitor {
 	R operator()(const Realised::Type& t);\
 \
 	R operator()(const Realised::FunctionType& t);\
-	R operator()(const Realised::InterfaceType& t);\
+	R operator()(const Realised::Interface& t);\
 	R operator()(const Realised::NamespaceType& t);\
 	R operator()(const Realised::Builtin& t);\
 	R operator()(const Realised::UnionType& t);\
@@ -38,6 +38,7 @@ struct TypeCategoryVisitor {
 	R operator()(const Realised::MapType& t);\
 	R operator()(const Realised::TypeListType& t);\
 \
-	R operator()(const Realised::CompileTimeType& t);
+	R operator()(const Realised::CompileTimeType& t);\
+	R operator()(const Realised::TemplateInstanceType& t);
 };
 

@@ -1,27 +1,30 @@
 #include "defaults.hpp"
 
-struct A;
-struct B;
-struct C;
+struct Dog;
+struct Cat;
+struct Named;
 
-struct A {
+struct Dog {
+	String name;
 };
 
-struct B {
+struct Cat {
+	String name;
 };
 
-struct C {
+struct Named {
+	Union<Dog, Cat> value;
 };
 
-
-using Union_A_or_B_ = Union<A, B>;
-using Union_A_or_B_or_C_ = Union<A, B, C>;
+using Vector_Named_ = Vector<Named>;
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& s);
 
 Int _redirect_main(const Vector_String_& s) {
-	Union_A_or_B_ v1 = { A{} }; 
-	Union_A_or_B_or_C_ v2 = std::visit([](const auto& auto1) -> Union_A_or_B_or_C_ { return auto1; }, v1);
+	Vector_Named_ vec = Vector_Named_{};
+	push(vec, Named{Dog{String{"doggo"}}});
+	push(vec, Named{Cat{String{"gato"}}});
+	return 0;
 }
 
 int main(int argc, char** argv) {

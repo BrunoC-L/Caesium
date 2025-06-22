@@ -156,7 +156,7 @@ NodeStructs::Typename get_typename_struct(
 	const grammar::Typename& t
 ) {
 	const auto& auto_or_tn = t.template get<Or<Token<AUTO>, grammar::NonAutoTypename>>();
-	NodeStructs::ParameterCategory value_cat = getStruct(file_name, vec, t.template get<Opt<grammar::ParameterCategory>>(), tag{});
+	NodeStructs::ValueCategory value_cat = getStruct(file_name, vec, t.template get<Opt<grammar::ParameterCategory>>(), tag{});
 	// const auto& optional = t.template get<Opt<Token<QUESTION>>>();
 
 	return std::visit(overload(
@@ -208,7 +208,7 @@ NodeStructs::Typename getStruct(
 	return get_typename_struct<tag_allow_value_category_or_empty>(file_name, vec, t);
 }
 
-NodeStructs::ParameterCategory getStruct(
+NodeStructs::ValueCategory getStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	const grammar::ParameterCategory& vc
@@ -218,13 +218,13 @@ NodeStructs::ParameterCategory getStruct(
 			/*[&](const Token<KEY>&) -> NodeStructs::ValueCategory {
 				return NodeStructs::Key{};
 			},*/
-			[&](const Token<VAL>&) -> NodeStructs::ParameterCategory {
+			[&](const Token<VAL>&) -> NodeStructs::ValueCategory {
 				return NodeStructs::Value{};
 			},
-			[&](const Token<REF>&) -> NodeStructs::ParameterCategory {
+			[&](const Token<REF>&) -> NodeStructs::ValueCategory {
 				return NodeStructs::Reference{};
 			},
-			[&](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ParameterCategory {
+			[&](const And<Token<REF>, Token<NOT>>&) -> NodeStructs::ValueCategory {
 				return NodeStructs::MutableReference{};
 			}
 		),
@@ -232,7 +232,7 @@ NodeStructs::ParameterCategory getStruct(
 	);
 }
 
-NodeStructs::ParameterCategory getStruct(const std::string& file_name,
+NodeStructs::ValueCategory getStruct(const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	const Opt<grammar::ParameterCategory>& vc, tag_expect_value_category
 ) {
@@ -242,7 +242,7 @@ NodeStructs::ParameterCategory getStruct(const std::string& file_name,
 		NOT_IMPLEMENTED;
 }
 
-NodeStructs::ParameterCategory getStruct(const std::string& file_name,
+NodeStructs::ValueCategory getStruct(const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	const Opt<grammar::ParameterCategory>& vc, tag_expect_empty_category
 ) {
@@ -251,7 +251,7 @@ NodeStructs::ParameterCategory getStruct(const std::string& file_name,
 	return NodeStructs::Value{};
 }
 
-NodeStructs::ParameterCategory getStruct(const std::string& file_name,
+NodeStructs::ValueCategory getStruct(const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	const Opt<grammar::ParameterCategory>& vc, tag_allow_value_category_or_empty
 ) {

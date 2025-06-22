@@ -43,17 +43,17 @@ R T::operator()(const Realised::FunctionType& t) {
 	NOT_IMPLEMENTED;
 }
 
-R T::operator()(const Realised::InterfaceType& t) {
+R T::operator()(const Realised::Interface& t) {
 	if (auto it = std::find_if(
-		t.interface.get().member_variables.begin(),
-		t.interface.get().member_variables.end(),
+		t.member_variables.begin(),
+		t.member_variables.end(),
 		[&](const auto& member) { return member.name._value == property_name; }
-	); it != t.interface.get().member_variables.end())
+	); it != t.member_variables.end())
 		NOT_IMPLEMENTED;
 	/*return type_of_typename(state, variables, it->type)
 			.transform([](auto&& t) { return R::value_type{ NodeStructs::Reference{}, std::move(t) }; });*/
 	else
-		return error{ "user error", "Error: object of type `" + t.interface.get().name._value + "` has no member `" + property_name + "`\n" };
+		return error{ "user error", "Error: object of type `" + t.name._value + "` has no member `" + property_name + "`\n" };
 }
 
 R T::operator()(const Realised::NamespaceType& t) {
@@ -116,5 +116,9 @@ R T::operator()(const Realised::TypeListType& t) {
 }
 
 R T::operator()(const Realised::CompileTimeType& t) {
+	NOT_IMPLEMENTED;
+}
+
+R T::operator()(const Realised::TemplateInstanceType& t) {
 	NOT_IMPLEMENTED;
 }

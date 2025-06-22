@@ -88,7 +88,6 @@ CMP_COPY_N(3, Alias)
 CMP_COPY_N(2, MemberVariable)
 
 CMP_COPY_N(2, FunctionType)
-CMP_COPY_N(1, InterfaceType)
 CMP_COPY_N(1, NamespaceType)
 CMP_COPY_N(1, UnionType)
 CMP_COPY_N(1, OptionalType)

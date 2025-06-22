@@ -23,8 +23,8 @@ constexpr inline cursor_info copy(const cursor_info& e) { return e; }
 struct caesium_source_location {
 	std::string file_name;
 	std::string content;
-	cursor_info beg;
-	cursor_info end;
+	cursor_info beg = { std::numeric_limits<unsigned>::max(), std::numeric_limits<unsigned>::max() };
+	cursor_info end = { std::numeric_limits<unsigned>::max(), std::numeric_limits<unsigned>::max() };
 };
 
 constexpr inline caesium_source_location copy(const caesium_source_location& e) { return e; }
@@ -99,13 +99,12 @@ namespace NodeStructs {
 	struct Move {};
 	struct Value {};
 	using ArgumentCategory = Variant<Reference, MutableReference, Move>;
-	using ParameterCategory = Variant<Reference, MutableReference, Value>;
 	using ValueCategory = Variant<Reference, MutableReference, Value>;
 
 	struct Typename {
 		using vt = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, UnionTypename, VariadicExpansionTypename>;
 		NonCopyableBox<vt> value;
-		Optional<ParameterCategory> category;
+		Optional<ValueCategory> category;
 		caesium_source_location info = rule_info_stub<Typename>();
 	};
 

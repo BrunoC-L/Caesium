@@ -8,7 +8,7 @@ namespace Realised {
 	struct Type;
 	struct Function;
 	struct FunctionType;
-	struct InterfaceType;
+	struct Interface;
 	struct NamespaceType;
 	struct UnionType;
 	struct TemplateType;
@@ -23,36 +23,13 @@ namespace Realised {
 	struct TypeListType;
 	struct CompileTimeType;
 
-	/*struct NameSpace {
-		std::string name;
-
-		template <typename T> using map_to_vec = std::map<std::string, std::vector<T>, default_less_than>;
-
-		map_to_vec<NodeStructs::Function> functions;
-		map_to_vec<Function> realised_functions;
-
-		map_to_vec<NodeStructs::Type> types;
-		map_to_vec<Type> realised_types;
-		map_to_vec<NodeStructs::Interface> interfaces;
-
-		map_to_vec<NodeStructs::Template> templates;
-
-		map_to_vec<NodeStructs::Block> blocks;
-		std::map<std::string, NodeStructs::Typename> aliases;
-		map_to_vec<NodeStructs::Enum> enums;
-
-		std::map<std::string, NameSpace> namespaces;
-		map_to_vec<Builtin> builtins;
-		caesium_source_location info = rule_info_stub<NameSpace>();
-	};*/
-
 	struct MetaType {
-		using vt = Variant<
+		using vt = Variant <
 			PrimitiveType, // ex. type(1)
 			Type, // ex. type Dog -> type(Dog{})
 
 			FunctionType, // ex. Bool has_bone(...) -> type(has_bone)
-			InterfaceType, // ex. interface Animal -> type(Animal)
+			Interface, // ex. interface Animal -> type(Animal)
 			NamespaceType, // ex. namespace std -> type(std)
 			UnionType, // ex. type A, type B -> type(A | B)
 			TemplateType, // ex. template X -> type(X)
@@ -119,6 +96,11 @@ namespace Realised {
 
 	struct TemplateType {
 		caesium_lib::string::type name;
+	};
+
+	struct TemplateInstanceType {
+		caesium_lib::string::type name;
+		caesium_lib::vector::type<Realised::MetaType> arguments;
 	};
 
 	struct Argument {
@@ -200,23 +182,21 @@ namespace Realised {
 
 	struct EnumValueType {
 		std::string value_name;
-		std::string enum_name;
-		std::reference_wrapper<const NodeStructs::Enum> enum_;
+		std::string full_name;
+		EnumType enum_;
 	};
 
 	struct OptionalType {
-		caesium_lib::string::type name;
 		MetaType value_type;
 	};
 
 	struct CompileTimeType {
-		caesium_lib::string::type name;
 		MetaType type;
 	};
 
 	struct Parameter {
 		MetaType type;
-		NodeStructs::ParameterCategory category;
+		NodeStructs::ValueCategory category;
 	};
 
 	struct Function {
@@ -241,11 +221,6 @@ namespace Realised {
 		caesium_lib::string::type name;
 		std::vector<MemberVariable> member_variables;
 		caesium_source_location info = rule_info_stub<Interface>();
-	};
-
-	struct InterfaceType {
-		caesium_lib::string::type name;
-		std::reference_wrapper<const Interface> interface;
 	};
 
 	struct NamespaceType {

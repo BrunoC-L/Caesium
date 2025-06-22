@@ -1,27 +1,24 @@
 #include "defaults.hpp"
 
-struct A;
-struct B;
-struct C;
-
-struct A {
-};
-
-struct B {
-};
-
-struct C {
-};
 
 
-using Union_A_or_B_ = Union<A, B>;
-using Union_A_or_B_or_C_ = Union<A, B, C>;
 using Vector_String_ = Vector<String>;
+Int f_String_String_();
+Int f_String_Int_();
+Int f_Int_String_();
 Int _redirect_main(const Vector_String_& s);
 
+Int f_String_String_() {
+	return 2;
+}
+Int f_String_Int_() {
+	return 1;
+}
+Int f_Int_String_() {
+	return 0;
+}
 Int _redirect_main(const Vector_String_& s) {
-	Union_A_or_B_ v1 = { A{} }; 
-	Union_A_or_B_or_C_ v2 = std::visit([](const auto& auto1) -> Union_A_or_B_or_C_ { return auto1; }, v1);
+	return (f_String_String_() + f_String_Int_() + f_Int_String_());
 }
 
 int main(int argc, char** argv) {
