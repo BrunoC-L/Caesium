@@ -5,7 +5,7 @@
 #include "compiler.hpp"
 
 template<typename... Ts> struct overload : Ts... { using Ts::operator()...; };
-template<typename... Ts> overload(Ts...) -> overload<Ts...>; // to help IDE
+template<typename... Ts> overload(Ts...) -> overload<Ts...>; // to deduce members as inheritance parents?
 
 // the following is a macro the provide a simpler error to the user
 // when they are missing an option in their overload set

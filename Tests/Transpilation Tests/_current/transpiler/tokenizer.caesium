@@ -70,7 +70,7 @@ String parseInt(String ref program, Int ref! index):
 	return out
 
 TOKENS peek(String ref program, Int ref! index):
-	unsigned peekFrom = index
+	Int peekFrom = index
 	while True:
 		TOKENVALUE v = readToken(program, ref! index)
 		if v.first == SPACE or v.first == TAB or v.first == TOKENS::NEWLINE:
@@ -79,7 +79,7 @@ TOKENS peek(String ref program, Int ref! index):
 		return v.first
 
 TOKENS peek(String ref program, Int ref! index, Int val n):
-	unsigned peekFrom = index
+	Int peekFrom = index
 	TOKENS v = peek(program, n)
     Int i = 0
     while i <? n:

@@ -35,30 +35,32 @@ struct error {
 	error(const error&) = default;
 	error(error&&) = default;
 
-	error(std::string error_class, std::string message) :
-		error_class(std::move(error_class)), message(std::move(message)), cause(std::nullopt) {}
+	error(std::string error_class_, std::string message_) :
+		error_class(std::move(error_class_)), message(std::move(message_)), cause(std::nullopt) {
+	}
 
-	error(std::string error_class, std::string message, error cause) :
-		error_class(std::move(error_class)), message(std::move(message)), cause(std::move(cause)) {}
+	error(std::string error_class_, std::string message_, error cause) :
+		error_class(std::move(error_class_)), message(std::move(message_)), cause(std::move(cause)) {
+	}
 
 	bool has_underlying_error() const {
 		return cause.has_value();
 	}
 
-	const error& underlying_error(std::string error_class, std::string message) const& {
+	const error& underlying_error(std::string error_class_, std::string message_) const& {
 		return cause.value().get();
 	}
 
-	error& underlying_error(std::string error_class, std::string message) & {
+	error& underlying_error(std::string error_class_, std::string message_)& {
 		return cause.value().get();
 	}
 
-	error wrap(std::string error_class, std::string message) && {
-		return error{ std::move(error_class), std::move(message), std::move(*this) };
+	error wrap(std::string error_class_, std::string message_)&& {
+		return error{ std::move(error_class_), std::move(message_), std::move(*this) };
 	}
 
-	error wrap(std::string error_class, std::string message) const& {
-		return error{ std::move(error_class), std::move(message), *this };
+	error wrap(std::string error_class_, std::string message_) const& {
+		return error{ std::move(error_class_), std::move(message_), *this };
 	}
 };
 

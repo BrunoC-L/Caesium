@@ -121,7 +121,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/bigobj /D DEBUG=1 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>..\caesium_lib\caesium_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="builtin_visitor\transpile_builtin_call_with_args_visitor.cpp" />
     <ClCompile Include="core\deduce_return_type.hpp" />
     <ClCompile Include="core\transpile_statement.cpp" />
     <ClCompile Include="expression_visitor\transpile_expression_visitor.cpp" />
@@ -165,6 +166,8 @@
     <ClCompile Include="type_visitor\type_of_resolution_operator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="builtin_visitor\builtin_visitor.hpp" />
+    <ClInclude Include="builtin_visitor\transpile_builtin_call_with_args_visitor.hpp" />
     <ClInclude Include="cmp.hpp" />
     <ClInclude Include="copy.hpp" />
     <ClInclude Include="core\builtins.hpp" />
@@ -173,7 +176,6 @@
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />
     <ClInclude Include="expression_visitor\transpile_expression_visitor.hpp" />
     <ClInclude Include="statement_visitor\transpile_statement.hpp" />
-    <ClInclude Include="structured\cmp_copy_all.hpp" />
     <ClInclude Include="utility\compiler.hpp" />
     <ClInclude Include="utility\default_includes.hpp" />
     <ClInclude Include="helpers.hpp" />

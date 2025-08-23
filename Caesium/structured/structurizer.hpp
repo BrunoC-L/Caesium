@@ -106,6 +106,16 @@ caesium_source_location rule_info_from_rule(const std::string& file_name, const 
 	return x;
 }
 
+caesium_source_location rule_info_from_rules(const std::string& file_name, const std::vector<TokenValue>& vec, const auto& start_rule, const auto& end_rule) {
+	auto x = caesium_source_location{
+		.file_name = file_name,
+		.content = accumulate_content(vec, start_rule.beg_offset, end_rule.end_offset),
+		.beg = cursor_info{ 0, start_rule.beg_offset },
+		.end = cursor_info{ 0, end_rule.end_offset }
+	};
+	return x;
+}
+
 NodeStructs::Statement<function_context> get_base_statement_struct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,

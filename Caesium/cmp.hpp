@@ -1,5 +1,17 @@
 #pragma once
 
+#ifdef DEBUG
+#define STATEMENTS(M) \
+M(2, NodeStructs::Statement<function_context>)\
+M(2, NodeStructs::Statement<type_context>)\
+M(2, NodeStructs::Statement<top_level_context>)
+#else
+#define STATEMENTS(M) \
+M(1, NodeStructs::Statement<function_context>)\
+M(1, NodeStructs::Statement<type_context>)\
+M(1, NodeStructs::Statement<top_level_context>)
+#endif
+
 #define ExpandAll(M) \
 M(1, NodeStructs::WordTypenameOrExpression)\
 M(3, NodeStructs::Typename)\
@@ -35,9 +47,7 @@ M(0, NodeStructs::Move)\
 M(0, NodeStructs::Value)\
 M(1, NodeStructs::RunTimeStatement)\
 M(2, NodeStructs::VariableDeclaration)\
-M(1, NodeStructs::Statement<function_context>)\
-M(1, NodeStructs::Statement<type_context>)\
-M(1, NodeStructs::Statement<top_level_context>)\
+STATEMENTS(M)\
 M(1, NodeStructs::CompileTimeStatement<function_context>)\
 M(1, NodeStructs::CompileTimeStatement<type_context>)\
 M(1, NodeStructs::CompileTimeStatement<top_level_context>)\
@@ -98,13 +108,13 @@ M(3, NodeStructs::File)\
 M(1, NodeStructs::Import)\
 \
 M(3, Realised::Type); \
-M(1, Realised::FunctionType); \
+M(2, Realised::FunctionType); \
 M(2, Realised::NamespaceType); \
 M(1, Realised::TemplateType); \
 M(2, Realised::EnumType); \
 M(3, Realised::EnumValueType); \
 M(1, Realised::OptionalType); \
-M(2, Realised::AggregateType); \
+M(1, Realised::AggregateType); \
 M(2, Realised::UnionType); \
 M(2, Realised::VectorType); \
 M(2, Realised::SetType); \
@@ -124,6 +134,8 @@ CMP_N(1, Realised::PrimitiveType);
 CMP_N(1, Realised::MetaType);
 CMP_N(1, Realised::Builtin);
 #undef CMP_N
+
+extern bool ignore_caesium_source_location_contents_for_comparison;
 
 template <typename T>
 std::strong_ordering cmp(const T& a, const T& b) {
@@ -186,8 +198,16 @@ std::strong_ordering cmp(const T& a, const T& b) {
 		return a <=> b;
 	else if constexpr (std::is_same_v<T, Realised::empty_optional_t>)
 		return a <=> b;
-	else if constexpr (std::is_same_v<T, caesium_source_location>)
+	else if constexpr (std::is_same_v<T, caesium_source_location>) {
+#ifdef STRUCTURIZE_TESTS
+		// careful, look at whitespaces when debugging!
+		auto res = cmp(a.content, b.content);
+		bool breakpoint = res != std::strong_ordering::equal;
+		return res;
+#else
 		return std::strong_ordering::equivalent;
+#endif
+	}
 	else if constexpr (std::is_same_v<T, double>) {
 		std::partial_ordering partial = a <=> b;
 		if (partial == partial.greater)

@@ -6,6 +6,11 @@ using T = realise_typename_visitor;
 using R = T::R;
 
 R T::operator()(const NodeStructs::BaseTypename& type) {
+#define case(language_keyword)\
+	if (type.type == language_keyword##_tn_base.type)\
+		return std::nullopt;
+	expand_language_typenames(case)
+#undef case
 	auto it = find_by_name(state.state.global_namespace.aliases, type.type);
 	if (it != state.state.global_namespace.aliases.end())
 		return operator()(it->aliasTo);
@@ -24,6 +29,9 @@ R T::operator()(const NodeStructs::BaseTypename& type) {
 			return std::nullopt;
 		else
 			NOT_IMPLEMENTED_BUT_PROBABLY_ERROR;
+	}
+	if (auto it = find_by_name(state.state.global_namespace.enums, type.type); it != state.state.global_namespace.enums.end()) {
+		return std::nullopt;
 	}
 	NOT_IMPLEMENTED;
 
@@ -78,7 +86,8 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 					if (std::optional<error> opt_e = operator()(get<NodeStructs::Typename>(e.value)); opt_e.has_value())
 						return opt_e;
 				if (holds<std::string>(e.value)) {
-					NOT_IMPLEMENTED;
+					if (std::optional<error> opt_e = operator()(NodeStructs::BaseTypename{ get<std::string>(e.value) }); opt_e.has_value())
+						NOT_IMPLEMENTED; // basically the error could be anything because maybe
 				}
 			}
 			return std::nullopt;

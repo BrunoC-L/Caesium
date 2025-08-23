@@ -16,6 +16,7 @@ struct C {
 
 using Union_A_or_B_ = Union<A, B>;
 using Union_A_or_B_or_C_ = Union<A, B, C>;
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& s);
 

@@ -35,9 +35,9 @@ R T::operator()(const Realised::NamespaceType& nst) {
 		return std::move(e_t).value();
 	}
 	if (auto it = find_by_name(ns.interfaces, accessed); it != ns.interfaces.end()) {
-		const auto& interface = *it;
 		NOT_IMPLEMENTED;
-		/*if (!state.state.interfaces_traversal.traversed.contains(interface)) {
+		/*const auto& interface = *it;
+		if (!state.state.interfaces_traversal.traversed.contains(interface)) {
 			state.state.interfaces_traversal.traversed.insert(copy(interface));
 			state.state.interfaces_to_transpile.insert(copy(interface));
 		}

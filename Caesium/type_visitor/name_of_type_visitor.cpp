@@ -60,13 +60,11 @@ R T::operator()(const Realised::UnionType& t) {
 }
 
 R T::operator()(const Realised::TemplateType& t) {
-	NOT_IMPLEMENTED;
-	//return make_typename(NodeStructs::BaseTypename{ t.name._value }, NodeStructs::Value{}, rule_info_stub_no_throw());
+	return t.name._value;
 }
 
 R T::operator()(const Realised::EnumType& t) {
-	NOT_IMPLEMENTED;
-	//return make_typename(NodeStructs::BaseTypename{ t.enum_.get().name }, NodeStructs::Value{}, rule_info_stub_no_throw());
+	return t.name._value;
 }
 
 R T::operator()(const Realised::EnumValueType& t) {

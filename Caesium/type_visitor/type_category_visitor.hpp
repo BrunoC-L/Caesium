@@ -2,12 +2,6 @@
 #include "../structured/node_structs.hpp"
 
 template <typename T>
-concept TypeCategoryVisitorConcept = requires(T&& t, const Realised::MetaType& v) {
-	t(v);
-	std::visit(t, v.type);
-};
-
-template <typename T>
 struct TypeCategoryVisitor {
 	template <typename Self>
 	auto operator()(this Self&& self, const Realised::MetaType& t) {

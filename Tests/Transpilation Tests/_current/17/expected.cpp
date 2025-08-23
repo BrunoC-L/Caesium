@@ -16,6 +16,7 @@ struct Named {
 	Union<Dog, Cat> value;
 };
 
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_Named_ = Vector<Named>;
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& s);

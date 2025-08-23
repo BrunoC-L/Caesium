@@ -2,6 +2,7 @@
 
 
 
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_String_ = Vector<String>;
 Int f_String_String_();
 Int f_String_Int_();

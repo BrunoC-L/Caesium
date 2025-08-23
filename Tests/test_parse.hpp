@@ -4,7 +4,7 @@
 #include "structured/structurizer.hpp"
 #include "utility/colored_text.hpp"
 
-static std::string test_file_name_stub() {
+static inline std::string test_file_name_stub() {
 	return "test_file_name_stub";
 }
 

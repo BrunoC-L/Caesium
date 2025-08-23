@@ -17,8 +17,8 @@ struct type_template_of_typename_visitor : TypenameVisitor<type_template_of_type
 expected<Realised::MetaType> type_template_of_typename(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with,
-	const auto& tn
+	const auto& tn,
+	const std::vector<NodeStructs::WordTypenameOrExpression>& templated_with
 ) {
 	return type_template_of_typename_visitor{ {}, state, variables, templated_with }(tn);
 }

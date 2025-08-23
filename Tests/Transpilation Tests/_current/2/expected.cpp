@@ -2,16 +2,13 @@
 
 
 
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_String_ = Vector<String>;
-Void println(const String& x);
 Int _redirect_main(const Vector_String_& cli_args);
 
-Void println(const String& x) {
-	return;
-}
 Int _redirect_main(const Vector_String_& cli_args) {
 	for (auto&& arg : cli_args) {
-		println(arg);
+		(Void)(std::cout << ('"' + arg + '"') << "\n");
 	}
 	return 0;
 }

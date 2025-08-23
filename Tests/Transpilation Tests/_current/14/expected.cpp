@@ -11,6 +11,7 @@ struct Cat {
 
 
 using Union_Cat_or_Dog_ = Union<Cat, Dog>;
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_String_ = Vector<String>;
 using Vector_Union_Cat_or_Dog__ = Vector<Union_Cat_or_Dog_>;
 Int f_Union_Cat_or_Dog__(const Vector_Union_Cat_or_Dog__& vec);

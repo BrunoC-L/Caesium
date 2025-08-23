@@ -24,6 +24,7 @@ ServerServiceProvider__DB provider;
 
 
 Void provide__DB__DB(ServerServiceProvider__DB& provider, const DB& service);
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_String_ = Vector<String>;
 Int _redirect_main(const Vector_String_& args);
 

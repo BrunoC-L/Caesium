@@ -247,34 +247,35 @@ R transpile_for_or_ifor_statement(
 			const Realised::TypeListType& tl = get<Realised::TypeListType>(coll_type_or_e_ok.type);
 			if (statement.iterators.size() != 1 || !std::holds_alternative<std::string>(statement.iterators[0]._value))
 				NOT_IMPLEMENTED;
-			const std::string& type_iterator = std::get<std::string>(statement.iterators[0]._value);
+			(void)tl;
+			//const std::string& type_iterator = std::get<std::string>(statement.iterators[0]._value);
 			
-			int i = 0;
-			std::stringstream ss;
-			for (const Realised::MetaType& type : tl.types) {
-				auto tn_repr = name_of_type(state, type);
-				return_if_error(tn_repr);
-				if constexpr (ifor) {
-					const std::string& index = index_or_none;
-					NOT_IMPLEMENTED;
-					/*variables[index].push_back(variable_info{
-						NodeStructs::ValueCategory{ NodeStructs::Value{} },
-						Realised::MetaType{ Realised::CompileTimeType{
-							.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<int>{ i } } }
-						} }
-					});*/
-					i += 1;
-				}
-				NOT_IMPLEMENTED;
-				/*state.state.global_namespace.aliases.insert({ type_iterator, std::move(tn).value() });
-				auto statements = transpile(state, variables, statement.statements, expected_return_type);
-				if constexpr (ifor) {
-					const std::string& index = index_or_none;
-					variables[index].pop_back();
-				}
-				return_if_error(statements);
-				ss << statements.value();*/
-			}
+			//int i = 0;
+			//std::stringstream ss;
+			//for (const Realised::MetaType& type : tl.types) {
+			//	auto tn_repr = name_of_type(state, type);
+			//	return_if_error(tn_repr);
+			//	if constexpr (ifor) {
+			//		const std::string& index = index_or_none;
+			//		NOT_IMPLEMENTED;
+			//		/*variables[index].push_back(variable_info{
+			//			NodeStructs::ValueCategory{ NodeStructs::Value{} },
+			//			Realised::MetaType{ Realised::CompileTimeType{
+			//				.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<int>{ i } } }
+			//			} }
+			//		});*/
+			//		i += 1;
+			//	}
+			//	NOT_IMPLEMENTED;
+			//	/*state.state.global_namespace.aliases.insert({ type_iterator, std::move(tn).value() });
+			//	auto statements = transpile(state, variables, statement.statements, expected_return_type);
+			//	if constexpr (ifor) {
+			//		const std::string& index = index_or_none;
+			//		variables[index].pop_back();
+			//	}
+			//	return_if_error(statements);
+			//	ss << statements.value();*/
+			//}
 			NOT_IMPLEMENTED;
 			/*state.state.global_namespace.aliases.erase(type_iterator);
 			return ss.str();*/
@@ -448,9 +449,9 @@ R transpile_statement_specific(
 	const Realised::MetaType& expected_return_type,
 	const NodeStructs::BlockStatement<context>& statement
 ) {
-	const auto& s = get<NodeStructs::BaseTypename>(statement.parametrized_block).type;
 	NOT_IMPLEMENTED;
-	/*if (state.state.global_namespace.blocks.contains(s)) {
+	/*const auto& s = get<NodeStructs::BaseTypename>(statement.parametrized_block).type;
+	if (state.state.global_namespace.blocks.contains(s)) {
 		const NodeStructs::Block& block = state.state.global_namespace.blocks.at(s).back();
 		std::stringstream ss;
 		for (const auto& statement_in_block : block.statements)

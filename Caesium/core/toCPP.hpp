@@ -10,10 +10,10 @@
 #include "../utility/enumerate.hpp"
 #include "../structured/node_structs.hpp"
 #include "../structured/structurizer.hpp"
-#include "../helpers.hpp"
 #include "realised.hpp"
 
 static const auto void_metatype = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Void{} } };
+static const auto int_metatype = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Int{} } };
 
 struct variable_info {
 	NodeStructs::ValueCategory value_category;
@@ -80,6 +80,7 @@ struct transpilation_state {
 	transpilation_state(NodeStructs::NameSpace global_namespace) : global_namespace(std::move(global_namespace)) {}
 
 	traversal<Realised::Function> functions_traversal;
+	std::map<std::string, Realised::MetaType> functions_return_types; // to get between traversing and traversed (needed for recursion)
 	traversal<Realised::Type> types_traversal;
 	traversal<Realised::Interface> interfaces_traversal;
 
@@ -235,6 +236,8 @@ bool uses_auto(const NodeStructs::Expression& t);
 #include "../type_visitor/name_of_type_visitor.hpp"
 #include "../type_visitor/type_of_resolution_operator.hpp"
 
+#include "../builtin_visitor/transpile_builtin_call_with_args_visitor.hpp"
+
 #include "../expression_visitor/transpile_expression_visitor.hpp"
 
 #include "../typename_visitor/type_of_typename_visitor.hpp"
@@ -267,7 +270,7 @@ transpile_t word_typename_or_expression_for_template(
 	const NodeStructs::WordTypenameOrExpression& value
 );
 
-expected<Realised::MetaType> type_of_typename(
+transpile_expression_information_t type_of_typename(
 	transpilation_state_with_indent state,
 	variables_t& variables,
 	const NodeStructs::WordTypenameOrExpression& tn_or_expr
@@ -290,23 +293,24 @@ expected<Arrangement> find_best_template(
 
 expected<Realised::Function> realise_function(
 	transpilation_state_with_indent state,
-	variables_t variables, // by value
 	const NodeStructs::Function& function,
+	const std::string& fkey,
 	const std::vector<expression_information>& args
 );
-
 
 transpile_expression_information_t produce_call(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const Realised::Function& function,
+	const std::string& fkey,
+	const Realised::MetaType& return_type,
+	const std::vector<NodeStructs::FunctionParameter>& parameters,
 	const std::vector<expression_information>& args
 );
 
 transpile_expression_information_t realise_function_and_produce_call(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	const std::string& name,
+	const Realised::FunctionType& fn,
 	const NodeStructs::NameSpace& space,
 	const std::vector<expression_information>& args
 );
@@ -380,3 +384,15 @@ void add_to_traversal_if_missing(
 		return;
 	traversal.traversed.insert(name, copy(to_insert));
 }
+
+std::optional<
+	std::pair<
+		std::reference_wrapper<const NodeStructs::Function>,
+		std::vector<Variant<directly_assignable, requires_conversion>>
+	>
+> find_best_function(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const std::vector<NodeStructs::Function>& overload_set,
+	const std::vector<expression_information>& args
+);

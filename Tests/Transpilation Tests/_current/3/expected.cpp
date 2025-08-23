@@ -2,6 +2,7 @@
 
 
 
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_String_ = Vector<String>;
 Bool bop1(const String& s);
 Int _redirect_main(const Vector_String_& cli_args);

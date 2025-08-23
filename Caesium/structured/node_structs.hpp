@@ -519,5 +519,8 @@ namespace NodeStructs {
 	template <typename context_>
 	struct Statement {
 		NonCopyableBox<Variant<CompileTimeStatement<context_>, contextual_options<context_>>> statement;
+#ifdef DEBUG
+		caesium_lib::string::type debug_info_string;
+#endif
 	};
 };

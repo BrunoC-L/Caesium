@@ -1,0 +1,62 @@
+template Token<_token>:
+    type Token:
+        String value
+        Int n_indent
+
+template Until<T>:
+    type Until:
+        Int n_indent
+
+type IndentToken:
+	Int n_indent
+
+template Indent<T>:
+    type Indent : public `T`:
+        Indent(Int n_indent) : `T`(n_indent + 1) {}
+
+template Alloc<T>:
+    type Alloc:
+        Box<`T`> value
+        Int n_indent
+
+template And<Ands...>:
+    type And:
+        Tuple<`Ands...`> value
+
+template Or<Ors...>:
+    type Or:
+        Union<`Ors...`> _value
+
+type TemplateBody:
+	Int n_indent
+	String value
+
+template KNode<T, CND, requiresComma>:
+    type KNode:
+        Int n_indent
+        Vector<`T`> nodes
+        Int beg_offset
+        Int end_offset
+
+type StarCnd:
+type PlusCnd:
+
+template cnd<CND=StarCnd, T>:
+    Bool cnd(ref Vector<T> v)
+        return true
+
+template cnd<CND=PlusCnd, T>:
+    Bool cnd(ref Vector<T> v)
+        return v.size() > 0
+
+template Star<T>:
+    using Star = KNode<`T`, StarCnd, False>
+
+template CommaStar<T>:
+    using CommaStar = KNode<`T`, StarCnd, True>
+
+template Plus<T>:
+    using Plus = KNode<`T`, PlusCnd, False>
+
+template CommaPlus<T>:
+    using CommaPlus = KNode<`T`, PlusCnd, True>

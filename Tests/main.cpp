@@ -3,6 +3,8 @@
 #include "test_template_selection.hpp"
 #include "test_transpile_files.hpp"
 
+bool ignore_caesium_source_location_contents_for_comparison = true;
+
 int main(int argc, char** argv) {
 	constexpr auto bad_exit = 1;
 
@@ -12,9 +14,12 @@ int main(int argc, char** argv) {
 		return bad_exit;
 	std::cout << colored_text("All parse tests passed\n", output_stream_colors::green);
 
+	ignore_caesium_source_location_contents_for_comparison = false;
 	if (!test_structurize_equals())
 		return bad_exit;
 	std::cout << colored_text("All structurize tests passed\n", output_stream_colors::green);
+
+	ignore_caesium_source_location_contents_for_comparison = true;
 
 	if (!test_template_selection())
 		return bad_exit;

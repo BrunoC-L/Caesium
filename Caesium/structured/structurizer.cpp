@@ -106,17 +106,20 @@ NodeStructs::Typename getStruct(
 		[&](const auto&) { // just checking its not a variadic expansion
 			return getStruct(file_name, vec, t, exts, std::visit(overload(overload_default_error,
 				[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
-					return make_typename(NodeStructs::NamespacedTypename{ std::move(res), e.template get<grammar::Word>().value }, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, e));
+					auto info = rule_info_from_rules(file_name, vec, t, e);
+					return make_typename(NodeStructs::NamespacedTypename{ std::move(res), e.template get<grammar::Word>().value }, NodeStructs::Value{}, std::move(info));
 				},
 				[&](const grammar::TemplateTypenameExtension& e) -> NodeStructs::Typename {
+					auto info = rule_info_from_rules(file_name, vec, t, e);
 					return make_typename(NodeStructs::TemplatedTypename{
 						std::move(res),
 						e.template get<CommaStar<grammar::TypenameOrExpression>>().template get<grammar::TypenameOrExpression>()
 						| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e, tag_allow_value_category_or_empty{}); })
 						| to_vec()
-						}, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, e));
+						}, NodeStructs::Value{}, std::move(info));
 				},
 				[&](const grammar::UnionTypenameExtension& ext) -> NodeStructs::Typename {
+					auto info = rule_info_from_rules(file_name, vec, t, ext);
 					auto temp = getStruct(file_name, vec, ext.template get<Alloc<grammar::Typename>>().get(), tag_allow_value_category_or_empty{});
 					if (holds<NodeStructs::UnionTypename>(res)) {
 						if (holds<NodeStructs::UnionTypename>(temp))
@@ -139,10 +142,11 @@ NodeStructs::Typename getStruct(
 					v.push_back(std::move(temp));
 					return make_typename(NodeStructs::UnionTypename{
 						std::move(v)
-					}, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, ext));
+					}, NodeStructs::Value{}, std::move(info));
 				},
 				[&](const Token<QUESTION>& ext) -> NodeStructs::Typename {
-					return make_typename(NodeStructs::OptionalTypename{ std::move(res) }, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, ext));
+					auto info = rule_info_from_rules(file_name, vec, t, ext);
+					return make_typename(NodeStructs::OptionalTypename{ std::move(res) }, NodeStructs::Value{}, std::move(info));
 				}
 			), ext.value()), i + 1);
 		}
@@ -839,20 +843,23 @@ NodeStructs::Expression getPostfixExpressionStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
 	NodeStructs::Expression&& expr,
-	const grammar::Postfix& postfix
+	const grammar::Postfix& postfix,
+	const auto& parent_rule
 ) {
+	auto info = rule_info_from_rules(file_name, vec, parent_rule, postfix);
 	return std::visit(
 		overload(overload_default_error,
 			[&](const And<Token<DOT>, grammar::Word>& e) {
 				return make_expression(
 					NodeStructs::PropertyAccessExpression{ std::move(expr), e.template get<grammar::Word>().value },
-					rule_info_from_rule(file_name, vec, e)
+					std::move(info)
 				);
 			},
 			[&](const And<Token<NS>, grammar::Word>& e) {
-				return make_expression(NodeStructs::NamespaceExpression{ std::move(expr), e.template get<grammar::Word>().value },
-					rule_info_from_rule(file_name, vec, e)
-					);
+				return make_expression(
+					NodeStructs::NamespaceExpression{ std::move(expr), e.template get<grammar::Word>().value },
+					std::move(info)
+				);
 			},
 			[&](const And<Token<DOT>, grammar::Word, grammar::ParenArguments>& e) {
 				return make_expression(
@@ -860,16 +867,17 @@ NodeStructs::Expression getPostfixExpressionStruct(
 						std::move(expr),
 						e.template get<grammar::Word>().value,
 						getStruct(file_name, vec, e.template get<grammar::ParenArguments>())
-					}, rule_info_from_rule(file_name, vec, e)
+					},
+					std::move(info)
 				);
 			},
 			[&](const grammar::ParenArguments& args) {
 				auto args_ = getStruct(file_name, vec, args);
-				return make_expression(NodeStructs::CallExpression{ std::move(expr), std::move(args_) }, rule_info_from_rule(file_name, vec, args));
+				return make_expression(NodeStructs::CallExpression{ std::move(expr), std::move(args_) }, std::move(info));
 			},
 			[&](const grammar::BracketArguments& args) {
 				auto args_ = getStruct(file_name, vec, args);
-				return make_expression(NodeStructs::BracketAccessExpression{ std::move(expr), std::move(args_) }, rule_info_from_rule(file_name, vec, args));
+				return make_expression(NodeStructs::BracketAccessExpression{ std::move(expr), std::move(args_) }, std::move(info));
 			},
 			[&](const grammar::TemplateTypenameExtension& args) {
 				return make_expression(NodeStructs::TemplateExpression{
@@ -877,7 +885,7 @@ NodeStructs::Expression getPostfixExpressionStruct(
 					args.template get<CommaStar<grammar::TypenameOrExpression>>().template get<grammar::TypenameOrExpression>()
 					| std::views::transform([&](auto&& e) { return getStruct(file_name, vec, e, tag_allow_value_category_or_empty{}); })
 					| to_vec()
-					}, rule_info_from_rule(file_name, vec, args));
+					}, std::move(info));
 			}
 		),
 		postfix.value()
@@ -894,7 +902,7 @@ NodeStructs::Expression getExpressionStruct(
 ) {
 	if (i == expressions.size())
 		return cur;
-	return getExpressionStruct(file_name, vec, expr, getPostfixExpressionStruct(file_name, vec, std::move(cur), expressions.at(i)), expressions, i + 1);
+	return getExpressionStruct(file_name, vec, expr, getPostfixExpressionStruct(file_name, vec, std::move(cur), expressions.at(i), expr), expressions, i + 1);
 }
 
 NodeStructs::Expression getExpressionStruct(
@@ -1128,7 +1136,8 @@ std::string accumulate_content(const std::vector<TokenValue>& vec, const unsigne
 	auto it = beg;
 	while (it != end)
 		ss << vec[it++].second;
-	return ss.str();
+	auto content = ss.str();
+	return content;
 }
 
 std::vector<NodeStructs::Expression> getExpressions(
@@ -1174,29 +1183,42 @@ NodeStructs::Statement<context> getStatementStruct(
 						get_compile_time_statement(file_name, vec, ct_statement)
 					}
 				}
+#ifdef DEBUG
+				, accumulate_content(vec, ct_statement.beg_offset, ct_statement.end_offset)
+#endif
 			};
 		},
 		[&](const Or<contextuals...>& x) -> NodeStructs::Statement<context> {
 			if constexpr (std::is_same_v<context, function_context>) {
-				return { Variant<NodeStructs::CompileTimeStatement<context>, NodeStructs::contextual_options<context>> {
-					std::visit(overload(
-						[&](const grammar::RunTimeStatement& x) -> NodeStructs::contextual_options<context> {
-							return getStruct(file_name, vec, x);
-						}
-					), x.value())
-				} };
+				return {
+					Variant<NodeStructs::CompileTimeStatement<context>, NodeStructs::contextual_options<context>> {
+						std::visit(overload(
+							[&](const grammar::RunTimeStatement& x) -> NodeStructs::contextual_options<context> {
+								return getStruct(file_name, vec, x);
+							}
+						), x.value())
+					}
+#ifdef DEBUG
+				, accumulate_content(vec, x.beg_offset, x.end_offset)
+#endif
+				};
 			}
 			else if constexpr (std::is_same_v<context, type_context>) {
-				return { Variant<NodeStructs::CompileTimeStatement<context>, NodeStructs::contextual_options<context>> {
-					std::visit(overload(
-						[&](const grammar::Alias& x) -> NodeStructs::contextual_options<context> {
-							return getStruct(file_name, vec, x, std::nullopt);
-						},
-						[&](const grammar::MemberVariable& x) -> NodeStructs::contextual_options<context> {
-							return getStruct(file_name, vec, x);
-						}
-					), x.value())
-				} };
+				return {
+					Variant<NodeStructs::CompileTimeStatement<context>, NodeStructs::contextual_options<context>> {
+						std::visit(overload(
+							[&](const grammar::Alias& x) -> NodeStructs::contextual_options<context> {
+								return getStruct(file_name, vec, x, std::nullopt);
+							},
+							[&](const grammar::MemberVariable& x) -> NodeStructs::contextual_options<context> {
+								return getStruct(file_name, vec, x);
+							}
+						), x.value())
+					}
+#ifdef DEBUG
+				, accumulate_content(vec, x.beg_offset, x.end_offset)
+#endif
+				};
 			}
 			else if constexpr (std::is_same_v<context, top_level_context>) {
 				NOT_IMPLEMENTED;

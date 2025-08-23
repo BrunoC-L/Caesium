@@ -18,6 +18,7 @@ struct CatsAndDogs {
 };
 
 
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
 using Vector_Cat_ = Vector<Cat>;
 using Vector_Dog_ = Vector<Dog>;
 using Vector_String_ = Vector<String>;

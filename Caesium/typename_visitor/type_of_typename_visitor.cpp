@@ -9,6 +9,23 @@ R T::operator()(const NodeStructs::BaseTypename& t) {
 		return Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::language_keyword{} } };
 	expand_language_typenames_that_can_appear_in_cpp(case)
 #undef case
+	if (t.type == Realised::Builtin::builtin_compile_time_error::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_compile_time_error{} } };
+	if (t.type == Realised::Builtin::builtin_typeof::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_typeof{} } };
+	if (t.type == Realised::Builtin::builtin_type_list::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_type_list{} } };
+	if (t.type == Realised::Builtin::builtin_exit::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_exit{} } };
+	// See github issue #4
+	/*if (t.type == Realised::Builtin::builtin_vector::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_vector{} } };
+	if (t.type == Realised::Builtin::builtin_set::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_set{} } };
+	if (t.type == Realised::Builtin::builtin_map::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_map{} } };
+	if (t.type == Realised::Builtin::builtin_union::name)
+		return Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_union{} } };*/
 
 	// getting the type of auto wouldnt make sense
 	if (t.type == auto_tn_base.type)
@@ -61,20 +78,7 @@ R T::operator()(const NodeStructs::NamespacedTypename& t) {
 }
 
 R T::operator()(const NodeStructs::TemplatedTypename& tt) {
-	std::vector<NodeStructs::WordTypenameOrExpression> templated_with;
-	templated_with.reserve(tt.templated_with.size());
-	for (const auto& t : tt.templated_with) {
-		auto arg = type_of_typename(state, variables, t);
-		return_if_error(arg);
-		auto tn = name_of_type(state, arg.value());
-		return_if_error(tn);
-		templated_with.push_back({ NodeStructs::Typename{
-			NodeStructs::BaseTypename{ std::move(tn).value() },
-			category_of_word_typename_or_expression(state, variables, t),
-			info_of_word_typename_or_expression(state, variables, t)
-		} });
-	}
-	return type_template_of_typename(state, variables, templated_with, tt.type);
+	return type_template_of_typename(state, variables, tt.type, tt.templated_with);
 }
 
 R T::operator()(const NodeStructs::OptionalTypename& t) {

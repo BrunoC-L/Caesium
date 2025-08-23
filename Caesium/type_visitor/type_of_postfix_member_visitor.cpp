@@ -25,19 +25,16 @@ R T::operator()(const Realised::PrimitiveType& t) {
 	NOT_IMPLEMENTED;
 }
 
-//R T::operator()(const NodeStructs::AggregateType& t) {
-//	if (t.arguments.size() == 0)
-//		NOT_IMPLEMENTED;
-//	if (t.arguments.size() == 1)
-//		return operator()(t.arguments.at(0).second);
-//	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
-//		NOT_IMPLEMENTED;
-//	}
-//}
-//
-//R T::operator()(const NodeStructs::TypeType& t) {
-//	NOT_IMPLEMENTED;
-//}
+R T::operator()(const Realised::AggregateType& t) {
+	NOT_IMPLEMENTED;
+	/*if (t.arguments.size() == 0)
+		NOT_IMPLEMENTED;
+	if (t.arguments.size() == 1)
+		return operator()(t.arguments.at(0).second);
+	if (auto it = state.state.global_namespace.functions.find(property_name); it != state.state.global_namespace.functions.end()) {
+		NOT_IMPLEMENTED;
+	}*/
+}
 
 R T::operator()(const Realised::FunctionType& t) {
 	NOT_IMPLEMENTED;
@@ -81,10 +78,6 @@ R T::operator()(const Realised::EnumValueType& tmpl) {
 }
 
 R T::operator()(const Realised::OptionalType& t) {
-	NOT_IMPLEMENTED;
-}
-
-R T::operator()(const Realised::AggregateType& t) {
 	NOT_IMPLEMENTED;
 }
 

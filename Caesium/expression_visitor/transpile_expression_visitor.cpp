@@ -401,52 +401,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 	if (std::holds_alternative<type_information>(t.value())) {
 		const auto& ti = std::get<type_information>(t.value());
 		if (holds<Realised::Builtin>(ti.type)) {
-			NOT_IMPLEMENTED;
-			/*const std::string& name = get<Realised::Builtin>(ti.type).name;
-			if (name == "print" || name == "println") {
-				std::stringstream ss;
-
-				ss << "(Void)(std::cout";
-				for (const auto& [_, arg] : expr.arguments.args) {
-					auto expr_s = expr_to_printable(state, variables, arg);
-					return_if_error(expr_s);
-					ss << " << " << expr_s.value();
-				}
-				bool newline = name == "println";
-				if (newline)
-					ss << " << \"\\n\"";
-				ss << ")";
-				return expression_information{ non_type_information{
-					.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::void_t>{} } },
-					.representation = ss.str(),
-					.value_category = NodeStructs::Value{}
-				} };
-			}
-			if (name == "exit") {
-				std::stringstream ss;
-				ss << "exit(";
-				if (expr.arguments.args.size() != 1)
-					NOT_IMPLEMENTED;
-				auto expr_info = operator()(expr.arguments.args.at(0).expr);
-				return_if_error(expr_info);
-				if (!std::holds_alternative<non_type_information>(expr_info.value()))
-					NOT_IMPLEMENTED;
-				const non_type_information& expr_info_ok = std::get<non_type_information>(expr_info.value());
-				if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<int>{} } }, expr_info_ok.type)._value))
-					NOT_IMPLEMENTED;
-				ss << expr_info_ok.representation << ")";
-				return expression_information{ non_type_information{
-					.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<Realised::void_t>{} } },
-					.representation = ss.str(),
-					.value_category = NodeStructs::Value{}
-				} };
-			}
-			if (name == "compile_time_error") {
-				return error{
-					"user error",
-					"user activated compile_time_error encountered"
-				};
-			}*/
+			return transpile_builtin_call_with_args(state, variables, expr.arguments.args, get<Realised::Builtin>(ti.type));
 		}
 		if (holds<Realised::TemplateType>(ti.type)) {
 			NOT_IMPLEMENTED;
@@ -471,7 +426,7 @@ R T::operator()(const NodeStructs::CallExpression& expr) {
 			return realise_function_and_produce_call(
 				state,
 				variables,
-				get<Realised::FunctionType>(ti.type).name._value,
+				get<Realised::FunctionType>(ti.type),
 				state.state.global_namespace,
 				args_or_e.value()
 			);
@@ -487,56 +442,57 @@ R T::operator()(const NodeStructs::NamespaceExpression& expr) {
 	if (!std::holds_alternative<type_information>(operand_t.value()))
 		NOT_IMPLEMENTED;
 	const auto& operand_t_ok = std::get<type_information>(operand_t.value());
-	NOT_IMPLEMENTED;
-	//return std::visit(overload(
-	//	[&](const NodeStructs::NamespaceType& nst) -> transpile_expression_information_t {
-	//		const auto& ns = nst.name_space.get();
-	//		if (auto it = ns.types.find(expr.name_in_name_space); it != ns.types.end()) {
-	//			NOT_IMPLEMENTED;
-	//			/*return expression_information{ type_information{
-	//				.type = { copy(it->second.back()) },
-	//				.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
-	//			} };*/
-	//		}
-	//		if (auto it = ns.functions.find(expr.name_in_name_space); it != ns.functions.end())
-	//			return expression_information{ type_information{
-	//				.type = Realised::MetaType{ NodeStructs::FunctionType{
-	//					.name = expr.name_in_name_space,
-	//					.name_space = ns
-	//				} },
-	//				.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
-	//			} };
-	//		if (auto it = ns.templates.find(expr.name_in_name_space); it != ns.templates.end())
-	//			return expression_information{ type_information{
-	//				.type = Realised::MetaType{ NodeStructs::TemplateType{
-	//					.name = expr.name_in_name_space,
-	//					.name_space = ns
-	//				} },
-	//				.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
-	//			} };
-	//		return error{
-	//			"user error",
-	//			"namespace `" + ns.name + "` has no type or function `" + expr.name_in_name_space + "`"
-	//		};
-	//	},
-	//	[&](const NodeStructs::EnumType& enumt) -> transpile_expression_information_t {
-	//		const auto& enum_ = enumt.enum_.get();
-	//		if (auto it = std::find(enum_.values.begin(), enum_.values.end(), expr.name_in_name_space); it != enum_.values.end()) {
-	//			return expression_information{ non_type_information{
-	//				.type = { NodeStructs::EnumValueType{ enum_, expr.name_in_name_space } },
-	//				.representation = operand_t_ok.representation + "__" + expr.name_in_name_space,
-	//				.value_category = NodeStructs::Value{}
-	//			} };
-	//		}
-	//		return error{
-	//			"user error",
-	//			"enum `" + operand_t_ok.representation + "` has no member `" + expr.name_in_name_space + "`"
-	//		};
-	//	},
-	//	[&](const auto& nst) -> transpile_expression_information_t {
-	//		NOT_IMPLEMENTED;
-	//	}
-	//), operand_t_ok.type.type.get()._value);
+	return caesium_lib::variant::visit(operand_t_ok.type.type.get(), overload(
+		[&](const Realised::NamespaceType& nst) -> R {
+			const auto& ns = nst.name_space.get();
+			if (auto it = find_by_name(ns.types, expr.name_in_name_space); it != ns.types.end()) {
+				NOT_IMPLEMENTED;
+				/*return expression_information{ type_information{
+					.type = { copy(it->second.back()) },
+					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
+				} };*/
+			}
+			if (auto fs = find_multiple_by_name(ns.functions, expr.name_in_name_space); fs.size() != 0)
+				return expression_information{ type_information{
+					.type = Realised::MetaType{ Realised::FunctionType{
+						.name = expr.name_in_name_space,
+						.overload_set = std::move(fs)
+					} },
+					.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
+				} };
+			NOT_IMPLEMENTED;
+			//if (auto it = ns.templates.find(expr.name_in_name_space); it != ns.templates.end())
+			//	return expression_information{ type_information{
+			//		.type = Realised::MetaType{ Realised::TemplateType{
+			//			.name = expr.name_in_name_space,
+			//			.name_space = ns
+			//		} },
+			//		.representation = operand_t_ok.representation + "__" + expr.name_in_name_space
+			//	} };
+			//return error{
+			//	"user error",
+			//	"namespace `" + ns.name + "` has no type or function `" + expr.name_in_name_space + "`"
+			//};
+		},
+		[&](const Realised::EnumType& enumt) -> R {
+			const auto& enum_ = enumt.enum_.get();
+			if (auto it = std::find(enum_.values.begin(), enum_.values.end(), expr.name_in_name_space); it != enum_.values.end()) {
+				auto full_name = operand_t_ok.representation + "__" + expr.name_in_name_space;
+				return expression_information{ non_type_information{
+					.type = { Realised::EnumValueType{ expr.name_in_name_space, full_name, copy(enumt) } },
+					.representation = full_name,
+					.value_category = NodeStructs::Value{}
+				} };
+			}
+			return error{
+				"user error",
+				"enum `" + operand_t_ok.representation + "` has no member `" + expr.name_in_name_space + "`"
+			};
+		},
+		[&](const auto& nst) -> R {
+			NOT_IMPLEMENTED;
+		}
+	));
 }
 
 R T::operator()(const NodeStructs::TemplateExpression& expr) {
@@ -598,11 +554,11 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 			);
 		}
 
-		bool has_f = find_by_name(state.state.global_namespace.functions, tmpl_name) != state.state.global_namespace.functions.end();
-		if (has_f)
+		if (auto fs = find_multiple_by_name(state.state.global_namespace.functions, tmpl_name); fs.size() != 0)
 			return expression_information{ type_information{
 				.type = Realised::MetaType{ Realised::FunctionType{
-					tmpl_name
+					tmpl_name,
+					std::move(fs)
 				} },
 				.representation = tmpl_name
 			} };
@@ -624,9 +580,11 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 					auto structured_f = getStruct("template:/" + tmpl_name, tokens, f.template get<grammar::Function>(), std::nullopt);
 					structured_f.name = tmpl_name;
 					state.state.global_namespace.functions.push_back(copy(structured_f));
+					caesium_lib::vector::type<NodeStructs::Function> v = caesium_lib::vector::make_with_capacity<NodeStructs::Function>(1);
 					return expression_information{ type_information{
 						.type = { Realised::FunctionType{
-							tmpl_name
+							tmpl_name,
+							caesium_lib::vector::push(std::move(v), std::move(structured_f))
 						} },
 						.representation = tmpl_name
 					} };
@@ -656,6 +614,15 @@ R T::operator()(const NodeStructs::TemplateExpression& expr) {
 					.type = Realised::MetaType{ std::move(structured_t) },
 					.representation = tmpl_name
 				} };*/
+			}
+		}
+		{
+			And<IndentToken, grammar::Alias, Token<END>> t{ tmpl.indent };
+			auto tokens = Tokenizer(replaced).read();
+			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
+			if (build(t, it)) {
+				auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.template get<grammar::Alias>(), std::nullopt);
+				NOT_IMPLEMENTED;
 			}
 		}
 		return error{
@@ -763,14 +730,13 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 }
 
 R T::operator()(const NodeStructs::ConstructExpression& expr) {
-	auto t = type_of_typename(state, variables, expr.operand);
-	return_if_error(t);
 	auto t_or_e = type_of_typename(state, variables, expr.operand);
 	return_if_error(t_or_e);
 	transpile_t typename_repr = name_of_type(state, t_or_e.value());
 	return_if_error(typename_repr);
-	return std::visit(overload(
+	return caesium_lib::variant::visit(t_or_e.value().type.get(), overload(
 		[&](const auto& e) -> R {
+			type_of_typename(state, variables, expr.operand);
 			NOT_IMPLEMENTED;
 		},
 		[&](const Realised::PrimitiveType& e) -> R {
@@ -902,7 +868,7 @@ R T::operator()(const NodeStructs::ConstructExpression& expr) {
 				"expression does not match any of the union type"
 			};
 		}
-	), t.value().type.get()._value);
+	));
 }
 
 R T::operator()(const NodeStructs::BracketAccessExpression& expr) {
@@ -1036,18 +1002,51 @@ R T::operator()(const NodeStructs::BraceArguments& expr) {
 	for (size_t i = 0; i < expr.args.size(); ++i)
 		ss << args_ok.at(i).representation << ", ";
 	ss << "}";
-	NOT_IMPLEMENTED;
-	//return expression_information{ non_type_information{
-	//	.type = { Realised::AggregateType{
-	//		copy(expr.args),
-	//		args_ok | std::views::transform([](non_type_information& e) { return std::move(e).type; }) | to_vec()
-	//	} },
-	//	.representation = ss.str(),
-	//	.value_category = NodeStructs::Value{}, // todo check conversion ok
-	//} };
+	return expression_information{ non_type_information{
+		.type = { Realised::AggregateType{
+			args_ok | std::views::transform([](non_type_information& e) {
+				return Realised::Argument{
+					.category = NodeStructs::Reference{},
+					.type = std::move(e).type
+				};
+			}) | to_vec()
+		} },
+		.representation = ss.str(),
+		.value_category = NodeStructs::Value{}, // todo check conversion ok
+	} };
 }
 
 R T::operator()(const std::string& expr) {
+	if (expr == Realised::Builtin::builtin_compile_time_error::name)
+		return expression_information{ type_information{
+			.type = Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_compile_time_error{} } },
+			.representation = expr
+		} };
+	if (expr == Realised::Builtin::builtin_typeof::name)
+		return expression_information{ type_information{
+			.type = Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_typeof{} } },
+			.representation = expr
+		} };
+	if (expr == Realised::Builtin::builtin_type_list::name)
+		return expression_information{ type_information{
+			.type = Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_type_list{} } },
+			.representation = expr
+		} };
+	if (expr == Realised::Builtin::builtin_exit::name)
+		return expression_information{ type_information{
+			.type = Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_exit{} } },
+			.representation = expr
+		} };
+	if (expr == Realised::Builtin::builtin_print::name)
+		return expression_information{ type_information{
+			.type = Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_print{} } },
+			.representation = expr
+		} };
+	if (expr == Realised::Builtin::builtin_println::name)
+		return expression_information{ type_information{
+			.type = Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_println{} } },
+			.representation = expr
+		} };
 	if (auto it = variables.find(expr); it != variables.end() && it->second.size() > 0) {
 		if (it->second.size() != 1)
 			NOT_IMPLEMENTED;
@@ -1059,11 +1058,11 @@ R T::operator()(const std::string& expr) {
 		} };
 	}
 
-	bool has_f = find_by_name(state.state.global_namespace.functions, expr) != state.state.global_namespace.functions.end();
-	if (has_f)
+	if (auto fs = find_multiple_by_name(state.state.global_namespace.functions, expr); fs.size() != 0)
 		return expression_information{ type_information{
 			.type = Realised::MetaType{ Realised::FunctionType{
-				expr
+				expr,
+				std::move(fs)
 			} },
 			.representation = expr
 		} };
@@ -1095,17 +1094,15 @@ R T::operator()(const std::string& expr) {
 			.representation = expr
 		} };
 	if (auto it = find_by_name(state.state.global_namespace.namespaces, expr); it != state.state.global_namespace.namespaces.end())
-		NOT_IMPLEMENTED;
-		/*return expression_information{ type_information{
-			.type = { Realised::NamespaceType{ it->second } },
+		return expression_information{ type_information{
+			.type = { Realised::NamespaceType{ it->name, *it } },
 			.representation = expr
-		} };*/
+		} };
 	if (auto it = find_by_name(state.state.global_namespace.enums, expr); it != state.state.global_namespace.enums.end())
-		NOT_IMPLEMENTED;
-		/*return expression_information{ type_information{
-			.type = { Realised::EnumType{ it->second.back() } },
+		return expression_information{ type_information{
+			.type = { Realised::EnumType{ it->name, *it } },
 			.representation = expr
-		} };*/
+		} };
 	return error{ "user error", "Undeclared identifier `" + expr + "`" };
 }
 

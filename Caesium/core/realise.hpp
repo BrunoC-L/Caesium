@@ -57,9 +57,26 @@ T add_member_to_type(
 	T type,
 	Variant<NodeStructs::Alias, NodeStructs::MemberVariable> member
 ) {
-	caesium_lib::variant::visit(std::move(member), [&](auto m) {
-		type.members.push_back(NodeStructs::Statement<type_context>{ NodeStructs::contextual_options<type_context>{ std::move(m) } });
-	});
+	caesium_lib::variant::visit(std::move(member), overload(
+		[&](NodeStructs::Alias x) {
+			auto debug_info_string = "alias name = " + copy(x.name);
+			type.members.push_back(NodeStructs::Statement<type_context>{
+				NodeStructs::contextual_options<type_context>{ std::move(x) }
+#ifdef DEBUG
+				, std::move(debug_info_string)
+#endif
+			});
+		},
+		[&](NodeStructs::MemberVariable x) {
+			auto debug_info_string = "variable name = " + copy(x.name);
+			type.members.push_back(NodeStructs::Statement<type_context>{
+				NodeStructs::contextual_options<type_context>{ std::move(x) }
+#ifdef DEBUG
+				, std::move(debug_info_string)
+#endif
+			});
+		}
+	));
 	return type;
 }
 
@@ -126,7 +143,6 @@ select_t<
 	);
 
 	for (const NodeStructs::Statement<type_context>& compile_time_statement : statements) {
-		variables_t variables = make_base_variables();
 		expected<T> next = caesium_lib::variant::visit(compile_time_statement.statement.get(), overload(
 			[&](const Variant<NodeStructs::Alias, NodeStructs::MemberVariable>& member) -> expected<T> {
 				return add_member_to_type(copy(intermediates._value.back()), copy(member));

@@ -1,10 +1,12 @@
 #include "defaults.hpp"
 
-struct Token__TOKENS__WORD;
-struct Or__Token__TOKENS__WORD__Int;
+struct Token_TOKENS__WORD_;
+struct Or_Token_TOKENS__WORD__Int_;
 struct Tokenizer;
-struct Pair__Int__String;
+struct Pair_TOKENS_String_;
 struct tokens_and_iterator;
+struct StarCnd;
+struct KNode_Int_StarCnd_False_;
 static constexpr Int TOKENS__END = 0;
 static constexpr Int TOKENS__SEMICOLON = 1;
 static constexpr Int TOKENS__COLON = 2;
@@ -93,71 +95,69 @@ static constexpr Int TOKENS__VARIANT = 84;
 static constexpr Int TOKENS__VIRTUAL = 85;
 static constexpr Int TOKENS__BOX = 86;
 
-struct Token__TOKENS__WORD {
-String value;
-Int n_indent;
+struct Token_TOKENS__WORD_ {
+	String value;
+	Int n_indent;
 };
 
-struct Or__Token__TOKENS__WORD__Int {
-Union<Token__TOKENS__WORD, Int> _value;
+struct Or_Token_TOKENS__WORD__Int_ {
+	Union_Int_or_Token_TOKENS__WORD__ _value;
 };
 
 struct Tokenizer {
-String program;
-Int index;
+	String program;
+	Int index;
 };
 
-struct Pair__Int__String {
-Int first;
-String second;
+struct Pair_TOKENS_String_ {
+	TOKENS first;
+	String second;
 };
 
 struct tokens_and_iterator {
-Vector<Pair__Int__String> tokens;
-Int it;
+	Vector_Pair_TOKENS_String__ tokens;
+	Int it;
+};
+
+struct StarCnd {
+};
+
+struct KNode_Int_StarCnd_False_ {
+	Int n_indent;
+	Vector_Int_ nodes;
+	Int beg_offset;
+	Int end_offset;
 };
 
 
-Bool build__File(const Int& it);
+using Union_Int_or_Token_TOKENS__WORD__ = Union<Int, Token_TOKENS__WORD_>;
+using Union_filesystem__directory_or_filesystem__file_ = Union<filesystem__directory, filesystem__file>;
+using Vector_Int_ = Vector<Int>;
+using Vector_Pair_TOKENS_String__ = Vector<Pair_TOKENS_String_>;
+using Vector_String_ = Vector<String>;
+Bool isStartOfWord(const Char& c);
 Bool isNum(const Char& c);
 Bool isPartWord(const Char& c);
-Bool isStartOfWord(const Char& c);
-String parseInt(const String& program, Int& index);
 String parseWord(const String& program, Int& index);
-Vector<Pair__Int__String> read(Tokenizer& tk);
-Pair__Int__String readToken(const String& program, Int& index);
-Int _redirect_main(const Vector<String>& args);
+String parseInt(const String& program, Int& index);
+Pair_TOKENS_String_ readToken(const String& program, Int& index);
+Vector_Pair_TOKENS_String__ read(Tokenizer& tk);
+Int _redirect_main(const Vector_String_& args);
 
-Bool build__File(const Int& it) {
-	return False;
-};
-Bool isNum(const Char& c) {
-	return c >= Char{ '0' } || c <= Char{ '9' };
-};
-Bool isPartWord(const Char& c) {
-	return isNum(c) || isStartOfWord(c);
-};
 Bool isStartOfWord(const Char& c) {
 	return c >= Char{ 'a' } || c <= Char{ 'z' } || c >= Char{ 'A' } || c <= Char{ 'Z' } || c == Char{ '_' };
-};
-String parseInt(const String& program, Int& index) {
-	String out = String{""};
-	while (index != program.size()) {
-		Char c = program.at(index);
-		if (isNum(c)) {
-			out = sum_strings(out, c);
-			index = (index + 1);
-		} else {
-			break;
-		}
-	}
-	return out;
-};
+}
+Bool isNum(const Char& c) {
+	return c >= Char{ '0' } || c <= Char{ '9' };
+}
+Bool isPartWord(const Char& c) {
+	return isNum(c) || isStartOfWord(c);
+}
 String parseWord(const String& program, Int& index) {
 	if (!isStartOfWord(program.at(index))) {
 		return String{""};
 	}
-	String out = String{""};
+	String out = { String{""} }; 
 	while (index != program.size()) {
 		Char c = program.at(index);
 		if (isPartWord(c)) {
@@ -168,40 +168,36 @@ String parseWord(const String& program, Int& index) {
 		}
 	}
 	return out;
-};
-Vector<Pair__Int__String> read(Tokenizer& tk) {
-	Vector<Pair__Int__String> out = Vector<Pair__Int__String>{};
-	out.reserve(tk.program.size());
-	if (tk.program.size() != 0) {
-		while (True) {
-			Pair__Int__String t = readToken(tk.program, tk.index);
-			push(out, t);
-			if (t.first != TOKENS__END) {
-				break;
-			}
+}
+String parseInt(const String& program, Int& index) {
+	String out = { String{""} }; 
+	while (index != program.size()) {
+		Char c = program.at(index);
+		if (isNum(c)) {
+			out = sum_strings(out, c);
+			index = (index + 1);
+		} else {
+			break;
 		}
-		if (out.size()) {
-			out.back().first = TOKENS__NEWLINE;
-			push(out, Pair__Int__String{TOKENS__END, String{""}});
-		}
-	} else {
-		push(out, Pair__Int__String{TOKENS__END, String{""}});
 	}
 	return out;
-};
-Pair__Int__String readToken(const String& program, Int& index) {
+}
+Pair_TOKENS_String_ readToken(const String& program, Int& index) {
 	if (index == program.size()) {
 		return { TOKENS__END, String{""}, };
 	}
 	Char c = program.at(index);
-	String str = String{""};
+	String str = { String{""} }; 
 	switch (c) {
 		case '\\':
 			if ((index + 1) <= program.size() || program.at((index + 1)) == Char{ '\n' }) {
 				index = (index + 1);
 				return readToken(program, index);
 			}
-			return Pair__Int__String{TOKENS__BACKSLASH, String{Char{ '\\' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__BACKSLASH,
+				String{Char{ '\\' }},
+						};
 		case '\'':
 		case '`':
 		case '"':
@@ -227,69 +223,117 @@ Pair__Int__String readToken(const String& program, Int& index) {
 			exit(1);
 		case '{':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__BRACEOPEN, String{Char{ '{' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__BRACEOPEN,
+				String{Char{ '{' }},
+						};
 		case '}':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__BRACECLOSE, String{Char{ '}' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__BRACECLOSE,
+				String{Char{ '}' }},
+						};
 		case '(':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__PARENOPEN, String{Char{ '(' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__PARENOPEN,
+				String{Char{ '(' }},
+						};
 		case ')':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__PARENCLOSE, String{Char{ ')' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__PARENCLOSE,
+				String{Char{ ')' }},
+						};
 		case '[':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__BRACKETOPEN, String{Char{ '[' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__BRACKETOPEN,
+				String{Char{ '[' }},
+						};
 		case ']':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__BRACKETCLOSE, String{Char{ ']' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__BRACKETCLOSE,
+				String{Char{ ']' }},
+						};
 		case ' ':
 			if ((index + 3) < program.size() || program.at((index + 1)) == Char{ ' ' } || program.at((index + 2)) == Char{ ' ' } || program.at((index + 3)) == Char{ ' ' }) {
 				index = (index + 4);
-				return Pair__Int__String{TOKENS__TAB, String{Char{ '\t' }}, };
+				return Pair_TOKENS_String_{
+					TOKENS__TAB,
+					String{Char{ '\t' }},
+								};
 			}
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__SPACE, String{Char{ ' ' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__SPACE,
+				String{Char{ ' ' }},
+						};
 		case '\n':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__NEWLINE, String{Char{ '\n' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__NEWLINE,
+				String{Char{ '\n' }},
+						};
 		case '\t':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__TAB, String{Char{ '\t' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__TAB,
+				String{Char{ '\t' }},
+						};
 		case '.':
 			if ((index + 2) < program.size() || program.at((index + 1)) == Char{ '.' } || program.at((index + 2)) == Char{ '.' }) {
 				index = (index + 3);
 				return { TOKENS__DOTS, String{"..."}, };
 			}
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__DOT, String{Char{ '.' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__DOT,
+				String{Char{ '.' }},
+						};
 		case ';':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__SEMICOLON, String{Char{ ';' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__SEMICOLON,
+				String{Char{ ';' }},
+						};
 		case ':':
 			index = (index + 1);
 			if (index < program.size() || program.at(index) == Char{ ':' }) {
 				index = (index + 1);
 				return { TOKENS__NS, String{"::"}, };
 			}
-			return Pair__Int__String{TOKENS__COLON, String{Char{ ':' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__COLON,
+				String{Char{ ':' }},
+						};
 		case ',':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__COMMA, String{Char{ ',' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__COMMA,
+				String{Char{ ',' }},
+						};
 		case '=':
 			index = (index + 1);
 			if (index < program.size() || program.at(index) == Char{ '=' }) {
 				index = (index + 1);
 				return { TOKENS__EQUALEQUAL, String{"=="}, };
 			}
-			return Pair__Int__String{TOKENS__EQUAL, String{Char{ '=' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__EQUAL,
+				String{Char{ '=' }},
+						};
 		case '!':
 			index = (index + 1);
 			if (index < program.size() || program.at(index) == Char{ '=' }) {
 				index = (index + 1);
 				return { TOKENS__NEQUAL, String{"!="}, };
 			}
-			return Pair__Int__String{TOKENS__NOT, String{Char{ '!' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__NOT,
+				String{Char{ '!' }},
+						};
 		case '<':
 			index = (index + 1);
 			if (index < program.size()) {
@@ -308,7 +352,10 @@ Pair__Int__String readToken(const String& program, Int& index) {
 					return { TOKENS__LTQ, String{"<?"}, };
 				}
 			}
-			return Pair__Int__String{TOKENS__LT, String{Char{ '<' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__LT,
+				String{Char{ '<' }},
+						};
 		case '>':
 			index = (index + 1);
 			if (index < program.size()) {
@@ -327,7 +374,10 @@ Pair__Int__String readToken(const String& program, Int& index) {
 					return { TOKENS__GTQ, String{">?"}, };
 				}
 			}
-			return Pair__Int__String{TOKENS__GT, String{Char{ '>' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__GT,
+				String{Char{ '>' }},
+						};
 		case '-':
 			index = (index + 1);
 			if (index < program.size()) {
@@ -339,7 +389,10 @@ Pair__Int__String readToken(const String& program, Int& index) {
 					return { TOKENS__MINUSMINUS, String{"--"}, };
 				}
 			}
-			return Pair__Int__String{TOKENS__DASH, String{Char{ '-' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__DASH,
+				String{Char{ '-' }},
+						};
 		case '+':
 			index = (index + 1);
 			if (index < program.size()) {
@@ -351,14 +404,20 @@ Pair__Int__String readToken(const String& program, Int& index) {
 					return { TOKENS__PLUSPLUS, String{"++"}, };
 				}
 			}
-			return Pair__Int__String{TOKENS__PLUS, String{Char{ '+' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__PLUS,
+				String{Char{ '+' }},
+						};
 		case '*':
 			index = (index + 1);
 			if (index < program.size() || program.at(index) == Char{ '=' }) {
 				index = (index + 1);
 				return { TOKENS__TIMESEQUAL, String{"*="}, };
 			}
-			return Pair__Int__String{TOKENS__ASTERISK, String{Char{ '*' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__ASTERISK,
+				String{Char{ '*' }},
+						};
 		case '/':
 			index = (index + 1);
 			if (index < program.size() || program.at(index) == Char{ '/' }) {
@@ -389,14 +448,20 @@ Pair__Int__String readToken(const String& program, Int& index) {
 				index = (index + 1);
 				return { TOKENS__DIVEQUAL, String{"/="}, };
 			}
-			return Pair__Int__String{TOKENS__SLASH, String{Char{ '/' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__SLASH,
+				String{Char{ '/' }},
+						};
 		case '%':
 			index = (index + 1);
 			if (index < program.size() || program.at(index) == Char{ '=' }) {
 				index = (index + 1);
 				return { TOKENS__MODEQUAL, String{"%="}, };
 			}
-			return Pair__Int__String{TOKENS__PERCENT, String{Char{ '%' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__PERCENT,
+				String{Char{ '%' }},
+						};
 		case '&':
 			index = (index + 1);
 			if (index < program.size()) {
@@ -410,17 +475,26 @@ Pair__Int__String readToken(const String& program, Int& index) {
 			}
 		case '?':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__QUESTION, String{Char{ '?' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__QUESTION,
+				String{Char{ '?' }},
+						};
 		case '#':
 			index = (index + 1);
-			return Pair__Int__String{TOKENS__POUND, String{Char{ '#' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__POUND,
+				String{Char{ '#' }},
+						};
 		case '^':
 			index = (index + 1);
 			if ((index + 1) <= program.size() || program.at(index) == Char{ '^' }) {
 				index = (index + 1);
 				return { TOKENS__XOREQUAL, String{"^="}, };
 			}
-			return Pair__Int__String{TOKENS__CARET, String{Char{ '^' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__CARET,
+				String{Char{ '^' }},
+						};
 		case '|':
 			index = (index + 1);
 			if ((index + 1) <= program.size()) {
@@ -432,7 +506,10 @@ Pair__Int__String readToken(const String& program, Int& index) {
 					return { TOKENS__OREQUAL, String{"|="}, };
 				}
 			}
-			return Pair__Int__String{TOKENS__BITOR, String{Char{ '|' }}, };
+			return Pair_TOKENS_String_{
+				TOKENS__BITOR,
+				String{Char{ '|' }},
+						};
 	}
 	String word = parseWord(program, index);
 	if (word.size()) {
@@ -520,7 +597,7 @@ Pair__Int__String readToken(const String& program, Int& index) {
 		return { TOKENS__WORD, word, };
 	}
 	String num = parseInt(program, index);
-	if (!num.size()) {
+	if (!(num.size() > 0)) {
 		exit(1);
 	}
 	if (index != program.size() || program.at(index) == Char{ '.' }) {
@@ -531,19 +608,40 @@ Pair__Int__String readToken(const String& program, Int& index) {
 		}
 	}
 	return { TOKENS__INTEGER_NUMBER, num, };
-};
-Int _redirect_main(const Vector<String>& args) {
-	Vector<Int>{}.size();
-	Token__TOKENS__WORD w = Token__TOKENS__WORD{String{"hi"}, 0};
-	Or__Token__TOKENS__WORD__Int t1 = Or__Token__TOKENS__WORD__Int{Token__TOKENS__WORD{String{"t1"}, 1}};
-	Or__Token__TOKENS__WORD__Int t2 = { Or__Token__TOKENS__WORD__Int{Token__TOKENS__WORD{String{"t2"}, 2}} };
+}
+Vector_Pair_TOKENS_String__ read(Tokenizer& tk) {
+	Vector_Pair_TOKENS_String__ out = Vector_Pair_TOKENS_String__{};
+	out.reserve(tk.program.size());
+	if (tk.program.size() != 0) {
+		while (True) {
+			Pair_TOKENS_String_ t = readToken(tk.program, tk.index);
+			push(out, t);
+			if (t.first != TOKENS__END) {
+				break;
+			}
+		}
+		if (out.size()) {
+			out.back().first = TOKENS__NEWLINE;
+			push(out, Pair_TOKENS_String_{TOKENS__END, String{""}});
+		}
+	} else {
+		push(out, Pair_TOKENS_String_{TOKENS__END, String{""}});
+	}
+	return out;
+}
+Int _redirect_main(const Vector_String_& args) {
+	Vector_Int_{}.size();
+	Token_TOKENS__WORD_ w1 = Token_TOKENS__WORD_{String{"hi"}, 0};
+	Token_TOKENS__WORD_ w2 = Token_TOKENS__WORD_{String{"hi"}, 0};
+	Or_Token_TOKENS__WORD__Int_ t1 = Or_Token_TOKENS__WORD__Int_{Token_TOKENS__WORD_{String{"t1"}, 1}};
+	Or_Token_TOKENS__WORD__Int_ t2 = Or_Token_TOKENS__WORD__Int_{Token_TOKENS__WORD_{String{"t2"}, 2}};
 	String program = String{"Int f():\n\treturn 0\n\nInt main(Vector<String> ref args):\n\treturn f()\n"};
 	Tokenizer tokenizer = Tokenizer{std::move(program), 0};
-	Vector<Pair__Int__String> tokens = read(tokenizer);
+	Vector_Pair_TOKENS_String__ tokens = read(tokenizer);
 	tokens_and_iterator g = tokens_and_iterator{std::move(tokens), 0};
-	(Void)(std::cout << String{build__File(g.it) ? "True" : "False"} << "\n");
+	KNode_Int_StarCnd_False_ f = KNode_Int_StarCnd_False_{0, Vector_Int_{}, 0, 0};
 	return 0;
-};
+}
 
 int main(int argc, char** argv) {
 	std::vector<std::string> args {};

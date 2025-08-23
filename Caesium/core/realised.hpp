@@ -45,52 +45,35 @@ namespace Realised {
 			TypeListType, // type(type_list<Int, String, Cat>)
 
 			CompileTimeType // type of a variable declared with #type var = ...
-		> ;
+		>;
 		NonCopyableBox<vt> type;
 	};
 
 	struct Builtin {
-		// lang
 		struct builtin_compile_time_error { static constexpr char name[]{ "compile_time_error" }; };
-		struct builtin_typeof { static constexpr char name[]{ "typeof" }; };
-		struct builtin_type_list { static constexpr char name[]{ "type_list" }; };
-		struct builtin_exit { static constexpr char name[]{ "exit" }; };
+		struct builtin_typeof { static constexpr char name[]{ "typeof" }; }; // typeof(<variable>)
+		struct builtin_type_list { static constexpr char name[]{ "type_list" }; }; // type_list<<typename>...>
+		struct builtin_exit { static constexpr char name[]{ "exit" }; }; // exit(<Int>);
+		struct builtin_print { static constexpr char name[]{ "print" }; }; // print(..., ..., ...);
+		struct builtin_println { static constexpr char name[]{ "println" }; }; // println(..., ..., ...);
 
 		struct builtin_vector { static constexpr char name[]{ "Vector" }; };
 		struct builtin_set { static constexpr char name[]{ "Set" }; };
 		struct builtin_map { static constexpr char name[]{ "Map" }; };
 		struct builtin_union { static constexpr char name[]{ "Union" }; };
-		
-
-		//// these are done wrong
-		//// lib
-		//struct builtin_print { static constexpr char name[]{ "print" }; };
-		//struct builtin_println { static constexpr char name[]{ "println" }; };
-		//struct builtin_file { static constexpr char name[]{ "file" }; };
-		//struct builtin_directory { static constexpr char name[]{ "directory" }; };
-		//struct builtin_push { static constexpr char name[]{ "push" }; };
-		//struct builtin_size { static constexpr char name[]{ "size" }; };
-		//struct builtin_insert { static constexpr char name[]{ "insert" }; };
-
 
 		caesium_lib::variant::type<
 			builtin_compile_time_error,
 			builtin_typeof,
 			builtin_type_list,
 			builtin_exit,
+			builtin_print,
+			builtin_println,
 
 			builtin_vector,
 			builtin_set,
 			builtin_map,
-			builtin_union/*,
-
-			builtin_print,
-			builtin_println,
-			builtin_file,
-			builtin_directory,
-			builtin_push,
-			builtin_size,
-			builtin_insert*/
+			builtin_union
 		> builtin;
 	};
 
@@ -109,7 +92,6 @@ namespace Realised {
 	};
 
 	struct AggregateType {
-		caesium_lib::string::type name;
 		std::vector<Argument> arguments;
 	};
 
@@ -230,6 +212,6 @@ namespace Realised {
 
 	struct FunctionType {
 		caesium_lib::string::type name;
-		// std::vector<std::reference_wrapper<const Function>> overload_set;
+		caesium_lib::vector::type<NodeStructs::Function> overload_set;
 	};
 }

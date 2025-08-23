@@ -85,10 +85,10 @@ struct caesium_standard_library_builtins {
 				}, NodeStructs::Reference{}, rule_info_language_element("filesystem::directory")),
 					//.category = NodeStructs::ValueCategory{ NodeStructs::Reference{}),
 					.name = "dir"
-					}
-				),
-				.statements = {},
-				.info = rule_info_stub_no_throw()
+			}
+		),
+		.statements = {},
+		.info = rule_info_stub_no_throw()
 	};
 
 	NodeStructs::Function entries_str = {
