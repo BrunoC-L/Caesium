@@ -105,7 +105,7 @@ R f(
 			And<IndentToken, grammar::Type> t{ tmpl.indent };
 			auto tokens = Tokenizer(replaced).read();
 			Iterator it = { .vec = tokens, .index = 0 , .line = 0, .col = 0, .file_name = "template:/" + tmpl_name };
-			auto ok = build(t, it);
+ 			auto ok = build(t, it);
 			while (parse_empty_line(it));
 			if (ok && (it.index == it.vec.size() || it.vec[it.index].first == END)) {
 				auto structured_t = getStruct("template:/" + tmpl_name, tokens, t.get<grammar::Type>(), std::nullopt);

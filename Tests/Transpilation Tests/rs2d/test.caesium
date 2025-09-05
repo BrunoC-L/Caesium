@@ -2,21 +2,21 @@ exists:
     sf:
         type Time:
         type Clock:
-        sf_time getElapsedTime(Vlock ref _):
-        Int asMicroseconds(Time ref _):
-        Void restart(Clock ref _):
+        sf::Time getElapsedTime(sf::Clock ref _):
+        Int asMicroseconds(sf::Time ref _):
+        Void restart(sf::Clock ref _):
 
         type TcpSocket:
         type TcpListener:
         type SocketSelector:
         type Socket:
-    sf__Socket:
-        type Status:
+        Socket:
+            type Status:
 
 template tuple_of_optionals<Ts...>:
     type tuple_of_optionals:
         #ifor i, T in type_list<`Ts...`>:
-            T? member_##i
+            T? member_//##`i`
 
 template add<Ts..., U>:
     tuple_of_optionals<`Ts...`> add(tuple_of_optionals<`Ts...`> val services, `U` val service):
@@ -39,7 +39,7 @@ template request<Ts..., U>:
         #if !found:
             #compile_time_error()
 
-using Services = tuple_of_optionals<DB>
+using Services = tuple_of_optionals<>
 
 type DB:
     Services ref services

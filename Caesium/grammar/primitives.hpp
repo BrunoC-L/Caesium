@@ -14,6 +14,11 @@
 struct parse_error {
 	std::string name_of_rule;
 	unsigned beg_offset;
+	unsigned index;
+	unsigned line;
+	unsigned col;
+	std::vector<TokenValue> vec;
+	std::string file_name = file_name_stub();
 };
 
 namespace grammar {

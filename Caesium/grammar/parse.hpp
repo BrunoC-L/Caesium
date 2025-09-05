@@ -138,8 +138,13 @@ bool build(And<Ands...>& and_, Iterator& it) {
 			if (!build(node, it)) {
 				if (commited)
 					throw parse_error{
-						grammar::name_of_rule<And<Ands...>>(),
-						it.index
+						.name_of_rule = grammar::name_of_rule<And<Ands...>>(),
+						.beg_offset = temp,
+						.index = it.index,
+						.line = it.line,
+						.col = it.col,
+						.vec = it.vec,
+						.file_name = it.file_name
 				};
 				it.index = temp;
 				failed = true;
@@ -207,8 +212,13 @@ bool build(Expect<T>& x, Iterator& it) {
 	x.beg_offset = it.index;
 	if (!build((T&)x, it))
 		throw parse_error{
-			grammar::name_of_rule<T>(),
-			it.index
+			.name_of_rule = grammar::name_of_rule<T>(),
+			.beg_offset = x.beg_offset,
+			.index = it.index,
+			.line = it.line,
+			.col = it.col,
+			.vec = it.vec,
+			.file_name = it.file_name
 		};
 	x.end_offset = it.index;
 	return true;

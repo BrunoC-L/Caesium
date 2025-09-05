@@ -91,7 +91,7 @@ std::optional<error> insert_all_named_recursive_with_imports(
 	};
 }
 
-void mark_exists_as_traversed(transpilation_state& state, variables_t& variables, const NodeStructs::NameSpace& exists, std::stringstream& ss) {
+std::optional<error> mark_exists_as_traversed(transpilation_state& state, variables_t& variables, const NodeStructs::NameSpace& exists, std::stringstream& ss) {
 	for (const auto& e : exists.types) {
 		auto types_or_e = realise_type_or_interface_unchecked({ state, 0 }, e);
 		if (types_or_e.has_error())
@@ -137,10 +137,12 @@ void mark_exists_as_traversed(transpilation_state& state, variables_t& variables
 		std::vector<Realised::Parameter> parameters;
 		parameters.reserve(e.parameters.size());
 		for (const auto& param : e.parameters) {
+			auto t = type_of_typename({ state }, variables, param.typename_);
+			return_if_error(t);
 			auto cat = param.typename_.category._value.has_value()
 				? copy(param.typename_.category._value.value())
 				: NodeStructs::ValueCategory{ NodeStructs::Reference{} };
-			parameters.push_back(Realised::Parameter{ .type = type_of_typename({ state }, variables, param.typename_).value(), .category = copy(cat) });
+			parameters.push_back(Realised::Parameter{ .type = std::move(t).value(), .category = copy(cat) });
 		}
 		
 		auto name = [&]() -> std::string {
@@ -152,9 +154,12 @@ void mark_exists_as_traversed(transpilation_state& state, variables_t& variables
 				return get<NodeStructs::BaseTypename>(e.name_space.value()).type + "__" + e.name;
 		}();
 
+		auto rt = type_of_typename({ state }, variables, e.returnType);
+		return_if_error(rt);
+
 		state.functions_traversal.traversed.insert({ name, Realised::Function{
 			.name = name,
-			.returnType = type_of_typename({ state }, variables, e.returnType).value(),
+			.returnType = std::move(rt).value(),
 			.parameters = std::move(parameters),
 			.info = copy(e.info)
 		} });
@@ -182,9 +187,12 @@ void mark_exists_as_traversed(transpilation_state& state, variables_t& variables
 			if (ns <=> e == std::strong_ordering::equal)
 				found = true;
 		if (!found)
-			*/state.global_namespace.namespaces.push_back(copy(e));
-		mark_exists_as_traversed(state, variables, e, ss);
+			*/
+		state.global_namespace.namespaces.push_back(copy(e));
+		if (std::optional<error> opt_e = mark_exists_as_traversed(state, variables, e, ss))
+			return std::move(opt_e).value();
 	}
+	return std::nullopt;
 }
 
 expected<std::pair<std::map<std::string, NodeStructs::NameSpace>, std::set<std::string>>> create_named_by_file(const std::vector<NodeStructs::File>& project) {
@@ -251,18 +259,20 @@ R"DELIM(exists:
 
 							NodeStructs::Exists structurized = getStruct(it.file_name, tokens, exists);
 
-							mark_exists_as_traversed(
+							if (std::optional<error> opt_e = mark_exists_as_traversed(
 								state,
 								variables,
 								structurized.global_exists,
 								absent_in_user_code
-							);
+							))
+								return std::move(opt_e).value();
 						}
 					}
 
 					for (const auto& f : project)
 						for (const auto& exists : f.exists)
-							mark_exists_as_traversed(state, variables, exists.global_exists, exists_aliases);
+							if (std::optional<error> opt_e = mark_exists_as_traversed(state, variables, exists.global_exists, exists_aliases))
+								return std::move(opt_e).value();
 				}
 
 				std::optional<error> res = realise_main({ state, 0 }, fn);
