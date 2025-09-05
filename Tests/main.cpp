@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 	}
 
 	else {
-		auto target_dir = [&](std::filesystem::path target_dir) -> std::filesystem::path {
+		auto _current_if_any_tests_are_in_current_folder = [&](std::filesystem::path target_dir) -> std::filesystem::path {
 			auto _current_folder_path = target_dir / "_current";
 			if (std::filesystem::exists(_current_folder_path) && std::filesystem::is_directory(_current_folder_path))
 				for (const auto& folder : std::filesystem::directory_iterator{ _current_folder_path })
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 			return target_dir;
 		}(std::filesystem::path{ argv[1] });
 		
-		if (!test_transpile_all_folders(std::filesystem::directory_iterator{ target_dir }))
+		if (!test_transpile_all_folders(std::filesystem::directory_iterator{ _current_if_any_tests_are_in_current_folder }))
 			return bad_exit;
 		std::cout << colored_text("All transpile tests passed\n", output_stream_colors::green);
 	}

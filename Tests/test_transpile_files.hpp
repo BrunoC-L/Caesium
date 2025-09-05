@@ -229,7 +229,6 @@ bool test_transpile_no_error(const std::filesystem::path& folder) {
 }
 
 bool test_transpile_folder(const std::filesystem::path& folder) {
-	std::cout << "Transpile Test " << folder << "\n";
 
 	{
 		std::remove((folder / "defaults.hpp").string().c_str());
@@ -242,21 +241,40 @@ bool test_transpile_folder(const std::filesystem::path& folder) {
 	std::remove((folder / "produced.cpp").string().c_str());
 
 	for (const auto& file : std::filesystem::directory_iterator{ folder })
-		if (file.path().filename() == "expected_error.txt")
+		if (file.path().filename() == "expected_error.txt") {
+			std::cout << "Transpile Error Producing Test " << folder << "\n";
 			return test_transpile_error(folder);
-		else if (file.path().filename() == "expected.cpp")
+		}
+		else if (file.path().filename() == "expected.cpp") {
+			std::cout << "Transpile Code  Producing Test " << folder << "\n";
 			return test_transpile_no_error(folder);
+		}
 
-	std::cout << "Test missing `expected_error.txt` or `expected.cpp`, folder was : '" << folder << "'\n";
-	return false;
+	std::cout <<         "Skipping - - - - - - - - - - - " << folder << ": Test missing `expected_error.txt` or `expected.cpp`\n";
+	return true;
 }
 
 bool test_transpile_all_folders(const std::filesystem::directory_iterator& base_folder) {
 	bool compilation_success = true;
 
-	for (const auto& folder : base_folder)
-		if (folder.is_directory() && !folder.path().stem().generic_string().starts_with(".") && folder.path().stem().generic_string() != "_current")
-			compilation_success &= test_transpile_folder(folder);
+	std::vector<std::filesystem::path> folders;
+	folders.reserve(1000);
+
+	auto add_folders_to_vec = [&folders](this auto self, const std::filesystem::directory_iterator& folder) -> void {
+		for (const auto& folder : folder)
+			if (folder.is_directory()
+				&& !folder.path().stem().generic_string().starts_with(".")
+				&& folder.path().stem().generic_string() != "_current"
+			) {
+				folders.push_back(folder.path());
+				self(std::filesystem::directory_iterator{ folder.path() });
+			}
+	};
+
+	add_folders_to_vec(base_folder);
+
+	for (const auto& folder : folders)
+		compilation_success &= test_transpile_folder(folder);
 
 	return compilation_success;
 }
