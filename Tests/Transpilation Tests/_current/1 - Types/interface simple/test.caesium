@@ -1,0 +1,14 @@
+interface Named:
+    String name
+
+type Cat:
+    String name
+
+type Dog:
+    String name
+
+Int main(Vector<String> ref s):
+    Vector<Named> vec = {}
+    vec.push(Dog{ "doggo" })
+    vec.push(Cat{ "gato"  })
+    return 0

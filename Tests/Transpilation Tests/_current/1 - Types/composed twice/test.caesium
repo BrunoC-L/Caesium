@@ -1,0 +1,16 @@
+type Texture:
+    String name
+
+type Fur:
+    Texture t
+
+type Cat:
+    Fur fur
+
+String pet_the_cat(Cat ref cat):
+
+Int main(Vector<String> ref args):
+    Cat cat = { Fur{ Texture{"wavy"} } }
+    Set<Int> s = {}
+
+    cat.fur.t.name(ref s)
