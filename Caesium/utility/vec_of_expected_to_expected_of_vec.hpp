@@ -1,3 +1,4 @@
+#pragma once
 #include "expected.hpp"
 #include <vector>
 

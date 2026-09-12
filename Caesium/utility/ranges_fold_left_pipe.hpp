@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ranges>
+#include <algorithm>
 #include <vector>
 
 namespace std {
