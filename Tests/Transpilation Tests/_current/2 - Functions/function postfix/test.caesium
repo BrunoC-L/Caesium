@@ -1,0 +1,23 @@
+interface Named:
+    String name
+
+type Cat:
+    String name
+
+type Dog:
+    String name
+
+type CatsAndDogs:
+    Vector<Cat> cats
+    Vector<Dog> dogs
+
+auto add(CatsAndDogs val cats_and_dogs, Cat val cat):
+    cats_and_dogs.cats.push(move cat)
+    return cats_and_dogs
+
+Int main(Vector<String> ref s):
+    auto a = CatsAndDogs{Vector<Cat>{}, Vector<Dog>{}}
+    auto b = add(move a, Cat{"cat1"})
+    auto c = (move b).add(Cat{"cat2"})
+    auto d = (move c, Cat{"cat3"}).add()
+    return 0

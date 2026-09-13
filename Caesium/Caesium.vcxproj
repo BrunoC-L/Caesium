@@ -43,7 +43,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -170,7 +170,6 @@
     <ClInclude Include="builtin_visitor\transpile_builtin_call_with_args_visitor.hpp" />
     <ClInclude Include="cmp.hpp" />
     <ClInclude Include="copy.hpp" />
-    <ClInclude Include="core\builtins.hpp" />
     <ClInclude Include="core\realise.hpp" />
     <ClInclude Include="core\realised.hpp" />
     <ClInclude Include="expression_visitor\expression_visitor.hpp" />

@@ -5,9 +5,7 @@
 #include <map>
 #include <set>
 #include <functional>
-#include "../utility/tag_type.hpp"
 #include "../utility/expected.hpp"
-#include "../utility/enumerate.hpp"
 #include "../structured/node_structs.hpp"
 #include "../structured/structurizer.hpp"
 #include "realised.hpp"
@@ -216,6 +214,36 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 	variables_t& variables,
 	const Realised::MetaType& parameter,
 	const Realised::MetaType& argument
+);
+
+bool category_assignable_to(
+	const Optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ArgumentCategory& argument_category
+);
+
+bool category_assignable_to(
+	const std::optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ArgumentCategory& argument_category
+);
+
+bool category_assignable_to(
+	const NodeStructs::ValueCategory& parameter_category,
+	const NodeStructs::ArgumentCategory& argument_category
+);
+
+bool category_assignable_to(
+	const Optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ValueCategory& argument_category
+);
+
+bool category_assignable_to(
+	const std::optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ValueCategory& argument_category
+);
+
+bool category_assignable_to(
+	const NodeStructs::ValueCategory& parameter_category,
+	const NodeStructs::ValueCategory& argument_category
 );
 
 transpile_t expr_to_printable(

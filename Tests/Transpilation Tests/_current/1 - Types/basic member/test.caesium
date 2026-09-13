@@ -1,0 +1,6 @@
+type T:
+    Int a
+
+Int main(Vector<String> ref args):
+    T t = { 3 }
+    return t.a

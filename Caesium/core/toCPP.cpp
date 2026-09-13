@@ -5,11 +5,12 @@
 #include "../utility/vec_of_expected_to_expected_of_vec.hpp"
 #include "../utility/vec_of_variant_to_optional_vector_single_type.hpp"
 #include "../utility/replace_all.hpp"
+#include "../utility/as_vec.hpp"
+#include "../utility/as_map.hpp"
 
 #include "../structured/structurizer.hpp"
 
 #include "toCPP.hpp"
-#include "builtins.hpp"
 #include "deduce_return_type.hpp"
 
 template <typename T>
@@ -911,6 +912,91 @@ Variant<not_assignable, directly_assignable, requires_conversion> assigned_to(
 		),
 		parameter.type.get()._value, argument.type.get()._value
 	);
+}
+
+bool category_assignable_to(
+	const Optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ArgumentCategory& argument_category
+) {
+	return category_assignable_to(parameter_category._value, argument_category);
+}
+
+bool category_assignable_to(
+	const std::optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ArgumentCategory& argument_category
+) {
+	if (parameter_category.has_value())
+		return category_assignable_to(parameter_category.value(), argument_category);
+	else
+		return holds<NodeStructs::Reference>(argument_category._value);
+}
+
+bool category_assignable_to(
+	const NodeStructs::ValueCategory& parameter_category,
+	const NodeStructs::ArgumentCategory& argument_category
+) {
+	using namespace NodeStructs;
+	return std::visit(overload(
+		[](const auto&, const auto&) {
+			return false;
+		},
+		[](const Value&, const Move&) {
+			return true;
+		},
+		[](const Reference&, const Reference&) {
+			return true;
+		},
+		[](const Reference&, const MutableReference&) {
+			return true;
+		},
+		[](const MutableReference&, const MutableReference&) {
+			return true;
+		}
+	), parameter_category._value, argument_category._value);
+}
+
+bool category_assignable_to(
+	const Optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ValueCategory& argument_category
+) {
+	return category_assignable_to(parameter_category._value, argument_category);
+}
+
+bool category_assignable_to(
+	const std::optional<NodeStructs::ValueCategory>& parameter_category,
+	const NodeStructs::ValueCategory& argument_category
+) {
+	if (parameter_category.has_value())
+		return category_assignable_to(parameter_category.value(), argument_category);
+	else
+		return holds<NodeStructs::Reference>(argument_category._value);
+}
+
+bool category_assignable_to(
+	const NodeStructs::ValueCategory& parameter_category,
+	const NodeStructs::ValueCategory& argument_category
+) {
+	using namespace NodeStructs;
+	return std::visit(overload(
+		[](const auto&, const auto&) {
+			return false;
+		},
+		[](const Value&, const Value&) {
+			return true;
+		},
+		[](const Reference&, const Reference&) {
+			return true;
+		},
+		[](const Reference&, const MutableReference&) {
+			return true;
+		},
+		[](const Reference&, const Value&) {
+			return true;
+		},
+		[](const MutableReference&, const MutableReference&) {
+			return true;
+		}
+	), parameter_category._value, argument_category._value);
 }
 
 transpile_t expr_to_printable(transpilation_state_with_indent state, variables_t& variables, const NodeStructs::Expression& expr) {
@@ -2154,10 +2240,13 @@ std::optional<
 			std::vector<Variant<directly_assignable, requires_conversion>> assigned_ts;
 			assigned_ts.reserve(sz);
 			for (size_t i = 0; i < sz; ++i) {
-				const auto& parameter = fn.get().parameters.at(i);
-				const auto& argument = args.at(i);
+				const NodeStructs::FunctionParameter& parameter = fn.get().parameters.at(i);
+				const expression_information& argument = args.at(i);
 				if (!holds<non_type_information>(argument))
 					NOT_IMPLEMENTED;
+
+				if (!category_assignable_to(parameter.typename_.category, ::get<non_type_information>(argument).value_category))
+					return std::nullopt;
 
 				if (cmp(parameter.typename_.value, auto_tn.value) == std::strong_ordering::equivalent) {
 					assigned_ts.push_back({ directly_assignable{} });

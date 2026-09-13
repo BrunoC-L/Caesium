@@ -133,7 +133,7 @@ R T::operator()(const Realised::PrimitiveType& t) {
 			return expression_information{ non_type_information{
 				.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<char>{} } },
 				.representation = operand_info.representation + ".at(" + arg_t_ok.representation + ")",
-				.value_category = NodeStructs::Value{},
+				.value_category = copy(operand_info.value_category),
 			} };
 		}
 	}
