@@ -1103,6 +1103,11 @@ R T::operator()(const std::string& expr) {
 			.type = { Realised::EnumType{ it->name, *it } },
 			.representation = expr
 		} };
+	if (auto it = find_by_name(state.state.types, expr); it != state.state.types.end())
+		return expression_information{ type_information{
+			.type = copy(it->second),
+			.representation = expr
+		} };
 	return error{ "user error", "Undeclared identifier `" + expr + "`" };
 }
 
