@@ -37,11 +37,12 @@ namespace grammar {
 	using TypenameOrExpression = Or<Typename, Expression>;
 
 	using VariadicExpansionTypename = And<Word, Token<DOTS>>;
+	using ToBeFilledInTypename = And<Token<BACKTICK>, Word, Token<BACKTICK>>;
 	using NamespaceTypenameExtension = And<Token<NS>, Word>;
 	using TemplateTypenameExtension = And<Token<LT>, CommaStar<TypenameOrExpression>, Token<GT>>;
 	using UnionTypenameExtension = And<Token<BITOR>, Alloc<Typename>>;
 	using NonAutoTypename = And<
-		Or<VariadicExpansionTypename, Word>,
+		Or<VariadicExpansionTypename, ToBeFilledInTypename, Word>,
 		Star<Or<
 			NamespaceTypenameExtension,
 			TemplateTypenameExtension,

@@ -23,8 +23,7 @@ R f(
 			std::stringstream ss;
 			bool has_previous = false;
 			for (size_t j = 0; j < arg_placements.size(); ++j) {
-				size_t k = arg_placements.at(j);
-				if (k == i) {
+				if (arg_placements.at(j) == i) { // this can happen more than once in the loop!
 					const auto& arg = word_typename_or_expression_for_template(state, variables, templated_with.at(j));
 					return_if_error(arg);
 					if (has_previous)
@@ -230,5 +229,9 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
+	NOT_IMPLEMENTED;
+}
+
+R T::operator()(const NodeStructs::ToBeFilledInTypename& t) {
 	NOT_IMPLEMENTED;
 }

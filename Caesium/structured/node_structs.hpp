@@ -63,6 +63,7 @@ namespace NodeStructs {
 	struct NamespacedTypename;
 	struct BaseTypename;
 	struct VariadicExpansionTypename;
+	struct ToBeFilledInTypename;
 	struct OptionalTypename;
 	struct UnionTypename;
 	struct Typename;
@@ -102,7 +103,7 @@ namespace NodeStructs {
 	using ValueCategory = Variant<Reference, MutableReference, Value>;
 
 	struct Typename {
-		using vt = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, UnionTypename, VariadicExpansionTypename>;
+		using vt = Variant<TemplatedTypename, NamespacedTypename, BaseTypename, OptionalTypename, UnionTypename, VariadicExpansionTypename, ToBeFilledInTypename>;
 		NonCopyableBox<vt> value;
 		Optional<ValueCategory> category;
 		caesium_source_location info = rule_info_stub<Typename>();
@@ -124,6 +125,10 @@ namespace NodeStructs {
 
 	struct VariadicExpansionTypename {
 		Typename type;
+	};
+
+	struct ToBeFilledInTypename {
+		std::string type;
 	};
 
 	struct UnionTypename {

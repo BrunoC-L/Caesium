@@ -5,7 +5,7 @@ template <typename T, template <typename> typename CompileTimeStatement>
 expected<T> realise_one_compile_time_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	T t,
+	T type_or_interface,
 	const CompileTimeStatement<type_context>& statement
 ) {
 	NOT_IMPLEMENTED;
@@ -15,7 +15,19 @@ template <typename T>
 expected<T> realise_one_compile_time_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	T type,
+	T type_or_interface,
+	const NodeStructs::IForStatement<type_context>& statement
+) {
+	transpile_expression_information_t expr_or_error = transpile_expression(state, variables, statement.for_statement.collection);
+	return_if_error(expr_or_error);
+	return std::move(type_or_interface);
+}
+
+template <typename T>
+expected<T> realise_one_compile_time_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	T type_or_interface,
 	const NodeStructs::IfStatement<type_context>& statement
 ) {
 	NOT_IMPLEMENTED;
@@ -46,21 +58,21 @@ template <typename T>
 expected<T> realise_one_compile_time_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	T t,
+	T type_or_interface,
 	const NodeStructs::CompileTimeStatement<type_context>& statement
 ) {
-	return std::visit([&](const auto& stmt) { return realise_one_compile_time_statement(state, variables, std::move(t), stmt); }, statement._value);
+	return std::visit([&](const auto& stmt) { return realise_one_compile_time_statement(state, variables, std::move(type_or_interface), stmt); }, statement._value);
 }
 
 template <typename T>
 T add_member_to_type(
-	T type,
+	T type_or_interface,
 	Variant<NodeStructs::Alias, NodeStructs::MemberVariable> member
 ) {
 	caesium_lib::variant::visit(std::move(member), overload(
 		[&](NodeStructs::Alias x) {
 			auto debug_info_string = "alias name = " + copy(x.name);
-			type.members.push_back(NodeStructs::Statement<type_context>{
+			type_or_interface.members.push_back(NodeStructs::Statement<type_context>{
 				NodeStructs::contextual_options<type_context>{ std::move(x) }
 #ifdef DEBUG
 				, std::move(debug_info_string)
@@ -69,7 +81,7 @@ T add_member_to_type(
 		},
 		[&](NodeStructs::MemberVariable x) {
 			auto debug_info_string = "variable name = " + copy(x.name);
-			type.members.push_back(NodeStructs::Statement<type_context>{
+			type_or_interface.members.push_back(NodeStructs::Statement<type_context>{
 				NodeStructs::contextual_options<type_context>{ std::move(x) }
 #ifdef DEBUG
 				, std::move(debug_info_string)
@@ -77,7 +89,7 @@ T add_member_to_type(
 			});
 		}
 	));
-	return type;
+	return type_or_interface;
 }
 
 template <typename T>

@@ -20,4 +20,5 @@ struct TypenameVisitor {
 	R operator()(const NodeStructs::TemplatedTypename& t);\
 	R operator()(const NodeStructs::UnionTypename& t);\
 	R operator()(const NodeStructs::OptionalTypename& t);\
-	R operator()(const NodeStructs::VariadicExpansionTypename& t);
+	R operator()(const NodeStructs::VariadicExpansionTypename& t);\
+	R operator()(const NodeStructs::ToBeFilledInTypename& t);
