@@ -41,8 +41,8 @@ The same can be done with functions returning a boolean, such as `bool exists = 
 ### Variants, Pattern Matching
 
 Similar examples can be found with `std::variant`, some may be extremely similar such as `std::variant<Empty, Value>` but even better are cases with a larger cardinality.
-Let us use: `std::variant<Apple, Pear, Grape, Cat, Dog, Box> get_object_type(const std::string& str);` which may be called `auto object_t = get_object_type("Apple");` and then used `std::visit(overload(...), object_t);`.
-This can be inlined by replacing the respective `if (str == "Apple") return Apple{};` with a call to the overload set directly such as `if (str == "Apple") overload_set(Apple{});`;
+Let us use: `std::variant<Apple, Pear, Grape> create_fruit(const std::string& str);` which may be called `auto fruit = create_fruit("Apple");` requiring a string comparison `if (str == "Apple") return Apple{};` and then used `std::visit(overload(...), fruit);` requiring an index comparison.
+This can be inlined directly such as `if (str == "Apple") overload_set(Apple{});`;
 
 ### Composed Cost
 
@@ -104,5 +104,5 @@ This will be done entirely without annotations, which are incredibly annoying wh
 Caesium will never allow for user crafted data structures, other than by composing existing data structures.
 All the code storing or acessing data at runtime can be deduced at compile time, leading to interesting approaches to safety of parallel execution and concurrent access of data.
 Caesium will offer parallel concurent data structures and algorithms which can be validated at compile time.
-Code with synchronization overhead will never be generated unless specified, but the compiler will not allow for unsafe code to be generated.
-In the event where the programmer allows for overhead and the compiler detects no need for synchronization, a warning will be emitted and the no overhead version will be generated.
+Code with synchronization overhead will never be generated unless specified.
+In the event where the programmer specifies overhead and the compiler detects no need for synchronization, a warning will be emitted and the no overhead version will be generated.
