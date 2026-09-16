@@ -4,4 +4,4 @@ template A<Us...>:
             `T` x
 
 Int main(Vector<String> ref args):
-    A<Int> a = { 1 }
+    A<Int, Int> a = { 1, 1 }

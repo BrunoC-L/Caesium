@@ -70,10 +70,25 @@ expected<T> realise_one_compile_time_statement(
 }
 
 template <typename T>
-T add_member_to_type(
+expected<T> add_member_to_type(
 	T type_or_interface,
 	Variant<NodeStructs::Alias, NodeStructs::MemberVariable> member
 ) {
+	std::string new_name = caesium_lib::variant::visit(member, overload(
+		[](const NodeStructs::Alias& x) -> std::string { return copy(x.name); },
+		[](const NodeStructs::MemberVariable& x) -> std::string { return copy(x.name); }
+	));
+	for (const auto& existing : type_or_interface.members) {
+		if (holds<NodeStructs::contextual_options<type_context>>(existing.statement.get())) {
+			const auto& opt = get<NodeStructs::contextual_options<type_context>>(existing.statement.get());
+			std::string existing_name = caesium_lib::variant::visit(opt, overload(
+				[](const NodeStructs::Alias& a) -> std::string { return copy(a.name); },
+				[](const NodeStructs::MemberVariable& mv) -> std::string { return copy(mv.name); }
+			));
+			if (existing_name == new_name)
+				return error{ "user error", "Duplicate member name `" + new_name + "`" };
+		}
+	}
 	caesium_lib::variant::visit(std::move(member), overload(
 		[&](NodeStructs::Alias x) {
 			auto debug_info_string = "alias name = " + copy(x.name);
