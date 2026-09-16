@@ -1,0 +1,8 @@
+template A<Us...>:
+    type A:
+        # ifor i, T in Us:
+            `T` x
+
+Int main(Vector<String> ref args):
+    A<Int> a = { 1 }
+    // A<Int, Int> a = { 1, 1 } // Should not work!

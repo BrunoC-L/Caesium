@@ -18,6 +18,7 @@ M(3, NodeStructs::Typename)\
 M(1, NodeStructs::OptionalTypename)\
 M(1, NodeStructs::UnionTypename)\
 M(1, NodeStructs::VariadicExpansionTypename)\
+M(1, NodeStructs::ToBeFilledInTypename)\
 M(1, NodeStructs::BaseTypename)\
 M(2, NodeStructs::NamespacedTypename)\
 M(2, NodeStructs::TemplatedTypename)\

@@ -1141,6 +1141,10 @@ bool uses_auto(const NodeStructs::VariadicExpansionTypename& t) {
 	return res;
 }
 
+bool uses_auto(const NodeStructs::ToBeFilledInTypename& t) {
+	return false;
+}
+
 bool uses_auto(const NodeStructs::Typename& t) {
 	return std::visit([](const auto& t_) { return uses_auto(t_); }, t.value.get()._value);
 }
@@ -1580,6 +1584,8 @@ expected<Realised::Function> do_realise_function(
 		if (holds<type_information>(arg))
 			NOT_IMPLEMENTED_BUT_PROBABLY_CORRECT;
 		if (holds<NodeStructs::VariadicExpansionTypename>(param.typename_))
+			NOT_IMPLEMENTED_BUT_PROBABLY_CORRECT;
+		if (holds<NodeStructs::ToBeFilledInTypename>(param.typename_))
 			NOT_IMPLEMENTED_BUT_PROBABLY_CORRECT;
 
 		if (cmp(auto_tn.value, param.typename_.value) == std::strong_ordering::equivalent)
@@ -2180,6 +2186,9 @@ transpile_t name_of_namespace(const NodeStructs::Typename& ns) {
 			NOT_IMPLEMENTED;
 		},
 		[&](const NodeStructs::VariadicExpansionTypename&) -> transpile_t {
+			NOT_IMPLEMENTED;
+		},
+		[&](const NodeStructs::ToBeFilledInTypename&) -> transpile_t {
 			NOT_IMPLEMENTED;
 		}
 	));

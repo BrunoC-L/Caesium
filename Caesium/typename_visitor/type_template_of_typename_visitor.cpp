@@ -23,8 +23,7 @@ R f(
 			std::stringstream ss;
 			bool has_previous = false;
 			for (size_t j = 0; j < arg_placements.size(); ++j) {
-				size_t k = arg_placements.at(j);
-				if (k == i) {
+				if (arg_placements.at(j) == i) { // this can happen more than once in the loop!
 					const auto& arg = word_typename_or_expression_for_template(state, variables, templated_with.at(j));
 					return_if_error(arg);
 					if (has_previous)
@@ -113,7 +112,43 @@ R f(
 				state.state.global_namespace.types.push_back(copy(structured_t));
 				// if exists 
 				// template <typename T> using `tmplname` = `actual exists name somehow?`<T>;
+				// Snapshot state.state.types keys before injecting anything, so we can
+				// restore to this baseline after realisation (cleaning up variadic params,
+				// for-loop iterator keys, and any other transient entries added during realise).
+				std::set<std::string> types_keys_before;
+				for (const auto& [k, _] : state.state.types)
+					types_keys_before.insert(k);
+
+				// Inject variadic template parameters as TypeListType into state.state.types so
+				// that type_of_typename can resolve the parameter name (e.g. `Ts`) during realisation.
+				for (size_t i = 0; i < tmpl.parameters.size(); ++i) {
+					if (std::holds_alternative<NodeStructs::VariadicTemplateParameter>(tmpl.parameters[i]._value)) {
+						const auto& varParam = std::get<NodeStructs::VariadicTemplateParameter>(tmpl.parameters[i]._value);
+						std::vector<Realised::MetaType> types;
+						for (size_t j = 0; j < arg_placements.size(); ++j) {
+							if (arg_placements[j] == i) {
+								auto mt_or_e = type_of_typename(state, variables, templated_with[j]);
+								return_if_error(mt_or_e);
+								if (!holds<type_information>(mt_or_e.value()))
+									return error{ "user error", "Variadic template argument must be a typename, not an expression" };
+								types.push_back(std::move(get<type_information>(mt_or_e.value()).type));
+							}
+						}
+						state.state.types.insert({ varParam.name, Realised::MetaType{ Realised::TypeListType{ std::move(types) } } });
+					}
+				}
+
 				auto realised_or_e = realise_type_or_interface(state, structured_t);
+
+				// Clean up all entries added to state.state.types since the snapshot
+				// (variadic params, for-loop iterator keys, unique resolved-type keys, etc.)
+				std::vector<std::string> to_erase;
+				for (const auto& [k, _] : state.state.types)
+					if (!types_keys_before.contains(k))
+						to_erase.push_back(k);
+				for (const auto& k : to_erase)
+					state.state.types.erase(k);
+
 				return_if_error(realised_or_e);
 				return Realised::MetaType{ std::move(realised_or_e).value() };
 			}
@@ -230,5 +265,9 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 }
 
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
+	NOT_IMPLEMENTED;
+}
+
+R T::operator()(const NodeStructs::ToBeFilledInTypename& t) {
 	NOT_IMPLEMENTED;
 }

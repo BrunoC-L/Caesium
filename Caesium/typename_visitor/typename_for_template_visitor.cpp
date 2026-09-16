@@ -40,3 +40,7 @@ R T::operator()(const NodeStructs::UnionTypename& t) {
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
 	NOT_IMPLEMENTED;
 }
+
+R T::operator()(const NodeStructs::ToBeFilledInTypename& t) {
+	NOT_IMPLEMENTED;
+}

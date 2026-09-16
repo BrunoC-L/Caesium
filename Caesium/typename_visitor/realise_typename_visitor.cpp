@@ -98,3 +98,7 @@ R T::operator()(const NodeStructs::TemplatedTypename& t) {
 R T::operator()(const NodeStructs::VariadicExpansionTypename& t) {
 	return operator()(t.type);
 }
+
+R T::operator()(const NodeStructs::ToBeFilledInTypename& t) {
+	NOT_IMPLEMENTED;
+}

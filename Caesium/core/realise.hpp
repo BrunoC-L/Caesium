@@ -5,7 +5,7 @@ template <typename T, template <typename> typename CompileTimeStatement>
 expected<T> realise_one_compile_time_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	T t,
+	T type_or_interface,
 	const CompileTimeStatement<type_context>& statement
 ) {
 	NOT_IMPLEMENTED;
@@ -15,7 +15,24 @@ template <typename T>
 expected<T> realise_one_compile_time_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	T type,
+	T type_or_interface,
+	const NodeStructs::ForStatement<type_context>& statement
+);
+
+template <typename T>
+expected<T> realise_one_compile_time_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	T type_or_interface,
+	const NodeStructs::IForStatement<type_context>& statement
+);
+
+
+template <typename T>
+expected<T> realise_one_compile_time_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	T type_or_interface,
 	const NodeStructs::IfStatement<type_context>& statement
 ) {
 	NOT_IMPLEMENTED;
@@ -46,21 +63,21 @@ template <typename T>
 expected<T> realise_one_compile_time_statement(
 	transpilation_state_with_indent state,
 	variables_t& variables,
-	T t,
+	T type_or_interface,
 	const NodeStructs::CompileTimeStatement<type_context>& statement
 ) {
-	return std::visit([&](const auto& stmt) { return realise_one_compile_time_statement(state, variables, std::move(t), stmt); }, statement._value);
+	return std::visit([&](const auto& stmt) { return realise_one_compile_time_statement(state, variables, std::move(type_or_interface), stmt); }, statement._value);
 }
 
 template <typename T>
 T add_member_to_type(
-	T type,
+	T type_or_interface,
 	Variant<NodeStructs::Alias, NodeStructs::MemberVariable> member
 ) {
 	caesium_lib::variant::visit(std::move(member), overload(
 		[&](NodeStructs::Alias x) {
 			auto debug_info_string = "alias name = " + copy(x.name);
-			type.members.push_back(NodeStructs::Statement<type_context>{
+			type_or_interface.members.push_back(NodeStructs::Statement<type_context>{
 				NodeStructs::contextual_options<type_context>{ std::move(x) }
 #ifdef DEBUG
 				, std::move(debug_info_string)
@@ -69,7 +86,7 @@ T add_member_to_type(
 		},
 		[&](NodeStructs::MemberVariable x) {
 			auto debug_info_string = "variable name = " + copy(x.name);
-			type.members.push_back(NodeStructs::Statement<type_context>{
+			type_or_interface.members.push_back(NodeStructs::Statement<type_context>{
 				NodeStructs::contextual_options<type_context>{ std::move(x) }
 #ifdef DEBUG
 				, std::move(debug_info_string)
@@ -77,7 +94,7 @@ T add_member_to_type(
 			});
 		}
 	));
-	return type;
+	return type_or_interface;
 }
 
 template <typename T>
@@ -159,6 +176,141 @@ select_t<
 	}
 
 	return std::move(intermediates._value.back());
+}
+
+// Shared utility for compile-time for/ifor over a TypeListType:
+// injects the type iterator name into state.state.types for each element,
+// optionally injects an index variable (ifor), runs the body statements, then cleans up.
+// MemberVariable typenames are resolved eagerly (while the iterator is in scope) and
+// stored under unique keys so type_of_typename can find them after the loop.
+template <typename T>
+expected<T> realise_compile_time_for_over_type_list(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	T type_or_interface,
+	const Realised::TypeListType& tl,
+	const std::string& type_iterator_name,
+	const std::vector<NodeStructs::Statement<type_context>>& statements,
+	std::optional<std::string> index_iterator_name = std::nullopt
+) {
+	auto intermediates = caesium_lib::vector::push(
+		caesium_lib::vector::make_with_capacity<T>(tl.types.size() + 1),
+		std::move(type_or_interface)
+	);
+	int i = 0;
+	for (const Realised::MetaType& type : tl.types) {
+		state.state.types.erase(type_iterator_name);
+		state.state.types.insert({ type_iterator_name, copy(type) });
+		if (index_iterator_name.has_value())
+			variables[index_iterator_name.value()].push_back(variable_info{
+				NodeStructs::ValueCategory{ NodeStructs::Value{} },
+				Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<int>{ i } } }
+			});
+
+		// Process body statements like realise_many_compile_time_statements, but resolve
+		// MemberVariable typenames eagerly while the type iterator is still in scope.
+		// Run inside a lambda so return_if_error exits the lambda (not the outer function),
+		// allowing cleanup to happen unconditionally after.
+		expected<T> body_result = [&]() -> expected<T> {
+			auto body_intermediates = caesium_lib::vector::push(
+				caesium_lib::vector::make_with_capacity<T>(statements.size() + 1),
+				copy(intermediates._value.back())
+			);
+			for (const NodeStructs::Statement<type_context>& stmt : statements) {
+				expected<T> next = caesium_lib::variant::visit(stmt.statement.get(), overload(
+					[&](const Variant<NodeStructs::Alias, NodeStructs::MemberVariable>& member) -> expected<T> {
+						return caesium_lib::variant::visit(member, overload(
+							[&](const NodeStructs::Alias& alias) -> expected<T> {
+								return add_member_to_type(copy(body_intermediates._value.back()), copy(member));
+							},
+							[&](const NodeStructs::MemberVariable& mv) -> expected<T> {
+								// Resolve the member type NOW while type_iterator_name is in state.state.types
+								auto resolved_or_e = type_of_typename(state, variables, mv.type);
+								return_if_error(resolved_or_e);
+								// Store under a unique key so type_of_typename can find it after the loop
+								std::string uid = "__for_iter_type_" + std::to_string(state.state.current_variable_unique_id++);
+								state.state.types.insert({ uid, copy(resolved_or_e.value()) });
+								return add_member_to_type(
+									copy(body_intermediates._value.back()),
+									Variant<NodeStructs::Alias, NodeStructs::MemberVariable>{
+										NodeStructs::MemberVariable{
+											NodeStructs::Typename{ NodeStructs::BaseTypename{ uid }, std::nullopt, rule_info_stub_no_throw() },
+											copy(mv.name)
+										}
+									}
+								);
+							}
+						));
+					},
+					[&](const NodeStructs::CompileTimeStatement<type_context>& ct) -> expected<T> {
+						return realise_one_compile_time_statement(state, variables, copy(body_intermediates._value.back()), ct);
+					}
+				));
+				return_if_error(next);
+				body_intermediates = caesium_lib::vector::push(std::move(body_intermediates), std::move(next).value());
+			}
+			return std::move(body_intermediates._value.back());
+		}();
+
+		state.state.types.erase(type_iterator_name);
+		if (index_iterator_name.has_value())
+			variables[index_iterator_name.value()].pop_back();
+
+		return_if_error(body_result);
+		intermediates = caesium_lib::vector::push(std::move(intermediates), std::move(body_result).value());
+		++i;
+	}
+	return std::move(intermediates._value.back());
+}
+
+template <typename T>
+expected<T> realise_one_compile_time_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	T type_or_interface,
+	const NodeStructs::ForStatement<type_context>& statement
+) {
+	transpile_expression_information_t expr_or_error = transpile_expression(state, variables, statement.collection);
+	return_if_error(expr_or_error);
+	if (!holds<type_information>(expr_or_error.value()))
+		return error{ "user error", "For collection must be a type list" };
+	const Realised::MetaType& coll_type = get<type_information>(expr_or_error.value()).type;
+	if (!holds<Realised::TypeListType>(coll_type))
+		NOT_IMPLEMENTED;
+	if (statement.iterators.size() != 1 || !std::holds_alternative<std::string>(statement.iterators[0]._value))
+		NOT_IMPLEMENTED;
+	return realise_compile_time_for_over_type_list(
+		state, variables, std::move(type_or_interface),
+		get<Realised::TypeListType>(coll_type),
+		std::get<std::string>(statement.iterators[0]._value),
+		statement.statements,
+		std::nullopt
+	);
+}
+
+template <typename T>
+expected<T> realise_one_compile_time_statement(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	T type_or_interface,
+	const NodeStructs::IForStatement<type_context>& statement
+) {
+	transpile_expression_information_t expr_or_error = transpile_expression(state, variables, statement.for_statement.collection);
+	return_if_error(expr_or_error);
+	if (!holds<type_information>(expr_or_error.value()))
+		return error{ "user error", "IFor collection must be a type list" };
+	const Realised::MetaType& coll_type = get<type_information>(expr_or_error.value()).type;
+	if (!holds<Realised::TypeListType>(coll_type))
+		NOT_IMPLEMENTED;
+	if (statement.for_statement.iterators.size() != 1 || !std::holds_alternative<std::string>(statement.for_statement.iterators[0]._value))
+		NOT_IMPLEMENTED;
+	return realise_compile_time_for_over_type_list(
+		state, variables, std::move(type_or_interface),
+		get<Realised::TypeListType>(coll_type),
+		std::get<std::string>(statement.for_statement.iterators[0]._value),
+		statement.for_statement.statements,
+		statement.index_iterator
+	);
 }
 
 template <typename T>

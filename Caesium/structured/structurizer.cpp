@@ -50,10 +50,13 @@ NodeStructs::WordTypenameOrExpression getTypenameOrExpressionStruct(
 							[&](const grammar::VariadicExpansionTypename&) -> NodeStructs::WordTypenameOrExpression { // X... is a typename
 								return { getStruct(file_name, vec, tn, tag_t{}) };
 							},
+							[&](const grammar::ToBeFilledInTypename&) -> NodeStructs::WordTypenameOrExpression {
+								NOT_IMPLEMENTED;
+							},
 							[&](const grammar::Word& word) -> NodeStructs::WordTypenameOrExpression {
 								return { word.value };
 							}
-						), non_auto_typename.template get<Or<grammar::VariadicExpansionTypename, grammar::Word>>().value());
+						), non_auto_typename.template get<Or<grammar::VariadicExpansionTypename, grammar::ToBeFilledInTypename, grammar::Word>>().value());
 					}
 			), tn.template get<Or<Token<AUTO>, grammar::NonAutoTypename>>().value());
 		},
@@ -103,7 +106,10 @@ NodeStructs::Typename getStruct(
 				}
 			), ext.value()), i + 1);
 		},
-		[&](const auto&) { // just checking its not a variadic expansion
+		[&](const NodeStructs::ToBeFilledInTypename&) -> NodeStructs::Typename {
+			NOT_IMPLEMENTED;
+		},
+		[&](const auto&) {
 			return getStruct(file_name, vec, t, exts, std::visit(overload(overload_default_error,
 				[&](const grammar::NamespaceTypenameExtension& e) -> NodeStructs::Typename {
 					auto info = rule_info_from_rules(file_name, vec, t, e);
@@ -172,6 +178,9 @@ NodeStructs::Typename get_typename_struct(
 				[&](const grammar::Word& w) -> NodeStructs::Typename {
 					return make_typename(NodeStructs::BaseTypename{ w.value }, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, w));
 				},
+				[&](const grammar::ToBeFilledInTypename& w) -> NodeStructs::Typename {
+					return make_typename(NodeStructs::BaseTypename{ w.get<grammar::Word>().value}, NodeStructs::Value{}, rule_info_from_rule(file_name, vec, w));
+				},
 				[&](const grammar::VariadicExpansionTypename& vetn) -> NodeStructs::Typename {
 					return make_typename(
 						NodeStructs::VariadicExpansionTypename{
@@ -180,7 +189,7 @@ NodeStructs::Typename get_typename_struct(
 						NodeStructs::Value{}, rule_info_from_rule(file_name, vec, vetn)
 					);
 				}
-			), e.template get<Or<grammar::VariadicExpansionTypename, grammar::Word>>().value());
+			), e.template get<Or<grammar::VariadicExpansionTypename, grammar::ToBeFilledInTypename, grammar::Word>>().value());
 			using opts = Or<grammar::NamespaceTypenameExtension, grammar::TemplateTypenameExtension, grammar::UnionTypenameExtension, Token<QUESTION>>;
 			NodeStructs::Typename::vt res2 = getStruct(file_name, vec, t, e.template get<Star<opts>>().template get<opts>(), std::move(res), 0).value;
 			return make_typename(std::move(res2), std::move(value_cat), rule_info_from_rule(file_name, vec, e));
@@ -191,7 +200,8 @@ NodeStructs::Typename get_typename_struct(
 NodeStructs::Typename getStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
-	const grammar::Typename& t, tag_expect_value_category
+	const grammar::Typename& t,
+	tag_expect_value_category
 ) {
 	return get_typename_struct<tag_expect_value_category>(file_name, vec, t);
 }
@@ -199,7 +209,8 @@ NodeStructs::Typename getStruct(
 NodeStructs::Typename getStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
-	const grammar::Typename& t, tag_expect_empty_category
+	const grammar::Typename& t,
+	tag_expect_empty_category
 ) {
 	return get_typename_struct<tag_expect_empty_category>(file_name, vec, t);
 }
@@ -207,7 +218,8 @@ NodeStructs::Typename getStruct(
 NodeStructs::Typename getStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
-	const grammar::Typename& t, tag_allow_value_category_or_empty
+	const grammar::Typename& t,
+	tag_allow_value_category_or_empty
 ) {
 	return get_typename_struct<tag_allow_value_category_or_empty>(file_name, vec, t);
 }
