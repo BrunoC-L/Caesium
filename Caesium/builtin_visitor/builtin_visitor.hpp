@@ -21,6 +21,7 @@ struct BuiltinVisitor {
 	 R operator()(const Realised::Builtin::builtin_exit& b);\
 	 R operator()(const Realised::Builtin::builtin_print& b);\
 	 R operator()(const Realised::Builtin::builtin_println& b);\
+	 R operator()(const Realised::Builtin::builtin_str& b);\
 \
 	 R operator()(const Realised::Builtin::builtin_vector& b);\
 	 R operator()(const Realised::Builtin::builtin_set& b);\

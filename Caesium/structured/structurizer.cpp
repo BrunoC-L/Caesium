@@ -390,6 +390,17 @@ NodeStructs::MemberVariable getStruct(
 	};
 }
 
+NodeStructs::MemberVariableComputedName getStruct(
+	const std::string& file_name,
+	const std::vector<TokenValue>& vec,
+	const grammar::MemberVariableComputedName& f
+) {
+	return NodeStructs::MemberVariableComputedName{
+		.type = getStruct(file_name, vec, f.template get<grammar::Typename>(), tag_allow_value_category_or_empty{}),
+		.name_expr = getExpressionStruct(file_name, vec, f.template get<grammar::Expression>()),
+	};
+}
+
 NodeStructs::Alias getStruct(
 	const std::string& file_name,
 	const std::vector<TokenValue>& vec,
@@ -1222,8 +1233,15 @@ NodeStructs::Statement<context> getStatementStruct(
 							[&](const grammar::Alias& x) -> NodeStructs::contextual_options<context> {
 								return getStruct(file_name, vec, x, std::nullopt);
 							},
-							[&](const grammar::MemberVariable& x) -> NodeStructs::contextual_options<context> {
-								return getStruct(file_name, vec, x);
+							[&](const Or<grammar::MemberVariable, grammar::MemberVariableComputedName>& inner) -> NodeStructs::contextual_options<context> {
+								return std::visit(overload(
+									[&](const grammar::MemberVariable& x) -> NodeStructs::contextual_options<context> {
+										return getStruct(file_name, vec, x);
+									},
+									[&](const grammar::MemberVariableComputedName& x) -> NodeStructs::contextual_options<context> {
+										return getStruct(file_name, vec, x);
+									}
+								), inner.value());
 							}
 						), x.value())
 					}
@@ -1255,7 +1273,7 @@ NodeStructs::Statement<grammar::type_context> get_base_statement_struct(
 	const std::vector<TokenValue>& vec,
 	const grammar::Statement<grammar::type_context>& statement
 ) {
-	return getStatementStruct(file_name, vec, statement.template get<Or<grammar::CompileTimeStatement<type_context>, Or<grammar::Alias, grammar::MemberVariable>>>());
+	return getStatementStruct(file_name, vec, statement.template get<Or<grammar::CompileTimeStatement<type_context>, Or<grammar::Alias, Or<grammar::MemberVariable, grammar::MemberVariableComputedName>>>>());
 }
 
 NodeStructs::Statement<grammar::top_level_context> get_base_statement_struct(

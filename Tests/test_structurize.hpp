@@ -5,7 +5,7 @@
 #include "utility/colored_text.hpp"
 #include "utility/as_vec.hpp"
 
-caesium_source_location tests_rule_info_stub() {
+static caesium_source_location tests_rule_info_stub() {
 	return {
 		"tests_rule_info_stub",
 		{ 0, 0 },
@@ -13,7 +13,7 @@ caesium_source_location tests_rule_info_stub() {
 	};
 }
 
-caesium_source_location tests_rule_info_simple(const std::string& content) {
+static caesium_source_location tests_rule_info_simple(const std::string& content) {
 	return {
 		"tests_rule_info_simple",
 		std::move(content),

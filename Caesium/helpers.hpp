@@ -139,6 +139,9 @@ inline bool primitives_assignable(const Realised::PrimitiveType& parameter, cons
 	if (param.index() + diff == arg.index()) // if param is nonvalued and param + diff matches valued arg, thats ok
 		return true;
 
+	if (param.index() == 1 && arg.index() == 7 + 2) // allow valued int assigned to floating
+		return true;
+
 	return false;
 }
 

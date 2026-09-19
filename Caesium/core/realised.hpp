@@ -56,6 +56,7 @@ namespace Realised {
 		struct builtin_exit { static constexpr char name[]{ "exit" }; }; // exit(<Int>);
 		struct builtin_print { static constexpr char name[]{ "print" }; }; // print(..., ..., ...);
 		struct builtin_println { static constexpr char name[]{ "println" }; }; // println(..., ..., ...);
+		struct builtin_str { static constexpr char name[]{ "str" }; }; // str(<value>) -> String
 
 		struct builtin_vector { static constexpr char name[]{ "Vector" }; };
 		struct builtin_set { static constexpr char name[]{ "Set" }; };
@@ -69,6 +70,7 @@ namespace Realised {
 			builtin_exit,
 			builtin_print,
 			builtin_println,
+			builtin_str,
 
 			builtin_vector,
 			builtin_set,

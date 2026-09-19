@@ -90,6 +90,33 @@ R T::operator()(const Realised::Builtin::builtin_println& b) {
 	} };
 }
 
+R T::operator()(const Realised::Builtin::builtin_str& b) {
+	if (args.size() != 1)
+		return error{ "user error", "str() takes exactly one argument" };
+	auto t = transpile_expression(state, variables, args.at(0).expr);
+	return_if_error(t);
+	if (!holds<non_type_information>(t.value()))
+		return error{ "user error", "str() argument must be a value, not a type" };
+	const auto& nti = get<non_type_information>(t.value());
+	if (holds<Realised::PrimitiveType>(nti.type)) {
+		const auto& pt = get<Realised::PrimitiveType>(nti.type);
+		if (holds<Realised::PrimitiveType::Valued<int>>(pt.value)) {
+			std::string s = std::to_string(get<Realised::PrimitiveType::Valued<int>>(pt.value).value);
+			return expression_information{ non_type_information{
+				.type = { Realised::PrimitiveType{ Realised::PrimitiveType::Valued<std::string>{ "\"" + s + "\"" } } },
+				.representation = "String{\"" + s + "\"}",
+				.value_category = NodeStructs::Value{}
+			} };
+		}
+	}
+	// Runtime fallback
+	return expression_information{ non_type_information{
+		.type = { Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<std::string>{} } },
+		.representation = "std::to_string(" + nti.representation + ")",
+		.value_category = NodeStructs::Value{}
+	} };
+}
+
 R T::operator()(const Realised::Builtin::builtin_vector& b) {
 	NOT_IMPLEMENTED;
 }

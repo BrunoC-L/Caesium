@@ -95,6 +95,7 @@ M(4, NodeStructs::Interface)\
 M(4, NodeStructs::Type)\
 M(3, NodeStructs::Alias)\
 M(2, NodeStructs::MemberVariable)\
+M(2, NodeStructs::MemberVariableComputedName)\
 M(2, NodeStructs::Block)\
 M(6, NodeStructs::Template)\
 M(3, NodeStructs::Enum)\

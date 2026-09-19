@@ -5,10 +5,16 @@
 
 bool ignore_caesium_source_location_contents_for_comparison = true;
 
+bool unit_tests();
+
 int main(int argc, char** argv) {
 	constexpr auto bad_exit = 1;
 
 	std::cout << std::boolalpha;
+
+	if (!unit_tests())
+		return bad_exit;
+	std::cout << colored_text("All unit tests passed\n", output_stream_colors::green);
 
 	if (!test_parse())
 		return bad_exit;

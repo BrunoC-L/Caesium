@@ -413,6 +413,9 @@ transpile_declaration_definition_t transpile(
 				return_if_error(name_or_e);
 				definition << "\t" << name_or_e.value() << " " << member.name << ";\n";
 				return std::nullopt;
+			},
+			[&](const NodeStructs::MemberVariableComputedName&) -> std::optional<error> {
+				NOT_IMPLEMENTED;
 			}
 		), std::get<NodeStructs::contextual_options<type_context>>(member.statement.get()._value)._value);
 		if (opt_e.has_value())

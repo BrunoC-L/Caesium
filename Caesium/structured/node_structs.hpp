@@ -382,6 +382,11 @@ namespace NodeStructs {
 		std::string name;
 	};
 
+	struct MemberVariableComputedName {
+		Typename type;
+		Expression name_expr;
+	};
+
 	struct Import {
 		std::string imported;
 	};
@@ -513,7 +518,7 @@ namespace NodeStructs {
 	struct contextual_options_<function_context> { using type = Variant<RunTimeStatement>; };
 
 	template <>
-	struct contextual_options_<type_context> { using type = Variant<Alias, MemberVariable>; };
+	struct contextual_options_<type_context> { using type = Variant<Alias, MemberVariable, MemberVariableComputedName>; };
 
 	template <>
 	struct contextual_options_<top_level_context> { using type = Variant<Type, Function>; };

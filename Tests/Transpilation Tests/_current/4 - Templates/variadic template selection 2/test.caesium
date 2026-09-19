@@ -1,0 +1,25 @@
+template A<T>:
+    type A:
+        `T` member_0_A
+
+template A<T, U>:
+    type A:
+        `T` member_0_B
+        `U` member_1_B
+
+template A<T, U, Us...>:
+    type A:
+        `T` member_0_C
+        `U` member_1_C
+        # ifor i, V in Us:
+            `V` `"member_" + str(i+2) + "_C"`
+
+Int main(Vector<String> ref args):
+    A<Int> a = { 1 }
+    A<Int, String> b = { 1, "hello" }
+    A<Int, String, Floating> c = { 1, "hello", 3 }
+    A<Int, String, Floating> d = { 1, "hello", 1 + 3.141592 }
+    A<Int, String, Floating> d = { 1, "hello", 3.141592 - 1 }
+    A<Int, String, Floating> e = { 1, "hello", 3.141592 - 2.71828 }
+    Int f = 7
+    A<Int, String, Floating> e = { 1, "hello", f }

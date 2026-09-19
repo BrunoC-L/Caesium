@@ -2,14 +2,21 @@
 
 struct A_Int_;
 struct A_Int_String_;
+struct A_Int_String_Floating_;
 
 struct A_Int_ {
-	Int member_0;
+	Int member_0_A;
 };
 
 struct A_Int_String_ {
-	Int member_0;
-	String member_1;
+	Int member_0_B;
+	String member_1_B;
+};
+
+struct A_Int_String_Floating_ {
+	Int member_0_C;
+	String member_1_C;
+	Floating member_2_C;
 };
 
 
@@ -20,6 +27,7 @@ Int _redirect_main(const Vector_String_& args);
 Int _redirect_main(const Vector_String_& args) {
 	A_Int_ a = A_Int_{1};
 	A_Int_String_ b = A_Int_String_{1, String{"hello"}};
+	A_Int_String_Floating_ c = A_Int_String_Floating_{1, String{"hello"}, 3};
 }
 
 int main(int argc, char** argv) {

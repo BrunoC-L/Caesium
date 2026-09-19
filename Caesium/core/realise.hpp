@@ -69,6 +69,35 @@ expected<T> realise_one_compile_time_statement(
 	return std::visit([&](const auto& stmt) { return realise_one_compile_time_statement(state, variables, std::move(type_or_interface), stmt); }, statement._value);
 }
 
+inline expected<std::string> evaluate_computed_member_name(
+	transpilation_state_with_indent state,
+	variables_t& variables,
+	const NodeStructs::Expression& name_expr
+) {
+	auto expr_or_e = transpile_expression(state, variables, name_expr);
+	return_if_error(expr_or_e);
+	if (!std::holds_alternative<non_type_information>(expr_or_e.value()))
+		return error{ "user error", "Computed member name must be a string expression, not a type" };
+	const auto& nti = std::get<non_type_information>(expr_or_e.value());
+	if (!holds<Realised::PrimitiveType>(nti.type))
+		return error{ "user error", "Computed member name must be a string" };
+	const auto& pt = get<Realised::PrimitiveType>(nti.type);
+	if (!holds<Realised::PrimitiveType::Valued<std::string>>(pt.value))
+		return error{ "user error", "Computed member name must be a compile-time string value" };
+	std::string name = get<Realised::PrimitiveType::Valued<std::string>>(pt.value).value;
+	// Strip surrounding quotes (Valued<std::string> stores string literals with their quotes)
+	if (name.size() >= 2 && name.front() == '"' && name.back() == '"')
+		name = name.substr(1, name.size() - 2);
+	if (name.empty())
+		return error{ "user error", "Computed member name cannot be empty" };
+	if (!std::isalpha((unsigned char)name[0]) && name[0] != '_')
+		return error{ "user error", "Computed member name must start with a letter or underscore: `" + name + "`" };
+	for (char c : name)
+		if (!std::isalnum((unsigned char)c) && c != '_')
+			return error{ "user error", "Computed member name contains invalid character: `" + name + "`" };
+	return name;
+}
+
 template <typename T>
 expected<T> add_member_to_type(
 	T type_or_interface,
@@ -83,7 +112,8 @@ expected<T> add_member_to_type(
 			const auto& opt = get<NodeStructs::contextual_options<type_context>>(existing.statement.get());
 			std::string existing_name = caesium_lib::variant::visit(opt, overload(
 				[](const NodeStructs::Alias& a) -> std::string { return copy(a.name); },
-				[](const NodeStructs::MemberVariable& mv) -> std::string { return copy(mv.name); }
+				[](const NodeStructs::MemberVariable& mv) -> std::string { return copy(mv.name); },
+				[](const NodeStructs::MemberVariableComputedName&) -> std::string { return {}; }
 			));
 			if (existing_name == new_name)
 				return error{ "user error", "Duplicate member name `" + new_name + "`" };
@@ -176,8 +206,32 @@ select_t<
 
 	for (const NodeStructs::Statement<type_context>& compile_time_statement : statements) {
 		expected<T> next = caesium_lib::variant::visit(compile_time_statement.statement.get(), overload(
-			[&](const Variant<NodeStructs::Alias, NodeStructs::MemberVariable>& member) -> expected<T> {
-				return add_member_to_type(copy(intermediates._value.back()), copy(member));
+			[&](const NodeStructs::contextual_options<type_context>& member) -> expected<T> {
+				return caesium_lib::variant::visit(member, overload(
+					[&](const NodeStructs::Alias& alias) -> expected<T> {
+						return add_member_to_type(copy(intermediates._value.back()), Variant<NodeStructs::Alias, NodeStructs::MemberVariable>{ copy(alias) });
+					},
+					[&](const NodeStructs::MemberVariable& mv) -> expected<T> {
+						return add_member_to_type(copy(intermediates._value.back()), Variant<NodeStructs::Alias, NodeStructs::MemberVariable>{ copy(mv) });
+					},
+					[&](const NodeStructs::MemberVariableComputedName& cmnv) -> expected<T> {
+						auto name_or_e = evaluate_computed_member_name(state, variables, cmnv.name_expr);
+						return_if_error(name_or_e);
+						auto resolved_or_e = type_of_typename(state, variables, cmnv.type);
+						return_if_error(resolved_or_e);
+						std::string uid = "__computed_name_type_" + std::to_string(state.state.current_variable_unique_id++);
+						state.state.types.insert({ uid, copy(resolved_or_e.value()) });
+						return add_member_to_type(
+							copy(intermediates._value.back()),
+							Variant<NodeStructs::Alias, NodeStructs::MemberVariable>{
+								NodeStructs::MemberVariable{
+									NodeStructs::Typename{ NodeStructs::BaseTypename{ uid }, std::nullopt, rule_info_stub_no_throw() },
+									std::move(name_or_e).value()
+								}
+							}
+						);
+					}
+				));
 			},
 			[&](const NodeStructs::CompileTimeStatement<type_context>& compile_time_statement) -> expected<T> {
 				return realise_one_compile_time_statement(state, variables, copy(intermediates._value.back()), compile_time_statement);
@@ -233,10 +287,10 @@ expected<T> realise_compile_time_for_over_type_list(
 			);
 			for (const NodeStructs::Statement<type_context>& stmt : statements) {
 				expected<T> next = caesium_lib::variant::visit(stmt.statement.get(), overload(
-					[&](const Variant<NodeStructs::Alias, NodeStructs::MemberVariable>& member) -> expected<T> {
+					[&](const NodeStructs::contextual_options<type_context>& member) -> expected<T> {
 						return caesium_lib::variant::visit(member, overload(
 							[&](const NodeStructs::Alias& alias) -> expected<T> {
-								return add_member_to_type(copy(body_intermediates._value.back()), copy(member));
+								return add_member_to_type(copy(body_intermediates._value.back()), Variant<NodeStructs::Alias, NodeStructs::MemberVariable>{ copy(alias) });
 							},
 							[&](const NodeStructs::MemberVariable& mv) -> expected<T> {
 								// Resolve the member type NOW while type_iterator_name is in state.state.types
@@ -251,6 +305,24 @@ expected<T> realise_compile_time_for_over_type_list(
 										NodeStructs::MemberVariable{
 											NodeStructs::Typename{ NodeStructs::BaseTypename{ uid }, std::nullopt, rule_info_stub_no_throw() },
 											copy(mv.name)
+										}
+									}
+								);
+							},
+							[&](const NodeStructs::MemberVariableComputedName& cmnv) -> expected<T> {
+								// Evaluate name and type NOW while the loop iterator is in state.state.types
+								auto name_or_e = evaluate_computed_member_name(state, variables, cmnv.name_expr);
+								return_if_error(name_or_e);
+								auto resolved_or_e = type_of_typename(state, variables, cmnv.type);
+								return_if_error(resolved_or_e);
+								std::string uid = "__for_iter_type_" + std::to_string(state.state.current_variable_unique_id++);
+								state.state.types.insert({ uid, copy(resolved_or_e.value()) });
+								return add_member_to_type(
+									copy(body_intermediates._value.back()),
+									Variant<NodeStructs::Alias, NodeStructs::MemberVariable>{
+										NodeStructs::MemberVariable{
+											NodeStructs::Typename{ NodeStructs::BaseTypename{ uid }, std::nullopt, rule_info_stub_no_throw() },
+											std::move(name_or_e).value()
 										}
 									}
 								);

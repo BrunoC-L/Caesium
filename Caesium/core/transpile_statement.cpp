@@ -21,7 +21,8 @@ R f(
 		return "";
 	}
 	else {
-		variables[statement.name].push_back({ NodeStructs::MutableReference{}, copy(type) });
+		variables[statement.name].push_back({ NodeStructs::MutableReference{},
+			holds<Realised::PrimitiveType>(assigned_expression_ok.type) ? copy(assigned_expression_ok.type) : copy(type) });
 
 		if (holds<Realised::UnionType>(assigned_expression_ok.type)
 			&& (cmp(type, assigned_expression_ok.type) != std::strong_ordering::equivalent)) {

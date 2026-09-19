@@ -228,22 +228,69 @@ template <typename OP, typename E>
 static R sum_numbers(auto& vis, const non_type_information& base, const std::vector<std::pair<OP, E>>& v, bool has_floating) {
 	std::stringstream ss;
 	ss << "(" << base.representation;
+
+	const bool base_is_valued_int = !has_floating
+		&& holds<Realised::PrimitiveType>(base.type)
+		&& holds<Realised::PrimitiveType::Valued<int>>(get<Realised::PrimitiveType>(base.type).value);
+	const bool base_is_valued_double = has_floating
+		&& holds<Realised::PrimitiveType>(base.type)
+		&& holds<Realised::PrimitiveType::Valued<double>>(get<Realised::PrimitiveType>(base.type).value);
+
+	bool all_compile_time = base_is_valued_int || base_is_valued_double;
+	double compile_time_val = base_is_valued_int
+		? get<Realised::PrimitiveType::Valued<int>>(get<Realised::PrimitiveType>(base.type).value).value
+		: base_is_valued_double
+			? get<Realised::PrimitiveType::Valued<double>>(get<Realised::PrimitiveType>(base.type).value).value
+			: 0.0;
+
 	for (const auto& [op, e] : v) {
 		auto add = vis(e);
 		return_if_error(add);
 		if (!std::holds_alternative<non_type_information>(add.value()))
 			NOT_IMPLEMENTED;
 		const non_type_information& add_ok = std::get<non_type_information>(add.value());
-		if (is_int(add_ok.type))
+		if (is_int(add_ok.type)) {
 			ss << " " << symbol_variant_as_text(op._value) << " " << add_ok.representation;
-		else if (is_floating(add_ok.type)) {
+			if (all_compile_time && holds<Realised::PrimitiveType::Valued<int>>(get<Realised::PrimitiveType>(add_ok.type).value)) {
+				double rhs = get<Realised::PrimitiveType::Valued<int>>(get<Realised::PrimitiveType>(add_ok.type).value).value;
+				if (std::holds_alternative<Token<PLUS>>(op._value))
+					compile_time_val += rhs;
+				else
+					compile_time_val -= rhs;
+			} else {
+				all_compile_time = false;
+			}
+		} else if (is_floating(add_ok.type)) {
 			has_floating = true;
 			ss << " " << symbol_variant_as_text(op._value) << " " << add_ok.representation;
-		}
-		else
+			if (all_compile_time && holds<Realised::PrimitiveType::Valued<double>>(get<Realised::PrimitiveType>(add_ok.type).value)) {
+				double rhs = get<Realised::PrimitiveType::Valued<double>>(get<Realised::PrimitiveType>(add_ok.type).value).value;
+				if (std::holds_alternative<Token<PLUS>>(op._value))
+					compile_time_val += rhs;
+				else
+					compile_time_val -= rhs;
+			} else {
+				all_compile_time = false;
+			}
+		} else {
 			return error{ "user error", "Expected an Integer or Floating to sum with previous Integer or Floating" };
+		}
 	}
 	ss << ")";
+	if (all_compile_time) {
+		if (has_floating)
+			return expression_information{ non_type_information{
+				.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<double>{ compile_time_val } } },
+				.representation = ss.str(),
+				.value_category = NodeStructs::Value{},
+			} };
+		else
+			return expression_information{ non_type_information{
+				.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<int>{ static_cast<int>(compile_time_val) } } },
+				.representation = ss.str(),
+				.value_category = NodeStructs::Value{},
+			} };
+	}
 	return expression_information{ non_type_information{
 		.type = Realised::MetaType{
 			has_floating ?
@@ -255,10 +302,23 @@ static R sum_numbers(auto& vis, const non_type_information& base, const std::vec
 	} };
 }
 
+// Strip surrounding quotes from a Valued<std::string> (tokenizer stores them with quotes)
+static std::string unquote_str_value(const std::string& s) {
+	if (s.size() >= 2 && s.front() == '"' && s.back() == '"')
+		return s.substr(1, s.size() - 2);
+	return s;
+}
+
 template <typename OP, typename E>
 static R sum_strings(auto& vis, const non_type_information& base, const std::vector<std::pair<OP, E>>& v) {
 	std::stringstream ss;
 	ss << "sum_strings(" << base.representation;
+	bool all_compile_time = holds<Realised::PrimitiveType>(base.type)
+		&& holds<Realised::PrimitiveType::Valued<std::string>>(get<Realised::PrimitiveType>(base.type).value);
+	std::string compile_time_val = all_compile_time
+		? unquote_str_value(get<Realised::PrimitiveType::Valued<std::string>>(get<Realised::PrimitiveType>(base.type).value).value)
+		: std::string{};
+
 	for (const auto& [op, e] : v) {
 		auto add = vis(e);
 		return_if_error(add);
@@ -267,12 +327,24 @@ static R sum_strings(auto& vis, const non_type_information& base, const std::vec
 		const non_type_information& add_ok = std::get<non_type_information>(add.value());
 		if (!std::holds_alternative<Token<PLUS>>(op._value))
 			return error{ "user error", "Addition between Char and String only allows for +, not -" };
-		if (is_char_or_string(add_ok.type))
-			ss << ", " << add_ok.representation;
-		else
+		if (!is_char_or_string(add_ok.type))
 			return error{ "user error", "Expected a Char or String to sum with previous Char or String" };
+		ss << ", " << add_ok.representation;
+		if (all_compile_time) {
+			if (holds<Realised::PrimitiveType>(add_ok.type)
+				&& holds<Realised::PrimitiveType::Valued<std::string>>(get<Realised::PrimitiveType>(add_ok.type).value))
+				compile_time_val += unquote_str_value(get<Realised::PrimitiveType::Valued<std::string>>(get<Realised::PrimitiveType>(add_ok.type).value).value);
+			else
+				all_compile_time = false;
+		}
 	}
 	ss << ")";
+	if (all_compile_time)
+		return expression_information{ non_type_information{
+			.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::Valued<std::string>{ "\"" + compile_time_val + "\"" } } },
+			.representation = ss.str(),
+			.value_category = NodeStructs::Value{},
+		} };
 	return expression_information{ non_type_information{
 		.type = Realised::MetaType{ Realised::PrimitiveType{ Realised::PrimitiveType::NonValued<std::string>{} } },
 		.representation = ss.str(),
@@ -724,7 +796,7 @@ std::optional<std::vector<non_type_information>> rearrange_if_possible(
 	if (v1.size() != v2.size())
 		return std::nullopt;
 	for (size_t i = 0; i < v1.size(); ++i)
-		if (!std::holds_alternative<directly_assignable>(assigned_to(state, variables, v1.at(i), v2.at(i).type)._value))
+		if (std::holds_alternative<not_assignable>(assigned_to(state, variables, v1.at(i), v2.at(i).type)._value))
 			return rearrange_if_possible(state, variables, v1, std::move(v2), 0, 0, {});
 	return std::move(v2);
 }
@@ -1057,6 +1129,11 @@ R T::operator()(const std::string& expr) {
 			.value_category = copy(v.value_category),
 		} };
 	}
+	if (expr == Realised::Builtin::builtin_str::name)
+		return expression_information{ type_information{
+			.type = Realised::MetaType{ Realised::Builtin{ Realised::Builtin::builtin_str{} } },
+			.representation = expr
+		} };
 
 	if (auto fs = find_multiple_by_name(state.state.global_namespace.functions, expr); fs.size() != 0)
 		return expression_information{ type_information{

@@ -58,6 +58,7 @@ namespace grammar {
 	> {};
 
 	using MemberVariable = And<Typename, Word, Newline>;
+	using MemberVariableComputedName = And<Typename, Token<BACKTICK>, Expression, Token<BACKTICK>, Newline>;
 
 	using Construct = And<Typename, BraceArguments>;
 
@@ -232,7 +233,7 @@ namespace grammar {
 	> {};
 
 	template <>
-	struct Statement<type_context> : And<IndentToken, Or<CompileTimeStatement<type_context>, Or<Alias, MemberVariable>>> {};
+	struct Statement<type_context> : And<IndentToken, Or<CompileTimeStatement<type_context>, Or<Alias, Or<MemberVariable, MemberVariableComputedName>>>> {};
 
 	template <>
 	struct Statement<top_level_context> : And<IndentToken, Or<CompileTimeStatement<type_context>, Or<Type>>> {};

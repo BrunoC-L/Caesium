@@ -1,7 +1,8 @@
 template A<Us...>:
     type A:
         # ifor i, T in Us:
-            `T` x
+            `T` `"member_" + str(i)`
 
 Int main(Vector<String> ref args):
     A<Int> a = { 1 }
+    A<Int, String> b = { 1, "hello" }

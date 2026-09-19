@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="test_parse.cpp" />
+    <ClCompile Include="unit_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Caesium\Caesium.vcxproj">

@@ -53,6 +53,7 @@ NodeStructs::Template getStruct(const std::string& file_name, const std::vector<
 NodeStructs::Template getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Template& t, std::optional<NodeStructs::Typename> name_space);
 
 NodeStructs::MemberVariable getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::MemberVariable& f);
+NodeStructs::MemberVariableComputedName getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::MemberVariableComputedName& f);
 
 NodeStructs::Alias getStruct(const std::string& file_name, const std::vector<TokenValue>& vec, const grammar::Alias& f, std::optional<NodeStructs::Typename> name_space);
 

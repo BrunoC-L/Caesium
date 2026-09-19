@@ -26,6 +26,7 @@ jobs:
       run: |
         clang++-19 -std=c++26 -Wall -I caesium_lib/caesium_lib -I Caesium -I Tests \
         Tests/main.cpp \
+        Tests/unit_test.cpp \
         Tests/test_parse.cpp \
         Caesium/core/toCPP.cpp \
         Caesium/helpers.cpp \
